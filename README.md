@@ -85,8 +85,6 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 2s
       retries: 30
-    networks:
-      - internal
     volumes:
       - ./data/mysql:/var/lib/mysql
 ```
