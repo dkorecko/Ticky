@@ -50,8 +50,6 @@ I'm constantly working to make Ticky even better! Here's a glimpse of what's in 
 1. Create a `docker-compose.yaml` file:
 
 ```yaml
-version: "2.1"
-
 services:
   ticky-app:
     image: ghcr.io/dkorecko/ticky:latest # or pin to a specific version (like v1.0.0) for manual updates
@@ -71,6 +69,9 @@ services:
       - SMTP_USERNAME=your-smtp-username
       - SMTP_PASSWORD=your-smtp-password
       - SMTP_SECURITY=true
+    depends_on:
+      ticky-db:
+        condition: service_healthy
 
   ticky-db:
     image: mysql:8
