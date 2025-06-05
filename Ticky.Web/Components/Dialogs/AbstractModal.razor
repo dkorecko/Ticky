@@ -1,0 +1,33 @@
+
+
+@code {
+    protected object? FocusElement { get; set; }
+
+    protected Modal? Modal;
+
+    public virtual async void Open()
+    {
+        if (Modal is null)
+            return;
+
+        OnOpen();
+        await Modal.Show();
+
+        ElementReference? element = null;
+
+        if (FocusElement is InputText inputText)
+            element = inputText.Element.GetValueOrDefault();
+        else if (FocusElement is InputTextArea inputTextArea)
+            element = inputTextArea.Element.GetValueOrDefault();
+        else if (FocusElement is ElementReference elementReference)
+            element = elementReference;
+
+        if(element.HasValue)
+            await element.Value.FocusAsync();
+    }
+
+    protected virtual void OnOpen()
+    {
+        
+    }
+}

@@ -1,0 +1,90 @@
+@using Ticky.Base.Entities
+@inherits LayoutComponentBase
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject NavigationManager _navigationManager
+
+<PageTitle>Ticky</PageTitle>
+
+<CascadingValue Name="@Constants.CascadingParameters.CurrentAccount" Value="@_user">
+    <Notifications @ref="_notifications" />
+    <CascadingValue Name="@Constants.CascadingParameters.MainLayout" Value="this">
+        <div class="h-screen overflow-clip">
+            <NavMenu/>
+
+            <main>
+                @if(_user is null)
+                {
+                    <Spinner/>
+                } else {
+                    @Body
+                }
+            </main>
+        </div>
+
+        <div id="blazor-error-ui" data-nosnippet>
+            An unhandled error has occurred.
+            <a href="." class="reload">Reload</a>
+            <span class="dismiss">🗙</span>
+        </div>
+        <UserInfoModal @ref="UserInfoModal"/>
+    </CascadingValue>
+</CascadingValue>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    private Notifications? _notifications { get; set; }
+
+    private User? _user { get; set; }
+
+    public UserInfoModal? UserInfoModal { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AuthenticationStateTask != null)
+        {
+            var authState = await AuthenticationStateTask;
+
+            if (authState.User?.Identity?.IsAuthenticated == true)
+            {
+                using var db = _dbContextFactory.CreateDbContext();
+                _user = await db.Users
+                    .AsNoTracking()
+                    .Include(x => x.ProjectMemberships)
+                    .Include(x => x.BoardMemberships)
+                    .SingleOrDefaultAsync(x => x.Email != null && x.Email.Equals(authState.User.Identity.Name));
+
+                if (_user is not null) 
+                {
+                    StateHasChanged();
+                    return;
+                }
+
+                _navigationManager.NavigateTo(Constants.Mappings.LOGOUT_PATH, true);
+            }
+        }
+
+        _navigationManager.NavigateTo(Constants.Mappings.LOGIN_PATH, true);
+    }
+
+    public void RunNotification(Notification notification)
+    {
+        _notifications?.RunNotification(notification);
+    }
+
+    public async Task UpdateRecentBoard()
+    {
+        if(_user is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        _user = await db.Users
+            .AsNoTracking()
+            .Include(x => x.ProjectMemberships)
+            .Include(x => x.BoardMemberships)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_user.Id));
+
+        StateHasChanged();
+    }
+}

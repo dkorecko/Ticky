@@ -1,0 +1,152 @@
+@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject IJSRuntime _js
+
+<ActionModal @ref=_modalRef Title="Link card">
+    @if(_card is null) {
+        <Spinner/>
+    } else {
+        <EditForm class="form p-2" EditContext="_editContext" OnSubmit="OnSubmitAttempted">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <Name For="() => _linkCardsModel.Text" />
+                <InputSelect class="form-control" @bind-Value="_linkCardsModel.Text">
+                    @foreach(var item in Constants.LINK_TYPE_PAIRS.Keys)
+                    {
+                        <option value="@item">@item</option>
+                    }
+                    @foreach (var item in Constants.LINK_TYPE_PAIRS.Values)
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => _linkCardsModel.Text" />
+            </div>
+
+            <div class="form-group">
+                <Name For="() => _linkCardsModel.TargetCardId" />
+                <InputText class="form-control" @bind-Value="_linkCardsModel.TargetCardId" />
+                <ValidationMessage For="() => _linkCardsModel.TargetCardId" />
+                @if(_cardError is not null)
+                {
+                    <div class="validation-message">@_cardError</div>
+                }
+            </div>
+
+            <button type="submit">Link</button>
+        </EditForm>
+    }
+</ActionModal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback UpdateCard {get; set;}
+
+    private ActionModal? _modalRef;
+
+    private Card? _card;
+
+    private LinkCardsModel _linkCardsModel = new();
+
+    private string? _cardError;
+
+    private EditContext _editContext = new(new LinkCardsModel());
+
+    public void Open(string elementId, Card card) {
+        _card = card;
+        _cardError = null;
+        _linkCardsModel = new();
+        _editContext = new EditContext(_linkCardsModel);
+        _modalRef?.Open(elementId);
+    }
+
+    public async Task OnSubmitAttempted() 
+    {
+        if(_card is null)
+            return;
+
+        _cardError = null;
+
+        if (!_editContext.Validate())
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await db.Cards
+            .Include(x => x.LinkedIssuesOne)
+            .Include(x => x.LinkedIssuesTwo)
+            .Include(x => x.Activities)
+            .Include(x => x.Column)
+                .ThenInclude(x => x.Board)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
+
+        if(card is null)
+            return;
+
+        var targetCard = await db.Cards
+            .Include(x => x.LinkedIssuesOne)
+            .Include(x => x.LinkedIssuesTwo)
+            .Include(x => x.Activities)
+            .Include(x => x.Column)
+                .ThenInclude(x => x.Board)
+            .FirstOrDefaultAsync(x => _linkCardsModel.TargetCardId.Equals(x.Column.Board.Code + "-" + x.Number));
+
+        if (targetCard is null) {
+            _cardError = "Card not found.";
+            return;
+        }
+
+        if(targetCard.Id.Equals(card.Id))
+        {
+            _cardError = "You cannot link this card to itself.";
+            return;
+        }
+
+        if(card.LinkedIssuesOne.Any(x => x.CardTwoId.Equals(targetCard.Id)))
+        {
+            _cardError = "This card is already linked to the target card.";
+            return;
+        }
+
+        card.LinkedIssuesOne.Add(new CardLink
+        {
+            CardOneId = card.Id,
+            CardTwoId = targetCard.Id,
+            Category = _linkCardsModel.Text
+        });
+
+        var oppositeCategory = Constants.LINK_TYPE_PAIRS.ContainsKey(_linkCardsModel.Text) ? Constants.LINK_TYPE_PAIRS[_linkCardsModel.Text] : Constants.LINK_TYPE_PAIRS.First(x => x.Value.Equals(_linkCardsModel)).Key;
+
+        targetCard.LinkedIssuesOne.Add(new CardLink
+            {
+                CardOneId = targetCard.Id,
+                CardTwoId = card.Id,
+                Category = oppositeCategory
+            });
+
+        card.Activities.Add(new Activity
+            {
+                Text = $"<b>added</b> a linked issue <b>{targetCard.Column.Board.Code}-{targetCard.Number}</b> with <b>{_linkCardsModel.Text}</b> relationship",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+            });
+        targetCard.Activities.Add(new Activity
+            {
+                Text = $"<b>added</b> a linked issue <b>{card.Column.Board.Code}-{card.Number}</b> with <b>{oppositeCategory}</b> relationship",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+            });
+
+        await db.SaveChangesAsync();
+
+        _card = card;
+        StateHasChanged();
+        await UpdateCard.InvokeAsync();
+        _modalRef?.Close();
+    }
+}

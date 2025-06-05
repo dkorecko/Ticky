@@ -1,0 +1,54 @@
+﻿@using Ticky.Base.Entities
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<Modal @ref="Modal" Title="Delete project" OnSubmitAttempted="OnSubmitAttempted" RedSubmit="true">
+    Are you sure you'd like to delete the project <b>@_projectName</b>?<br />
+    All boards, cards and data associated with this project will be deleted.<br />
+    <b>This action is irreversible.</b>
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    private int? _projectId;
+    private string? _projectName;
+
+    public async void Open(int projectId, string projectName)
+    {
+        _projectId = projectId;
+        _projectName = projectName;
+
+        if (_user.InstantDelete)
+        {
+            await OnSubmitAttempted();
+            return;
+        }
+
+        StateHasChanged();
+        base.Open();
+    }
+
+    private async Task OnSubmitAttempted()
+    {
+        if(Modal is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var targetProject = await db.Projects.FirstOrDefaultAsync(x => x.Id.Equals(_projectId));
+
+        if (targetProject is null)
+            return;
+
+        db.Projects.Remove(targetProject);
+        await db.SaveChangesAsync();
+
+        await Modal.Close();
+        await OnSubmit.InvokeAsync();
+    }
+}

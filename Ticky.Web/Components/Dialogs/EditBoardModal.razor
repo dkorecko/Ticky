@@ -1,0 +1,80 @@
+@using Ticky.Base.Entities
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<Modal @ref="Modal" Title="Edit board" OnSubmitAttempted="OnSubmitAttempted">
+    @if (_board is not null)
+    {
+        <EditForm class="form" EditContext="  _editContext">
+            <DataAnnotationsValidator />
+            
+            <div class="form-group">
+                <Name For=" () => _board.Name" />
+                <InputText class="form-control" @bind-Value="_board.Name" @ref="FocusElement" />
+                <ValidationMessage For="  () => _board.Name" />
+            </div>
+                
+            <div class="form-group">
+                <Name For="() => _board.Description" />
+                <InputText class="form-control" @bind-Value="_board.Description" />
+                <ValidationMessage For=" () => _board.Description" />
+            </div>
+
+            <div class="form-group">
+                <Name For="() => _board.Code" />
+                <InputText class="form-control" @bind-Value="_board.Code" />
+                <ValidationMessage For=" () => _board.Code" />
+            </div>
+        </EditForm>
+    }
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    private Board? _board;
+
+    private EditContext? _editContext;
+
+    public async Task Open(int boardId)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+        _board = await db.Boards
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id.Equals(boardId));
+
+        if (_board is null)
+            return;
+
+        _editContext = new EditContext(_board);
+
+        base.Open();
+    }
+
+    private async Task OnSubmitAttempted()
+    {
+        if (Modal is null || _editContext is null || _board is null)
+            return;
+
+        if (!_editContext.Validate())
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var targetBoard = await db.Boards.FirstOrDefaultAsync(x => x.Id.Equals(_board.Id));
+
+        if (targetBoard is not null)
+        {
+            targetBoard.Name = _board.Name;
+            targetBoard.Description = _board.Description;
+            targetBoard.Code = _board.Code;
+            await db.SaveChangesAsync();
+        }
+
+        await Modal.Close();
+        await OnSubmit.InvokeAsync();
+    }
+}

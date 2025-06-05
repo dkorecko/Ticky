@@ -1,0 +1,45 @@
+﻿@inject IJSRuntime _js
+
+<div @ref="_element" class="dropdown absolute top-0 left-0 z-20 hidden rounded-xs bg-white shadow-2xl">
+	<section class="flex w-full flex-row items-center justify-center gap-10 px-2 py-3">
+		<label class="text-sm font-normal">@Title</label>
+		<i class="fa fa-xmark ml-auto cursor-pointer text-gray-400 hover:text-gray-800" @onclick="Close"></i>
+	</section>
+	<hr/>
+	<div class="px-2 py-2">
+		@ChildContent
+	</div>
+</div>
+
+@code {
+	[Parameter]
+	public required RenderFragment ChildContent { get; set; }
+
+	[Parameter]
+	public required string Title { get; set; }
+
+	private ElementReference? _element;
+
+	public async void Open(string elementId)
+	{
+		await _js.InvokeVoidAsync("openDropDownOnElementId", _element, elementId);
+		if (_element.HasValue)
+		{
+			await _js.InvokeVoidAsync("trapFocusInElement", _element);
+		}
+	}
+
+	public async void Open(ElementReference? triggerElement)
+	{
+		await _js.InvokeVoidAsync("openDropDownOnElementPosition", _element, triggerElement);
+		if (_element.HasValue)
+		{
+			await _js.InvokeVoidAsync("trapFocusInElement", _element);
+		}
+	}
+
+	public async void Close() 
+	{
+		await _js.InvokeVoidAsync("closeDropdowns");
+	}
+}

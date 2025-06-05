@@ -1,0 +1,103 @@
+@using Ticky.Base.Entities
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<Modal @ref="Modal" Title="New column" OnSubmitAttempted="OnSubmitAttempted">
+    <EditForm class="form" EditContext="_editContext">
+        <DataAnnotationsValidator />
+        
+        <div class="form-group">
+            <Name For="() => _column.Name" />
+            <InputText class="form-control" @bind-Value="_column.Name" @ref="FocusElement" />
+            <ValidationMessage For="() => _column.Name" />
+        </div>
+
+        <div class="form-group">
+            <Name For="() => _column.MaxCards" />
+            <InputNumber class="form-control" @bind-Value="_column.MaxCards" />
+            <ValidationMessage For="() => _column.MaxCards" />
+        </div>
+
+        <div class="form-group">
+            <Name For="() => _column.Finished" />
+            <InputCheckbox class="switch" @bind-Value="_column.Finished" />
+            <ValidationMessage For="() => _column.Finished" />
+        </div>
+
+        <div class="form-group">
+            <Name For="() => _column.OrderRule" />
+            <InputSelect class="form-control" @bind-Value="_column.OrderRule">
+                @foreach (Enum enumValue in Enum.GetValues(typeof(OrderRule)))
+                {
+                    if (_column.OrderRule.Equals(enumValue))
+                    {
+                        <option selected value="@enumValue">@enumValue.GetDisplayName()</option>
+                    }
+                    else
+                    {
+                        <option value="@enumValue">@enumValue.GetDisplayName()</option>
+                    }
+                }
+            </InputSelect>
+            <ValidationMessage For="() => _column.OrderRule" />
+        </div>
+    </EditForm>
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    public int _boardId { get; set; }
+
+    private Column _column = new()
+    {
+        Name = string.Empty,
+        BoardId = 0,
+        Index = 0
+    };
+
+    private EditContext? _editContext;
+
+    public void Open(int boardId)
+    {
+        _boardId = boardId;
+        _column.BoardId = boardId;
+
+        _column = new()
+            {
+                Name = string.Empty,
+                BoardId = 0,
+                Index = 0
+            };
+        _editContext = new EditContext(_column);
+
+        base.Open();
+    }
+
+    private async Task OnSubmitAttempted()
+    {
+        if (Modal is null || _editContext is null || _column is null)
+            return;
+
+        if (!_editContext.Validate())
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var board = await db.Boards.Include(x => x.Columns).FirstOrDefaultAsync(x => x.Id.Equals(_boardId));
+
+        if (board is not null)
+        {
+            _column.Index = board.Columns.GetNextIndex();
+
+            board.Columns.Add(_column);
+            await db.SaveChangesAsync();
+        }
+
+        await Modal.Close();
+        await OnSubmit.InvokeAsync();
+    }
+}

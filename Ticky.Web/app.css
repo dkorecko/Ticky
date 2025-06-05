@@ -1,0 +1,384 @@
+﻿@import "tailwindcss";
+
+@theme {
+    --color-primary: oklch(0.595 0.2538 297);
+
+    --text-2xs: 0.65rem;
+}
+
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+}
+
+h1:focus {
+    outline: none;
+}
+
+body, input {
+    font-family: 'Noto Sans';
+}
+
+input {
+    outline: none;
+}
+
+.nav-links {
+    @apply flex;
+    @apply flex-row;
+    @apply gap-10;
+    @apply self-center;
+    @apply text-slate-500;
+    @apply text-sm tracking-wide;
+}
+
+.nav-link {
+    @apply transition-all;
+    @apply select-none;
+    @apply hover:text-primary;
+    @apply cursor-pointer;
+    @apply z-10;
+}
+
+.active {
+    @apply text-primary;
+}
+
+.avatar {
+    @apply w-8;
+    @apply h-8;
+
+    @apply bg-center;
+    background-size: cover;
+    border-radius: 50%;
+
+    @apply cursor-pointer;
+}
+
+.stack-avatars {
+    margin-left: -1rem;
+    @apply outline-1 outline-white;
+}
+
+.avatar-border {
+    @apply shadow-primary shadow-[0_0_2px_2px];
+}
+
+.board-column {
+    @apply flex w-64 flex-col items-center;
+}
+
+.task-card {
+    @apply mb-2 flex w-full cursor-pointer flex-col gap-3 rounded-lg bg-slate-100 p-3 shadow-sm select-none data-[blocked=True]:bg-orange-200;
+}
+
+.to-task-card {
+    @apply select-none data-[active=True]:bg-slate-100 data-[active=True]:flex data-[active=True]:flex-col data-[active=True]:p-3 data-[active=True]:gap-3 data-[active=True]:shadow-sm
+        data-[active=True]:outline-0;
+}
+
+.priority {
+    @apply text-2xs w-fit cursor-pointer rounded-lg px-3 py-1 font-bold;
+}
+
+.label {
+    @apply text-2xs flex w-fit cursor-pointer items-center justify-center rounded-lg px-3 py-1 font-bold;
+}
+
+.card-data-point {
+    @apply flex cursor-pointer flex-row items-center justify-center gap-1 whitespace-nowrap;
+}
+
+button, button[type='submit'], .label-as-button {
+    @apply rounded-lg bg-primary py-2 text-xs text-slate-100 transition-all ease-in-out hover:bg-purple-900;
+}
+
+button, .label-as-button > label {
+    @apply cursor-pointer;
+}
+
+button, .label-as-button > i {
+    @apply cursor-pointer;
+}
+
+::-webkit-scrollbar {
+    @apply h-2 w-2;
+  }
+  
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 8px;
+  }
+  
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+
+.auth-bg {
+    @apply bg-gradient-to-tr flex h-full w-full items-center justify-center from-teal-400 via-purple-400 to-primary;
+}
+
+.auth-inp-label {
+    @apply flex flex-col gap-2;
+}
+
+.auth-label {
+    @apply ml-1 text-sm font-semibold opacity-80;
+}
+
+.auth-input {
+    @apply h-8 w-full border-b-2 border-gray-600 bg-white px-2 text-sm font-normal
+        transition-all ease-in-out focus:border-primary;
+}
+
+.auth-button {
+    @apply mt-5 !rounded-full !text-base;
+}
+
+.auth-card {
+    @apply flex w-[30rem] flex-col gap-12 rounded-lg bg-white px-12 py-24 shadow-2xl;
+}
+
+.auth-form {
+    @apply flex flex-col gap-6;
+}
+
+.auth-link {
+    @apply text-xs font-semibold text-primary transition-all hover:text-purple-900;
+}
+
+.auth-secondary-button {
+    @apply bg-white px-5 py-1 text-xs font-normal text-gray-500 outline-1 outline-gray-300 hover:bg-gray-300 hover:text-white;
+}
+
+input[type="checkbox"].switch{
+	font-size: 30px;
+	-webkit-appearance: none;
+	   -moz-appearance: none;
+	        appearance: none;
+	width: 3.5em;
+	height: 1.5em;
+	background: transparent;
+	border-radius: 3em;
+	position: relative;
+	cursor: pointer;
+	-webkit-transition: all .2s ease-in-out;
+	transition: all .2s ease-in-out;
+    @apply scale-50 bg-gray-400 shadow-sm;
+  }
+  
+  input[type="checkbox"].switch:checked{
+	@apply bg-primary;
+  }
+  
+  input[type="checkbox"].switch:after{
+	position: absolute;
+	content: "";
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 50%;
+	background: #fff;
+	-webkit-transform: scale(.7);
+	        transform: scale(.7);
+	left: 0;
+	-webkit-transition: all .2s ease-in-out;
+	transition: all .2s ease-in-out;
+  }
+  
+  input[type="checkbox"].switch:checked:after{
+	left: calc(100% - 1.5em);
+  }
+
+.settings-menu-item {
+    @apply cursor-pointer rounded-lg px-2 py-1 transition-all ease-in-out hover:bg-slate-400 hover:text-black data-[active=true]:bg-purple-900/20 data-[active=true]:text-purple-900;
+}
+
+.settings-item {
+    @apply flex flex-col justify-between gap-2 py-5 lg:flex-row lg:items-center;
+}
+
+@utility add {
+    @apply flex cursor-pointer flex-col items-center justify-center gap-5 text-gray-500 outline-1 outline-gray-500 transition-all ease-in-out outline-dashed hover:outline-gray-900 hover:text-gray-900;
+}
+
+.board-card-create {
+    @apply add h-min w-full rounded-lg px-5 py-5 select-none sm:w-72;
+}
+
+    .add label {
+        @apply cursor-pointer;
+    }
+
+@utility icon-button {
+    @apply bg-transparent cursor-pointer rounded-lg p-1 text-gray-500 transition-all ease-in-out hover:text-gray-900 hover:bg-slate-400;
+}
+
+.card-button {
+    @apply icon-button hover:!bg-gray-300;
+}
+
+.board-card {
+    @apply flex h-min w-full cursor-pointer flex-col rounded-lg bg-slate-100 px-5 py-5 shadow-sm transition-all ease-in-out select-none hover:shadow-xl hover:shadow-gray-500 sm:w-72 /*hover:scale-105*/;
+}
+    .board-card-data-point {
+        @apply flex cursor-pointer flex-row items-center justify-start gap-3 pl-1 text-xs text-gray-500;
+    }
+
+    .board-card-data-point > i {
+        @apply w-4 text-base;
+    }
+
+.field-validation-error, .validation-message {
+    @apply text-xs text-red-600;
+}
+
+.form {
+    @apply flex flex-col gap-3;
+}
+
+.form-group {
+    @apply flex flex-col gap-1 transition-all;
+}
+
+    .form-group > label {
+        @apply text-xs font-light;
+    }
+
+    .form-group > .form-control {
+        @apply border-b-2 border-purple-300 px-2 py-1 text-sm transition-all focus:border-primary;
+    }
+
+.dragging {
+    @apply rotate-6 transition-transform;
+}
+
+.edit-task-label {
+    @apply w-24 overflow-hidden text-sm font-normal text-slate-500;
+}
+
+.edit-task-item {
+    @apply flex flex-row flex-wrap items-center gap-2 text-sm font-medium;
+}
+
+.person-label {
+    @apply flex flex-row items-center justify-center gap-1
+        overflow-hidden rounded-full bg-slate-200 p-1 text-xs font-normal;
+}
+
+    .person-label > div {
+        @apply w-5;
+        @apply h-5;
+    
+        @apply bg-center;
+        background-size: cover;
+        border-radius: 50%;
+    }
+
+.card-label {
+    @apply flex flex-row items-center justify-center gap-2
+        overflow-hidden rounded-full bg-slate-200 px-2 py-1.5 text-xs font-normal;
+}
+
+.edit-icon {
+    @apply cursor-pointer p-2 text-xs
+    text-gray-500 outline-gray-500 transition-all ease-in-out
+    hover:outline-gray-900 hover:text-gray-900;
+}
+
+.icon {
+    @apply p-2 text-xs
+    text-gray-500 outline-gray-500 transition-all ease-in-out}
+
+.priority-selector-item {
+    @apply flex cursor-pointer flex-row items-center justify-between px-2 py-2 transition-all ease-in-out hover:bg-slate-200;
+}
+
+.person-link {
+    @apply cursor-pointer items-stretch rounded-lg bg-blue-600 px-1 pb-0.5 whitespace-pre-wrap text-white transition-all ease-in-out hover:bg-blue-700;
+}
+
+.plk-dd-spacing {
+    @apply h-1 transition-all;
+}
+
+.plk-dd-spacing-dragged-over {
+    @apply h-24 transition-all;
+}
+
+.plk-dd-inprogess > * {
+    pointer-events: none;
+}
+
+.element-spinner {
+    border: 4px solid silver;
+    border-top: 4px solid rgb(148, 71, 255);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.element-spinner-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid #26b050;
+}
+
+.invalid {
+    outline: 1px solid #e50000;
+}
+
+.blazor-error-boundary {
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+
+    .blazor-error-boundary::after {
+        content: "An error has occurred."
+    }
+
+#blazor-error-ui {
+    color-scheme: light only;
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }

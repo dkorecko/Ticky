@@ -1,0 +1,517 @@
+@page "/boards/{Id:int}/{CardId:int?}"
+@using Ticky.Base.Entities
+@inject NavigationManager _navigationManager
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject CardNumberingService _cardNumberingService
+@inherits NotifiableBase
+
+<CreateColumnModal @ref="_createColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Added)" />
+<EditColumnModal @ref="_editColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Edited)" />
+<DeleteColumnModal @ref="_deleteColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Deleted)" />
+<DeleteTaskModal @ref="_deleteTaskModal" OnSubmit="async () => await RunNotification(typeof(Card), OperationType.Deleted)" />
+<EditCardModal @ref="_editCardModal" OnSubmit="OnTaskEdited" />
+<EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
+
+<div class="flex h-screen w-full flex-row divide-x divide-gray-400">
+    <section class="flex flex-grow flex-col gap-10 overflow-auto px-12 py-14">
+        <!-- Board section -->
+        @if (_board is not null)
+        {
+            <header class="flex flex-row justify-end gap-5 text-2xl font-bold">
+                <label class="mr-auto">@_board.Name <label class="text-2xs font-normal">(Project @_board.Project.Name)</label></label>
+
+                <div class="flex flex-row gap-1">
+                    @{
+                        var i = 0;
+                    }
+                    @foreach(var member in _members)
+                    {
+                        string id = $"avatar_{i}";
+                        <div id="@id" class="avatar stack-avatars" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"
+                            @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
+                        i++;
+                    }
+                    @if (IsAdmin())
+                    {
+                        <div class="avatar add" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)">
+                            <i class="fa fa-plus text-sm"></i>
+                        </div>
+                    }
+                </div>
+
+                @if (IsAdmin())
+                {
+                    <a href="/boards/settings/@_board.Id"><i class="fa fa-gear icon-button"></i></a>
+                }
+            </header>
+
+            <section class="flex w-full flex-row gap-5">
+                <SortableList Class="flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
+                    <SortableItemTemplate>
+                        <div class="board-column gap-1">
+                            <div class="flex w-full flex-row items-center justify-between">
+                                <div class="flex flex-row items-center gap-2">
+                                    <label>
+                                        @column.Name
+                                    </label>
+                                    <span class='text-2xs rounded-full p-0.5 shadow-sm @(column.MaxCards != 0 && column.Cards.Count >= column.MaxCards ? "bg-red-300" : "bg-slate-100")'>
+                                        @if(column.MaxCards == 0)
+                                        {
+                                            <span>@column.Cards.Count</span>
+                                        } else {
+                                            <span>@column.Cards.Count/@column.MaxCards</span>
+                                        }
+                                    </span>
+                                    @if (column.Collapsed)
+                                    {
+                                        <label class="text-xs font-normal">(Collapsed)</label>
+                                    }
+                                </div>
+
+                                @if (IsAdmin())
+                                {
+                                    <div class="flex flex-row items-center gap-2">
+                                        <i class="fa fa-up-down-left-right drag-toggle icon-button cursor-move text-gray-500"></i>
+
+                                        <Dropdown Actions='new() {
+                                            { "Edit column", () => _editColumnModal?.Open(column.Id) },
+                                            { "Delete column", () => _deleteColumnModal?.Open(column.Id, column.Name) },
+                                            { $"{(column.Collapsed ? "Expand" : "Collapse")} column", async () => await ExpandOrCollapseColumn(column.Id) },
+                                        }'>
+                                            <i class="fa fa-ellipsis icon-button pr-1"></i>
+                                        </Dropdown>
+                                    </div>
+                                }
+                            </div>
+
+                            @if(!column.Collapsed) 
+                            {
+                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Class="min-h-[1rem] w-full" Group="group" Items="column.Cards.OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
+                                    <SortableItemTemplate>
+                                        @if(column.MaxCards == 1)
+                                        {
+                                            <div class="mt-1"></div>
+                                        }
+                                        <TaskCard Card="@context" BoardCode="@_board.Code" EditCardModal="_editCardModal" DeleteTaskModal="_deleteTaskModal" Members="_members" OnCardUpdated="HandleUpdate" />
+                                    </SortableItemTemplate>
+                                </SortableList>
+
+                                @if(column.MaxCards == 0 || column.Cards.Count < column.MaxCards) 
+                                {
+                                    <div data-active=@((_adding == column.Id).ToString()) @onclick="async () => await StartAddingToColumn(column.Id)" 
+                                        class="add rounded-lg select-none p-5 h-min w-full to-task-card">
+                                        @if(_adding != column.Id) {
+                                            <i class="fa fa-plus text-3xl"></i>
+                                            <label>New card</label>
+                                        } else {
+                                            <div class="flex w-full flex-row items-center justify-between text-sm font-semibold">
+                                                <label>Create new card</label>
+                                                <i class="fa fa-xmark text-gray-500" @onclick="() => _adding = -1" @onclick:stopPropagation=true></i>
+                                            </div>
+
+                                            <textarea class="h-16 w-full rounded-lg bg-slate-100 p-2 text-start text-xs outline-1 outline-gray-300" 
+                                                           value="@_createTaskModel.Text"
+                                                           @ref=_textElement
+                                                           @oninput='OnTaskTextChanged'
+                                                           @onkeydown='async (e) => {
+                                                               if(!e.Key.Contains("Enter"))
+                                                                    return;
+
+                                                               await AttemptCreateTaskSubmit(column.Id);
+                                                           }'
+                                                           autofocus
+                                            placeholder="What is the description?" wrap="soft"/>
+
+                                            <hr class="border-t-gray-300">
+                                            <button class="w-full" @onclick="() => AttemptCreateTaskSubmit(column.Id)">Create</button>
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </SortableItemTemplate>
+                </SortableList>
+
+                @if (IsAdmin())
+                {
+                    <div class="add h-[75vh] w-64 rounded-lg" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id)+1 : 0);">
+                        <i class="fa fa-plus text-3xl"></i>
+                        <label>New column</label>
+                    </div>
+                }
+            </section>
+        }
+        else
+        {
+            <Spinner />
+        }
+    </section>
+    <section class="flex w-80 flex-col gap-8 px-12 py-14">
+        <!-- Side section -->
+        @if (_board is not null)
+        {
+            var completedCards = _board.Columns.Where(x => x.Finished).SelectMany(x => x.Cards).Count();
+            var totalCards = _board.Columns.SelectMany(x => x.Cards).Count();
+
+            <label>Progress</label>
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-1">
+                    <div class="flex flex-row justify-between text-xs">
+                        <label>Tasks completed</label>
+                        <label class="text-gray-500">@completedCards/@totalCards</label>
+                    </div>
+                    <div class="grid h-1 w-full rounded-lg">
+                        <div class="z-10 w-24 rounded-lg bg-pink-500 transition-all" style="grid-row: 1; grid-column: 1; width: @(Math.Round((double) completedCards/totalCards*100))%;"></div>
+                        <div class="rounded-lg bg-pink-300" style="grid-row: 1; grid-column: 1;"></div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <Spinner />
+        }
+    </section>
+</div>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public int Id { get; set; } = default!;
+
+    [Parameter]
+    public int? CardId { get; set; }
+
+    private const string COLUMN_PREFIX = "column_";
+
+    private Base.Entities.Board? _board;
+    private List<User> _members = new();
+
+    private CreateColumnModal? _createColumnModal;
+    private EditColumnModal? _editColumnModal;
+    private EditCardModal? _editCardModal;
+    private DeleteColumnModal? _deleteColumnModal;
+    private DeleteTaskModal? _deleteTaskModal;
+    private EditBoardMembershipsModal? _editBoardMembershipsModal;
+    private List<ElementReference> _avatars = new();
+    private ElementReference Avatars { set => _avatars.Add(value); }
+    private ElementReference? _textElement;
+
+    private CreateTaskModel _createTaskModel = new();
+    private bool _justAdded;
+    private int _adding;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await HandleUpdate();
+
+        if (_board is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var user = await db.Users
+            .Include(x => x.LastVisits)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_user.Id));
+
+        if (user is null)
+            return;
+
+        user.LastVisitedBoardId = _board.Id;
+
+        var pastVisit = user.LastVisits.FirstOrDefault(x => x.BoardId.Equals(_board.Id));
+
+        if (pastVisit is not null)
+            user.LastVisits.Remove(pastVisit);
+
+        user.LastVisits.Add(new LastVisit
+        {
+            UserId = _user.Id,
+            BoardId = _board.Id,
+            VisitTime = DateTime.Now
+        });
+
+        await db.SaveChangesAsync();
+
+        if(CardId.HasValue)
+            _editCardModal?.Open(CardId.Value, _members);
+
+        await MainLayout.UpdateRecentBoard();
+    }
+
+    private int GetColumnIdFromString(string str)
+        => Convert.ToInt32(str.Replace(COLUMN_PREFIX, string.Empty));
+
+    private async Task OnMovedWithinList((int oldIndex, int newIndex, string columnId) args)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var targetColumn = db.Columns
+            .Include(x => x.Cards)
+            .FirstOrDefault(x => x.Id.Equals(GetColumnIdFromString(args.columnId)));
+
+        if(targetColumn is null)
+            return;
+
+        IndexHelper.ChangeOrderOfItem(targetColumn.Cards, args.oldIndex, args.newIndex);
+
+        await db.SaveChangesAsync();
+        await HandleUpdate();
+    }
+
+    private async Task OnColumnMoved((int oldIndex, int newIndex, string _) args)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var targetBoard = db.Boards
+            .Include(x => x.Columns)
+            .FirstOrDefault(x => x.Id.Equals(Id));
+
+        if(targetBoard is null)
+            return;
+
+        IndexHelper.ChangeOrderOfItem(targetBoard.Columns, args.oldIndex, args.newIndex);
+
+        await db.SaveChangesAsync();
+        await HandleUpdate();
+    }
+
+    private async Task OnMovedFromColumn((int oldIndex, int newIndex, string oldColumnId, string newColumnId) args)
+    {
+        var oldColumnId = GetColumnIdFromString(args.oldColumnId);
+        var newColumnId = GetColumnIdFromString(args.newColumnId);
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var targetColumns = await db.Columns
+            .Where(x => x.Id.Equals(oldColumnId) || x.Id.Equals(newColumnId))
+            .Include(x => x.Cards)
+            .ToListAsync();
+
+        var oldColumn = targetColumns.FirstOrDefault(x => x.Id.Equals(oldColumnId));
+        var newColumn = targetColumns.FirstOrDefault(x => x.Id.Equals(newColumnId));
+
+        if (oldColumn is null || newColumn is null)
+            return;
+
+        if(newColumn.MaxCards != 0 && newColumn.Cards.Count+1 > newColumn.MaxCards)
+        {
+            MainLayout.RunNotification(new("The card could not be moved to this column due to it being already full.", NotificationType.Fail));
+            return;
+        }
+
+        var targetCard = oldColumn.Cards.OrderBy(x => x.Index).ElementAtOrDefault(args.oldIndex);
+
+        if (targetCard is null)
+            return;
+
+        oldColumn.Cards.Remove(targetCard);
+
+        IndexHelper.FixIndices(oldColumn.Cards);
+
+        foreach(var card in newColumn.Cards)
+        {
+            if(card.Index >= args.newIndex)
+            {
+                card.Index++;
+            }
+        }
+
+        newColumn.Cards.Add(targetCard);
+        targetCard.Index = args.newIndex;
+        targetCard.ColumnId = newColumnId;
+
+        IndexHelper.FixIndices(newColumn.Cards);
+
+        await db.SaveChangesAsync();
+        await HandleUpdate();
+    }
+
+    protected override async Task HandleUpdate()
+    {
+        _board = await LoadBoardAsync();
+        StateHasChanged();
+    }
+
+    private async Task OnTaskCreated()
+    {
+        await RunNotification(typeof(Card), OperationType.Added);
+
+        if(_board is not null && _user.AutomaticCardEdit)
+            _editCardModal?.Open(_board.Columns.SelectMany(x => x.Cards).ToList().OrderByDescending(x => x.CreatedAt).First().Id, _members);
+    }
+
+    private async Task OnTaskEdited()
+    {
+        if(_board is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var columns = await db.Columns
+            .Include(x => x.Cards)
+            .Where(x => x.BoardId.Equals(_board.Id))
+            .ToListAsync();
+
+        foreach(var column in columns)
+        {
+            column.ReorderCards();
+        }
+
+        await db.SaveChangesAsync();
+
+        await HandleUpdate();
+    }
+
+    private async Task StartAddingToColumn(int columnId)
+    {
+        _adding = columnId;
+
+        StateHasChanged();
+
+        if (_textElement is null)
+            return;
+
+        await Task.Delay(10);
+        await _textElement.Value.FocusAsync();
+        StateHasChanged();
+    }
+
+    private async Task ExpandOrCollapseColumn(int columnId)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var targetColumn = await db.Columns.FirstOrDefaultAsync(x => x.Id.Equals(columnId));
+
+        if(targetColumn is null)
+            return;
+
+        targetColumn.Collapsed = !targetColumn.Collapsed;
+
+        await db.SaveChangesAsync();
+        await HandleUpdate();
+    }
+
+    private async Task<Base.Entities.Board?> LoadBoardAsync()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var board = await db.Boards
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.CreatedBy)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Assignees)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Attachments)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Subtasks)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Labels)
+            .Include(x => x.Project)
+                .ThenInclude(x => x.Memberships)
+                    .ThenInclude(x => x.User)
+            .Include(x => x.Memberships)
+                .ThenInclude(x => x.User)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.TimeRecords)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id.Equals(Id));
+
+        if (board is null) {
+            _navigationManager.NavigateTo("/");
+            return null;
+        }
+
+        _members = new();
+
+        if (board.Memberships.Any())
+            _members.AddRange(board.Memberships.Select(x => x.User));
+
+        if (board.Project.Memberships.Any())
+            _members.AddRange(board.Project.Memberships.Select(x => x.User));
+
+        _members = _members.DistinctBy(x => x.Id).ToList();
+
+        StateHasChanged();
+
+        return board;
+    }
+
+    private async Task AttemptCreateTaskSubmit(int columnId)
+    {
+        if (_createTaskModel is null || string.IsNullOrWhiteSpace(_createTaskModel.Text))
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var column = await db.Columns
+            .Include(x => x.Cards)
+            .FirstOrDefaultAsync(x => x.Id.Equals(columnId));
+
+        if (column is not null)
+        {
+            column.Cards.Add(new Card
+            {
+                Text = _createTaskModel.Text,
+                ColumnId = columnId,
+                Index = IndexHelper.GetNextIndex(column.Cards),
+                CreatedAt = DateTime.Now,
+                Number = await _cardNumberingService.GetNextNumberAsync(Id),
+                CreatedById = _user.Id
+            });
+            await db.SaveChangesAsync();
+        }
+
+        _justAdded = true;
+        _createTaskModel = new();
+
+        await OnTaskCreated();
+    }
+
+    private bool IsAdmin()
+    {
+        if(_board is null)
+            return false;
+
+        var boardMembership = _board.Memberships.FirstOrDefault(x => x.UserId.Equals(_user.Id));
+
+        if(boardMembership is null)
+        {
+            var projectMembership = _board.Project.Memberships.FirstOrDefault(x => x.UserId.Equals(_user.Id));
+
+            if(projectMembership is null)
+                return false;
+
+            return projectMembership.IsAdmin;
+        }
+
+        return boardMembership.IsAdmin;
+    }
+
+    private void OnTaskTextChanged(ChangeEventArgs e)
+    {
+        if(_justAdded)
+        {
+            _justAdded = false;
+            return;
+        }
+
+        if (e.Value?.ToString() is not string str)
+            return;
+
+        _createTaskModel.Text = str.ReplaceLineEndings(" ");
+
+        StateHasChanged();
+    }
+}
+

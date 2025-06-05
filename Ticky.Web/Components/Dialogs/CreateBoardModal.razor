@@ -1,0 +1,94 @@
+@using Ticky.Base.Entities
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<Modal @ref="Modal" Title="New board" OnSubmitAttempted="OnSubmitAttempted">
+    <EditForm class="form" EditContext="_editContext">
+        <DataAnnotationsValidator />
+
+        <div class="form-group">
+            <Name For="() => _board.Name" />
+            <InputText class="form-control" @bind-Value="_board.Name" @ref="FocusElement"/>
+            <ValidationMessage For="() => _board.Name" />
+        </div>
+        
+        <div class="form-group">
+            <Name For="() => _board.Description" />
+            <InputText class="form-control" @bind-Value="_board.Description" />
+            <ValidationMessage For="() => _board.Description" />
+        </div>
+
+        <div class="form-group">
+            <Name For="() => _board.Code" />
+            <InputText class="form-control" @bind-Value="_board.Code" />
+            <ValidationMessage For="() => _board.Code" />
+        </div>
+    </EditForm>
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    public int _projectId { get; set; }
+
+    private Board _board = new()
+    {
+        Name = string.Empty,
+        Code = string.Empty,
+        Description = string.Empty,
+        ProjectId = 0
+    };
+
+    private EditContext? _editContext;
+
+    public void Open(int projectId)
+    {
+        _projectId = projectId;
+        _board.ProjectId = projectId;
+
+        _board = new()
+            {
+                Name = string.Empty,
+                Code = string.Empty,
+                Description = string.Empty,
+                ProjectId = 0
+            };
+        _editContext = new EditContext(_board);
+
+        base.Open();
+    }
+
+    private async Task OnSubmitAttempted()
+    {
+        if (Modal is null || _editContext is null || _board is null)
+            return;
+
+        if (!_editContext.Validate())
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var project = await db.Projects.FirstOrDefaultAsync(x => x.Id.Equals(_projectId));
+
+        if (project is not null)
+        {
+            var defaultLabels = new List<Ticky.Base.Entities.Label>
+            {
+                new Ticky.Base.Entities.Label { Text = "Bug", TextColor = Color.White, BackgroundColor = Color.FromArgb(220, 38, 38), BoardId = _board.Id },
+                new Ticky.Base.Entities.Label { Text = "Feature", TextColor = Color.White, BackgroundColor = Color.FromArgb(16, 185, 129), BoardId = _board.Id },
+                new Ticky.Base.Entities.Label { Text = "Enhancement", TextColor = Color.White, BackgroundColor = Color.FromArgb(59, 130, 246), BoardId = _board.Id }
+            };
+
+            _board.Labels.AddRange(defaultLabels);
+
+            project.Boards.Add(_board);
+            await db.SaveChangesAsync();
+        }
+
+        await Modal.Close();
+        await OnSubmit.InvokeAsync();
+    }
+}

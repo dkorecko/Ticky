@@ -1,0 +1,80 @@
+@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<ActionModal @ref=_modalRef Title="Edit time record">
+    @if(_timeRecord is null) {
+        <Spinner/>
+    } else {
+        <EditForm class="form p-2" Model="_timeRecordModel" OnValidSubmit="EditTimeRecord">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <Name For="() => _timeRecordModel.Time" />
+                <InputText class="form-control" @bind-Value="_timeRecordModel.Time"  />
+                <ValidationMessage For="() => _timeRecordModel.Time" />
+            </div>
+
+            <button type="submit">Edit</button>
+        </EditForm>
+    }
+</ActionModal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback UpdateCard { get; set; }
+
+    private ActionModal? _modalRef;
+
+    private TimeRecord? _timeRecord;
+
+    private TimeRecordModel _timeRecordModel = new();
+
+    private string _oldTimeRecord = string.Empty;
+
+    public void Open(string triggerElementId, TimeRecord timeRecord) {
+        _timeRecord = timeRecord;
+        _timeRecordModel = new()
+            {
+                Time = (timeRecord.EndedAt!.Value - timeRecord.StartedAt).ConvertToString()
+            };
+        _oldTimeRecord = _timeRecordModel.Time;
+        _modalRef?.Open(triggerElementId);
+        StateHasChanged();
+    }
+
+    public async Task EditTimeRecord() 
+    {
+        if(_timeRecord is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var timeRecord = await db.TimeRecords
+            .Include(x => x.Card)
+                .ThenInclude(x => x.Activities)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_timeRecord.Id));
+
+        if (timeRecord is null)
+            return;
+        
+        var timeSpan = _timeRecordModel.Time.ConvertToTimeSpan();
+
+        timeRecord.EndedAt = DateTime.Now;
+        timeRecord.StartedAt = DateTime.Now.Subtract(timeSpan).Subtract(TimeSpan.FromSeconds(1));
+
+        timeRecord.Card.Activities.Add(new Activity
+            {
+                Text = $"<b>changed</b> the time record from <b>{_oldTimeRecord}</b> to <b>{_timeRecordModel.Time}</b>",
+                UserId = _user.Id,
+                CardId = timeRecord.CardId,
+                At = DateTime.Now
+            });
+
+        await db.SaveChangesAsync();
+        await UpdateCard.InvokeAsync();
+        _modalRef?.Close();
+    }
+}

@@ -1,0 +1,82 @@
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<ActionModal @ref=_modalRef Title="Add time record">
+    @if(_card is null) {
+        <Spinner/>
+    } else {
+        <EditForm class="form p-2" Model="_timeRecordModel" OnValidSubmit="AddTimeRecord">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <Name For="() => _timeRecordModel.Time" />
+                <InputText class="form-control" @bind-Value="_timeRecordModel.Time" />
+                <ValidationMessage For="() => _timeRecordModel.Time" />
+            </div>
+
+            <button type="submit">Add</button>
+        </EditForm>
+    }
+</ActionModal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback UpdateCard { get; set; }
+
+    private ActionModal? _modalRef;
+
+    private Card? _card;
+
+    private TimeRecordModel _timeRecordModel = new();
+
+    public void Open(string triggerElementId, Card card) 
+    {
+        _card = card;
+        _timeRecordModel = new();
+        _modalRef?.Open(triggerElementId);
+        StateHasChanged();
+    }
+
+    public async Task AddTimeRecord() 
+    {
+        if(_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var card = await db.Cards
+            .Include(x => x.TimeRecords)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
+
+        if(card is null)
+            return;
+
+        var timeSpan = _timeRecordModel.Time.ConvertToTimeSpan();
+
+        var timeRecord = new TimeRecord
+            {
+                CardId = card.Id,
+                UserId = _user.Id,
+                StartedAt = DateTime.Now.Subtract(timeSpan),
+                EndedAt = DateTime.Now
+            };
+
+        card.TimeRecords.Add(timeRecord);
+        card.Activities.Add(new Activity
+            {
+                Text = $"<b>added</b> a time record for <b>{(timeRecord.EndedAt.Value-timeRecord.StartedAt).ToElapsedString()}</b>",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+            });
+
+        await db.SaveChangesAsync();
+
+        _card = card;
+        StateHasChanged();
+        await UpdateCard.InvokeAsync();
+        _modalRef?.Close();
+    }
+}

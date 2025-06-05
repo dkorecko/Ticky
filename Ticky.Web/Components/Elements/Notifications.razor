@@ -1,0 +1,37 @@
+﻿<div class="z-20 fixed bottom-5 right-5 transition-all flex flex-col gap-10">
+    @foreach(var notification in _notifications) 
+    {
+        <div class="bg-white rounded-md flex flex-row content-between items-center gap-10 transition-all 
+            overflow-hidden shadow">
+            <div class="flex flex-row gap-5 content-start items-center">
+                <div class='@(notification.Type == NotificationType.Success ? "bg-green-500" : "bg-red-500") 
+                    w-2 h-16'>
+                </div>
+                <i class='@(notification.Type == NotificationType.Success ? "text-green-500 fa-circle-check" : "text-red-500 fa-circle-xmark")
+                    text-2xl fa-regular'></i>
+                <label class="text-sm">
+                    @notification.Text
+                </label>
+            </div>
+            <div class="text-gray-400 hover:text-red-500 cursor-pointer p-5 transition-all" 
+                @onclick="() => _notifications.Remove(notification)">
+                CLOSE
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Notification> _notifications = new();
+
+    public async void RunNotification(Notification notification)
+    {
+        _notifications.Add(notification);
+        StateHasChanged();
+        await Task.Delay(Constants.Limits.DEFAULT_NOTIFICATION_TIME_IN_MS);
+        if(_notifications.Contains(notification)) {
+            _notifications.Remove(notification);
+            StateHasChanged();
+        }
+    }
+}

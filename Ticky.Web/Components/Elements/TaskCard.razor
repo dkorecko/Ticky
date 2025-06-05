@@ -1,0 +1,95 @@
+﻿@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<div data-blocked="@Card.Blocked.ToString()" class="task-card" @onclick="() => EditCardModal.Open(Card.Id, Members)">
+    <div class="flex flex-row items-center justify-between gap-2">
+        <div class="flex flex-row flex-wrap items-center justify-start gap-1">
+            <PriorityLabel Priority="Card.Priority"/>
+            @foreach(var label in Card.Labels) {
+                <Label LabelEntity="label"></Label>
+            }
+        </div>
+
+        <Dropdown Actions='new() {
+                                { "Edit task", async () => await EditCardModal.Open(Card.Id, Members) },
+                                { "Delete task", () => DeleteTaskModal?.Open(Card.Id, $"{BoardCode}-{Card.Number}") },
+                                { $"{(Card.Blocked ? "Unmark" : "Mark")} as blocked", async () => await ChangeBlockedStatus() }
+                            }'>
+            <i class="fa fa-ellipsis card-button pr-1"></i>
+        </Dropdown>
+    </div>
+    <label class="cursor-pointer text-xs">
+        @Card.Text
+    </label>
+    <div class="flex flex-row items-center justify-between gap-3">
+        <div class="flex w-full flex-row flex-wrap items-center justify-start gap-x-3 gap-y-1 text-xs text-gray-500">
+            @if (Card.Deadline is not null)
+            {
+                DeadlineColor color = Card.Column.Finished ? DeadlineColor.Green : (DateTime.Compare(Card.Deadline.Value, DateTime.Now) < 0 ? DeadlineColor.Red : (Card.Deadline.Value.Date == DateTime.Today.Date ? DeadlineColor.Yellow : DeadlineColor.Default));
+                <label data-coloring="@color" class="card-data-point rounded-lg px-1 py-1 text-white capitalize data-[coloring=Default]:mx-[-0.25rem] data-[coloring=Default]:text-gray-500 data-[coloring=Green]:bg-green-500 data-[coloring=Yellow]:bg-yellow-500 data-[coloring=Red]:bg-red-500"><i class="fa fa-clock"></i> @Card.Deadline.Value.ToString("MMM d")</label>
+            }
+            <label class="card-data-point"><i class="fa fa-hashtag"></i> @(BoardCode)-@Card.Number</label>
+            @if (Card.Attachments.Any())
+            {
+                <label class="card-data-point"><i class="fa fa-paperclip"></i> @Card.Attachments.Count</label>
+            }
+            @if (Card.Subtasks.Any())
+            {
+                <label class="card-data-point"><i class="fa fa-check"></i> @Card.Subtasks.Where(x => x.Completed).Count()/@Card.Subtasks.Count</label>
+            }
+            @{
+                var trackedTime = new TimeSpan(Card.TimeRecords.Select(x => ((x.EndedAt ?? DateTime.Now) - x.StartedAt).Ticks).Sum()).ToElapsedString(true);
+            }
+            @if (!string.IsNullOrWhiteSpace(trackedTime))
+            {
+                <label class="card-data-point"><i class="fa fa-stopwatch"></i> @trackedTime</label>
+            }
+            @if(Card.Blocked)
+            {
+                <label class="card-data-point text-red-800"><i class="fa fa-flag"></i> Blocked</label>
+            }
+        </div>
+        <div class="flex">
+            @foreach(var assignee in Card.Assignees) 
+            {
+                <div class="avatar stack-avatars !ml-[-0.8rem] !h-6 !w-6" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');"></div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public required EditCardModal EditCardModal {get; set;}
+
+    [Parameter]
+    public required DeleteTaskModal DeleteTaskModal { get; set; }
+
+    [Parameter]
+    public required Card Card { get; set; }
+
+    [Parameter]
+    public required string BoardCode { get; set; }
+
+    [Parameter]
+    public required List<User> Members { get; set; }
+
+    [Parameter]
+    public EventCallback OnCardUpdated { get; set; }
+
+    private async Task ChangeBlockedStatus()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var card = await db.Cards.FindAsync(Card.Id);
+
+        if (card is null)
+            return;
+
+        card.Blocked = !card.Blocked;
+
+        await db.SaveChangesAsync();
+        StateHasChanged();
+        await OnCardUpdated.InvokeAsync();
+    }
+}

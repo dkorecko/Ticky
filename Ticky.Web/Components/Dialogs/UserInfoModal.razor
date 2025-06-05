@@ -1,0 +1,55 @@
+@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<ActionModal @ref=_modalRef Title="User information">
+    @if(_targetUser is null) {
+        <Spinner/>
+    } else
+    {
+        <div class="flex flex-col items-center gap-2 p-2">
+            <div class="avatar !h-10 !w-10" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_targetUser.ProfilePictureFileName');"></div>
+            <label class="font-bold">@_targetUser.DisplayName</label>
+            <div class="flex flex-col items-center gap-1">
+                @foreach(var commonProjectMembership in _targetUser.ProjectMemberships.Where(x => _user.ProjectMemberships.Any(userMembership => userMembership.ProjectId.Equals(x.ProjectId))))
+                {
+                    <label class="text-sm"><i class="fa fa-building icon"></i>@(commonProjectMembership.IsAdmin ? "Admin" : "Member") of project @commonProjectMembership.Project.Name</label>
+                }
+                @foreach (var commonBoardMembership in _targetUser.BoardMemberships.Where(x => _user.BoardMemberships.Any(userMembership => userMembership.BoardId.Equals(x.BoardId)) || _user.ProjectMemberships.Any(userMembership => userMembership.ProjectId.Equals(x.Board.ProjectId))))
+                {
+                    <label class="text-sm"><i class="fa fa-building icon"></i>@(commonBoardMembership.IsAdmin ? "Admin" : "Member") of board @commonBoardMembership.Board.Name</label>
+                }
+            </div>
+        </div>
+    }
+</ActionModal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    private ActionModal? _modalRef;
+
+    private User? _targetUser;
+
+    public async void Open(string elementId, int? targetUserId)
+    {
+        if(!targetUserId.HasValue)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        _targetUser = await db.Users
+            .AsNoTracking()
+            .Include(x => x.ProjectMemberships)
+                .ThenInclude(x => x.Project)
+            .Include(x => x.BoardMemberships)
+                .ThenInclude(x => x.Board)
+            .FirstOrDefaultAsync(x => x.Id.Equals(targetUserId.Value));
+
+        if(_targetUser is null)
+            return;
+
+        StateHasChanged();
+        _modalRef?.Open(elementId);
+    }
+}

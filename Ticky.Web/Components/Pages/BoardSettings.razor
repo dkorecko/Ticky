@@ -1,0 +1,96 @@
+@page "/boards/settings/{Id:int}"
+@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject ILogger<BoardSettings> _logger
+@inherits NotifiableBase
+
+<AddLabelModal @ref="_addLabelModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.Label), OperationType.Added)" />
+<EditLabelModal @ref="_editLabelModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.Label), OperationType.Edited)" />
+<DeleteLabelModal @ref="_deleteLabelModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.Label), OperationType.Deleted)" />
+
+<div class="h-screen w-full">
+    <section class="flex w-full max-w-4xl flex-grow flex-col gap-5 overflow-y-auto px-12 py-14">
+        <header class="flex flex-row justify-between text-2xl font-bold">
+            Board settings
+        </header>
+
+        <section
+            class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-gray-400 px-1 py-1 text-sm">
+            <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(1)">Labels</div>
+        </section>
+
+        @if(_board is null)
+        {
+            <Spinner/>
+        } else {
+            <section class="flex w-full flex-col divide-y divide-gray-400">
+                @if (_tab == 1)
+                {
+                    <div class="flex flex-col py-5">
+                        <label class="font-bold">Labels</label>
+                        <label class="text-sm opacity-70">The settings for what labels are available for assignment to cards.</label>
+                    </div>
+
+                    <div class="flex flex-col gap-2 py-5">
+                        @foreach (var label in _board.Labels)
+                        {
+                            <div class="flex flex-row items-center">
+                                <Label LabelEntity="label" />
+                                <label class="ml-2 text-xs">Used on @label.OnCards.Count cards</label>
+                                <i class="fa fa-pencil edit-icon ml-2" @onclick="() => _editLabelModal?.Open(_board, label)"></i>
+                                <i class="fa fa-trash-can edit-icon hover:text-red-800" @onclick="() => _deleteLabelModal?.Open(label.Id, label.Text, label.OnCards.Count)"></i>
+                            </div>
+                        }
+                    </div>
+
+                    <button @onclick="() => _addLabelModal?.Open(_board)">Create a label</button>
+                }
+            </section>
+        }
+    </section>
+</div>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public int Id { get; set; } = default!;
+
+    private int _tab = 1;
+
+    private Base.Entities.Board? _board;
+    private AddLabelModal? _addLabelModal;
+    private EditLabelModal? _editLabelModal;
+    private DeleteLabelModal? _deleteLabelModal;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await HandleUpdate();
+    }
+
+    protected override async Task HandleUpdate()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var board = await db.Boards
+            .Include(x => x.Labels)
+                .ThenInclude(x => x.OnCards)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id.Equals(Id));
+
+        if (board is null)
+            return;
+
+        _board = board;
+
+        await base.HandleUpdate();
+    }
+
+    private void GoToTab(int tabNumber) {
+        _tab = tabNumber;
+    }
+}

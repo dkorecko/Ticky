@@ -1,0 +1,183 @@
+@page "/"
+@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inherits NotifiableBase
+
+<CreateProjectModal @ref="_createProjectModal" OnSubmit="async () => await RunNotification(typeof(Project), OperationType.Added)" />
+<CreateBoardModal @ref="_createBoardModal" OnSubmit="async () => await RunNotification(typeof(Board), OperationType.Added)" />
+<EditProjectModal @ref="_editProjectModal" OnSubmit="async () => await RunNotification(typeof(Project), OperationType.Edited)" />
+<EditProjectMembershipsModal @ref="_editProjectMembershipsModal" OnSubmit="async () => await RunNotification(typeof(ProjectMembership), OperationType.Edited)" />
+<DeleteProjectModal @ref="_deleteProjectModal" OnSubmit="async () => await RunNotification(typeof(Project), OperationType.Deleted)" />
+
+<div class="flex h-screen w-full flex-col gap-10 overflow-y-auto px-12 py-14">
+    <div class="flex flex-row items-center justify-end gap-5">
+        <div class="mr-auto flex flex-col gap-2">
+            <header class="text-2xl font-bold">
+                Hey there
+            </header>
+            <label class="opacity-60">On this home page you can create a new board/project or open an existing one.</label>
+        </div>
+        <button class="flex flex-row items-center justify-between gap-2 px-10 py-2 shadow-lg" @onclick="() => _createProjectModal?.Open()"><i class="fa fa-plus"></i>New project</button>
+    </div>
+
+    @if (_projects is not null && _remainingBoards is not null)
+    {
+        foreach (var project in _projects)
+        {
+            <section class="flex flex-col gap-2">
+                <div class="flex flex-row justify-between">
+                    <div class="flex flex-row items-center gap-2">
+                        <label>Project @project.Name</label>
+                        @if(project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin) 
+                        {
+                            <Dropdown Actions='new() {
+                                { "Edit project", () => _editProjectModal?.Open(project.Id)},
+                                { "Delete project", () => _deleteProjectModal?.Open(project.Id, project.Name) }
+                            }'>
+                                <i class="fa fa-ellipsis icon-button"></i>
+                            </Dropdown>
+                        }
+                    </div>
+
+                    <div class="flex flex-row gap-1">
+                        @{
+                            var i = 0;
+                        }
+                        @foreach(var member in project.Memberships.OrderBy(x => x.AddedAt))
+                        {
+                            string id = $"avatar_{i}";
+                            <div id="@id" class="avatar stack-avatars" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.User.ProfilePictureFileName');"
+                            @onclick="() => _mainLayout.UserInfoModal?.Open(id, member.UserId)"></div>
+                        }
+                        @if (project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin)
+                        {
+                            <div class="avatar add" @onclick="() => _editProjectMembershipsModal?.Open(project.Id)">
+                                <i class="fa fa-plus text-sm"></i>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="flex w-full flex-row flex-wrap gap-5">
+                    @foreach (var board in project.Boards.OrderByDescending(x => x.Favorites.Any(y => y.BoardId.Equals(x.Id))).ThenByDescending(x => x.LastVisits.Select(y => y.VisitTime).OrderByDescending(y => y).FirstOrDefault()))
+                    {
+                        <BoardCard Board="board" IsAdmin="board.Memberships.Any(x => x.UserId.Equals(_user.Id) && x.IsAdmin) || project.Memberships.Any(x => x.UserId.Equals(_user.Id) && x.IsAdmin)" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnDelete="async () => await RunNotification(typeof(Board), OperationType.Deleted)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" />
+                    }
+                    @if(project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin) 
+                    {
+                        <div class="board-card-create" @onclick="() => _createBoardModal?.Open(project.Id)">
+                            <i class="fa fa-plus text-3xl"></i>
+                            <label>New board</label>
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+
+        @if (_remainingBoards.Any())
+        {
+            <section class="flex flex-col gap-2">
+                <div class="flex flex-row justify-between">
+                    <div class="flex flex-row items-center gap-2">
+                        <label>Uncategorized boards</label>
+                    </div>
+                </div>
+                <div class="flex w-full flex-row flex-wrap gap-5">
+                    @foreach (var board in _remainingBoards.OrderByDescending(x => x.Favorites.Any(y => y.BoardId.Equals(x.Id))).ThenByDescending(x => x.LastVisits.Select(y => y.VisitTime).OrderByDescending(y => y).FirstOrDefault()))
+                    {
+                        <BoardCard Board="board" IsAdmin="board.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnDelete="async () => await RunNotification(typeof(Board), OperationType.Deleted)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" />
+                    }
+                </div>
+            </section>
+        }
+    }
+    else
+    {
+        <Spinner />
+    }
+</div>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+    private MainLayout _mainLayout { get; set; } = default!;
+
+    private IEnumerable<Project>? _projects;
+
+    private IEnumerable<Ticky.Base.Entities.Board>? _remainingBoards;
+
+    private CreateProjectModal? _createProjectModal;
+
+    private CreateBoardModal? _createBoardModal;
+
+    private EditProjectModal? _editProjectModal;
+
+    private EditProjectMembershipsModal? _editProjectMembershipsModal;
+
+    private DeleteProjectModal? _deleteProjectModal;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await HandleUpdate();
+        StateHasChanged();
+    }
+
+    protected override async Task HandleUpdate() 
+    {
+        _projects = await LoadProjectsAsync();
+        _remainingBoards = await LoadRemainingBoardsAsync();
+    }
+
+    private async Task<IEnumerable<Project>> LoadProjectsAsync()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var projects = await db.Projects
+            .Include(x => x.Memberships)
+                .ThenInclude(x => x.User)
+            .Where(x => x.Memberships.Any(membership => membership.UserId.Equals(_user.Id)))
+            .Include(x => x.Boards)
+                .ThenInclude(x => x.Memberships)
+                    .ThenInclude(x => x.User)
+            .Include(x => x.Boards)
+                .ThenInclude(x => x.Columns)
+                    .ThenInclude(x => x.Cards)
+                        .ThenInclude(x => x.TimeRecords)
+            .Include(x => x.Boards)
+                .ThenInclude(x => x.LastVisits)
+                    .ThenInclude(x => x.User)
+            .Include(x => x.Boards)
+                .ThenInclude(x => x.Favorites)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return projects;
+    }
+
+    private async Task<IEnumerable<Ticky.Base.Entities.Board>> LoadRemainingBoardsAsync()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var boards = await db.Boards
+            .Include(x => x.Memberships)
+                .ThenInclude(x => x.User)
+            .Include(x => x.Favorites)
+            .Where(x => x.Memberships.Any(membership => membership.UserId.Equals(_user.Id)))
+            .Include(x => x.Columns)
+                    .ThenInclude(x => x.Cards)
+                        .ThenInclude(x => x.TimeRecords)
+            .Include(x => x.LastVisits)
+                .ThenInclude(x => x.User)
+            .AsNoTracking()
+            .ToListAsync();
+
+        if(_projects is not null)
+            boards = boards.Where(x => !_projects.Any(project => project.Id.Equals(x.ProjectId))).ToList();
+
+        return boards;
+    }
+}

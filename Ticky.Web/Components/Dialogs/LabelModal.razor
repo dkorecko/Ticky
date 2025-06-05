@@ -1,0 +1,97 @@
+@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<ActionModal @ref=_modalRef Title="Labels">
+    @if(_card is null || _labels is null) {
+        <Spinner/>
+    } else {
+        if (_labels.Any())
+        {
+            <div class="flex w-36 flex-col gap-1">
+                @foreach (var label in _labels)
+                {
+                    <div class="priority-selector-item" @onclick="() => OnSelect(label)">
+                        <Label LabelEntity="label"/>
+
+                        @if (_card.Labels.Any(x => x.Id.Equals(label.Id)))
+                        {
+                            <i class="fa fa-check text-gray-500"></i>
+                        }
+                    </div>
+                }
+            </div>
+        } else
+        {
+            <div>No labels have been created for this board. You can do so in the board settings.</div>
+        }
+    }
+</ActionModal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback UpdateCard {get; set;}
+
+    private ActionModal? _modalRef;
+
+    private Card? _card;
+
+    private List<Base.Entities.Label>? _labels;
+
+    public void Open(ElementReference? triggerElement, Card card, List<Base.Entities.Label> labels) {
+        _card = card;
+        _labels = labels;
+        _modalRef?.Open(triggerElement);
+    }
+
+    public async Task OnSelect(Base.Entities.Label label)
+    {
+        if(_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await db.Cards
+            .Include(x => x.Activities)
+            .Include(x => x.Labels)
+            .Include(x => x.Column)
+                .ThenInclude(x => x.Board)
+                    .ThenInclude(x => x.Labels)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
+
+        if(card is null)
+            return;
+
+        if(card.Labels.Any(x => x.Id.Equals(label.Id)))
+        {
+            card.Labels.RemoveAll(x => x.Id.Equals(label.Id));
+            card.Activities.Add(new Activity
+                {
+                    Text = $"<b>removed</b> label <b>{label.Text}</b>",
+                    UserId = _user.Id,
+                    CardId = card.Id,
+                    At = DateTime.Now
+                });
+        } else {
+            var targetLabel = await db.Labels.FirstOrDefaultAsync(x => x.Id.Equals(label.Id));
+
+            if(targetLabel is null)
+                return;
+
+            card.Labels.Add(targetLabel);
+            card.Activities.Add(new Activity
+                {
+                    Text = $"<b>added</b> label <b>{label.Text}</b>",
+                    UserId = _user.Id,
+                    CardId = card.Id,
+                    At = DateTime.Now
+                });
+        }
+
+        await db.SaveChangesAsync();
+
+        _card = card;
+        await UpdateCard.InvokeAsync();
+    }
+}

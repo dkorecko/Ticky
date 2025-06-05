@@ -1,0 +1,45 @@
+@inject IJSRuntime _js
+
+<div @ref="_element" @onclick="OpenMenu" @onclick:stopPropagation="true">
+	@ChildContent
+</div>
+
+<div @ref="_dropdownElement" class="dropdown absolute top-0 left-0 z-10 hidden rounded-xs bg-white shadow">
+	<div class="flex flex-col text-center text-sm">
+		@foreach(var action in Actions) 
+		{
+			<div class='cursor-pointer @(action.Key.Contains("Delete") ? "text-red-600" : string.Empty) px-8 py-1 transition-all hover:bg-gray-300' 
+				@onclick="() => RunAction(action.Value)" @onclick:stopPropagation="true">@action.Key</div>
+		}
+	</div>
+</div>
+
+
+@code {
+	[Parameter]
+	public required RenderFragment ChildContent { get; set; }
+
+	[Parameter]
+	public required Dictionary<string, Action> Actions { get; set; }
+
+	[Parameter]
+	public bool Disabled { get; set; }
+
+	private ElementReference? _element;
+
+	private ElementReference? _dropdownElement;
+
+	private async void OpenMenu(MouseEventArgs e)
+	{
+		if (Disabled)
+			return;
+
+		await _js.InvokeVoidAsync("onDropdownTriggerClicked", e.ClientX, e.ClientY, _dropdownElement);
+	}
+
+	private async void RunAction(Action action)
+	{
+		action.Invoke();
+		await _js.InvokeVoidAsync("closeDropdowns");
+	}
+}

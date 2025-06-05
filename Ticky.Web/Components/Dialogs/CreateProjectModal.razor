@@ -1,0 +1,68 @@
+@using Ticky.Base.Entities
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<Modal @ref="Modal" Title="New project" OnSubmitAttempted="OnSubmitAttempted">
+    <EditForm class="form" EditContext="_editContext">
+        <DataAnnotationsValidator/>
+        
+        <div class="form-group">
+            <Name For="() => _project.Name"/>
+            <InputText class="form-control" @bind-Value="_project.Name" @ref="FocusElement" />
+            <ValidationMessage For="() => _project.Name" />
+        </div>
+    </EditForm>
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    private Project _project = new()
+    {
+        Name = string.Empty
+    };
+
+    private EditContext? _editContext;
+
+    protected override void OnOpen()
+    {
+        _project = new()
+            {
+                Name = string.Empty
+            };
+        _editContext = new EditContext(_project);
+    }
+
+    private async Task OnSubmitAttempted()
+    {
+        if(Modal is null || _editContext is null || _project is null)
+            return;
+
+        if (!_editContext.Validate())
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var user = await db.Users.FirstOrDefaultAsync(x => x.Id.Equals(_user.Id));
+
+        if (user is not null)
+        {
+            var membership = new ProjectMembership
+            {
+                IsAdmin = true,
+                ProjectId = _project.Id,
+                UserId = user.Id,
+                AddedAt = DateTime.Now
+            };
+            _project.Memberships.Add(membership);
+            db.Projects.Add(_project);
+            await db.SaveChangesAsync();
+        }
+
+        await Modal.Close();
+        await OnSubmit.InvokeAsync();
+    }
+}

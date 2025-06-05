@@ -1,0 +1,86 @@
+@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<ActionModal @ref=_modalRef Title="Assignees">
+    @if(_card is null) {
+        <Spinner/>
+    } else {
+        <div class="flex w-full flex-col items-center">
+            @foreach(var member in _members) 
+            {
+                <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-gray-300" @onclick="() => SwitchMember(member)">
+                    <div class="avatar mr-auto" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"></div>
+                    <label class="cursor-pointer">@member.DisplayName</label>
+                    <i class='fa fa-check icon ml-auto @(!_card.Assignees.Any(x => x.Id.Equals(member.Id)) ? "opacity-0" : string.Empty)'></i>
+                </div>
+            }
+        </div>
+    }
+</ActionModal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback UpdateCard {get; set;}
+
+    private ActionModal? _modalRef;
+
+    private Card? _card;
+
+    private List<User> _members = new();
+
+    public void Open(ElementReference? triggerElement, Card card, List<User> members) {
+        _card = card;
+        _members = members;
+        _modalRef?.Open(triggerElement);
+    }
+
+    public async Task SwitchMember(User member) 
+    {
+        if(_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await db.Cards
+            .Include(x => x.Assignees)
+            .Include(x => x.Activities)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
+
+        if(card is null)
+            return;
+
+        var targetUser = await db.Users.FirstOrDefaultAsync(x => x.Id.Equals(member.Id));
+
+        if (targetUser is null)
+            return;
+
+        if (card.Assignees.Contains(targetUser)) {
+            card.Assignees.Remove(targetUser);
+            card.Activities.Add(new Activity
+                {
+                    Text = $"<b>removed</b> the user <b>{targetUser.DisplayName}</b> from the assignees",
+                    UserId = _user.Id,
+                    CardId = card.Id,
+                    At = DateTime.Now
+                });
+        }
+        else {
+            card.Assignees.Add(targetUser);
+            card.Activities.Add(new Activity
+                {
+                    Text = $"<b>added</b> the user <b>{targetUser.DisplayName}</b> as an assignee",
+                    UserId = _user.Id,
+                    CardId = card.Id,
+                    At = DateTime.Now
+                });
+        }
+
+        await db.SaveChangesAsync();
+
+        _card = card;
+        StateHasChanged();
+        await UpdateCard.InvokeAsync();
+    }
+}

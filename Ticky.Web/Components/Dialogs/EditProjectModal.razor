@@ -1,0 +1,66 @@
+@using Ticky.Base.Entities
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<Modal @ref="Modal" Title="Edit project" OnSubmitAttempted="OnSubmitAttempted">
+    @if(_project is null)
+    {
+        <Spinner/>
+    } else {
+        <EditForm class="form" EditContext="_editContext">
+            <DataAnnotationsValidator/>
+            
+            <div class="form-group">
+                <Name For="() => _project.Name"/>
+                <InputText class="form-control" @bind-Value="_project.Name" @ref="FocusElement" />
+                <ValidationMessage For="() => _project.Name" />
+            </div>
+        </EditForm>
+    }
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    public Project? _project;
+
+    private EditContext? _editContext;
+
+    public async Task Open(int projectId)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        _project = await db.Projects.AsNoTracking().FirstOrDefaultAsync(x => x.Id.Equals(projectId));
+
+        if (_project is null)
+            return;
+
+        _editContext = new EditContext(_project);
+        base.Open();
+    }
+
+    private async Task OnSubmitAttempted()
+    {
+        if(Modal is null || _editContext is null || _project is null)
+            return;
+
+        if (!_editContext.Validate())
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var project = await db.Projects.FirstOrDefaultAsync(x => x.Id.Equals(_project.Id));
+
+        if (project is not null)
+        {
+            project.Name = _project.Name;
+            await db.SaveChangesAsync();
+        }
+
+        await Modal.Close();
+        await OnSubmit.InvokeAsync();
+    }
+}

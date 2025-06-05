@@ -1,0 +1,135 @@
+@using Ticky.Base.Entities
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<Modal @ref=Modal Title="Edit label" OnSubmitAttempted="EditLabel">
+    @if(_board is null) {
+        <Spinner/>
+    } else {
+        <EditForm class="form p-2" EditContext="_editContext">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <Name For="() => _labelModel.Text" />
+                <input type="text" class="form-control" value="@_labelModel.Text" @oninput="OnTextUpdated" @ref="FocusElement" />
+                <ValidationMessage For="() => _labelModel.Text" />
+            </div>
+
+            <div class="form-group">
+                <Name For="() => _labelModel.TextColor" />
+                <input type="color" value="@(_labelModel.TextColor.HasValue ? ColorTranslator.ToHtml(_labelModel.TextColor.Value) : string.Empty)" @onchange="OnTextColorUpdated" />
+                <ValidationMessage For="() => _labelModel.TextColor" />
+            </div>
+
+            <div class="form-group">
+                <Name For="() => _labelModel.BackgroundColor" />
+                <input type="color" value="@(_labelModel.BackgroundColor.HasValue ? ColorTranslator.ToHtml(_labelModel.BackgroundColor.Value) : string.Empty)" @onchange="OnBackgroundColorUpdated" />
+                <ValidationMessage For="() => _labelModel.BackgroundColor" />
+            </div>
+
+            <div class="form-group">
+                <label>Preview:</label>
+                <Label LabelEntity="_showcaseLabel"/>
+            </div>
+        </EditForm>
+    }
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    private Board? _board;
+    private Base.Entities.Label? _label;
+    private LabelModel _labelModel = new();
+    private Base.Entities.Label? _showcaseLabel;
+    private EditContext? _editContext;
+
+    public void Open(Board board, Base.Entities.Label label) {
+        _board = board;
+        _label = label;
+        _labelModel = new()
+        {
+            Text = label.Text,
+            BackgroundColor = label.BackgroundColor,
+            TextColor = label.TextColor
+        };
+        _showcaseLabel = new()
+            {
+                BoardId = 0,
+                Text = label.Text,
+                BackgroundColor = label.BackgroundColor,
+                TextColor = label.TextColor
+            };
+        _editContext = new EditContext(_board);
+
+        base.Open();
+    }
+
+    private void OnTextUpdated(ChangeEventArgs e)
+    {
+        if (e.Value is not string str || _showcaseLabel is null)
+            return;
+
+        if(string.IsNullOrWhiteSpace(str))
+        {
+            _showcaseLabel.Text = "Example";
+            return;
+        }
+
+        _showcaseLabel.Text = str;
+        _labelModel.Text = str;
+    }
+
+    private void OnTextColorUpdated(ChangeEventArgs e)
+    {
+        if (e.Value is not string str || _showcaseLabel is null)
+            return;
+
+        _showcaseLabel.TextColor = ColorTranslator.FromHtml(str);
+        _labelModel.TextColor = _showcaseLabel.TextColor;
+    }
+
+    private void OnBackgroundColorUpdated(ChangeEventArgs e)
+    {
+        if (e.Value is not string str || _showcaseLabel is null)
+            return;
+
+        _showcaseLabel.BackgroundColor = ColorTranslator.FromHtml(str);
+        _labelModel.BackgroundColor = _showcaseLabel.BackgroundColor;
+    }
+
+    public async Task EditLabel() 
+    {
+        if(_board is null || _label is null || _editContext is null || !_editContext.Validate())
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var board = await db.Boards
+            .Include(x => x.Labels)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_board.Id));
+
+        if(board is null)
+            return;
+
+        var targetLabel = board.Labels.FirstOrDefault(x => x.Id.Equals(_label.Id));
+
+        if (targetLabel is null)
+            return;
+
+        targetLabel.BoardId = board.Id;
+        targetLabel.Text = _labelModel.Text;
+        targetLabel.TextColor = _labelModel.TextColor!.Value;
+        targetLabel.BackgroundColor = _labelModel.BackgroundColor!.Value;
+
+        await db.SaveChangesAsync();
+
+        _board = board;
+        StateHasChanged();
+        await OnSubmit.InvokeAsync();
+        Modal?.Close();
+    }
+}

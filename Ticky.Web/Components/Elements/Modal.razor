@@ -1,0 +1,107 @@
+@if(_triggeredShow) 
+{
+	<div data-active="@_shown.ToString()" class="fixed top-0 left-0 z-10 flex h-screen w-screen items-center justify-center bg-gray-600/0 transition-all ease-in-out data-[active=True]:bg-gray-600/40" @onmousedown="Cancel" @onkeydown="this.OnKey">
+		<div data-active="@_shown.ToString()" class="m-5 flex flex-col divide-y overflow-hidden rounded-lg bg-white/0 transition-all ease-in-out data-[active=False]:translate-y-[500%] data-[active=True]:bg-white/100" @onmousedown:stopPropagation=true>
+			@if(!DisableButtons || EnableTitle) 
+			{
+				<section class="flex flex-row items-center justify-between gap-10 px-7 py-3">
+					<h5 class="">@Title</h5>
+					<i class="fa fa-xmark cursor-pointer text-gray-400 hover:text-gray-800" @onclick="Cancel"></i>
+				</section>
+				<section @ref=_childContent class="max-h-[80vh] overflow-y-auto px-7 py-5">@ChildContent</section>
+				@if (!DisableButtons)
+				{
+					<section class="flex flex-row justify-end gap-5 px-7 py-5">
+						<button class="bg-gray-500 px-5 py-2 hover:bg-gray-700" @onclick="Cancel">Cancel</button>
+						<button class='px-5 py-2 @(RedSubmit ? "bg-red-500 hover:bg-red-700" : "")' @onclick="Submit">Done</button>
+					</section>
+				}
+			} else {
+				@ChildContent
+			}
+		</div>
+	</div>
+}
+
+@code {
+	[Parameter]
+	public required string Title { get; set; }
+
+	[Parameter]
+	public required RenderFragment ChildContent { get; set; }
+
+	[Parameter]
+	public EventCallback OnCancel { get; set; }
+
+	[Parameter]
+	public EventCallback OnSubmitAttempted { get; set; }
+
+	[Parameter]
+	public EventCallback OnClose { get; set; }
+
+	[Parameter]
+	public bool RedSubmit { get; set; }
+
+	[Parameter]
+	public bool DisableButtons { get; set; }
+
+	[Parameter]
+	public bool EnableTitle { get; set; }
+
+	private bool _triggeredShow;
+	private bool _shown;
+	private ElementReference? _childContent;
+
+	public async Task Show() 
+	{
+		if(!_triggeredShow) 
+		{
+			_triggeredShow = true;
+			StateHasChanged();
+			await Task.Delay(5);
+		}
+		_shown = true;
+		StateHasChanged();
+	}
+
+	public async Task Close()
+	{
+		_shown = false;
+		StateHasChanged();
+		await Task.Delay(200);
+		_triggeredShow = false;
+		StateHasChanged();
+	}
+
+	private async Task Cancel()
+	{
+		await OnClose.InvokeAsync();
+
+		await OnCancel.InvokeAsync();
+
+		await Close();
+	}
+
+	private async Task Submit()
+	{
+		await OnSubmitAttempted.InvokeAsync();
+	}
+
+	private async Task OnKey(KeyboardEventArgs e)
+	{
+		switch(e.Key)
+		{
+			case "Enter":
+			{
+				if(_childContent.HasValue)
+					await _childContent.Value.FocusAsync();
+
+				await OnSubmitAttempted.InvokeAsync();
+				break;
+			}
+			case "Escape":
+				await Cancel();
+                break;
+		}
+	}
+}

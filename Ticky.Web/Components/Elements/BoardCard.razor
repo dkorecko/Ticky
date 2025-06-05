@@ -1,0 +1,110 @@
+@using Ticky.Base.Entities
+@inject NavigationManager _navigationManager
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<EditBoardModal @ref="_editBoardModal" OnSubmit="OnEdit" />
+<DeleteBoardModal @ref="_deleteBoardModal" OnSubmit="OnDelete" />
+
+<div class="board-card" @onclick='GoToBoard'>
+    <div class="flex w-full flex-row justify-end gap-2 align-middle">
+        <i class='@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "fa-solid" : "fa-regular") fa-star card-button' @onclick='MakeFavorite' @onclick:stopPropagation="true"></i>
+        @if (IsAdmin)
+        {
+            <Dropdown Actions='new() {
+                        { "Edit board", () => _editBoardModal?.Open(Board.Id) },
+                        { "Delete board", () => _deleteBoardModal?.Open(Board.Id, Board.Name) }
+                    }'>
+                <i class="fa fa-ellipsis card-button"></i>
+            </Dropdown>
+        }
+    </div>
+
+        <div class="flex flex-col gap-2">
+            <label class="cursor-pointer text-xl font-semibold text-slate-800">@Board.Name</label>
+            <label class="cursor-pointer text-xs text-gray-500">@Board.Description</label>
+        </div>
+
+        <div class="mt-5 flex flex-row items-center justify-between">
+            <div class="flex flex-col gap-2">
+            @{
+                var lastVisit = Board.LastVisits.FirstOrDefault(x => x.UserId.Equals(_user.Id));
+                var trackedTime = new TimeSpan(Board.Columns.SelectMany(x => x.Cards).SelectMany(x => x.TimeRecords).Select(x => ((x.EndedAt ?? DateTime.Now) - x.StartedAt).Ticks).Sum()).ToElapsedString(true);
+            }
+            <label class="board-card-data-point"><i class="fa-regular fa-calendar"></i> @(lastVisit is null ? "never" : lastVisit.VisitTime.ToElapsedString())</label>
+            @if (!string.IsNullOrWhiteSpace(trackedTime))
+            {
+                <label class="board-card-data-point"><i class="fa-regular fa-hourglass"></i> @trackedTime</label>
+            }
+        </div>
+            <div class="flex flex-row gap-1">
+                @foreach(var member in _members) 
+                {
+                    <div class="avatar stack-avatars" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"></div>
+                }
+            </div>
+        </div>
+</div>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback OnDelete { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnFavorite { get; set; }
+
+    [Parameter]
+    public required Board Board { get; set; }
+
+    private List<User> _members
+    {
+        get => Board.Memberships.Select(x => x.User).Concat(Board.Project?.Memberships?.Select(x => x.User) ?? new List<User>()).DistinctBy(x => x.Id).ToList();
+    }
+
+    [Parameter]
+    public bool IsAdmin { get; set; }
+
+    private EditBoardModal? _editBoardModal;
+
+    private DeleteBoardModal? _deleteBoardModal;
+
+    private void GoToBoard() {
+        _navigationManager.NavigateTo(_navigationManager.BaseUri + "boards/" + Board.Id);
+    }
+
+    private async Task MakeFavorite(MouseEventArgs e)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var board = await db.Boards
+            .Include(x => x.Favorites)
+            .FirstOrDefaultAsync(x => x.Id.Equals(Board.Id));
+
+        if (board is null)
+            return;
+
+        var existingFavorite = board.Favorites.FirstOrDefault(x => x.UserId.Equals(_user.Id));
+
+        bool newState = false;
+
+        if (existingFavorite is null)
+        {
+            board.Favorites.Add(new()
+            {
+                UserId = _user.Id,
+                BoardId = board.Id
+            });
+            newState = true;
+        }
+        else
+            board.Favorites.Remove(existingFavorite);
+
+        await db.SaveChangesAsync();
+        await OnFavorite.InvokeAsync(newState);
+    }
+}

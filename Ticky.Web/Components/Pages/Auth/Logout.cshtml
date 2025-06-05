@@ -1,0 +1,16 @@
+﻿@page
+@using Ticky.Base.Entities
+@attribute [IgnoreAntiforgeryToken]
+@inject SignInManager<User> SignInManager
+
+@functions {
+    public async Task<IActionResult> OnGet()
+    {
+        if (SignInManager.IsSignedIn(User))
+        {
+            await SignInManager.SignOutAsync();
+        }
+
+        return LocalRedirect(Constants.Mappings.LOGIN_PATH);
+    }
+}

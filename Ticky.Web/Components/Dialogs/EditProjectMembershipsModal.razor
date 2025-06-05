@@ -1,0 +1,183 @@
+@using Ticky.Base.Entities
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<Modal @ref="Modal" Title=@($"Edit memberships for project {_project?.Name}") DisableButtons="true" EnableTitle="true">
+    @if(_project is null)
+    {
+        <Spinner/>
+    } else
+    {
+        <div class="flex flex-col items-center gap-3">
+            <div class="flex w-full flex-row items-center gap-3">
+                <input class="w-full rounded-lg bg-stone-100 px-2 py-1 text-sm" type="text"
+                       placeholder="Enter e-mail address" @oninput="OnInviteTextChanged" @ref="FocusElement" />
+                <button class="px-3 py-1.5" @onclick="AddAccess">Add</button>
+            </div>
+
+            <table class="border-separate border-spacing-x-5 border-spacing-y-1">
+                @{
+                    var i = 0;
+                }
+                @foreach(var membership in _project.Memberships.OrderByDescending(x => x.IsAdmin).ThenBy(x => x.AddedAt))
+                {
+                    string avatarId = $"avatar_{i}";
+
+                    <tr class="text-sm">
+                        <td>
+                            <div id="@avatarId" @onclick="() => _mainLayout.UserInfoModal?.Open(avatarId, membership.UserId)" class="avatar" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@membership.User.ProfilePictureFileName');"></div>
+                        </td>
+                        <td>
+                            @membership.User.DisplayName @(membership.UserId.Equals(_user.Id) ? "(you)" : string.Empty)
+                        </td>
+                        <td>
+                            
+                            <Dropdown Disabled="@membership.UserId.Equals(_user.Id)" Actions='new() {
+                                { "Admin", () => ChangeAdmin(membership.Id, true)},
+                                { "Member", () => ChangeAdmin(membership.Id, false)}
+                            }'>
+                                <div class='flex flex-row items-center justify-between pr-2 pl-5 transition-all ease-in-out @(!membership.UserId.Equals(_user.Id) ? "bg-gray-200 hover:bg-gray-300 cursor-pointer" : "bg-gray-100 cursor-not-allowed")'>
+                                    @(membership.IsAdmin ? "Admin" : "Member")
+                                    <i class='fa fa-chevron-down edit-icon @(membership.UserId.Equals(_user.Id) ? "!text-gray-300 !hover:text-gray-300 !cursor-not-allowed" : string.Empty)'></i>
+                                </div>
+                            </Dropdown>
+                        </td>
+                        <td>
+                            <i @onclick="() => RemoveUser(membership.UserId)" 
+                                class='fa fa-trash edit-icon @(membership.UserId.Equals(_user.Id) ? "!text-gray-300 !hover:text-gray-300 !cursor-not-allowed" : string.Empty)'>
+                            </i>
+                        </td>
+                    </tr>
+
+                    i++;
+                }
+            </table>
+        </div>
+    }
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+    private MainLayout _mainLayout { get; set; } = default!;
+
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    private Project? _project;
+    private string _inviteText = string.Empty;
+
+    public async void Open(int projectId)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        _project = await db.Projects
+            .AsNoTracking()
+            .Include(x => x.Memberships)
+                .ThenInclude(x => x.User)
+            .FirstOrDefaultAsync(x => x.Id.Equals(projectId));
+
+        if (_project is null)
+            return;
+
+        base.Open();
+    }
+
+    private void OnInviteTextChanged(ChangeEventArgs e) 
+    {
+        _inviteText = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private async Task AddAccess() 
+    {
+        if(_project is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var project = await db.Projects
+            .Include(x => x.Memberships)
+                .ThenInclude(x => x.User)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_project.Id));
+
+        if (project is null)
+            return;
+
+        var targetUser = await db.Users.
+            FirstOrDefaultAsync(x => x.Email != null && x.Email.Equals(_inviteText));
+
+        if(targetUser is null)
+        {
+            _mainLayout.RunNotification(new Notification("There is no user with the provided e-mail address.", NotificationType.Fail));
+            return;
+        }
+
+        if(project.Memberships.Any(x => x.UserId.Equals(targetUser.Id)))
+        {
+            _mainLayout.RunNotification(new Notification("This user already has access to this project.", NotificationType.Fail));
+            return;
+        }
+
+        var membership = new ProjectMembership
+        {
+            ProjectId = project.Id,
+            IsAdmin = false,
+            UserId = targetUser.Id,
+            AddedAt = DateTime.Now
+        };
+
+        project.Memberships.Add(membership);
+        await db.SaveChangesAsync();
+
+        _project = project;
+        await OnSubmit.InvokeAsync();
+    }
+
+    private async void ChangeAdmin(int membershipId, bool value)
+    {
+        if (_project is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var targetMembership = await db.ProjectMemberships.FirstOrDefaultAsync(x => x.Id.Equals(membershipId));
+
+        if (targetMembership is null)
+            return;
+
+        targetMembership.IsAdmin = value;
+        await db.SaveChangesAsync();
+
+        _project.Memberships.First(x => x.Id.Equals(membershipId)).IsAdmin = value;
+        await OnSubmit.InvokeAsync();
+    }
+
+    private async Task RemoveUser(int userId)
+    {
+        if (_project is null || userId.Equals(_user.Id))
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var project = await db.Projects
+            .Include(x => x.Memberships)
+                .ThenInclude(x => x.User)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_project.Id));
+
+        if (project is null)
+            return;
+
+        var targetMembership = project.Memberships.FirstOrDefault(x => x.UserId.Equals(userId));
+
+        if(targetMembership is null)
+            return;
+
+        project.Memberships.Remove(targetMembership);
+        await db.SaveChangesAsync();
+
+        _project = project;
+        await OnSubmit.InvokeAsync();
+    }
+}

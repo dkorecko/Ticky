@@ -1,0 +1,78 @@
+@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<ActionModal @ref=_modalRef Title="Add subtask">
+    @if(_card is null) {
+        <Spinner/>
+    } else {
+        <EditForm class="form p-2" Model="_subtaskModel" OnValidSubmit="AddSubtask">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <Name For="() => _subtaskModel.Text" />
+                <InputText class="form-control" @bind-Value="_subtaskModel.Text" />
+                <ValidationMessage For="() => _subtaskModel.Text" />
+            </div>
+
+            <button type="submit">Add</button>
+        </EditForm>
+    }
+</ActionModal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback UpdateCard {get; set;}
+
+    private ActionModal? _modalRef;
+
+    private Card? _card;
+
+    private SubtaskModel _subtaskModel = new();
+
+    public void Open(ElementReference? triggerElement, Card card) {
+        _card = card;
+        _subtaskModel = new();
+        StateHasChanged();
+        _modalRef?.Open(triggerElement);
+    }
+
+    public async Task AddSubtask() 
+    {
+        if(_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await db.Cards
+            .Include(x => x.Subtasks)
+            .Include(x => x.Activities)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
+
+        if(card is null)
+            return;
+
+        card.Subtasks.Add(new Subtask
+        {
+            CardId = card.Id,
+            Text = _subtaskModel.Text,
+            Index = IndexHelper.GetNextIndex(card.Subtasks)
+            });
+        card.Activities.Add(new Activity
+            {
+                Text = $"<b>added</b> subtask <b>{_subtaskModel.Text}</b>",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+            });
+
+        await db.SaveChangesAsync();
+
+        _card = card;
+        StateHasChanged();
+        await UpdateCard.InvokeAsync();
+        _modalRef?.Close();
+        _card = null;
+    }
+}

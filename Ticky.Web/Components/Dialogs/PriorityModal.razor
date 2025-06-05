@@ -1,0 +1,82 @@
+﻿@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<ActionModal @ref=_modalRef Title="Priority">
+    @if(_card is null) {
+        <Spinner/>
+    } else {
+        <div class="flex w-36 flex-col gap-1">
+            <div class="priority-selector-item" @onclick="() => OnChangeTo(CardPriority.Normal)">
+                <PriorityLabel Priority="CardPriority.Normal"/>
+
+                @if(_card.Priority.Equals(CardPriority.Normal)) {
+                    <i class="fa fa-check text-gray-500"></i>
+                }
+            </div>
+            <div class="priority-selector-item" @onclick="() => OnChangeTo(CardPriority.Medium)">
+                <PriorityLabel Priority="CardPriority.Medium"/>
+
+                @if(_card.Priority.Equals(CardPriority.Medium)) {
+                    <i class="fa fa-check text-gray-500"></i>
+                }
+            </div>
+            <div class="priority-selector-item" @onclick="() => OnChangeTo(CardPriority.High)">
+                <PriorityLabel Priority="CardPriority.High"/>
+
+                @if(_card.Priority.Equals(CardPriority.High)) {
+                    <i class="fa fa-check text-gray-500"></i>
+                }
+            </div>
+            <div class="priority-selector-item" @onclick="() => OnChangeTo(CardPriority.Critical)">
+                <PriorityLabel Priority="CardPriority.Critical"/>
+
+                @if(_card.Priority.Equals(CardPriority.Critical)) {
+                    <i class="fa fa-check text-gray-500"></i>
+                }
+            </div>
+        </div>
+    }
+</ActionModal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback UpdateCard {get; set;}
+
+    private ActionModal? _modalRef;
+
+    private Card? _card;
+
+    public void Open(ElementReference? triggerElement, Card card) {
+        _card = card;
+        _modalRef?.Open(triggerElement);
+    }
+
+    public async Task OnChangeTo(CardPriority priority) {
+        if(_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await db.Cards
+            .Include(x => x.Activities)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
+
+        if(card is null || card.Priority.Equals(priority))
+            return;
+
+        card.Priority = priority;
+        card.Activities.Add(new Activity
+            {
+                Text = $"<b>changed</b> the priority to <b>{priority}</b>",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+            });
+        await db.SaveChangesAsync();
+
+        _card = card;
+        await UpdateCard.InvokeAsync();
+    }
+}

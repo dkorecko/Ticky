@@ -1,0 +1,26 @@
+@if(Priority.Equals(CardPriority.Normal)) {
+    <div class="priority bg-sky-500 text-white">
+        <i class="fa fa-flag"></i>
+        Normal
+    </div>
+} else if(Priority.Equals(CardPriority.Medium)) {
+    <div class="priority bg-yellow-500 text-white">
+        <i class="fa fa-flag"></i>
+        Medium
+    </div>
+} else if(Priority.Equals(CardPriority.High)) {
+    <div class="priority bg-orange-500 text-white">
+        <i class="fa fa-flag"></i>
+        High
+    </div>
+} else if(Priority.Equals(CardPriority.Critical)) {
+    <div class="priority bg-red-500 text-white">
+        <i class="fa fa-flag"></i>
+        Critical
+    </div>
+}
+
+@code {
+    [Parameter]
+    public required CardPriority Priority { get; set; }
+}

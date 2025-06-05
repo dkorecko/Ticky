@@ -1,0 +1,135 @@
+@implements IDisposable
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject IJSRuntime _js
+@inject NavigationManager _navigationManager
+
+<nav class="flex w-full flex-row justify-center self-center bg-slate-100 px-10 py-2">
+    <input @ref="_triggerElement" class="mr-auto w-80 rounded-2xl bg-slate-200 p-2 text-center text-xs" type="search"
+           placeholder="Search for tasks ..." @oninput="UpdateSearchTerm"
+           @onclick='OpenSearchResults' @onclick:stopPropagation=true/>
+    <div @ref="_dropdownElement" class="dropdown absolute top-0 left-0 z-10 hidden min-w-80 bg-white shadow">
+        @if(_isLoading)
+        {
+            <Spinner Class="py-2"/>
+        } else if (_resultCards.Count == 0) 
+        {
+            <div class="px-3 py-2 text-xs">
+                No results have been found.
+            </div>
+        } else {
+            foreach(var result in _resultCards) {
+                <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-gray-300" @onclick='() => GoToTask(result.Column.BoardId, result.Id)'>
+                    <div class="flex flex-row justify-between gap-3">
+                        <label class="cursor-pointer whitespace-nowrap">@result.Column.Board.Code-@result.Number</label>
+                        <label class="cursor-pointer truncate whitespace-nowrap">@result.Text</label>
+                    </div>
+                    <label class="text-2xs cursor-pointer font-light">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</label>
+                </div>
+            }
+        }
+    </div>
+    <div class="mr-auto grid">
+        <div class="nav-links" style="grid-column: 1; grid-row: 1;">
+            <NavLink class="nav-link" Match="NavLinkMatch.All" href="/">
+                Home
+            </NavLink>
+            @if (_user?.LastVisitedBoardId is not null)
+            {
+                <NavLink class="nav-link" href=@($"/boards/{_user?.LastVisitedBoardId}")>
+                    Recent board
+                </NavLink>
+            }
+            <NavLink class="nav-link" href="/auth/logout">
+                Log out
+            </NavLink>
+        </div>
+        <div class="flex w-100 flex-col justify-end" style="grid-column: 1; grid-row: 1;">
+            <div id="nav-button-underline" class="h-0.5 w-0 bg-primary transition-all ease-in-out"></div>
+        </div>
+    </div>
+    <NavLink class="ml-auto" href="/settings">
+        <div class="avatar avatar-border" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
+    </NavLink>
+</nav>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    private Timer? _timer;
+    private string? _searchTerm;
+    private bool _isLoading;
+
+    private List<Card> _resultCards = new();
+
+    private ElementReference? _triggerElement;
+    private ElementReference? _dropdownElement;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        StateHasChanged();
+
+        _timer = new Timer(2000);
+        _timer.Stop();
+        _timer.Elapsed += Filter;
+        _timer.AutoReset = false;
+    }
+
+    private void UpdateSearchTerm(ChangeEventArgs e)
+    {
+        _searchTerm = e.Value as string;
+
+        _timer?.Stop();
+        _timer?.Start();
+
+        _isLoading = true;
+        StateHasChanged();
+    }
+
+    private async Task GoToTask(int boardId, int cardId)
+    {
+        _navigationManager.NavigateTo($"/boards/{boardId}/{cardId}");
+        await _js.InvokeVoidAsync("closeDropdowns");
+    }
+
+    private async Task OpenSearchResults()
+    {
+        await _js.InvokeVoidAsync("openDropDownOnElementPosition", _dropdownElement, _triggerElement);
+    }
+
+    private async void Filter(Object? obj = null, ElapsedEventArgs? e = null)
+    {
+        if (string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            _isLoading = false;
+            _resultCards = new();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        _resultCards = await db.Cards
+            .Include(x => x.Column)
+                .ThenInclude(x => x.Board)
+                    .ThenInclude(x => x.Project)
+                        .ThenInclude(x => x.Memberships)
+            .Include(x => x.Column)
+                .ThenInclude(x => x.Board)
+                    .ThenInclude(x => x.Memberships)
+            .Where(x => x.Column.Board.Project.Memberships.Any(membership => membership.UserId.Equals(_user.Id)) || 
+                x.Column.Board.Memberships.Any(membership => membership.UserId.Equals(_user.Id)))
+            .Where(x => x.Text.Contains(_searchTerm) || (x.Column.Board.Code + "-" + x.Number).Contains(_searchTerm))
+            .Take(5)
+            .ToListAsync();
+
+        _isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void IDisposable.Dispose()
+        => _timer?.Dispose();
+}

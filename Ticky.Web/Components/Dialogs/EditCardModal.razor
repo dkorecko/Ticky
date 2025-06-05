@@ -1,0 +1,1081 @@
+@using Ticky.Base.Entities
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject IJSRuntime _js
+
+<PriorityModal @ref=_priorityModal UpdateCard="UpdateCard" />
+<LabelModal @ref=_labelModal UpdateCard="UpdateCard" />
+<AssigneesModal @ref=_assigneesModal UpdateCard="UpdateCard" />
+<AddSubtaskModal @ref=_addSubtaskModal UpdateCard="OnSubtaskAdded" />
+<AddReminderModal @ref=_addReminderModal UpdateCard="UpdateCard" />
+<AddTimeRecordModal @ref=_addTimeRecordModal UpdateCard="UpdateCard" />
+<EditTimeRecordModal @ref=_editTimeRecordModal UpdateCard="UpdateCard" />
+<EditSubtaskModal @ref=_editSubtaskModal UpdateCard="UpdateCard" />
+<EditDeadlineModal @ref=_editDeadlineModal UpdateCard="UpdateCard" />
+<LinkCardsModal @ref=_linkCardsModal UpdateCard="UpdateCard" />
+
+<Modal @ref="Modal" Title="Edit an existing task" DisableButtons=true>
+    @if (_card is null)
+    {
+        <Spinner />
+    }
+    else
+    {
+        <div class="h-[90vh] w-[33rem] overflow-y-scroll">
+            <div class="flex flex-col gap-3 px-5 py-5">
+                <i class="edit-icon fa fa-x ml-auto" @onclick="async () => await Modal!.Close()"></i>
+                <textarea class="min-h-12 resize-none px-2 py-2 text-2xl font-bold transition-all ease-in-out" @onchange="OnTextChanged">@_card.Text</textarea>
+                <hr />
+                <table class="ml-2 border-separate border-spacing-3">
+                    <tbody>
+                        <tr>
+                            <td class="edit-task-label">ID</td>
+                            <td class="edit-task-item">
+                                @(_card.Column.Board.Code)-@_card.Number
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="edit-task-label">Priority</td>
+                            <td class="edit-task-item">
+                                <div @ref="_priorityDiv" @onclick="() => _priorityModal?.Open(_priorityDiv, _card)">
+                                    <PriorityLabel Priority="_card.Priority" />
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="edit-task-label">Assignees</td>
+                            <td class="edit-task-item flex-wrap">
+                                @{
+                                    var i = 0;
+                                }
+                                @foreach(var assignee in _card.Assignees.OrderBy(x => x.DisplayName)) 
+                                {
+                                    var assigneeId = $"avatar_1_{i}";
+
+                                    <div id="@assigneeId" class="person-label cursor-pointer" @onclick="() => _mainLayout.UserInfoModal?.Open(assigneeId, assignee.Id)">
+                                        <div style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');"></div>
+                                        <label class="cursor-pointer">@assignee.DisplayName</label>
+                                    </div>
+
+                                    i++;
+                                }
+                                <i @ref="_assigneesTrigger" class="fa fa-pencil edit-icon" @onclick="() => _assigneesModal?.Open(_assigneesTrigger, _card, _members)"></i>
+                                @if (_card.Assignees.Any(x => x.Id.Equals(_user.Id)))
+                                {
+                                    <i class="fa-solid fa-user-minus edit-icon" @onclick="Leave"></i>
+                                }
+                                else
+                                {
+                                    <i class="fa-solid fa-user-plus edit-icon" @onclick="Join"></i>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="edit-task-label">Current list</td>
+                            <td class="edit-task-item">
+                                @_card.Column.Name
+                                @if (_card.Column.Index != 0)
+                                {
+                                    <i class="fa fa-left-long edit-icon" @onclick="MoveToPreviousList"></i>
+                                }
+                                @if (_lastColumnIndex != _card.Column.Index)
+                                {
+                                    <i class="fa fa-right-long edit-icon" @onclick="MoveToNextList"></i>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="edit-task-label">Labels</td>
+                            <td class="edit-task-item">
+                                @foreach(var label in _card.Labels) {
+                                    <Label LabelEntity="label"></Label>
+                                }
+                                <i @ref="_labelDiv" class="fa fa-pencil edit-icon" @onclick="() => _labelModal?.Open(_labelDiv, _card, _card.Column.Board.Labels)"></i>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="edit-task-label">Reminders</td>
+                            <td class="edit-task-item">
+                                @foreach(var reminder in _card.Reminders.OrderBy(x => x.At)) 
+                                {
+                                    <div class="card-label">
+                                        <label class="whitespace-nowrap">@reminder.At.ToReadableStringWithTime()</label>
+                                        <i class="fa fa-trash-can cursor-pointer text-red-500 transition-all ease-in-out hover:text-red-800" @onclick="() => DeleteReminder(reminder)"></i>
+                                    </div>
+                                }
+                                <i @ref="_addReminderTrigger" class="fa fa-pencil edit-icon" @onclick="() => _addReminderModal?.Open(_addReminderTrigger, _card)"></i>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="edit-task-label">Deadline</td>
+                            <td class="edit-task-item">
+                                @if(_card.Deadline is not null)
+                                {
+                                    <div class="card-label">
+                                        <label class="whitespace-nowrap">@_card.Deadline.Value.ToReadableStringWithTime()</label>
+                                        <i class="fa fa-trash-can cursor-pointer text-red-500 transition-all ease-in-out hover:text-red-800" @onclick="DeleteDeadline"></i>
+                                    </div>
+                                }
+                                <i @ref="_editDeadlineTrigger" class="fa fa-pencil edit-icon" @onclick="() => _editDeadlineModal?.Open(_editDeadlineTrigger, _card)"></i>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="edit-task-label">Created by</td>
+                            <td class="edit-task-item">
+                                @{
+                                    var createdById = "created_by";
+                                }
+                                <div id=@createdById class="person-label cursor-pointer" @onclick="() => _mainLayout.UserInfoModal?.Open(createdById, _card.CreatedById)">
+                                    <div style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_card.CreatedBy.ProfilePictureFileName');"></div>
+                                    <label class="cursor-pointer">@_card.CreatedBy.DisplayName</label>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="flex flex-row text-sm">
+                    <label data-active=@((_tab == 0).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-gray-500 data-[active=True]:border-black" @onclick="() => _tab = 0">Description</label>
+                    <label data-active=@((_tab == 1).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-gray-500 data-[active=True]:border-black" @onclick="() => _tab = 1">Comments</label>
+                    <label data-active=@((_tab == 2).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-gray-500 data-[active=True]:border-black" @onclick="() => _tab = 2">Activity</label>
+                    <label data-active=@((_tab == 3).ToString()) class="cursor-pointer border-b-2 px-4 py-2 whitespace-nowrap transition-all select-none hover:border-gray-500 data-[active=True]:border-black" @onclick="() => _tab = 3">Time Tracking</label>
+                    <label class="w-full border-b-2 px-2 py-2"></label>
+
+                </div>
+                @if (_tab == 0)
+                {
+                    <textarea @onchange="OnDescriptionChanged" 
+                        class="h-24 w-full resize-none overflow-auto rounded-lg bg-slate-200 p-4 text-sm outline-0 outline-blue-300 transition-all ease-in-out focus:outline-2"
+                              placeholder="Might be the time for some additional information ...">@_card.Description</textarea>
+                    <hr />
+                    <section class="flex flex-col gap-2">
+                        <div class="flex flex-row items-center gap-2 text-xs">
+                            <h5 class="font-normal text-stone-400 select-none">LINKED CARDS</h5>
+                            <i id="linked_cards" class="fa fa-plus edit-icon !p-0" @onclick='() => _linkCardsModal?.Open("linked_cards", _card)'></i>
+                        </div>
+                        @foreach(var group in _card.LinkedIssuesOne.GroupBy(x => x.Category)) 
+                        {
+                            var linkedCard = group.ElementAt(0).CardTwo;
+                            <label class="text-sm">@group.Key</label>
+                            <div class="flex cursor-pointer flex-col justify-between rounded-sm px-3 py-2 text-xs shadow outline-1 outline-gray-500 transition-all ease-in-out hover:bg-gray-300">
+                                <div class="flex flex-row justify-between gap-3">
+                                    <label class="cursor-pointer whitespace-nowrap">@linkedCard.Column.Board.Code-@linkedCard.Number</label>
+                                    <label class="cursor-pointer truncate whitespace-nowrap">@linkedCard.Text</label>
+                                </div>
+                                <div class="flex flex-row items-center justify-between">
+                                    <label class="text-2xs cursor-pointer font-light">Project @linkedCard.Column.Board.Project.Name — @linkedCard.Column.Name</label>
+                                    <i class="fa fa-trash-can edit-icon !p-0 !text-red-500 hover:!text-red-800" @onclick="() => DeleteLink(group.ElementAt(0))" @onclick:stopPropagation=true></i>
+                                </div>
+                            </div>
+                            
+                        }
+                    </section>
+                    <hr />
+                    <section class="flex flex-col gap-2">
+                        <div class="flex flex-row items-center gap-3 text-xs">
+                            <h5 class="font-normal text-stone-400 select-none">SUB-TASKS</h5>
+                            <i @ref="_addSubtaskTrigger" class="fa fa-plus edit-icon !p-0" @onclick="() => _addSubtaskModal?.Open(_addSubtaskTrigger, _card)"></i>
+                        </div>
+                        @if (_card.Subtasks.Any())
+                        {
+                            <div class="flex flex-row items-center justify-between gap-2 px-3 py-2">
+                                @{
+                                    double percentage = Math.Round((_card.Subtasks.Where(x => x.Completed).Count() / (double)_card.Subtasks.Count) * 100);
+                                }
+                                <label class="w-9 text-center text-xs text-stone-500">@percentage%</label>
+                                <div class="grid h-3 w-full overflow-hidden rounded-lg">
+                                    <div class="h-full w-full bg-gray-300" style="grid-column: 1; grid-row: 1;"></div>
+                                    <div class='z-10 @(percentage != 100 ? "bg-blue-400" : "bg-green-400") block h-full transition-all' style="grid-column: 1; grid-row: 1; width: @percentage%;"></div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2 pl-3">
+                                @{
+                                    i = 0;
+                                    var subtaskId = $"subtask_id_{i}";
+                                }
+                                @foreach (var subtask in _card.Subtasks.OrderBy(x => x.Index))
+                                {
+                                    <div class="flex flex-row items-center gap-2 text-sm font-normal">
+                                        <input type="checkbox" checked="@subtask.Completed" @onchange="(e) => OnSubtaskStatusChanged(e, subtask)" />
+                                        <label>@subtask.Text</label>
+                                        <i id="@subtaskId" class="fa fa-pencil edit-icon" @onclick="() => _editSubtaskModal?.Open(subtaskId, subtask)"></i>
+                                        <i class="fa fa-trash-can edit-icon !text-red-500 hover:!text-red-800" @onclick="() => DeleteSubtask(subtask)"></i>
+                                    </div>
+                                    i++;
+                                }
+                            </div>
+                        }
+                    </section>
+                    <hr />
+                    <section class="flex flex-col gap-4">
+                        <h5 class="text-xs font-normal text-stone-400 select-none">ATTACHMENTS</h5>
+                        <label class="add h-min w-full rounded-lg px-5 py-5 select-none" for="file-upload">
+                            <i class="fa fa-file-arrow-down text-3xl"></i>
+                            <label>Upload attachment</label>
+                            <InputFile class="hidden" multiple id="file-upload" OnChange="OnFileChanged"/>
+                        </label>
+                        <div class="flex flex-row flex-wrap items-center justify-start gap-2">
+                            @foreach(var attachment in _card.Attachments) 
+                            {
+                                <div class="flex w-min cursor-pointer flex-row items-center justify-center gap-2 rounded-lg px-2 py-2 outline-2 outline-gray-400 transition-all ease-in-out select-none hover:outline-gray-800"
+                                    @onclick="() => DownloadAttachment(attachment)">
+                                    <div class="h-8 w-8 bg-cover bg-center" style="background-image: url('./images/icons/@AttachmentHelper.GetImageNameFromAttachment(attachment)');" />
+                                    <div class="flex flex-col text-xs font-normal">
+                                        <label class="cursor-pointer font-medium">@attachment.OriginalName</label>
+                                        <div class="flex flex-row gap-2">
+                                            <label class="cursor-pointer text-gray-500">@AttachmentHelper.GetFileTypeFromAttachment(attachment)</label>
+                                            <label class="ml-auto cursor-pointer text-red-500 hover:text-red-800" @onclick="() => DeleteAttachment(attachment)" @onclick:stopPropagation=true><i class="fa fa-trash-can"></i></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+                else if (_tab == 1)
+                {
+                    <textarea class="h-24 w-full overflow-auto rounded-lg bg-slate-200 p-4 text-sm outline-0 outline-blue-300 transition-all ease-in-out focus:outline-2" 
+                        @oninput="OnCommentTextChanged" value="@_commentText"
+                        placeholder="Say what's on your mind ..."></textarea>
+                    <div class="flex flex-row justify-end">
+                        <button class="w-min px-4 py-2" @onclick="PostComment">Submit</button>
+                    </div>
+                    <hr />
+                    @if (_card.Comments.Any())
+                    {
+                        int j = 0;
+                        @foreach (var comment in _card.Comments.OrderByDescending(x => x.CreatedAt))
+                        {
+                            <div class="flex flex-col gap-1">
+                                <div class="flex flex-row items-center gap-2">
+                                    @{
+                                        var commentId = $"comment_id_{i}";
+                                    }
+                                    @if(comment.CreatedBy is not null) 
+                                    {
+                                        <div id=@commentId class="avatar" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@comment.CreatedBy.ProfilePictureFileName');"
+                                             @onclick="() => _mainLayout.UserInfoModal?.Open(commentId, comment.CreatedById)"></div>
+                                    } else {
+                                        <div id=@commentId class="avatar" style="background-image: url('./images/question_mark_avatar.png');"></div>
+                                    }
+                                    <label id=@commentId class="cursor-pointer text-sm font-medium" @onclick="() => _mainLayout.UserInfoModal?.Open(commentId, comment.CreatedById)">@(comment.CreatedBy?.DisplayName ?? "Deleted User")</label>
+                                    <label class="text-xs text-gray-400">@TimeHelper.ToElapsedString(comment.CreatedAt)</label>
+                                </div>
+                                <label class="text-sm font-normal">@comment.Text</label>
+                            </div>
+
+                            j++;
+                        }
+                    }
+                    else
+                    {
+                        <label class="text-sm font-normal">There are no comments here yet.</label>
+                    }
+                }
+                else if (_tab == 2)
+                {
+                    <div class="flex flex-col gap-1 border-l-2">
+                        @{
+                            DateTime? lastDay = null;
+                            i = 0;
+                            var onlyFirstDates = _card.Activities.OrderBy(x => x.At).GroupBy(x => x.At.Date).Select(x => x.OrderBy(y => y.At.Date).First()).Select(x => x.At).ToList();
+
+                            onlyFirstDates.RemoveAll(x => x.Date.Equals(_card.CreatedAt.Date));
+                            onlyFirstDates.Add(_card.CreatedAt);
+                        }
+                        @foreach(var activity in _card.Activities.OrderByDescending(x => x.At))
+                        {
+                            var activityId = $"activity_id_{i}";
+
+                            <div class="flex flex-row items-center justify-between py-2 text-xs">
+                                <div class='ml-[-5px] h-2 w-2 rounded-full bg-gray-500 @(onlyFirstDates.Any(x => DateTime.Compare(activity.At, x) == 0) ? string.Empty : "opacity-0")'></div>
+                                <label class="ml-3 whitespace-nowrap text-gray-500 capitalize">@activity.At.ToString("MMM d")</label>
+                                <label class="ml-6"><label class="person-link" id="@activityId"
+                                    @onclick="() => _mainLayout.UserInfoModal?.Open(activityId, activity.UserId)">
+                                    @@@activity.User.DisplayName</label> @((MarkupString) activity.Text).
+                                </label>
+                                <label class="ml-auto whitespace-nowrap text-gray-500">@activity.At.ToElapsedString()</label>
+                            </div>
+
+                            lastDay = DateTime.Now;
+                            i++;
+                        }
+
+                        @{
+                            var finalActivityId = $"activity_id_{i}";
+                        }
+                        <div class="flex flex-row items-center justify-between py-2 text-xs">
+                            <div class="ml-[-5px] h-2 w-2 rounded-full bg-gray-500"></div>
+                            <label class="ml-3 whitespace-nowrap text-gray-500 capitalize">@_card.CreatedAt.ToString("MMM d")</label>
+                            <label class="ml-6"><label class="person-link" id="@finalActivityId"
+                                @onclick="() => _mainLayout.UserInfoModal?.Open(finalActivityId, _card.CreatedById)">
+                                @@@_card.CreatedBy.DisplayName</label> <b>created</b> this card.
+                            </label>
+                            <label class="ml-auto whitespace-nowrap text-gray-500">@_card.CreatedAt.ToElapsedString()</label>
+                        </div>
+                    </div>
+                }
+                else if (_tab == 3)
+                {
+                    <div class="flex w-full flex-col gap-3 text-sm select-none">
+                        <div class="flex flex-row items-center justify-start gap-1">
+                            <div class="flex flex-row items-center gap-2">
+                                <label>Total time:</label> <div class="rounded-lg bg-gray-200 px-1 py-0.5 font-bold text-gray-900">@(new TimeSpan(_card.TimeRecords.Select(x => ((x.EndedAt ?? DateTime.Now) - x.StartedAt).Ticks).Sum()).ToElapsedString())</div>
+                            </div>
+                            @{
+                                var ongoingTimer = _card.TimeRecords.Where(x => x.UserId.Equals(_user.Id) && x.EndedAt == null).FirstOrDefault();
+                                var timeRecordCreateId = "time_record_create";
+                            }
+                            <div class="ml-auto flex flex-row items-center gap-2">
+                                <button class="px-2" id=@timeRecordCreateId @onclick="() => _addTimeRecordModal?.Open(timeRecordCreateId, _card)">Add time</button>
+                                @if (ongoingTimer is null)
+                                {
+                                    <button class='!bg-green-700 px-2 !hover:bg-green-900' @onclick="StartTimer">Start timer</button>
+                                } else {
+                                    <button class='!bg-red-400 px-2 !hover:bg-red-800' @onclick="() => EndTimer(ongoingTimer)">@_ongoingTimer.ToElapsedString()</button>
+                                }
+                            </div>
+                        </div>
+                        @foreach(var timeRecord in _card.TimeRecords.Where(x => x.EndedAt != null).OrderByDescending(x => x.EndedAt)) 
+                        {
+                            string userTimeRecordId = $"user_time_record_{timeRecord.Id}";
+                            string timeRecordId = $"time_record_{timeRecord.Id}";
+
+                            <div class="flex flex-row items-center justify-start gap-3">
+                                <div id="@userTimeRecordId" class="avatar" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@timeRecord.User.ProfilePictureFileName');"
+                                    @onclick="() => _mainLayout.UserInfoModal?.Open(userTimeRecordId, timeRecord.UserId)"></div>
+                                <div class="flex w-full flex-row items-center justify-between">
+                                    <div class="flex flex-col items-start justify-center">
+                                        <label>@timeRecord.User.DisplayName</label>
+                                        <label class="font-bold">@((timeRecord.EndedAt!.Value - timeRecord.StartedAt).ToElapsedString())</label>
+                                    </div>
+
+                                    <div class="flex flex-row items-center">
+                                        <i id="@timeRecordId" class="fa fa-pencil edit-icon" @onclick="() => _editTimeRecordModal?.Open(timeRecordId, timeRecord)"></i>
+                                        <i class="fa fa-trash-can edit-icon !text-red-500 hover:!text-red-800" @onclick="() => DeleteTimeRecord(timeRecord)"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+    private MainLayout _mainLayout { get; set; } = default!;
+
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    private Card? _card;
+    private List<User> _members = new();
+
+    private ElementReference? _labelDiv;
+    private ElementReference? _priorityDiv;
+    private ElementReference? _assigneesTrigger;
+    private ElementReference? _addSubtaskTrigger;
+    private ElementReference? _addReminderTrigger;
+    private ElementReference? _editDeadlineTrigger;
+    private LabelModal? _labelModal;
+    private PriorityModal? _priorityModal;
+    private AssigneesModal? _assigneesModal;
+    private AddSubtaskModal? _addSubtaskModal;
+    private AddReminderModal? _addReminderModal;
+    private AddTimeRecordModal? _addTimeRecordModal;
+    private EditTimeRecordModal? _editTimeRecordModal;
+    private EditSubtaskModal? _editSubtaskModal;
+    private EditDeadlineModal? _editDeadlineModal;
+    private LinkCardsModal? _linkCardsModal;
+
+    private int _tab = 0;
+    private string _identifier = string.Empty;
+    private string _commentText = string.Empty;
+    private int _lastColumnIndex;
+    private System.Timers.Timer? _timer;
+    private TimeSpan _ongoingTimer;
+
+    public async Task Open(int cardId, List<User> members)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+        _card = await GetNoTrackingCard(db, cardId);
+
+        if (_card is null)
+            return;
+
+        _members = members;
+
+        _identifier = $"{_card.Column.Board.Code}-{_card.Number}";
+        UpdateTimer();
+        base.Open();
+    }
+
+    private async Task OnTextChanged(ChangeEventArgs e)
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        card.Text = e.Value?.ToString() ?? string.Empty;
+        card.Activities.Add(new Activity
+        {
+            Text = "<b>changed</b> the title",
+            UserId = _user.Id,
+            CardId = card.Id,
+            At = DateTime.Now
+        });
+
+        await db.SaveChangesAsync();
+
+        await UpdateCard();
+    }
+
+    private void OnCommentTextChanged(ChangeEventArgs e)
+    {
+        _commentText = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private async Task OnDescriptionChanged(ChangeEventArgs e)
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        card.Description = e.Value?.ToString() ?? string.Empty;
+        card.Activities.Add(new Activity
+        {
+            Text = "<b>changed</b> the description",
+            UserId = _user.Id,
+            CardId = card.Id,
+            At = DateTime.Now
+        });
+
+        await db.SaveChangesAsync();
+
+        await UpdateCard();
+    }
+
+    private async Task OnSubtaskStatusChanged(ChangeEventArgs e, Subtask subtask)
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        var targetSubtask = card.Subtasks.FirstOrDefault(x => x.Id.Equals(subtask.Id));
+
+        if (targetSubtask is null)
+            return;
+
+        targetSubtask.Completed = e.Value is not null ? (bool)e.Value : false;
+
+        card.Activities.Add(new Activity
+            {
+                Text = $"<b>marked</b> the subtask <b>{targetSubtask.Text}</b> as <b>{(targetSubtask.Completed ? "completed" : "to be done")}</b>",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+            });
+
+        await db.SaveChangesAsync();
+        await UpdateCard();
+    }
+
+
+    private void UpdateTimer()
+    {
+        var targetRecord = _card?.TimeRecords?.FirstOrDefault(x => x.UserId.Equals(_user.Id) && x.EndedAt == null);
+
+        if(_card is null || targetRecord is null)
+        {
+            if (_timer is not null)
+                _timer.Stop();
+            return;
+        }
+
+        _ongoingTimer = DateTime.Now - targetRecord.StartedAt;
+        StateHasChanged();
+
+        _timer = new System.Timers.Timer(1000);
+        _timer.Elapsed += OnTimerTick;
+        _timer.AutoReset = true;
+        _timer.Start();
+    }
+
+    private async void OnTimerTick(object? sender, ElapsedEventArgs e)
+    {
+        _ongoingTimer = _ongoingTimer.Add(TimeSpan.FromSeconds(1));
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task PostComment()
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        card.Comments.Add(new Comment
+            {
+                Text = _commentText,
+                CreatedAt = DateTime.Now,
+                CreatedById = _user.Id,
+                CardId = _card.Id
+            });
+        card.Activities.Add(new Activity
+            {
+                Text = "<b>posted</b> a comment",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+            });
+
+        await db.SaveChangesAsync();
+
+        _commentText = string.Empty;
+        await UpdateCard();
+    }
+
+    private async Task StartTimer()
+    {
+        if (_card is null)
+            return;
+
+        _ongoingTimer = TimeSpan.Zero;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        card.TimeRecords.Add(new TimeRecord
+        {
+            UserId = _user.Id,
+            CardId = card.Id,
+            StartedAt = DateTime.Now
+        });
+
+        await db.SaveChangesAsync();
+        await UpdateCard();
+        UpdateTimer();
+    }
+
+    private async Task EndTimer(TimeRecord activeTimeRecord)
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        var targetRecord = card.TimeRecords.FirstOrDefault(x => x.Id.Equals(activeTimeRecord.Id));
+
+        if(targetRecord is null)
+            return;
+
+        targetRecord.EndedAt = DateTime.Now;
+
+        if((targetRecord.EndedAt.Value - targetRecord.StartedAt).TotalSeconds < 1)
+        {
+            db.TimeRecords.Remove(targetRecord);
+        }
+
+        await db.SaveChangesAsync();
+        await UpdateCard();
+        UpdateTimer();
+    }
+
+    private async Task DeleteTimeRecord(TimeRecord timeRecord)
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        await db.TimeRecords.Where(x => x.Id.Equals(timeRecord.Id)).ExecuteDeleteAsync();
+
+        db.Activities.Add(new Activity
+        {
+            Text = $"<b>deleted</b> time record of <b>{(timeRecord.EndedAt!.Value - timeRecord.StartedAt).ToElapsedString()}</b>",
+            UserId = _user.Id,
+            CardId = _card.Id,
+            At = DateTime.Now
+        });
+
+        await db.SaveChangesAsync();
+        await UpdateCard();
+    }
+
+    private async Task MoveToPreviousList()
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        var targetColumn = await db.Columns
+            .Include(x => x.Cards)
+            .Where(x => x.BoardId.Equals(card.Column.BoardId))
+            .FirstOrDefaultAsync(x => x.Index.Equals(card.Column.Index - 1));
+
+        if (targetColumn is null)
+            return;
+
+        card.Column = targetColumn;
+        card.Activities.Add(new Activity
+            {
+                Text = $"<b>moved</b> the card to <b>{targetColumn.Name}</b>",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+            });
+
+        await db.SaveChangesAsync();
+
+        await UpdateCard();
+    }
+
+    private async Task Join()
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        var targetUser = await db.Users.SingleOrDefaultAsync(x => x.Id.Equals(_user.Id));
+
+        if(targetUser is null)
+            return;
+
+        card.Assignees.Add(targetUser);
+        card.Activities.Add(new Activity
+        {
+            Text = $"<b>joined</b> the card",
+            UserId = _user.Id,
+            CardId = card.Id,
+            At = DateTime.Now
+        });
+
+        await db.SaveChangesAsync();
+
+        await UpdateCard();
+    }
+
+    private async Task Leave()
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        var targetUser = await db.Users.SingleOrDefaultAsync(x => x.Id.Equals(_user.Id));
+
+        if (targetUser is null)
+            return;
+
+        card.Assignees.Remove(targetUser);
+        card.Activities.Add(new Activity
+        {
+            Text = $"<b>left</b> the card",
+            UserId = _user.Id,
+            CardId = card.Id,
+            At = DateTime.Now
+        });
+
+        await db.SaveChangesAsync();
+
+        await UpdateCard();
+    }
+
+    private async Task MoveToNextList()
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        var targetColumn = await db.Columns
+            .Include(x => x.Cards)
+            .Where(x => x.BoardId.Equals(card.Column.BoardId))
+            .FirstOrDefaultAsync(x => x.Index.Equals(card.Column.Index + 1));
+
+        if (targetColumn is null)
+            return;
+
+        card.Column = targetColumn;
+        card.Activities.Add(new Activity
+            {
+                Text = $"<b>moved</b> the card to <b>{targetColumn.Name}</b>",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+            });
+
+        await db.SaveChangesAsync();
+
+        await UpdateCard();
+    }
+
+    private async Task UpdateCard()
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        _card = await GetNoTrackingCard(db, _card.Id);
+        StateHasChanged();
+
+        await OnSubmit.InvokeAsync();
+    }
+
+    private async Task OnSubtaskAdded()
+    {
+        await UpdateCard();
+
+        _ = ReopenSubtaskCreation();
+    }
+
+    private async Task ReopenSubtaskCreation()
+    {
+        await Task.Delay(50);
+        _addSubtaskModal?.Open(_addSubtaskTrigger, _card!);
+    }
+
+    private async Task DownloadAttachment(Attachment attachment)
+    {
+        await _js.InvokeVoidAsync("triggerFileDownload", attachment.OriginalName, $"{Constants.ACCESS_UPLOADED_FILES_PATH}/{attachment.FileName}");
+    }
+
+    private async Task DeleteAttachment(Attachment attachment)
+    {
+        if(_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        card.Attachments.RemoveAll(x => x.Id.Equals(attachment.Id));
+        card.Activities.Add(new Activity
+            {
+                Text = $"<b>deleted</b> file named <b>{attachment.OriginalName}</b>",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+                });
+
+        _mainLayout.RunNotification(new Notification($"File {attachment.OriginalName} deleted successfully."));
+
+        await db.SaveChangesAsync();
+        await UpdateCard();
+    }
+
+    private async Task DeleteReminder(Reminder reminder)
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        card.Reminders.RemoveAll(x => x.Id.Equals(reminder.Id));
+        card.Activities.Add(new Activity
+            {
+                Text = $"<b>deleted</b> the reminder at <b>{reminder.At.ToReadableStringWithTime()}</b>",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+            });
+
+        await db.SaveChangesAsync();
+        await UpdateCard();
+    }
+
+    private async Task DeleteDeadline()
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        card.Deadline = null;
+        card.Activities.Add(new Activity
+            {
+                Text = "<b>deleted</b> the deadline",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+            });
+
+        await db.SaveChangesAsync();
+        await UpdateCard();
+    }
+
+    private async Task DeleteSubtask(Subtask subtask)
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        card.Subtasks.RemoveAll(x => x.Id.Equals(subtask.Id));
+        card.Activities.Add(new Activity
+            {
+                Text = $"<b>deleted</b> subtask <b>{subtask.Text}</b>",
+                UserId = _user.Id,
+                CardId = card.Id,
+                At = DateTime.Now
+            });
+
+        IndexHelper.FixIndices(card.Subtasks);
+
+        await db.SaveChangesAsync();
+        await UpdateCard();
+    }
+
+    private async Task DeleteLink(CardLink link)
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var targetLink = await db.CardLinks
+            .Include(x => x.CardOne)
+                .ThenInclude(x => x.Activities)
+            .Include(x => x.CardOne)
+                .ThenInclude(x => x.Column)
+                    .ThenInclude(x => x.Board)
+            .Include(x => x.CardTwo)
+                .ThenInclude(x => x.Column)
+                    .ThenInclude(x => x.Board)
+            .Include(x => x.CardTwo)
+                .ThenInclude(x => x.Activities)
+            .FirstOrDefaultAsync(x => x.Id.Equals(link.Id));
+
+        if (targetLink is null)
+            return;
+
+        var oppositeCategory = Constants.LINK_TYPE_PAIRS.ContainsKey(targetLink.Category) ? Constants.LINK_TYPE_PAIRS[targetLink.Category] : Constants.LINK_TYPE_PAIRS.First(x => x.Value.Equals(targetLink.Category)).Key;
+        var oppositeTarget = await db.CardLinks.FirstOrDefaultAsync(x => x.CardTwoId.Equals(targetLink.CardOneId));
+
+        if (oppositeTarget is not null)
+        {
+            db.CardLinks.Remove(oppositeTarget);
+
+            targetLink.CardTwo.Activities.Add(new Activity
+                {
+                    Text = $"<b>deleted</b> a linked issue <b>{targetLink.CardOne.Column.Board.Code}-{targetLink.CardOne.Number}</b> with <b>{targetLink.Category}</b> relationship",
+                    UserId = _user.Id,
+                    CardId = targetLink.CardTwoId,
+                    At = DateTime.Now
+                });
+        }
+
+        db.CardLinks.Remove(targetLink);
+
+        targetLink.CardOne.Activities.Add(new Activity
+            {
+                Text = $"<b>deleted</b> a linked issue <b>{targetLink.CardTwo.Column.Board.Code}-{targetLink.CardTwo.Number}</b> with <b>{targetLink.Category}</b> relationship",
+                UserId = _user.Id,
+                CardId = targetLink.CardOneId,
+                At = DateTime.Now
+            });
+
+        await db.SaveChangesAsync();
+        await UpdateCard();
+    }
+
+    public async Task OnFileChanged(InputFileChangeEventArgs e)
+    {
+        if (_card is null)
+            return;
+
+        if(e.FileCount > Constants.Limits.MAX_FILES)
+        {
+            _mainLayout.RunNotification(new Notification($"Only {Constants.Limits.MAX_FILES} can be uploaded.", NotificationType.Fail));
+            return;
+        }
+
+        var files = e.GetMultipleFiles(Constants.Limits.MAX_FILES).ToList();
+
+        var folderPath = Constants.SAVE_UPLOADED_FILES_PATH;
+
+        if (!Directory.Exists(folderPath))
+            Directory.CreateDirectory(folderPath);
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        foreach (var file in files)
+        {
+            if (file.Size > Constants.Limits.MAX_FILE_SIZE)
+            {
+                _mainLayout.RunNotification(new Notification($"The file {file.Name} is too large.", NotificationType.Fail));
+                continue;
+            }
+
+            try
+            {
+                var extension = file.Name[(file.Name.LastIndexOf('.') + 1)..];
+
+                string path;
+                string trustedFileName;
+                do
+                {
+                    trustedFileName = Path.GetRandomFileName();
+                    trustedFileName = trustedFileName[..trustedFileName.LastIndexOf('.')] + $".{extension}";
+
+                    path = Path.Combine(folderPath, trustedFileName);
+                } while (File.Exists(path));
+
+                await using FileStream fs = new(path, FileMode.Create);
+                await file.OpenReadStream(Constants.Limits.MAX_FILE_SIZE).CopyToAsync(fs);
+
+                card.Attachments.Add(new Attachment
+                {
+                    CardId = _card.Id,
+                    FileName = trustedFileName,
+                    OriginalName = file.Name
+                    });
+                card.Activities.Add(new Activity
+                    {
+                        Text = $"<b>uploaded</b> file named <b>{file.Name}</b>",
+                        UserId = _user.Id,
+                        CardId = card.Id,
+                        At = DateTime.Now
+                    });
+
+                _mainLayout.RunNotification(new Notification($"File {file.Name} uploaded successfully."));
+            }
+            catch
+            {
+                _mainLayout.RunNotification(new Notification($"File upload error while uploading {file.Name}.", NotificationType.Fail));
+                continue;
+            }
+        }
+
+        await db.SaveChangesAsync();
+        await UpdateCard();
+    }
+
+    private async Task<Card?> GetNoTrackingCard(DataContext db, int id)
+    { 
+        var card = await db.Cards
+            .AsNoTracking()
+            .Include(x => x.Column)
+                .ThenInclude(x => x.Board)
+                    .ThenInclude(x => x.Labels)
+            .Include(x => x.CreatedBy)
+            .Include(x => x.Comments)
+                .ThenInclude(x => x.CreatedBy)
+            .Include(x => x.Assignees)
+            .Include(x => x.Attachments)
+            .Include(x => x.Activities)
+                .ThenInclude(x => x.User)
+            .Include(x => x.Subtasks)
+            .Include(x => x.Reminders)
+            .Include(x => x.Labels)
+            .Include(x => x.TimeRecords)
+                .ThenInclude(x => x.User)
+            .Include(x => x.LinkedIssuesOne)
+                .ThenInclude(x => x.CardTwo)
+                    .ThenInclude(x => x.Column)
+                        .ThenInclude(x => x.Board)
+                            .ThenInclude(x => x.Project)
+            .FirstOrDefaultAsync(x => x.Id.Equals(id));
+
+        if(card is not null)
+            _lastColumnIndex = await db.Columns.Where(x => x.BoardId.Equals(card.Column.BoardId)).Select(x => x.Index).MaxAsync();
+
+        return card;
+    }
+
+    private async Task<Card?> GetCard(DataContext db, int id)
+    {
+        var card = await db.Cards
+            .Include(x => x.Column)
+                .ThenInclude(x => x.Board)
+                    .ThenInclude(x => x.Labels)
+            .Include(x => x.CreatedBy)
+            .Include(x => x.Comments)
+                .ThenInclude(x => x.CreatedBy)
+            .Include(x => x.Assignees)
+            .Include(x => x.Attachments)
+            .Include(x => x.Activities)
+            .Include(x => x.Subtasks)
+            .Include(x => x.Reminders)
+            .Include(x => x.Labels)
+            .Include(x => x.TimeRecords)
+                .ThenInclude(x => x.User)
+            .Include(x => x.LinkedIssuesOne)
+                .ThenInclude(x => x.CardTwo)
+                    .ThenInclude(x => x.Column)
+                        .ThenInclude(x => x.Board)
+                            .ThenInclude(x => x.Project)
+            .FirstOrDefaultAsync(x => x.Id.Equals(id));
+
+        if (card is not null)
+            _lastColumnIndex = await db.Columns.Where(x => x.BoardId.Equals(card.Column.BoardId)).Select(x => x.Index).MaxAsync();
+
+        return card;
+    }
+}

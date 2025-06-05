@@ -1,0 +1,16 @@
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+    protected MainLayout MainLayout { get; set; } = default!;
+
+    protected async Task RunNotification(Type type, OperationType operationType) 
+    {
+        await HandleUpdate();
+        MainLayout.RunNotification(new Notification($"{type.Name} {operationType.GetDisplayName()} successfully."));
+    }
+
+    protected virtual Task HandleUpdate()
+    {
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+}

@@ -1,0 +1,45 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33209.295
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ticky.Internal", "Ticky.Internal\Ticky.Internal.csproj", "{6CF74B09-F595-41A6-B577-C195A3DC826D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ticky.Base", "Ticky.Base\Ticky.Base.csproj", "{E3267CAC-DB33-4BF9-BE1C-1B46BB6E3526}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		CONTRIBUTING.md = CONTRIBUTING.md
+		docker-compose.yaml = docker-compose.yaml
+		Dockerfile = Dockerfile
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ticky.Web", "Ticky.Web\Ticky.Web.csproj", "{B1E89F57-87FE-441E-AC21-DF0A38428C1E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6CF74B09-F595-41A6-B577-C195A3DC826D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CF74B09-F595-41A6-B577-C195A3DC826D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CF74B09-F595-41A6-B577-C195A3DC826D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CF74B09-F595-41A6-B577-C195A3DC826D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3267CAC-DB33-4BF9-BE1C-1B46BB6E3526}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3267CAC-DB33-4BF9-BE1C-1B46BB6E3526}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3267CAC-DB33-4BF9-BE1C-1B46BB6E3526}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3267CAC-DB33-4BF9-BE1C-1B46BB6E3526}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1E89F57-87FE-441E-AC21-DF0A38428C1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1E89F57-87FE-441E-AC21-DF0A38428C1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1E89F57-87FE-441E-AC21-DF0A38428C1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1E89F57-87FE-441E-AC21-DF0A38428C1E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C4407ABF-5671-49C8-9310-0C8C4829530B}
+	EndGlobalSection
+EndGlobal
