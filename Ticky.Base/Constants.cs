@@ -3,6 +3,7 @@ namespace Ticky.Base
     public static class Constants
     {
         public static bool SMTP_ENABLED = true;
+        public static bool FULLY_OFFLINE;
 
         public static class CascadingParameters
         {

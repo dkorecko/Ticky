@@ -1,4 +1,4 @@
-﻿namespace Ticky.Internal.Services
+namespace Ticky.Internal.Services
 {
     public class AvatarService
     {
@@ -23,11 +23,21 @@
             if (File.Exists(targetFilePath))
                 return fileName;
 
-            var stream = await _httpClient.GetStreamAsync(
-                $"https://ui-avatars.com/api/?background=random&name={Uri.EscapeDataString(name)}"
-            );
-            using var fs = File.Create(targetFilePath);
-            stream.CopyTo(fs);
+            if (!Constants.FULLY_OFFLINE)
+            {
+                var stream = await _httpClient.GetStreamAsync(
+                    $"https://ui-avatars.com/api/?background=random&name={Uri.EscapeDataString(name)}"
+                );
+                using var fs = File.Create(targetFilePath);
+                stream.CopyTo(fs);
+            }
+            else
+            {
+                File.Copy(
+                    Path.Combine(Constants.WWW_ROOT, "images", "question_mark_avatar.png"),
+                    targetFilePath
+                );
+            }
             return fileName;
         }
     }

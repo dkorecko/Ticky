@@ -4,17 +4,17 @@
 <head>
     <meta charset="utf-8" />
     <meta name="description" content="Ticky, the kanban board app designed to make your life simpler and your tasks feel lighter. With its intuitive visual layout, you can effortlessly move your projects from to-do to done, making productivity feel like a breeze. Get ready to tick off your goals with a smile!">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="preload" href="fonts/o-0bIpQlx3QUlC5A4PNB6Ryti20_6n1iPHjc5a7duw.woff2" as="font" type="font/woff2" crossorigin>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <link rel="stylesheet" href="@Assets["css/app.css"]" />
     <link rel="icon" type="image/png" href="./images/favicon.png" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    <link rel="stylesheet" href="@Assets["fonts/Noto-Sans.css"]">
+    <link rel="stylesheet" href="@Assets["font-awesome/css/fontawesome.min.css"]">
+    <link rel="stylesheet" href="@Assets["font-awesome/css/solid.min.css"]">
     <link href="Ticky.Web.styles.css" rel="stylesheet" />
     <script src="js/main.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.6/Sortable.min.js"></script>
+    <script src="@Assets["js/sortable/Sortable.min.js"]"></script>
     <script type="module" src="../Components/Elements/Sortable/SortableList.razor.js"></script>
     <ImportMap />
     <HeadOutlet @rendermode="InteractiveServer" />

@@ -56,6 +56,8 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
     options.TokenLifespan = TimeSpan.FromDays(7);
 });
 
+Constants.FULLY_OFFLINE = builder.Configuration.GetValue("FULLY_OFFLINE", true);
+
 var mailKitOptions = builder.Configuration.GetSection("Email").Get<MailKitOptions>();
 
 if (mailKitOptions is null)

@@ -8,10 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Devity.Blazor" Version="2025.5.7.2024" />
     <PackageReference Include="Devity.Extensions" Version="2025.5.7.2024" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.5" />
@@ -26,6 +22,12 @@
   <ItemGroup>
     <ProjectReference Include="..\Ticky.Base\Ticky.Base.csproj" />
     <ProjectReference Include="..\Ticky.Internal\Ticky.Internal.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\images\question_mark_avatar.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
