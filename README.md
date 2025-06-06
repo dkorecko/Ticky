@@ -50,7 +50,7 @@ I'm constantly working to make Ticky even better! Here's a glimpse of what's in 
 
 ### Using Docker (Recommended)
 
-1. Create a `docker-compose.yaml` file, if you'd like to skip SMTP, either use `SMTP_ENABLE=false` or comment out the SMTP section of the environment variables:
+1. Create a `docker-compose.yaml` file, if you'd like to skip SMTP, either use `SMTP_ENABLED=false` or comment out the SMTP section of the environment variables:
 
 ```yaml
 services:
