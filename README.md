@@ -27,6 +27,8 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Progress**: Track your progress within a board by seeing how many tasks have already been completed.
 - **App-wide Search**: Find cards from other boards based on their unique identificator (like TEST-1), jump directly to them.
 - **Recent board**: Immediately go back to your most recent board.
+- **Auto-generated avatars**: To make things more colorful.
+- **Able to do fully offline**: Ability to run fully offline, disabling the avatar service, having all the files bundled on the server and not using SMTP.
 - ... and more!
 
 ### 📝 Planned features
@@ -36,7 +38,6 @@ I'm constantly working to make Ticky even better! Here's a glimpse of what's in 
 - Repeat cards
 - Mobile version
 - Real-time updates
-- Manage users without SMTP
 
 ## 📋 Prerequisites
 
@@ -62,6 +63,7 @@ services:
     environment:
       - DB_HOST=ticky-db
       - DB_PASSWORD=your-secure-password
+      #- FULLY_OFFLINE=true # Uncomment this if you want to disable the avatar service and run fully offline.
       - SMTP_ENABLE=true # Change this to false to ignore SMTP configuration and disable SMTP setup. Resetting password via typical password reset won't work (will need to be reset by an admin via the Admin Panel), as well as reminders and notifications. Can be enabled at any time.
       - SMTP_HOST=your-smtp-host
       - SMTP_PORT=your-smtp-port
