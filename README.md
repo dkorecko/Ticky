@@ -23,6 +23,7 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Activity Tracking**: Monitor all changes and activities on tasks.
 - **Comments**: Leave comments on cards to discuss and provide other useful information.
 - **User Management**: You can add users on the project level or on the board level, choosing between a Member and an Admin role.
+- **Admin Panel**: For creating, editing and deleting users as an admin. Mostly for when not using SMTP.
 - **Email Notifications**: Receive notifications for deadlines, and reminders.
 - **Progress**: Track your progress within a board by seeing how many tasks have already been completed.
 - **App-wide Search**: Find cards from other boards based on their unique identificator (like TEST-1), jump directly to them.
@@ -38,6 +39,7 @@ I'm constantly working to make Ticky even better! Here's a glimpse of what's in 
 - Repeat cards
 - Mobile version
 - Real-time updates
+- Swimlanes
 
 ## 📋 Prerequisites
 
