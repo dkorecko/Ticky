@@ -66,7 +66,7 @@ services:
       - DB_HOST=ticky-db
       - DB_PASSWORD=your-secure-password
       #- FULLY_OFFLINE=true # Uncomment this if you want to disable the avatar service and run fully offline.
-      - SMTP_ENABLE=true # Change this to false to ignore SMTP configuration and disable SMTP setup. Resetting password via typical password reset won't work (will need to be reset by an admin via the Admin Panel), as well as reminders and notifications. Can be enabled at any time.
+      - SMTP_ENABLED=true # Change this to false to ignore SMTP configuration and disable SMTP setup. Resetting password via typical password reset won't work (will need to be reset by an admin via the Admin Panel), as well as reminders and notifications. Can be enabled at any time.
       - SMTP_HOST=your-smtp-host
       - SMTP_PORT=your-smtp-port
       - SMTP_DISPLAY_NAME=Ticky
