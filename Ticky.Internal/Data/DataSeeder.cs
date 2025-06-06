@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 
 namespace Ticky.Internal.Data;
@@ -11,14 +12,51 @@ public class DataSeeder
         var dataContext = serviceProvider.GetRequiredService<DataContext>();
         var avatarService = serviceProvider.GetRequiredService<AvatarService>();
 
+        var adminClaim = new Claim(ClaimTypes.Role, Constants.Roles.Admin);
+        var adminUsers = await userManager.GetUsersForClaimAsync(adminClaim);
+
+        if (!adminUsers.Any())
+        {
+            var adminUser = new User
+            {
+                DisplayName = "Default Admin",
+                UserName = Constants.Defaults.ADMIN_EMAIL,
+                Email = Constants.Defaults.ADMIN_EMAIL,
+                EmailConfirmed = true,
+                NeedsNewCredentials = true
+            };
+
+            adminUser.ProfilePictureFileName = await avatarService.FetchAvatarAsync(
+                adminUser.DisplayName
+            );
+
+            var result = await userManager.CreateAsync(
+                adminUser,
+                Constants.Defaults.ADMIN_PASSWORD
+            );
+
+            if (!result.Succeeded)
+                throw new Exception(
+                    $"Failed to create admin account. Errors:\n- {string.Join("\n- ", result.Errors)}"
+                );
+
+            result = await userManager.AddClaimAsync(adminUser, adminClaim);
+
+            if (!result.Succeeded)
+                throw new Exception(
+                    $"Failed to add claims to the admin account. Errors:\n- {string.Join("\n- ", result.Errors)}"
+                );
+        }
+
         if (await dataContext.Users.AnyAsync())
             return;
 
+#if DEBUG
         var testUser = new User
         {
-            DisplayName = "Dávid Korečko",
-            UserName = "user@devity.sk",
-            Email = "user@devity.sk",
+            DisplayName = "Testing User",
+            UserName = "user@ticky.com",
+            Email = "user@ticky.com",
             EmailConfirmed = true,
             AutomaticDeadlineReminder = true
         };
@@ -28,19 +66,6 @@ public class DataSeeder
         );
 
         await userManager.CreateAsync(testUser, "abc123");
-
-        var testUser3 = new User
-        {
-            DisplayName = "Andrej Kažmirský",
-            UserName = "user3@devity.sk",
-            Email = "user3@devity.sk",
-            EmailConfirmed = true
-        };
-        testUser3.ProfilePictureFileName = await avatarService.FetchAvatarAsync(
-            testUser3.DisplayName
-        );
-
-        await userManager.CreateAsync(testUser3, "abc123");
 
         var testProject = new Project { Name = "DAZN" };
 
@@ -166,5 +191,6 @@ public class DataSeeder
         dataContext.Projects.Add(testProject);
 
         await dataContext.SaveChangesAsync();
+#endif
     }
 }

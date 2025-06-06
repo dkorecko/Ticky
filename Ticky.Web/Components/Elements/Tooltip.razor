@@ -1,0 +1,12 @@
+<div class="tooltip-wrapper">
+    <span class="tooltip-span">@Text</span>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] 
+    public required RenderFragment ChildContent { get; set; }
+
+    [Parameter] 
+    public required string Text { get; set; }
+}

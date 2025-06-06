@@ -5,6 +5,7 @@ namespace Ticky.Internal.Services
     public class MailService
     {
         private readonly IEmailService _emailService;
+        private readonly ILogger<MailService> _logger;
         private static readonly string VERIFY_EMAIL = Path.Combine(
             Constants.Emails.BASE_PATH,
             "VerifyEmail.html"
@@ -22,9 +23,10 @@ namespace Ticky.Internal.Services
             "DeadlineReminder.html"
         );
 
-        public MailService(IEmailService emailService)
+        public MailService(IEmailService emailService, ILogger<MailService> logger)
         {
             _emailService = emailService;
+            _logger = logger;
         }
 
         public async Task SendVerificationEmailAsync(string emailAddress, Code code) =>
@@ -94,6 +96,12 @@ namespace Ticky.Internal.Services
             Dictionary<string, string>? data = null
         )
         {
+            if (!Constants.SMTP_ENABLED)
+            {
+                _logger.LogWarning("SMTP disabled, could not send e-mail.");
+                return;
+            }
+
             if (!File.Exists(bodyPath))
                 throw new FileNotFoundException(
                     "Could not find e-mail body file when sending e-mail."

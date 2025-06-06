@@ -47,7 +47,7 @@ I'm constantly working to make Ticky even better! Here's a glimpse of what's in 
 
 ### Using Docker (Recommended)
 
-1. Create a `docker-compose.yaml` file:
+1. Create a `docker-compose.yaml` file, if you'd like to skip SMTP, either use `SMTP_ENABLE=false` or comment out the SMTP section of the environment variables:
 
 ```yaml
 version: "2.1"
@@ -64,6 +64,7 @@ services:
     environment:
       - DB_HOST=ticky-db
       - DB_PASSWORD=your-secure-password
+      - SMTP_ENABLE=true # Change this to false to ignore SMTP configuration and disable SMTP setup. Resetting password via typical password reset won't work (will need to be reset by an admin via the Admin Panel), as well as reminders and notifications. Can be enabled at any time.
       - SMTP_HOST=your-smtp-host
       - SMTP_PORT=your-smtp-port
       - SMTP_DISPLAY_NAME=Ticky
@@ -99,7 +100,7 @@ services:
    docker-compose up -d
    ```
 
-4. Access the application at: `http://localhost:4088`
+4. Access the application at: `http://localhost:4088`. Then, you can log in to the default admin account with `admin@ticky.com` and password `abc123`. You will be prompted to change these right away (after changing, the app will log you out, so just use your new credentials to log in). Depending on whether you enabled SMTP or not, other users will either be able to create an account themselves (if SMTP is enabled) or you will need to create accounts for them.
 
 ### Manual Setup
 

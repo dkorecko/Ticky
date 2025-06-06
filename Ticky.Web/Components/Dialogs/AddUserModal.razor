@@ -1,0 +1,96 @@
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject UserManager<User> _userManager
+@inject AvatarService _avatarService
+
+<Modal @ref=Modal Title="Add user" OnSubmitAttempted="AddUser">
+    <EditForm class="form p-2" EditContext="_editContext">
+        <DataAnnotationsValidator />
+
+        <div class="form-group">
+            <Name For="() => _userModel.DisplayName" />
+            <InputText class="form-control" @bind-Value="_userModel.DisplayName" @ref=FocusElement />
+            <ValidationMessage For="() => _userModel.DisplayName" />
+        </div>
+
+        <div class="form-group">
+            <Name For="() => _userModel.Email" />
+            <InputText class="form-control" @bind-Value="_userModel.Email" />
+            <ValidationMessage For="() => _userModel.Email" />
+        </div>
+
+        <div class="form-group">
+            <Name For="() => _userModel.Password" />
+            <InputText class="form-control" @bind-Value="_userModel.Password" />
+            <ValidationMessage For="() => _userModel.Password" />
+        </div>
+
+        <div class="form-group">
+            <Name For="() => _userModel.ConfirmPassword" />
+            <InputText class="form-control" @bind-Value="_userModel.ConfirmPassword" />
+            <ValidationMessage For="() => _userModel.ConfirmPassword" />
+        </div>
+    </EditForm>
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    private UserModel _userModel = new();
+    private EditContext? _editContext;
+    private ValidationMessageStore? _validationMessageStore;
+
+    public override void Open() 
+    {
+        _userModel = new();
+        _editContext = new EditContext(_userModel);
+        _editContext.OnValidationRequested += (sender, args) =>
+        {
+            _validationMessageStore?.Clear();
+        };
+        _validationMessageStore = new(_editContext);
+
+        base.Open();
+    }
+
+    public void Dispose()
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task AddUser() 
+    {
+        if(_editContext is null || !_editContext.Validate())
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var user = new User
+        {
+            DisplayName = _userModel.DisplayName,
+            Email = _userModel.Email,
+            UserName = _userModel.Email,
+            NeedsNewCredentials = true,
+            ProfilePictureFileName = await _avatarService.FetchAvatarAsync(_userModel.DisplayName)
+        };
+
+        var result = await _userManager.CreateAsync(user);
+
+        if(!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+                _validationMessageStore?.Add(() => _userModel.Email, error.Description);
+
+            _editContext?.NotifyValidationStateChanged();
+            return;
+        }
+
+        StateHasChanged();
+        await OnSubmit.InvokeAsync();
+        Modal?.Close();
+    }
+}

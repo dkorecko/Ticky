@@ -39,6 +39,11 @@
                     Recent board
                 </NavLink>
             }
+            <AuthorizeView Policy="@Constants.Policies.RequireAdmin">
+                <NavLink class="nav-link" href="/admin">
+                    Admin Panel
+                </NavLink>
+            </AuthorizeView>
             <NavLink class="nav-link" href="/auth/logout">
                 Log out
             </NavLink>

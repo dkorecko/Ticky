@@ -1,9 +1,12 @@
-﻿@page "/settings"
+@page "/settings/{Tab:int?}"
 @using Ticky.Base.Entities
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ILogger<UserSettings> _logger
 @inject AvatarService _avatarService
+@inject UserManager<User> _userManager
+@inject ILogger<UserSettings> _logger
 @inherits NotifiableBase
+@implements IDisposable
 
 <div class="h-screen w-full">
     <section class="flex w-full max-w-4xl grow flex-col gap-5 overflow-y-auto px-12 py-14">
@@ -15,10 +18,14 @@
             class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-gray-400 px-1 py-1 text-sm">
             <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(1)">General</div>
             <div data-active='@(_tab == 2 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(2)">Avatar</div>
+            <div data-active='@(_tab == 3 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(3)">Credentials</div>
         </section>
 
         <section class="flex w-full flex-col divide-y divide-gray-400">
-            @if (_tab == 1)
+            @if(_user is null)
+            {
+                <Spinner/>
+            } else if (_tab == 1)
             {
                 <div class="flex flex-col py-5">
                     <label class="font-bold">General settings</label>
@@ -96,32 +103,128 @@
                         <button class="bg-slate-500 px-5 py-2 hover:bg-slate-900" @onclick="RestoreToOriginal">Reset</button>
                     </div>
                 </div>
+            } else if(_tab == 3)
+            {
+                <NavigationLock ConfirmExternalNavigation=true OnBeforeInternalNavigation="OnBeforeInternalNavigation"/>
 
+                <div class="flex flex-col py-5">
+                    <label class="font-bold">Credentials</label>
+                    @if(_user.NeedsNewCredentials)
+                    {
+                        <label class="text-sm text-orange-500 opacity-70">This account is either using default credentials or they have been set up by the administrator, therefore they must be changed before going any further.</label>
+                    } else {
+                        <label class="text-sm opacity-70">Here you can change your credentials.</label>
+                    }
+                </div>
 
+                <EditForm class="form py-5" EditContext="_credentialsContext" OnValidSubmit="OnCredentialsValidSubmit">
+                    
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <Name For="() => _credentialsModel.OldEmailAddress" />
+                        <InputText class="form-control" @bind-Value="_credentialsModel.OldEmailAddress" disabled/>
+                        <ValidationMessage For="() => _credentialsModel.OldEmailAddress" />
+                    </div>
+
+                    <div class="form-group">
+                        <Name For="() => _credentialsModel.NewEmailAddress" />
+                        <InputText class="form-control" @bind-Value="_credentialsModel.NewEmailAddress" autofocus/>
+                        <ValidationMessage For="() => _credentialsModel.NewEmailAddress" />
+                    </div>
+
+                    @if(!_user.NeedsNewCredentials)
+                    {
+                        <div class="form-group">
+                            <Name For="() => _credentialsModel.OldPassword" />
+                            <InputText class="form-control" @bind-Value="_credentialsModel.OldPassword"/>
+                            <ValidationMessage For="() => _credentialsModel.OldPassword" />
+                        </div>
+                    }
+
+                    <div class="form-group">
+                        <Name For="() => _credentialsModel.NewPassword" />
+                        <InputText class="form-control" @bind-Value="_credentialsModel.NewPassword"/>
+                        <ValidationMessage For="() => _credentialsModel.NewPassword" />
+                    </div>
+
+                    <div class="form-group">
+                        <Name For="() => _credentialsModel.RepeatPassword" />
+                        <InputText class="form-control" @bind-Value="_credentialsModel.RepeatPassword"/>
+                        <ValidationMessage For="() => _credentialsModel.RepeatPassword" />
+                    </div>
+
+                    <button class="auth-button" type="submit">Save</button>
+                </EditForm>
             }
         </section>
     </section>
 </div>
 
 @code {
-    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
-    private MainLayout _mainLayout { get; set; } = default!;
-
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
-    private User _user { get; set; } = default!;
+    private User? _user { get; set; }
+
+    [Parameter]
+    public int? Tab { get; set; }
 
     private int _tab = 1;
 
     private IBrowserFile? _uploadedFile;
 
     private bool _isLoading;
+    private CredentialsModel _credentialsModel = new();
+    private EditContext? _credentialsContext;
+    private ValidationMessageStore? _credentialsMessageStore;
 
-    private void GoToTab(int tabNumber) {
-        _tab = tabNumber;
+    protected override void OnParametersSet()
+    {
+        _credentialsContext = new EditContext(_credentialsModel);
+
+        if(!Tab.HasValue)
+            return;
+
+        GoToTab(Tab.Value);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if(!firstRender)
+            return;
+
+        ArgumentNullException.ThrowIfNull(_user);
+
+        _credentialsModel = new()
+        {
+            OldEmailAddress = _user.Email!,
+            NewEmailAddress = _user.NeedsNewCredentials ? string.Empty : _user.Email!
+        };
+        _credentialsContext = new EditContext(_credentialsModel);
+        _credentialsContext.OnValidationRequested += HandleValidationRequested;
+        _credentialsMessageStore = new(_credentialsContext);
+        StateHasChanged();
+    }
+
+    private void GoToTab(int tabNumber) 
+    {
+        ArgumentNullException.ThrowIfNull(_user);
+
+        if (tabNumber == _tab)
+            return;
+
+        if (_user.NeedsNewCredentials && tabNumber != 3) 
+        {
+            OnAttemptedLeaveWhenDisallowed();
+            return;
+        }
+
+        _tab = Math.Clamp(tabNumber, 1, 3);
     }
 
     private async void OnInstantDeleteChanged(ChangeEventArgs e)
     {
+        ArgumentNullException.ThrowIfNull(_user);
+
         if (e.Value is not bool val)
             return;
 
@@ -139,6 +242,8 @@
 
     private async void OnAutomaticCardEditChanged(ChangeEventArgs e)
     {
+        ArgumentNullException.ThrowIfNull(_user);
+
         if (e.Value is not bool val)
             return;
 
@@ -156,6 +261,8 @@
 
     private async void OnAutomaticDeadlineReminderChanged(ChangeEventArgs e)
     {
+        ArgumentNullException.ThrowIfNull(_user);
+
         if (e.Value is not bool val)
             return;
 
@@ -174,12 +281,14 @@
     private void ShowUploadError(string message)
     {
         _isLoading = false;
-        _mainLayout.RunNotification(new Notification($"File upload failed: {message}", NotificationType.Fail));
+        MainLayout.RunNotification(new Notification($"File upload failed: {message}", NotificationType.Fail));
         StateHasChanged();
     }
 
     public async Task RestoreToOriginal() 
     {
+        ArgumentNullException.ThrowIfNull(_user);
+
         var avatarPath = await _avatarService.FetchAvatarAsync(_user.DisplayName);
 
         using var db = _dbContextFactory.CreateDbContext();
@@ -194,11 +303,12 @@
 
         StateHasChanged();
 
-        _mainLayout.RunNotification(new Notification("Profile picture was reset to the default one."));
+        MainLayout.RunNotification(new Notification("Profile picture was reset to the default one."));
     }
 
     public async Task OnFileChanged(InputFileChangeEventArgs e)
     {
+        ArgumentNullException.ThrowIfNull(_user);
         _isLoading = true;
 
         if (!e.File.ContentType.Contains("image"))
@@ -250,7 +360,7 @@
 
             await db.SaveChangesAsync();
 
-            _mainLayout.RunNotification(new Notification("Profile picture was changed."));
+            MainLayout.RunNotification(new Notification("Profile picture was changed."));
             _isLoading = false;
         }
         catch (Exception ex)
@@ -260,5 +370,119 @@
         }
 
         StateHasChanged();
+    }
+
+    private void OnBeforeInternalNavigation(LocationChangingContext context)
+    {
+        ArgumentNullException.ThrowIfNull(_user);
+
+        if(!_user.NeedsNewCredentials)
+            return;
+
+        context.PreventNavigation();
+        OnAttemptedLeaveWhenDisallowed();
+    }
+
+    private void OnAttemptedLeaveWhenDisallowed()
+    {
+        MainLayout.RunNotification(new("You can't leave this page until you have changed your credentials.", NotificationType.Fail));
+    }
+
+    private async void HandleValidationRequested(object? sender,
+        ValidationRequestedEventArgs args)
+    {
+        ArgumentNullException.ThrowIfNull(_user);
+
+        _credentialsMessageStore?.Clear();
+
+        if (!_user.NeedsNewCredentials)
+        {
+            if(!(await _userManager.CheckPasswordAsync(_user, _credentialsModel.OldPassword)))
+                _credentialsMessageStore?.Add(() => _credentialsModel.OldPassword, "The old password you provided is incorrect. If you don't remember it, please reach out to an administrator to get it reset.");
+        } else
+        {
+            if(string.IsNullOrWhiteSpace(_credentialsModel.NewPassword))
+                _credentialsMessageStore?.Add(() => _credentialsModel.NewPassword, "A new password must be provided.");
+
+        }
+    }
+
+    private async Task OnCredentialsValidSubmit()
+    {
+        ArgumentNullException.ThrowIfNull(_user);
+
+        var targetUser = await _userManager.FindByIdAsync(_user.Id.ToString());
+
+        ArgumentNullException.ThrowIfNull(targetUser);
+
+        if (!_credentialsModel.NewEmailAddress.Equals(_user.Email))
+        {
+            try
+            {
+                var result = await _userManager.SetUserNameAsync(targetUser, _credentialsModel.NewEmailAddress);
+
+                if (!result.Succeeded)
+                {
+                    foreach (var error in result.Errors)
+                        _credentialsMessageStore?.Add(() => _credentialsModel.NewEmailAddress, error.Description);
+
+                    _credentialsContext?.NotifyValidationStateChanged();
+                    return;
+                }
+
+                result = await _userManager.ChangeEmailAsync(targetUser, _credentialsModel.NewEmailAddress, await _userManager.GenerateChangeEmailTokenAsync(targetUser, _credentialsModel.NewEmailAddress));
+
+                if (!result.Succeeded)
+                {
+                    foreach (var error in result.Errors)
+                        _credentialsMessageStore?.Add(() => _credentialsModel.NewEmailAddress, error.Description);
+
+                    _credentialsContext?.NotifyValidationStateChanged();
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to change e-mail.");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(_credentialsModel.NewPassword))
+        {
+            try
+            {
+                var result = await _userManager.ResetPasswordAsync(targetUser, await _userManager.GeneratePasswordResetTokenAsync(targetUser), _credentialsModel.NewPassword);
+
+                if (!result.Succeeded)
+                {
+                    foreach (var error in result.Errors)
+                        _credentialsMessageStore?.Add(() => _credentialsModel.NewPassword, error.Description);
+
+                    _credentialsContext?.NotifyValidationStateChanged();
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to change password.");
+            }
+
+        }
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        await db.Users.Where(x => x.Id.Equals(targetUser.Id)).ExecuteUpdateAsync(x => x.SetProperty(y => y.NeedsNewCredentials, false));
+        targetUser.NeedsNewCredentials = false;
+        _user = targetUser;
+        MainLayout.RunNotification(new("User updated successfully."));
+    }
+
+
+    public void Dispose()
+    {
+        if (_credentialsContext is not null)
+        {
+            _credentialsContext.OnValidationRequested -= HandleValidationRequested;
+        }
     }
 }

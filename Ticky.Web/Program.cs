@@ -60,29 +60,38 @@ var mailKitOptions = builder.Configuration.GetSection("Email").Get<MailKitOption
 
 if (mailKitOptions is null)
 {
-    mailKitOptions = new MailKitOptions
+    Constants.SMTP_ENABLED = builder.Configuration.GetValue("SMTP_ENABLED", false);
+
+    if (Constants.SMTP_ENABLED)
     {
-        Server = builder.Configuration.GetValue<string>("SMTP_HOST"),
-        Port = builder.Configuration.GetValue<int>("SMTP_PORT"),
-        SenderName = builder.Configuration.GetValue<string>("SMTP_DISPLAY_NAME"),
-        SenderEmail = builder.Configuration.GetValue<string>("SMTP_EMAIL"),
-        Password = builder.Configuration.GetValue<string>("SMTP_PASSWORD"),
-        Account = builder.Configuration.GetValue<string>("SMTP_USERNAME"),
-        Security = builder.Configuration.GetValue<bool>("SMTP_SECURITY", true)
-    };
+        mailKitOptions = new MailKitOptions
+        {
+            Server = builder.Configuration.GetValue<string>("SMTP_HOST"),
+            Port = builder.Configuration.GetValue<int>("SMTP_PORT"),
+            SenderName = builder.Configuration.GetValue<string>("SMTP_DISPLAY_NAME"),
+            SenderEmail = builder.Configuration.GetValue<string>("SMTP_EMAIL"),
+            Password = builder.Configuration.GetValue<string>("SMTP_PASSWORD"),
+            Account = builder.Configuration.GetValue<string>("SMTP_USERNAME"),
+            Security = builder.Configuration.GetValue("SMTP_SECURITY", true)
+        };
+    }
 }
 
 if (
-    mailKitOptions.Server is null
-    || mailKitOptions.SenderEmail is null
-    || mailKitOptions.Password is null
-    || mailKitOptions.Port == 0
-    || mailKitOptions.SenderName is null
-    || mailKitOptions.Account is null
+    Constants.SMTP_ENABLED
+    && (
+        mailKitOptions is null
+        || mailKitOptions.Server is null
+        || mailKitOptions.SenderEmail is null
+        || mailKitOptions.Password is null
+        || mailKitOptions.Port == 0
+        || mailKitOptions.SenderName is null
+        || mailKitOptions.Account is null
+    )
 )
 {
     throw new InvalidOperationException(
-        "SMTP configuration is missing. Please add the necessary environment variables."
+        "Some parts of the SMTP configuration are missing. Please add the necessary environment variables. Check the repository for more information: https://github.com/dkorecko/Ticky."
     );
 }
 
@@ -93,7 +102,9 @@ builder.Services.AddScoped<MailService>();
 builder.Services.AddScoped<AvatarService>();
 builder.Services.AddScoped<CardNumberingService>();
 builder.Services.AddHostedService<CleanupHostedService>();
-builder.Services.AddHostedService<ReminderHostedService>();
+
+if (Constants.SMTP_ENABLED)
+    builder.Services.AddHostedService<ReminderHostedService>();
 
 builder
     .Services.AddDataProtection()
@@ -108,6 +119,14 @@ builder
     );
 
 builder.Services.AddHttpClient();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(
+        Constants.Policies.RequireAdmin,
+        policy => policy.RequireClaim(ClaimTypes.Role, Constants.Roles.Admin).Build()
+    );
+});
 
 var app = builder.Build();
 

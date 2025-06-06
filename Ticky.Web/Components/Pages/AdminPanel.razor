@@ -1,0 +1,100 @@
+﻿@page "/admin"
+@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject ILogger<BoardSettings> _logger
+@inherits NotifiableBase
+
+<AddUserModal @ref="_addUserModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.User), OperationType.Added)" />
+<EditUserModal @ref="_editUserModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.User), OperationType.Edited)" />
+<DeleteUserModal @ref="_deleteUserModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.User), OperationType.Deleted)" />
+
+<div class="h-screen w-full">
+    <section class="flex w-full max-w-4xl flex-grow flex-col gap-5 overflow-y-auto px-12 py-14">
+        <header class="flex flex-row justify-between text-2xl font-bold">
+            App settings
+        </header>
+
+        <section
+            class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-gray-400 px-1 py-1 text-sm">
+            <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(1)">Users</div>
+        </section>
+
+        <section class="flex w-full flex-col divide-y divide-gray-400">
+            @if (_tab == 1)
+            {
+                <div class="flex flex-row items-center justify-between">
+                    <div class="flex flex-col py-5">
+                        <label class="font-bold">Users</label>
+                        <label class="text-sm opacity-70">Create, edit and delete user accounts.</label>
+                    </div>
+                    <button class="px-5" @onclick="() => _addUserModal?.Open()">Create a user</button>
+                </div>
+
+                @if (_users is null)
+                {
+                    <Spinner/>
+                } else {
+                    <div class="flex flex-row flex-wrap gap-5 pt-5">
+                        @foreach (var user in _users)
+                        {
+                            <div class="flex w-64 flex-col items-center gap-3 rounded bg-slate-100 pt-5 shadow-lg">
+                                <img class="avatar !h-32 !w-32" src="@Constants.ACCESS_UPLOADED_IMAGES_PATH/@user.ProfilePictureFileName" />
+                                <div class="flex flex-col items-center px-5 pb-3 select-none">
+                                    <div class="font-semibold">@user.DisplayName</div>
+                                    <div class="text-sm">@user.Email</div>
+                                </div>
+                                <div class="flex w-full flex-col items-center gap-3 bg-stone-200 px-5 py-3">
+                                    <button class="w-full" @onclick="() => _editUserModal?.Open(user.Id)">Edit</button>
+                                    <button class="w-full !bg-red-500 hover:!bg-red-700" @onclick="() => _deleteUserModal?.Open(user.Id, user.DisplayName)">Delete</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+            }
+        </section>
+    </section>
+</div>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public int Id { get; set; } = default!;
+
+    private int _tab = 1;
+
+    private List<User>? _users;
+    private AddUserModal? _addUserModal;
+    private EditUserModal? _editUserModal;
+    private DeleteUserModal? _deleteUserModal;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await HandleUpdate();
+    }
+
+    protected override async Task HandleUpdate()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        _users = await db.Users
+            .AsNoTracking()
+            .ToListAsync();
+
+        if (_users is null)
+            return;
+
+        await base.HandleUpdate();
+    }
+
+    private void GoToTab(int tabNumber) 
+    {
+        _tab = tabNumber;
+    }
+}

@@ -1,0 +1,54 @@
+@using Ticky.Base.Entities
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<Modal @ref="Modal" Title="Delete user" OnSubmitAttempted="OnSubmitAttempted" RedSubmit="true">
+    Are you sure you'd like to delete the user <b>@_userName</b>?<br />
+    <b>This will delete everything they have created and is irreversible.</b>
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    private string? _userName;
+    private int? _userId;
+
+    public async void Open(int userId, string userName)
+    {
+        _userId = userId;
+        _userName = userName;
+
+        if (_user.InstantDelete)
+        {
+            await OnSubmitAttempted();
+            return;
+        }
+
+        StateHasChanged();
+        base.Open();
+    }
+
+    private async Task OnSubmitAttempted()
+    {
+        if(Modal is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var targetUser = await db.Users
+            .FirstOrDefaultAsync(x => x.Id.Equals(_userId));
+
+        if (targetUser is null)
+            return;
+
+        db.Remove(targetUser);
+        await db.SaveChangesAsync();
+
+        await Modal.Close();
+        await OnSubmit.InvokeAsync();
+    }
+}

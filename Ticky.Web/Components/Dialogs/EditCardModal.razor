@@ -96,14 +96,22 @@
                         <tr>
                             <td class="edit-task-label">Reminders</td>
                             <td class="edit-task-item">
-                                @foreach(var reminder in _card.Reminders.OrderBy(x => x.At)) 
+                                @if(Constants.SMTP_ENABLED)
                                 {
-                                    <div class="card-label">
-                                        <label class="whitespace-nowrap">@reminder.At.ToReadableStringWithTime()</label>
-                                        <i class="fa fa-trash-can cursor-pointer text-red-500 transition-all ease-in-out hover:text-red-800" @onclick="() => DeleteReminder(reminder)"></i>
-                                    </div>
+                                    @foreach(var reminder in _card.Reminders.OrderBy(x => x.At)) 
+                                    {
+                                        <div class="card-label">
+                                            <label class="whitespace-nowrap">@reminder.At.ToReadableStringWithTime()</label>
+                                            <i class="fa fa-trash-can cursor-pointer text-red-500 transition-all ease-in-out hover:text-red-800" @onclick="() => DeleteReminder(reminder)"></i>
+                                        </div>
+                                    }
+                                    <i @ref="_addReminderTrigger" class="fa fa-pencil edit-icon" @onclick="() => _addReminderModal?.Open(_addReminderTrigger, _card)"></i>
+                                } else
+                                {
+                                    <Tooltip Text="Reminders cannot be used without SMTP">
+                                        <DisabledBadge/>
+                                    </Tooltip>
                                 }
-                                <i @ref="_addReminderTrigger" class="fa fa-pencil edit-icon" @onclick="() => _addReminderModal?.Open(_addReminderTrigger, _card)"></i>
                             </td>
                         </tr>
                         <tr>

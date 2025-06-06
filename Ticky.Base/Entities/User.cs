@@ -34,5 +34,7 @@ public class User : IdentityUser<int>, IDbEntry
 
     public int? LastVisitedBoardId { get; set; }
 
+    public bool NeedsNewCredentials { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 }

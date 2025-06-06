@@ -2,6 +2,33 @@ namespace Ticky.Base
 {
     public static class Constants
     {
+        public static bool SMTP_ENABLED = true;
+
+        public static class CascadingParameters
+        {
+            public const string CurrentAccount = "CurrentAccount";
+            public const string MainLayout = "MainLayout";
+        }
+
+        public static class Defaults
+        {
+            public const string ADMIN_EMAIL = "admin@ticky.com";
+            public const string ADMIN_PASSWORD = "abc123";
+        }
+
+        public static class Emails
+        {
+            public static readonly string BASE_PATH = Path.Combine(WWW_ROOT, "emails");
+
+            public static class Mappings
+            {
+                public const string VERIFICATION_CODE = "{VERIFICATION_CODE}";
+                public const string CARD_CODE = "{CARD_CODE}";
+                public const string CARD_TEXT = "{CARD_TEXT}";
+                public const string CARD_SCHEDULED_FOR = "{CARD_SCHEDULED_FOR}";
+            }
+        }
+
         public static class Limits
         {
             public const int MINIMUM_SECOND_HOSTED_SERVICE_DELAY = 15;
@@ -18,10 +45,14 @@ namespace Ticky.Base
             public const string LOGOUT_PATH = "/auth/logout";
         }
 
-        public static class CascadingParameters
+        public static class Policies
         {
-            public const string CurrentAccount = "CurrentAccount";
-            public const string MainLayout = "MainLayout";
+            public const string RequireAdmin = "RequireAdmin";
+        }
+
+        public static class Roles
+        {
+            public const string Admin = "Admin";
         }
 
         public static readonly string WWW_ROOT = $"{AppDomain.CurrentDomain.BaseDirectory}/wwwroot";
@@ -40,18 +71,5 @@ namespace Ticky.Base
                 { "is tested by", "tests" },
                 { "relates to", "relates to" }
             };
-
-        public static class Emails
-        {
-            public static readonly string BASE_PATH = Path.Combine(WWW_ROOT, "emails");
-
-            public static class Mappings
-            {
-                public const string VERIFICATION_CODE = "{VERIFICATION_CODE}";
-                public const string CARD_CODE = "{CARD_CODE}";
-                public const string CARD_TEXT = "{CARD_TEXT}";
-                public const string CARD_SCHEDULED_FOR = "{CARD_SCHEDULED_FOR}";
-            }
-        }
     }
 }

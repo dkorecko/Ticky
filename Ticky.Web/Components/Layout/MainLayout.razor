@@ -57,6 +57,13 @@
 
                 if (_user is not null) 
                 {
+                    var credentialsSettings = "/settings/3";
+
+                    if (_user.NeedsNewCredentials && !_navigationManager.Uri.EndsWith(credentialsSettings))
+                    {
+                        _navigationManager.NavigateTo(credentialsSettings);
+                    }
+
                     StateHasChanged();
                     return;
                 }
