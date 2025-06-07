@@ -1,4 +1,8 @@
-# ![Ticky Logo](./Ticky.Web/wwwroot/images/favicon.png) Ticky
+<p align="center">
+    <img src="images/ticky_logo.png" width="300" title="Ticky logo">
+</p>
+
+# Ticky
 
 Ticky is a modern, feature-rich task management system with Kanban-style boards, built using ASP.NET Core Blazor. It is designed to help you manage your projects and tasks efficiently, whether for personal use or team collaboration. Ticky is fully open-source and free to use (and will always be), with a focus on simplicity and usability.
 
@@ -9,6 +13,7 @@ You might be thinking, "Another Kanban app?" and that's fair! As someone who nav
 ## 🌟 Features
 
 Ticky is packed with powerful features designed to make your task management seamless and enjoyable:
+
 - **Projects**: Create and manage projects to group your boards.
 - **Boards**: Create and manage your own Kanban boards. You can even make them favorites to stay atop the list.
 - **Columns**: Each board can have any amount of columns, all of which are collapsible. You can specify a max card limit, automatically mark the cards within the column as finished and automatically order them.
@@ -32,6 +37,7 @@ Ticky is packed with powerful features designed to make your task management sea
 ### 📝 Planned features
 
 I'm constantly working to make Ticky even better! Here's a glimpse of what's in my plans:
+
 - Snooze cards
 - Repeat cards
 - Mobile version
