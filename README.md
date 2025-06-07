@@ -28,10 +28,13 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Activity Tracking**: Monitor all changes and activities on tasks.
 - **Comments**: Leave comments on cards to discuss and provide other useful information.
 - **User Management**: You can add users on the project level or on the board level, choosing between a Member and an Admin role.
+- **Admin Panel**: For creating, editing and deleting users as an admin. Mostly for when not using SMTP.
 - **Email Notifications**: Receive notifications for deadlines, and reminders.
 - **Progress**: Track your progress within a board by seeing how many tasks have already been completed.
 - **App-wide Search**: Find cards from other boards based on their unique identificator (like TEST-1), jump directly to them.
 - **Recent board**: Immediately go back to your most recent board.
+- **Auto-generated avatars**: To make things more colorful.
+- **Able to do fully offline**: Ability to run fully offline, disabling the avatar service, having all the files bundled on the server and not using SMTP.
 - ... and more!
 
 ### 📝 Planned features
@@ -42,7 +45,7 @@ I'm constantly working to make Ticky even better! Here's a glimpse of what's in 
 - Repeat cards
 - Mobile version
 - Real-time updates
-- Manage users without SMTP
+- Swimlanes
 
 ## 📋 Prerequisites
 
@@ -53,7 +56,7 @@ I'm constantly working to make Ticky even better! Here's a glimpse of what's in 
 
 ### Using Docker (Recommended)
 
-1. Create a `docker-compose.yaml` file, if you'd like to skip SMTP, either use `SMTP_ENABLE=false` or comment out the SMTP section of the environment variables:
+1. Create a `docker-compose.yaml` file, if you'd like to skip SMTP, either use `SMTP_ENABLED=false` or comment out the SMTP section of the environment variables:
 
 ```yaml
 services:
@@ -68,7 +71,8 @@ services:
     environment:
       - DB_HOST=ticky-db
       - DB_PASSWORD=your-secure-password
-      - SMTP_ENABLE=true # Change this to false to ignore SMTP configuration and disable SMTP setup. Resetting password via typical password reset won't work (will need to be reset by an admin via the Admin Panel), as well as reminders and notifications. Can be enabled at any time.
+      #- FULLY_OFFLINE=true # Uncomment this if you want to disable the avatar service and run fully offline.
+      - SMTP_ENABLED=true # Change this to false to ignore SMTP configuration and disable SMTP setup. Resetting password via typical password reset won't work (will need to be reset by an admin via the Admin Panel), as well as reminders and notifications. Can be enabled at any time.
       - SMTP_HOST=your-smtp-host
       - SMTP_PORT=your-smtp-port
       - SMTP_DISPLAY_NAME=Ticky
