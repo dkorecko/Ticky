@@ -43,11 +43,68 @@
     --color-button-text: oklch(0.968 0.007 247.896); /* slate 100 */
 
     --color-app-bg: oklch(0.869 0.022 252.894); /* slate 300 */
+
+    --color-app-text: #000; /* black */
+    --color-card-heading: oklch(0.279 0.041 260.031); /* slate 800 */
+
+    --color-auth-gradient-start: oklch(0.777 0.152 181.912); /* teal 400 */
+    --color-auth-gradient-via: oklch(0.714 0.203 305.504); /* purple 400 */
+    --color-auth-gradient-to: oklch(0.595 0.2538 297); /* primary */
+
     --text-2xs: 0.65rem;
 }
 
 @layer base {
     [data-theme='dark'] {
+        --color-primary: oklch(0.595 0.2538 297); /* purple 500 - same as light mode, as it's a vibrant accent */
+        --color-primary-hover: oklch(0.700 0.280 297); /* Lighter hover for contrast on dark background */
+
+        --color-card-bg: oklch(0.18 0.005 247.896); /* Dark slate for card backgrounds */
+        --color-card-diff-bg: oklch(0.25 0.005 48.717); /* Slightly lighter dark stone for differentiated cards */
+
+        --color-add-outline: oklch(0.45 0.027 264.364); /* Darker gray for outlines */
+        --color-add-outline-hover: oklch(0.65 0.034 264.665); /* Lighter gray on hover */
+
+        --color-cancel-button: oklch(0.45 0.027 264.364); /* Darker gray for cancel button */
+        --color-cancel-button-hover: oklch(0.60 0.034 259.733); /* Lighter gray on hover */
+        --color-red-button: oklch(0.637 0.237 25.331); /* Red 500 - same as light mode for clear action */
+        --color-red-button-hover: oklch(0.700 0.250 25.331); /* Lighter red on hover */
+
+        --color-backdrop: oklch(0.1 0.01 256.802); /* Very dark gray for backdrop, near black */
+        --color-modal: oklch(0.20 0.01 247.896); /* Dark background for modals */
+
+        --color-dropdown-option: oklch(0.35 0.01 258.338); /* Darker gray for dropdown options */
+        --color-icon: oklch(0.65 0.027 264.364); /* Lighter gray for icons */
+        --color-icon-hover: oklch(0.85 0.034 264.665); /* Even lighter gray on hover */
+        --color-disabled-icon: oklch(0.40 0.01 258.338); /* Darker gray for disabled icons */
+
+        --color-label-text: oklch(0.90 0.01 250); /* Off-white for labels */
+
+        --color-card-data-points: oklch(0.70 0.027 264.364); /* Lighter gray for data points */
+
+        --color-search-bar: oklch(0.22 0.01 255.508); /* Dark slate for search bar */
+
+        --color-typing-outline: oklch(0.65 0.105 251.813); /* Brighter blue for typing outline */
+
+        --color-card-heading: oklch(0.50 0.01 56.259); /* Darker stone for card headings */
+
+        --color-auth-bottom-text: oklch(0.55 0.022 261.325); /* Mid-gray for authentication bottom text */
+        --color-auth-bg: oklch(0.15 0.01 247.896); /* Very dark background for auth pages */
+
+        --color-tab-outline: oklch(0.55 0.022 261.325); /* Mid-gray for tab outlines */
+
+        --color-nav-link: oklch(0.75 0.046 257.417); /* Lighter slate for navigation links */
+        --color-avatar-ring: oklch(0.90 0.01 250); /* Off-white for avatar ring */
+        --color-button-text: oklch(0.1 0.007 247.896); /* Dark text on primary buttons for contrast */
+
+        --color-app-bg: oklch(0.12 0.01 252.894); /* Very dark main app background */
+
+        --color-app-text: oklch(0.95 0.01 250); /* Near white for main app text */
+        --color-card-heading: #fff; /* white */
+
+        --color-auth-gradient-start: oklch(0.277 0.046 192.524); /* teal 950 */
+        --color-auth-gradient-via: oklch(0.291 0.149 302.717); /* purple 950 */
+        --color-auth-gradient-to: oklch(0.284 0.109 3.907); /* pink 950 */
     }
 
     *,
@@ -170,7 +227,7 @@ button, .label-as-button > i {
   }
 
 .auth-bg {
-    @apply bg-gradient-to-tr flex h-full w-full items-center justify-center from-teal-400 via-purple-400 to-primary;
+    @apply bg-gradient-to-tr from-auth-gradient-start via-auth-gradient-via to-auth-gradient-to flex h-full w-full items-center justify-center;
 }
 
 .auth-inp-label {

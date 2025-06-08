@@ -16,19 +16,19 @@
     --color-green-400: oklch(79.2% 0.209 151.711);
     --color-green-500: oklch(72.3% 0.219 149.579);
     --color-green-700: oklch(52.7% 0.154 150.069);
-    --color-teal-400: oklch(77.7% 0.152 181.912);
+    --color-teal-950: oklch(27.7% 0.046 192.524);
     --color-sky-500: oklch(68.5% 0.169 237.323);
     --color-blue-400: oklch(70.7% 0.165 254.624);
     --color-blue-600: oklch(54.6% 0.245 262.881);
     --color-blue-700: oklch(48.8% 0.243 264.376);
     --color-purple-300: oklch(82.7% 0.119 306.383);
-    --color-purple-400: oklch(71.4% 0.203 305.504);
+    --color-purple-950: oklch(29.1% 0.149 302.717);
     --color-pink-300: oklch(82.3% 0.12 346.018);
     --color-pink-500: oklch(65.6% 0.241 354.308);
+    --color-pink-950: oklch(28.4% 0.109 3.907);
     --color-slate-200: oklch(92.9% 0.013 255.508);
     --color-slate-400: oklch(70.4% 0.04 256.788);
     --color-slate-500: oklch(55.4% 0.046 257.417);
-    --color-slate-800: oklch(27.9% 0.041 260.031);
     --color-gray-100: oklch(96.7% 0.003 264.542);
     --color-gray-200: oklch(92.8% 0.006 264.531);
     --color-gray-300: oklch(87.2% 0.01 258.338);
@@ -90,7 +90,7 @@
     --color-card-data-points: oklch(0.551 0.027 264.364);
     --color-search-bar: oklch(0.929 0.013 255.508);
     --color-typing-outline: oklch(0.809 0.105 251.813);
-    --color-card-heading: oklch(0.709 0.01 56.259);
+    --color-card-heading: oklch(0.279 0.041 260.031);
     --color-auth-bottom-text: oklch(0.707 0.022 261.325);
     --color-auth-bg: #fff;
     --color-tab-outline: oklch(0.707 0.022 261.325);
@@ -98,6 +98,10 @@
     --color-avatar-ring: #fff;
     --color-button-text: oklch(0.968 0.007 247.896);
     --color-app-bg: oklch(0.869 0.022 252.894);
+    --color-app-text: #000;
+    --color-auth-gradient-start: oklch(0.777 0.152 181.912);
+    --color-auth-gradient-via: oklch(0.714 0.203 305.504);
+    --color-auth-gradient-to: oklch(0.595 0.2538 297);
     --text-2xs: 0.65rem;
   }
 }
@@ -947,6 +951,9 @@
   .text-add-outline {
     color: var(--color-add-outline);
   }
+  .text-app-text {
+    color: var(--color-app-text);
+  }
   .text-auth-bottom-text {
     color: var(--color-auth-bottom-text);
   }
@@ -985,9 +992,6 @@
   }
   .text-red-button {
     color: var(--color-red-button);
-  }
-  .text-slate-800 {
-    color: var(--color-slate-800);
   }
   .text-stone-500 {
     color: var(--color-stone-500);
@@ -1202,6 +1206,41 @@
   }
 }
 @layer base {
+  [data-theme='dark'] {
+    --color-primary: oklch(0.595 0.2538 297);
+    --color-primary-hover: oklch(0.700 0.280 297);
+    --color-card-bg: oklch(0.18 0.005 247.896);
+    --color-card-diff-bg: oklch(0.25 0.005 48.717);
+    --color-add-outline: oklch(0.45 0.027 264.364);
+    --color-add-outline-hover: oklch(0.65 0.034 264.665);
+    --color-cancel-button: oklch(0.45 0.027 264.364);
+    --color-cancel-button-hover: oklch(0.60 0.034 259.733);
+    --color-red-button: oklch(0.637 0.237 25.331);
+    --color-red-button-hover: oklch(0.700 0.250 25.331);
+    --color-backdrop: oklch(0.1 0.01 256.802);
+    --color-modal: oklch(0.20 0.01 247.896);
+    --color-dropdown-option: oklch(0.35 0.01 258.338);
+    --color-icon: oklch(0.65 0.027 264.364);
+    --color-icon-hover: oklch(0.85 0.034 264.665);
+    --color-disabled-icon: oklch(0.40 0.01 258.338);
+    --color-label-text: oklch(0.90 0.01 250);
+    --color-card-data-points: oklch(0.70 0.027 264.364);
+    --color-search-bar: oklch(0.22 0.01 255.508);
+    --color-typing-outline: oklch(0.65 0.105 251.813);
+    --color-card-heading: oklch(0.50 0.01 56.259);
+    --color-auth-bottom-text: oklch(0.55 0.022 261.325);
+    --color-auth-bg: oklch(0.15 0.01 247.896);
+    --color-tab-outline: oklch(0.55 0.022 261.325);
+    --color-nav-link: oklch(0.75 0.046 257.417);
+    --color-avatar-ring: oklch(0.90 0.01 250);
+    --color-button-text: oklch(0.1 0.007 247.896);
+    --color-app-bg: oklch(0.12 0.01 252.894);
+    --color-app-text: oklch(0.95 0.01 250);
+    --color-card-heading: #fff;
+    --color-auth-gradient-start: oklch(0.277 0.046 192.524);
+    --color-auth-gradient-via: oklch(0.291 0.149 302.717);
+    --color-auth-gradient-to: oklch(0.284 0.109 3.907);
+  }
   *, ::after, ::before, ::backdrop, ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
   }
@@ -1394,12 +1433,12 @@ button, .label-as-button > i {
   justify-content: center;
   --tw-gradient-position: to top right in oklab;
   background-image: linear-gradient(var(--tw-gradient-stops));
-  --tw-gradient-from: var(--color-teal-400);
+  --tw-gradient-from: var(--color-auth-gradient-start);
   --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
-  --tw-gradient-via: var(--color-purple-400);
+  --tw-gradient-via: var(--color-auth-gradient-via);
   --tw-gradient-via-stops: var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-via) var(--tw-gradient-via-position), var(--tw-gradient-to) var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-via-stops);
-  --tw-gradient-to: var(--color-primary);
+  --tw-gradient-to: var(--color-auth-gradient-to);
   --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
 }
 .auth-inp-label {
