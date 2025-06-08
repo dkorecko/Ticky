@@ -1,4 +1,4 @@
-﻿@using Ticky.Base.Entities
+@using Ticky.Base.Entities
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
 <ActionModal @ref=_modalRef Title="Priority">
@@ -10,28 +10,28 @@
                 <PriorityLabel Priority="CardPriority.Normal"/>
 
                 @if(_card.Priority.Equals(CardPriority.Normal)) {
-                    <i class="fa fa-check text-gray-500"></i>
+                    <i class="fa fa-check text-icon"></i>
                 }
             </div>
             <div class="priority-selector-item" @onclick="() => OnChangeTo(CardPriority.Medium)">
                 <PriorityLabel Priority="CardPriority.Medium"/>
 
                 @if(_card.Priority.Equals(CardPriority.Medium)) {
-                    <i class="fa fa-check text-gray-500"></i>
+                    <i class="fa fa-check text-icon"></i>
                 }
             </div>
             <div class="priority-selector-item" @onclick="() => OnChangeTo(CardPriority.High)">
                 <PriorityLabel Priority="CardPriority.High"/>
 
                 @if(_card.Priority.Equals(CardPriority.High)) {
-                    <i class="fa fa-check text-gray-500"></i>
+                    <i class="fa fa-check text-icon"></i>
                 }
             </div>
             <div class="priority-selector-item" @onclick="() => OnChangeTo(CardPriority.Critical)">
                 <PriorityLabel Priority="CardPriority.Critical"/>
 
                 @if(_card.Priority.Equals(CardPriority.Critical)) {
-                    <i class="fa fa-check text-gray-500"></i>
+                    <i class="fa fa-check text-icon"></i>
                 }
             </div>
         </div>

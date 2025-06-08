@@ -3,11 +3,11 @@
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
 
-<nav class="flex w-full flex-row justify-center self-center bg-slate-100 px-10 py-2">
-    <input @ref="_triggerElement" class="mr-auto w-80 rounded-2xl bg-slate-200 p-2 text-center text-xs" type="search"
+<nav class="flex w-full flex-row justify-center self-center bg-card-bg px-10 py-2">
+    <input @ref="_triggerElement" class="mr-auto w-80 rounded-2xl bg-search-bar p-2 text-center text-xs" type="search"
            placeholder="Search for tasks ..." @oninput="UpdateSearchTerm"
            @onclick='OpenSearchResults' @onclick:stopPropagation=true/>
-    <div @ref="_dropdownElement" class="dropdown absolute top-0 left-0 z-10 hidden min-w-80 bg-white shadow">
+    <div @ref="_dropdownElement" class="dropdown absolute top-0 left-0 z-10 hidden min-w-80 bg-modal shadow">
         @if(_isLoading)
         {
             <Spinner Class="py-2"/>
@@ -18,7 +18,7 @@
             </div>
         } else {
             foreach(var result in _resultCards) {
-                <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-gray-300" @onclick='() => GoToTask(result.Column.BoardId, result.Id)'>
+                <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-dropdown-option" @onclick='() => GoToTask(result.Column.BoardId, result.Id)'>
                     <div class="flex flex-row justify-between gap-3">
                         <label class="cursor-pointer whitespace-nowrap">@result.Column.Board.Code-@result.Number</label>
                         <label class="cursor-pointer truncate whitespace-nowrap">@result.Text</label>

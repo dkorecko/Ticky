@@ -2,11 +2,54 @@
 
 @theme {
     --color-primary: oklch(0.595 0.2538 297);
+    --color-primary-hover: oklch(0.381 0.176 304.987); /* purple 900 */
 
+    --color-card-bg: oklch(0.968 0.007 247.896); /* slate 100 */
+    --color-card-diff-bg: oklch(0.923 0.003 48.717); /* stone 200 */
+
+    --color-add-outline: oklch(0.551 0.027 264.364); /* gray 500 */
+    --color-add-outline-hover: oklch(0.21 0.034 264.665); /* gray 900 */
+
+    --color-cancel-button: oklch(0.551 0.027 264.364); /* gray 500 */
+    --color-cancel-button-hover: oklch(0.373 0.034 259.733); /* gray 700 */
+    --color-red-button: oklch(0.637 0.237 25.331); /* red 500 */
+    --color-red-button-hover: oklch(0.505 0.213 27.518); /* red 700 */
+
+    --color-backdrop: oklch(0.446 0.03 256.802); /* gray 600 */
+    --color-modal: #fff; /* white */
+
+    --color-dropdown-option: oklch(0.872 0.01 258.338); /* gray 300 */
+    --color-icon: oklch(0.551 0.027 264.364); /* gray 500 */
+    --color-icon-hover: oklch(0.21 0.034 264.665); /* gray 900 */
+    --color-disabled-icon: oklch(0.872 0.01 258.338); /* gray 300 */
+
+    --color-label-text: #fff; /* white */
+
+    --color-card-data-points: oklch(0.551 0.027 264.364); /* gray 500 */
+
+    --color-search-bar: oklch(0.929 0.013 255.508); /* slate 200 */
+
+    --color-typing-outline: oklch(0.809 0.105 251.813); /* blue 300 */
+
+    --color-card-heading: oklch(0.709 0.01 56.259); /* stone 400 */
+
+    --color-auth-bottom-text: oklch(0.707 0.022 261.325); /* gray 400 */
+    --color-auth-bg: #fff; /* white */
+
+    --color-tab-outline: oklch(0.707 0.022 261.325); /* gray 400 */
+
+    --color-nav-link: oklch(0.554 0.046 257.417); /* slate 500 */
+    --color-avatar-ring: #fff; /* white */
+    --color-button-text: oklch(0.968 0.007 247.896); /* slate 100 */
+
+    --color-app-bg: oklch(0.869 0.022 252.894); /* slate 300 */
     --text-2xs: 0.65rem;
 }
 
 @layer base {
+    [data-theme='dark'] {
+    }
+
     *,
     ::after,
     ::before,
@@ -33,7 +76,7 @@ input {
     @apply flex-row;
     @apply gap-10;
     @apply self-center;
-    @apply text-slate-500;
+    @apply text-nav-link;
     @apply text-sm tracking-wide;
 }
 
@@ -62,7 +105,7 @@ input {
 
 .stack-avatars {
     margin-left: -1rem;
-    @apply outline-1 outline-white;
+    @apply outline-1 outline-avatar-ring;
 }
 
 .avatar-border {
@@ -74,11 +117,11 @@ input {
 }
 
 .task-card {
-    @apply mb-2 flex w-full cursor-pointer flex-col gap-3 rounded-lg bg-slate-100 p-3 shadow-sm select-none data-[blocked=True]:bg-orange-200;
+    @apply mb-2 flex w-full cursor-pointer flex-col gap-3 rounded-lg bg-card-bg p-3 shadow-sm select-none data-[blocked=True]:bg-orange-200;
 }
 
 .to-task-card {
-    @apply select-none data-[active=True]:bg-slate-100 data-[active=True]:flex data-[active=True]:flex-col data-[active=True]:p-3 data-[active=True]:gap-3 data-[active=True]:shadow-sm
+    @apply select-none data-[active=True]:flex data-[active=True]:flex-col data-[active=True]:gap-3 data-[active=True]:bg-card-bg data-[active=True]:p-3 data-[active=True]:shadow-sm
         data-[active=True]:outline-0;
 }
 
@@ -95,7 +138,7 @@ input {
 }
 
 button, button[type='submit'], .label-as-button {
-    @apply rounded-lg bg-primary py-2 text-xs text-slate-100 transition-all ease-in-out hover:bg-purple-900;
+    @apply rounded-lg bg-primary py-2 text-xs text-button-text transition-all ease-in-out hover:bg-primary-hover;
 }
 
 button, .label-as-button > label {
@@ -139,7 +182,7 @@ button, .label-as-button > i {
 }
 
 .auth-input {
-    @apply h-8 w-full border-b-2 border-gray-600 bg-white px-2 text-sm font-normal
+    @apply h-8 w-full border-b-2 border-gray-600 bg-auth-bg px-2 text-sm font-normal
         transition-all ease-in-out focus:border-primary;
 }
 
@@ -148,7 +191,7 @@ button, .label-as-button > i {
 }
 
 .auth-card {
-    @apply flex w-[30rem] flex-col gap-12 rounded-lg bg-white px-12 py-24 shadow-2xl;
+    @apply flex w-[30rem] flex-col gap-12 rounded-lg bg-auth-bg px-12 py-24 shadow-2xl;
 }
 
 .auth-form {
@@ -156,11 +199,7 @@ button, .label-as-button > i {
 }
 
 .auth-link {
-    @apply text-xs font-semibold text-primary transition-all hover:text-purple-900;
-}
-
-.auth-secondary-button {
-    @apply bg-white px-5 py-1 text-xs font-normal text-gray-500 outline-1 outline-gray-300 hover:bg-gray-300 hover:text-white;
+    @apply text-xs font-semibold text-primary transition-all hover:text-primary-hover;
 }
 
 input[type="checkbox"].switch{
@@ -202,7 +241,7 @@ input[type="checkbox"].switch{
   }
 
 .settings-menu-item {
-    @apply cursor-pointer rounded-lg px-2 py-1 transition-all ease-in-out hover:bg-slate-400 hover:text-black data-[active=true]:bg-purple-900/20 data-[active=true]:text-purple-900;
+    @apply cursor-pointer rounded-lg px-2 py-1 transition-all ease-in-out hover:bg-slate-400 hover:text-black data-[active=true]:bg-primary-hover/20 data-[active=true]:text-primary-hover;
 }
 
 .settings-item {
@@ -210,7 +249,7 @@ input[type="checkbox"].switch{
 }
 
 @utility add {
-    @apply flex cursor-pointer flex-col items-center justify-center gap-5 text-gray-500 outline-1 outline-gray-500 transition-all ease-in-out outline-dashed hover:outline-gray-900 hover:text-gray-900;
+    @apply flex cursor-pointer flex-col items-center justify-center gap-5 text-add-outline outline-1 outline-add-outline transition-all ease-in-out outline-dashed hover:text-add-outline-hover hover:outline-add-outline-hover;
 }
 
 .board-card-create {
@@ -222,7 +261,7 @@ input[type="checkbox"].switch{
     }
 
 @utility icon-button {
-    @apply bg-transparent cursor-pointer rounded-lg p-1 text-gray-500 transition-all ease-in-out hover:text-gray-900 hover:bg-slate-400;
+    @apply bg-transparent cursor-pointer rounded-lg p-1 text-add-outline transition-all ease-in-out hover:text-add-outline-hover hover:bg-slate-400;
 }
 
 .card-button {
@@ -230,18 +269,18 @@ input[type="checkbox"].switch{
 }
 
 .board-card {
-    @apply flex h-min w-full cursor-pointer flex-col rounded-lg bg-slate-100 px-5 py-5 shadow-sm transition-all ease-in-out select-none hover:shadow-xl hover:shadow-gray-500 sm:w-72 /*hover:scale-105*/;
+    @apply flex h-min w-full cursor-pointer flex-col rounded-lg bg-card-bg px-5 py-5 shadow-sm transition-all ease-in-out select-none hover:shadow-xl hover:shadow-gray-500 sm:w-72 /*hover:scale-105*/;
 }
-    .board-card-data-point {
-        @apply flex cursor-pointer flex-row items-center justify-start gap-3 pl-1 text-xs text-gray-500;
-    }
+.board-card-data-point {
+    @apply flex cursor-pointer flex-row items-center justify-start gap-3 pl-1 text-xs text-add-outline;
+}
 
     .board-card-data-point > i {
         @apply w-4 text-base;
     }
 
 .field-validation-error, .validation-message {
-    @apply text-xs text-red-600;
+    @apply text-xs text-red-button;
 }
 
 .form {
@@ -293,13 +332,14 @@ input[type="checkbox"].switch{
 
 .edit-icon {
     @apply cursor-pointer p-2 text-xs
-    text-gray-500 outline-gray-500 transition-all ease-in-out
-    hover:outline-gray-900 hover:text-gray-900;
+    text-add-outline outline-add-outline transition-all ease-in-out
+    hover:text-add-outline-hover hover:outline-add-outline-hover;
 }
 
 .icon {
     @apply p-2 text-xs
-    text-gray-500 outline-gray-500 transition-all ease-in-out}
+    text-add-outline outline-add-outline transition-all ease-in-out;
+}
 
 .priority-selector-item {
     @apply flex cursor-pointer flex-row items-center justify-between px-2 py-2 transition-all ease-in-out hover:bg-slate-200;

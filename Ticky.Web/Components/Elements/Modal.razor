@@ -1,19 +1,19 @@
 @if(_triggeredShow) 
 {
-	<div data-active="@_shown.ToString()" class="fixed top-0 left-0 z-10 flex h-screen w-screen items-center justify-center bg-gray-600/0 transition-all ease-in-out data-[active=True]:bg-gray-600/40" @onmousedown="Cancel" @onkeydown="this.OnKey">
-		<div data-active="@_shown.ToString()" class="m-5 flex flex-col divide-y overflow-hidden rounded-lg bg-white/0 transition-all ease-in-out data-[active=False]:translate-y-[500%] data-[active=True]:bg-white/100" @onmousedown:stopPropagation=true>
+	<div data-active="@_shown.ToString()" class="fixed top-0 left-0 z-10 flex h-screen w-screen items-center justify-center bg-backdrop/0 transition-all ease-in-out data-[active=True]:bg-backdrop/40" @onmousedown="Cancel" @onkeydown="this.OnKey">
+		<div data-active="@_shown.ToString()" class="m-5 flex flex-col divide-y overflow-hidden rounded-lg bg-modal/0 transition-all ease-in-out data-[active=False]:translate-y-[500%] data-[active=True]:bg-modal/100" @onmousedown:stopPropagation=true>
 			@if(!DisableButtons || EnableTitle) 
 			{
 				<section class="flex flex-row items-center justify-between gap-10 px-7 py-3">
-					<h5 class="">@Title</h5>
-					<i class="fa fa-xmark cursor-pointer text-gray-400 hover:text-gray-800" @onclick="Cancel"></i>
+					<h5>@Title</h5>
+					<i class="fa fa-xmark cursor-pointer text-icon hover:text-icon-hover" @onclick="Cancel"></i>
 				</section>
 				<section @ref=_childContent class="max-h-[80vh] overflow-y-auto px-7 py-5">@ChildContent</section>
 				@if (!DisableButtons)
 				{
 					<section class="flex flex-row justify-end gap-5 px-7 py-5">
-						<button class="bg-gray-500 px-5 py-2 hover:bg-gray-700" @onclick="Cancel">Cancel</button>
-						<button class='px-5 py-2 @(RedSubmit ? "bg-red-500 hover:bg-red-700" : "")' @onclick="Submit">Done</button>
+						<button class="bg-cancel-button px-5 py-2 hover:bg-cancel-button-hover" @onclick="Cancel">Cancel</button>
+						<button class='px-5 py-2 @(RedSubmit ? "bg-red-button hover:bg-red-button-hover" : "")' @onclick="Submit">Done</button>
 					</section>
 				}
 			} else {

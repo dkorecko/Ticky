@@ -12,7 +12,7 @@
 <EditCardModal @ref="_editCardModal" OnSubmit="OnTaskEdited" />
 <EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
 
-<div class="flex h-screen w-full flex-row divide-x divide-gray-400">
+<div class="flex h-screen w-full flex-row divide-x divide-tab-outline">
     <section class="flex flex-grow flex-col gap-10 overflow-auto px-12 py-14">
         <!-- Board section -->
         @if (_board is not null)
@@ -54,7 +54,7 @@
                                     <label>
                                         @column.Name
                                     </label>
-                                    <span class='text-2xs rounded-full p-0.5 shadow-sm @(column.MaxCards != 0 && column.Cards.Count >= column.MaxCards ? "bg-red-300" : "bg-slate-100")'>
+                                    <span class='text-2xs rounded-full p-0.5 shadow-sm @(column.MaxCards != 0 && column.Cards.Count >= column.MaxCards ? "bg-red-300" : "bg-card-bg")'>
                                         @if(column.MaxCards == 0)
                                         {
                                             <span>@column.Cards.Count</span>
@@ -71,7 +71,7 @@
                                 @if (IsAdmin())
                                 {
                                     <div class="flex flex-row items-center gap-2">
-                                        <i class="fa fa-up-down-left-right drag-toggle icon-button cursor-move text-gray-500"></i>
+                                        <i class="fa fa-up-down-left-right drag-toggle icon-button cursor-move text-icon"></i>
 
                                         <Dropdown Actions='new() {
                                             { "Edit column", () => _editColumnModal?.Open(column.Id) },
@@ -106,10 +106,10 @@
                                         } else {
                                             <div class="flex w-full flex-row items-center justify-between text-sm font-semibold">
                                                 <label>Create new card</label>
-                                                <i class="fa fa-xmark text-gray-500" @onclick="() => _adding = -1" @onclick:stopPropagation=true></i>
+                                                <i class="fa fa-xmark text-icon" @onclick="() => _adding = -1" @onclick:stopPropagation=true></i>
                                             </div>
 
-                                            <textarea class="h-16 w-full rounded-lg bg-slate-100 p-2 text-start text-xs outline-1 outline-gray-300" 
+                                            <textarea class="h-16 w-full rounded-lg bg-card-bg p-2 text-start text-xs outline-1 outline-typing-outline" 
                                                            value="@_createTaskModel.Text"
                                                            @ref=_textElement
                                                            @oninput='OnTaskTextChanged'
@@ -122,7 +122,7 @@
                                                            autofocus
                                             placeholder="What is the description?" wrap="soft"/>
 
-                                            <hr class="border-t-gray-300">
+                                            <hr class="border-t-tab-outline">
                                             <button class="w-full" @onclick="() => AttemptCreateTaskSubmit(column.Id)">Create</button>
                                         }
                                     </div>

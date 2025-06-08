@@ -8,7 +8,7 @@
         <div class="flex w-full flex-col items-center">
             @foreach(var member in _members) 
             {
-                <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-gray-300" @onclick="() => SwitchMember(member)">
+                <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="() => SwitchMember(member)">
                     <div class="avatar mr-auto" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"></div>
                     <label class="cursor-pointer">@member.DisplayName</label>
                     <i class='fa fa-check icon ml-auto @(!_card.Assignees.Any(x => x.Id.Equals(member.Id)) ? "opacity-0" : string.Empty)'></i>

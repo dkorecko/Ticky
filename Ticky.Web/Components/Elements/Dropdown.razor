@@ -4,11 +4,11 @@
 	@ChildContent
 </div>
 
-<div @ref="_dropdownElement" class="dropdown absolute top-0 left-0 z-10 hidden rounded-xs bg-white shadow">
+<div @ref="_dropdownElement" class="dropdown absolute top-0 left-0 z-10 hidden rounded-xs bg-modal shadow">
 	<div class="flex flex-col text-center text-sm">
 		@foreach(var action in Actions) 
 		{
-			<div class='cursor-pointer @(action.Key.Contains("Delete") ? "text-red-600" : string.Empty) px-8 py-1 transition-all hover:bg-gray-300' 
+			<div class='cursor-pointer @(action.Key.Contains("Delete") ? "text-red-button" : string.Empty) px-8 py-1 transition-all hover:bg-dropdown-option' 
 				@onclick="() => RunAction(action.Value)" @onclick:stopPropagation="true">@action.Key</div>
 		}
 	</div>

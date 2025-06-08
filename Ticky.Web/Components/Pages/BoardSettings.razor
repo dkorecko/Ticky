@@ -15,7 +15,7 @@
         </header>
 
         <section
-            class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-gray-400 px-1 py-1 text-sm">
+            class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-tab-outline px-1 py-1 text-sm">
             <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(1)">Labels</div>
         </section>
 
@@ -23,7 +23,7 @@
         {
             <Spinner/>
         } else {
-            <section class="flex w-full flex-col divide-y divide-gray-400">
+            <section class="flex w-full flex-col divide-y divide-tab-outline">
                 @if (_tab == 1)
                 {
                     <div class="flex flex-col py-5">
@@ -38,7 +38,7 @@
                                 <Label LabelEntity="label" />
                                 <label class="ml-2 text-xs">Used on @label.OnCards.Count cards</label>
                                 <i class="fa fa-pencil edit-icon ml-2" @onclick="() => _editLabelModal?.Open(_board, label)"></i>
-                                <i class="fa fa-trash-can edit-icon hover:text-red-800" @onclick="() => _deleteLabelModal?.Open(label.Id, label.Text, label.OnCards.Count)"></i>
+                                <i class="fa fa-trash-can edit-icon hover:text-red-button-hover" @onclick="() => _deleteLabelModal?.Open(label.Id, label.Text, label.OnCards.Count)"></i>
                             </div>
                         }
                     </div>
