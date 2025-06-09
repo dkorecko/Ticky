@@ -743,9 +743,6 @@
   .bg-gray-100 {
     background-color: var(--color-gray-100);
   }
-  .bg-gray-200 {
-    background-color: var(--color-gray-200);
-  }
   .bg-gray-300 {
     background-color: var(--color-gray-300);
   }
@@ -956,9 +953,6 @@
   .\!text-disabled-icon {
     color: var(--color-disabled-icon) !important;
   }
-  .\!text-gray-300 {
-    color: var(--color-gray-300) !important;
-  }
   .\!text-red-button {
     color: var(--color-red-button) !important;
   }
@@ -1128,13 +1122,6 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-full-dropdown-hover);
-      }
-    }
-  }
-  .hover\:bg-gray-300 {
-    &:hover {
-      @media (hover: hover) {
-        background-color: var(--color-gray-300);
       }
     }
   }

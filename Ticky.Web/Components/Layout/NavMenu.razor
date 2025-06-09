@@ -1,12 +1,15 @@
-﻿@implements IDisposable
+@implements IDisposable
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
 
 <nav class="flex w-full flex-row justify-center self-center bg-card-bg px-10 py-2">
-    <input @ref="_triggerElement" class="mr-auto w-80 rounded-2xl bg-search-bar p-2 text-center text-xs" type="search"
-           placeholder="Search for tasks ..." @oninput="UpdateSearchTerm"
-           @onclick='OpenSearchResults' @onclick:stopPropagation=true/>
+    <div class="mr-auto flex flex-row items-center gap-5">
+        <img height="32" width="32" src='@Assets["/images/ticky.png"]' alt="Ticky app logo"/>
+        <input @ref="_triggerElement" class="w-80 rounded-2xl bg-search-bar p-2 text-center text-xs" type="search"
+               placeholder="Search for tasks ..." @oninput="UpdateSearchTerm"
+               @onclick='OpenSearchResults' @onclick:stopPropagation=true/>
+    </div>
     <div @ref="_dropdownElement" class="dropdown absolute top-0 left-0 z-10 hidden min-w-80 bg-modal shadow">
         @if(_isLoading)
         {
