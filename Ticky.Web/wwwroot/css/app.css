@@ -10,7 +10,6 @@
     --color-red-300: oklch(80.8% 0.114 19.571);
     --color-red-500: oklch(63.7% 0.237 25.331);
     --color-red-800: oklch(44.4% 0.177 26.899);
-    --color-orange-200: oklch(90.1% 0.076 70.697);
     --color-orange-500: oklch(70.5% 0.213 47.604);
     --color-yellow-500: oklch(79.5% 0.184 86.047);
     --color-green-400: oklch(79.2% 0.209 151.711);
@@ -25,7 +24,6 @@
     --color-slate-200: oklch(92.9% 0.013 255.508);
     --color-slate-400: oklch(70.4% 0.04 256.788);
     --color-gray-100: oklch(96.7% 0.003 264.542);
-    --color-gray-200: oklch(92.8% 0.006 264.531);
     --color-gray-300: oklch(87.2% 0.01 258.338);
     --color-gray-400: oklch(70.7% 0.022 261.325);
     --color-gray-500: oklch(55.1% 0.027 264.364);
@@ -69,6 +67,8 @@
     --color-primary-hover: oklch(0.381 0.176 304.987);
     --color-card-bg: oklch(0.968 0.007 247.896);
     --color-card-diff-bg: oklch(0.923 0.003 48.717);
+    --color-card-blocked-bg: oklch(0.901 0.076 70.697);
+    --color-card-blocked-text: oklch(0.444 0.177 26.899);
     --color-add-outline: oklch(0.551 0.027 264.364);
     --color-add-outline-hover: oklch(0.21 0.034 264.665);
     --color-cancel-button: oklch(0.551 0.027 264.364);
@@ -965,6 +965,9 @@
   .text-auth-bottom-text {
     color: var(--color-auth-bottom-text);
   }
+  .text-card-blocked-text {
+    color: var(--color-card-blocked-text);
+  }
   .text-card-data-points {
     color: var(--color-card-data-points);
   }
@@ -1236,6 +1239,8 @@
     --color-primary-hover: oklch(0.700 0.280 297);
     --color-card-bg: oklch(0.25 0.005 247.896);
     --color-card-diff-bg: oklch(0.32 0.005 48.717);
+    --color-card-blocked-bg: oklch(0.258 0.092 26.042);
+    --color-card-blocked-text: oklch(0.808 0.114 19.571);
     --color-add-outline: oklch(0.8 0.027 264.364);
     --color-add-outline-hover: oklch(0.95 0.034 264.665);
     --color-cancel-button: oklch(0.45 0.027 264.364);
@@ -1392,7 +1397,7 @@ input {
   -webkit-user-select: none;
   user-select: none;
   &[data-blocked="True"] {
-    background-color: var(--color-orange-200);
+    background-color: var(--color-card-blocked-bg);
   }
 }
 .to-task-card {

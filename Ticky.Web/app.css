@@ -6,7 +6,8 @@
 
     --color-card-bg: oklch(0.968 0.007 247.896); /* slate 100 */
     --color-card-diff-bg: oklch(0.923 0.003 48.717); /* stone 200 */
-
+    --color-card-blocked-bg: oklch(0.901 0.076 70.697); /* orange 200 */
+    --color-card-blocked-text: oklch(0.444 0.177 26.899); /* red 800 */
     --color-add-outline: oklch(0.551 0.027 264.364); /* gray 500 */
     --color-add-outline-hover: oklch(0.21 0.034 264.665); /* gray 900 */
 
@@ -76,6 +77,8 @@
 
         --color-card-bg: oklch(0.25 0.005 247.896); /* Dark slate for card backgrounds */
         --color-card-diff-bg: oklch(0.32 0.005 48.717); /* Slightly lighter dark stone for differentiated cards */
+        --color-card-blocked-bg: oklch(0.258 0.092 26.042); /* red 950 */
+        --color-card-blocked-text: oklch(0.808 0.114 19.571); /* red 300 */
 
         --color-add-outline: oklch(0.8 0.027 264.364); /* Darker gray for outlines */
         --color-add-outline-hover: oklch(0.95 0.034 264.665); /* Lighter gray on hover */
@@ -104,7 +107,6 @@
         --color-full-dropdown: oklch(0.22 0.01 255.508); /* slate 200 */
         --color-full-dropdown-hover: oklch(0.35 0.01 255.508); /* slate 300 */
         --color-full-dropdown-disabled: oklch(0.33 0.01 255.508);
-
         --color-typing-outline: oklch(0.65 0.105 251.813); /* Brighter blue for typing outline */
 
         --color-card-heading: oklch(0.50 0.01 56.259); /* Darker stone for card headings */
@@ -240,7 +242,7 @@ input {
 }
 
 .task-card {
-    @apply mb-2 flex w-full cursor-pointer flex-col gap-3 rounded-lg bg-card-bg p-3 shadow-sm select-none data-[blocked=True]:bg-orange-200;
+    @apply mb-2 flex w-full cursor-pointer flex-col gap-3 rounded-lg bg-card-bg p-3 shadow-sm select-none data-[blocked=True]:bg-card-blocked-bg;
 }
 
 .to-task-card {

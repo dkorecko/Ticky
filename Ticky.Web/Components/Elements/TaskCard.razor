@@ -1,4 +1,4 @@
-﻿@using Ticky.Base.Entities
+@using Ticky.Base.Entities
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
 <div data-blocked="@Card.Blocked.ToString()" class="task-card" @onclick="() => EditCardModal.Open(Card.Id, Members)">
@@ -46,7 +46,7 @@
             }
             @if(Card.Blocked)
             {
-                <label class="card-data-point text-red-800"><i class="fa fa-flag"></i> Blocked</label>
+                <label class="card-data-point text-card-blocked-text"><i class="fa fa-flag"></i> Blocked</label>
             }
         </div>
         <div class="flex">
