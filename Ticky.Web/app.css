@@ -457,7 +457,7 @@ input[type="checkbox"].switch{
         justify-center gap-1 overflow-hidden rounded-full p-1 text-xs font-normal;
 }
 
-[data-theme='dark'] .person-label {
+[data-theme='dark'] .person-label, [data-theme='dark'] .card-label {
     @apply outline-2;
 }
 
@@ -471,8 +471,8 @@ input[type="checkbox"].switch{
     }
 
 .card-label {
-    @apply flex flex-row items-center justify-center gap-2
-        overflow-hidden rounded-full bg-slate-200 px-2 py-1.5 text-xs font-normal;
+    @apply bg-person-label-bg flex flex-row items-center
+        justify-center gap-2 overflow-hidden rounded-full px-2 py-1.5 text-xs font-normal;
 }
 
 .edit-icon {

@@ -19,7 +19,6 @@
     --color-purple-300: oklch(82.7% 0.119 306.383);
     --color-pink-300: oklch(82.3% 0.12 346.018);
     --color-pink-500: oklch(65.6% 0.241 354.308);
-    --color-slate-200: oklch(92.9% 0.013 255.508);
     --color-slate-400: oklch(70.4% 0.04 256.788);
     --color-gray-100: oklch(96.7% 0.003 264.542);
     --color-gray-300: oklch(87.2% 0.01 258.338);
@@ -729,9 +728,6 @@
   }
   .bg-card-bg {
     background-color: var(--color-card-bg);
-  }
-  .bg-card-blocked-bg {
-    background-color: var(--color-card-blocked-bg);
   }
   .bg-card-diff-bg {
     background-color: var(--color-card-diff-bg);
@@ -1890,7 +1886,7 @@ input[type="checkbox"].switch:checked:after {
   --tw-font-weight: var(--font-weight-normal);
   font-weight: var(--font-weight-normal);
 }
-[data-theme='dark'] .person-label {
+[data-theme='dark'] .person-label, [data-theme='dark'] .card-label {
   outline-style: var(--tw-outline-style);
   outline-width: 2px;
 }
@@ -1909,7 +1905,7 @@ input[type="checkbox"].switch:checked:after {
   gap: calc(var(--spacing) * 2);
   overflow: hidden;
   border-radius: calc(infinity * 1px);
-  background-color: var(--color-slate-200);
+  background-color: var(--color-person-label-bg);
   padding-inline: calc(var(--spacing) * 2);
   padding-block: calc(var(--spacing) * 1.5);
   font-size: var(--text-xs);
