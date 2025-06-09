@@ -1258,7 +1258,7 @@
     --color-icon-bg-hover: oklch(0.4 0.01 252.894);
     --color-card-icon-bg-hover: oklch(0.4 0.005 247.896);
     --color-disabled-icon: oklch(0.50 0.027 264.364);
-    --color-label-text: oklch(0.90 0.01 250);
+    --color-label-text: #fff;
     --color-card-data-points: oklch(0.70 0.027 264.364);
     --color-search-bar: oklch(0.22 0.01 255.508);
     --color-full-dropdown: oklch(0.22 0.01 255.508);

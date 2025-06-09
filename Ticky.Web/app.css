@@ -101,7 +101,7 @@
         --color-card-icon-bg-hover: oklch(0.4 0.005 247.896);
         --color-disabled-icon: oklch(0.50 0.027 264.364); /* Darker gray for disabled icons */
 
-        --color-label-text: oklch(0.90 0.01 250); /* Off-white for labels */
+        --color-label-text: #fff; /* Off-white for labels */
 
         --color-card-data-points: oklch(0.70 0.027 264.364); /* Lighter gray for data points */
 
