@@ -35,6 +35,7 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Recent board**: Immediately go back to your most recent board.
 - **Auto-generated avatars**: To make things more colorful.
 - **Able to do fully offline**: Ability to run fully offline, disabling the avatar service, having all the files bundled on the server and not using SMTP.
+- **Dark Mode**: A sleek dark mode for less strain on your eyes.
 - ... and more!
 
 ### 📝 Planned features
@@ -129,9 +130,12 @@ services:
 
 ## 📷 Preview
 
-![](images/landing.png)
-![](images/board.png)
-![](images/card.png)
+![Image of the landing page in light mode](images/landing_light.png)
+![Image of the board in light mode](images/board_light.png)
+![Image of the card in light mode](images/card_light.png)
+![Image of the landing page in dark mode](images/landing_dark.png)
+![Image of the board in dark mode](images/board_dark.png)
+![Image of the card in dark mode](images/card_dark.png)
 
 ## 🛠️ Project Structure
 

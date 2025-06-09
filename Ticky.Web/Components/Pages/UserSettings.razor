@@ -15,13 +15,13 @@
         </header>
 
         <section
-            class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-gray-400 px-1 py-1 text-sm">
+            class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-tab-outline px-1 py-1 text-sm">
             <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(1)">General</div>
             <div data-active='@(_tab == 2 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(2)">Avatar</div>
             <div data-active='@(_tab == 3 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(3)">Credentials</div>
         </section>
 
-        <section class="flex w-full flex-col divide-y divide-gray-400">
+        <section class="flex w-full flex-col divide-y divide-tab-outline">
             @if(_user is null)
             {
                 <Spinner/>
@@ -100,7 +100,7 @@
                     <div class="flex flex-row justify-end gap-5">
                         <label class="label-as-button w-min cursor-pointer px-5 py-2" for="file-upload">Upload</label>
                         <InputFile class="hidden" id="file-upload" OnChange="OnFileChanged"/>
-                        <button class="bg-slate-500 px-5 py-2 hover:bg-slate-900" @onclick="RestoreToOriginal">Reset</button>
+                        <button class="bg-cancel-button px-5 py-2 hover:bg-cancel-button-hover" @onclick="RestoreToOriginal">Reset</button>
                     </div>
                 </div>
             } else if(_tab == 3)

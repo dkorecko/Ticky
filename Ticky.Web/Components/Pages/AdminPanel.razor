@@ -15,11 +15,11 @@
         </header>
 
         <section
-            class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-gray-400 px-1 py-1 text-sm">
+            class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-tab-outline px-1 py-1 text-sm">
             <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(1)">Users</div>
         </section>
 
-        <section class="flex w-full flex-col divide-y divide-gray-400">
+        <section class="flex w-full flex-col divide-y divide-tab-outline">
             @if (_tab == 1)
             {
                 <div class="flex flex-row items-center justify-between">
@@ -37,15 +37,15 @@
                     <div class="flex flex-row flex-wrap gap-5 pt-5">
                         @foreach (var user in _users)
                         {
-                            <div class="flex w-64 flex-col items-center gap-3 rounded bg-slate-100 pt-5 shadow-lg">
+                            <div class="flex w-64 flex-col items-center gap-3 rounded bg-card-bg pt-5 shadow-lg">
                                 <img class="avatar !h-32 !w-32" src="@Constants.ACCESS_UPLOADED_IMAGES_PATH/@user.ProfilePictureFileName" />
                                 <div class="flex flex-col items-center px-5 pb-3 select-none">
                                     <div class="font-semibold">@user.DisplayName</div>
                                     <div class="text-sm">@user.Email</div>
                                 </div>
-                                <div class="flex w-full flex-col items-center gap-3 bg-stone-200 px-5 py-3">
+                                <div class="bg-card-diff-bg flex w-full flex-col items-center gap-3 px-5 py-3">
                                     <button class="w-full" @onclick="() => _editUserModal?.Open(user.Id)">Edit</button>
-                                    <button class="w-full !bg-red-500 hover:!bg-red-700" @onclick="() => _deleteUserModal?.Open(user.Id, user.DisplayName)">Delete</button>
+                                    <button class="w-full !bg-red-button hover:!bg-red-button-hover" @onclick="() => _deleteUserModal?.Open(user.Id, user.DisplayName)">Delete</button>
                                 </div>
                             </div>
                         }

@@ -10,7 +10,7 @@
     {
         <div class="flex flex-col items-center gap-3">
             <div class="flex w-full flex-row items-center gap-3">
-                <input class="w-full rounded-lg bg-stone-100 px-2 py-1 text-sm" type="text"
+                <input class="w-full rounded-lg bg-search-bar px-2 py-1 text-sm" type="text"
                        placeholder="Enter e-mail address" @oninput="OnInviteTextChanged" @ref="FocusElement" />
                 <button class="px-3 py-1.5" @onclick="AddAccess">Add</button>
             </div>
@@ -31,15 +31,15 @@
                                 { "Admin", () => ChangeAdmin(membership.Id, true)},
                                 { "Member", () => ChangeAdmin(membership.Id, false)}
                             }'>
-                                <div class='flex flex-row items-center justify-between pr-2 pl-5 transition-all ease-in-out @(!membership.UserId.Equals(_user.Id) ? "bg-gray-200 hover:bg-gray-300 cursor-pointer" : "bg-gray-100 cursor-not-allowed")'>
+                        <div class='flex flex-row items-center justify-between pr-2 pl-5 transition-all ease-in-out @(!membership.UserId.Equals(_user.Id) ? "bg-full-dropdown hover:bg-full-dropdown-hover cursor-pointer" : "bg-gray-100 cursor-not-allowed")'>
                                     @(membership.IsAdmin ? "Admin" : "Member")
-                                    <i class='fa fa-chevron-down edit-icon @(membership.UserId.Equals(_user.Id) ? "!text-gray-300 !hover:text-gray-300 !cursor-not-allowed" : string.Empty)'></i>
+                                    <i class='fa fa-chevron-down edit-icon @(membership.UserId.Equals(_user.Id) ? "!cursor-not-allowed" : string.Empty)'></i>
                                 </div>
                             </Dropdown>
                         </td>
                         <td>
                             <i @onclick="() => RemoveUser(membership.UserId)" 
-                                class='fa fa-trash edit-icon @(membership.UserId.Equals(_user.Id) ? "!text-gray-300 !hover:text-gray-300 !cursor-not-allowed" : string.Empty)'>
+                                class='fa fa-trash edit-icon @(membership.UserId.Equals(_user.Id) ? "!text-disabled-icon !hover:text-disabled-icon !cursor-not-allowed" : string.Empty)'>
                             </i>
                         </td>
                     </tr>
@@ -62,13 +62,13 @@
                             @membership.User.DisplayName @(membership.UserId.Equals(_user.Id) ? "(you)" : string.Empty)
                         </td>
                         <td>
-                            <div class="flex cursor-not-allowed flex-row items-center justify-between bg-gray-100 pr-2 pl-5 transition-all ease-in-out">
+                            <div class="flex cursor-not-allowed flex-row items-center justify-between bg-search-bar pr-2 pl-5 transition-all ease-in-out">
                                 @(membership.IsAdmin ? "Admin" : "Member")
-                                <i class="fa fa-chevron-down edit-icon !cursor-not-allowed !text-gray-300 !hover:text-gray-300"></i>
+                                <i class="fa fa-chevron-down edit-icon !text-disabled-icon !cursor-not-allowed !hover:text-disabled-icon"></i>
                             </div>
                         </td>
                         <td>
-                            <i class="fa fa-trash edit-icon !cursor-not-allowed !text-gray-300 !hover:text-gray-300"></i>
+                            <i class="fa fa-trash edit-icon !text-disabled-icon !cursor-not-allowed !hover:text-disabled-icon"></i>
                         </td>
                     </tr>
 

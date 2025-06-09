@@ -1,7 +1,7 @@
 ﻿<div class="fixed right-5 bottom-5 z-20 flex flex-col gap-10 transition-all">
     @foreach(var notification in _notifications) 
     {
-        <div class="flex flex-row content-between items-center gap-10 overflow-hidden rounded-md bg-white shadow transition-all">
+        <div class="flex flex-row content-between items-center gap-10 overflow-hidden rounded-md bg-modal shadow transition-all">
             <div class="flex flex-row content-start items-center gap-5">
                 <div class='@(notification.Type == NotificationType.Success ? "bg-green-500" : "bg-red-500") h-16 w-2'>
                 </div>
@@ -10,7 +10,7 @@
                     @notification.Text
                 </label>
             </div>
-            <div class="cursor-pointer p-5 text-gray-400 transition-all hover:text-red-500" 
+            <div class="cursor-pointer p-5 text-icon transition-all hover:text-red-button" 
                 @onclick="() => _notifications.Remove(notification)">
                 CLOSE
             </div>

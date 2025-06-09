@@ -102,7 +102,7 @@
                                     {
                                         <div class="card-label">
                                             <label class="whitespace-nowrap">@reminder.At.ToReadableStringWithTime()</label>
-                                            <i class="fa fa-trash-can cursor-pointer text-red-500 transition-all ease-in-out hover:text-red-800" @onclick="() => DeleteReminder(reminder)"></i>
+                                            <i class="fa fa-trash-can cursor-pointer text-red-button transition-all ease-in-out hover:text-red-button-hover" @onclick="() => DeleteReminder(reminder)"></i>
                                         </div>
                                     }
                                     <i @ref="_addReminderTrigger" class="fa fa-pencil edit-icon" @onclick="() => _addReminderModal?.Open(_addReminderTrigger, _card)"></i>
@@ -121,7 +121,7 @@
                                 {
                                     <div class="card-label">
                                         <label class="whitespace-nowrap">@_card.Deadline.Value.ToReadableStringWithTime()</label>
-                                        <i class="fa fa-trash-can cursor-pointer text-red-500 transition-all ease-in-out hover:text-red-800" @onclick="DeleteDeadline"></i>
+                                        <i class="fa fa-trash-can cursor-pointer text-red-button transition-all ease-in-out hover:text-red-button-hover" @onclick="DeleteDeadline"></i>
                                     </div>
                                 }
                                 <i @ref="_editDeadlineTrigger" class="fa fa-pencil edit-icon" @onclick="() => _editDeadlineModal?.Open(_editDeadlineTrigger, _card)"></i>
@@ -142,36 +142,36 @@
                     </tbody>
                 </table>
                 <div class="flex flex-row text-sm">
-                    <label data-active=@((_tab == 0).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-gray-500 data-[active=True]:border-black" @onclick="() => _tab = 0">Description</label>
-                    <label data-active=@((_tab == 1).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-gray-500 data-[active=True]:border-black" @onclick="() => _tab = 1">Comments</label>
-                    <label data-active=@((_tab == 2).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-gray-500 data-[active=True]:border-black" @onclick="() => _tab = 2">Activity</label>
-                    <label data-active=@((_tab == 3).ToString()) class="cursor-pointer border-b-2 px-4 py-2 whitespace-nowrap transition-all select-none hover:border-gray-500 data-[active=True]:border-black" @onclick="() => _tab = 3">Time Tracking</label>
+                    <label data-active=@((_tab == 0).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 0">Description</label>
+                    <label data-active=@((_tab == 1).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 1">Comments</label>
+                    <label data-active=@((_tab == 2).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 2">Activity</label>
+                    <label data-active=@((_tab == 3).ToString()) class="cursor-pointer border-b-2 px-4 py-2 whitespace-nowrap transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 3">Time Tracking</label>
                     <label class="w-full border-b-2 px-2 py-2"></label>
 
                 </div>
                 @if (_tab == 0)
                 {
                     <textarea @onchange="OnDescriptionChanged" 
-                        class="h-24 w-full resize-none overflow-auto rounded-lg bg-slate-200 p-4 text-sm outline-0 outline-blue-300 transition-all ease-in-out focus:outline-2"
+                        class="h-24 w-full resize-none overflow-auto rounded-lg bg-search-bar p-4 text-sm outline-0 outline-typing-outline transition-all ease-in-out focus:outline-2"
                               placeholder="Might be the time for some additional information ...">@_card.Description</textarea>
                     <hr />
                     <section class="flex flex-col gap-2">
                         <div class="flex flex-row items-center gap-2 text-xs">
-                            <h5 class="font-normal text-stone-400 select-none">LINKED CARDS</h5>
+                            <h5 class="font-normal text-card-heading select-none">LINKED CARDS</h5>
                             <i id="linked_cards" class="fa fa-plus edit-icon !p-0" @onclick='() => _linkCardsModal?.Open("linked_cards", _card)'></i>
                         </div>
                         @foreach(var group in _card.LinkedIssuesOne.GroupBy(x => x.Category)) 
                         {
                             var linkedCard = group.ElementAt(0).CardTwo;
                             <label class="text-sm">@group.Key</label>
-                            <div class="flex cursor-pointer flex-col justify-between rounded-sm px-3 py-2 text-xs shadow outline-1 outline-gray-500 transition-all ease-in-out hover:bg-gray-300">
+                            <div class="flex cursor-pointer flex-col justify-between rounded-sm px-3 py-2 text-xs shadow outline-1 outline-add-outline transition-all ease-in-out hover:bg-dropdown-option">
                                 <div class="flex flex-row justify-between gap-3">
                                     <label class="cursor-pointer whitespace-nowrap">@linkedCard.Column.Board.Code-@linkedCard.Number</label>
                                     <label class="cursor-pointer truncate whitespace-nowrap">@linkedCard.Text</label>
                                 </div>
                                 <div class="flex flex-row items-center justify-between">
                                     <label class="text-2xs cursor-pointer font-light">Project @linkedCard.Column.Board.Project.Name — @linkedCard.Column.Name</label>
-                                    <i class="fa fa-trash-can edit-icon !p-0 !text-red-500 hover:!text-red-800" @onclick="() => DeleteLink(group.ElementAt(0))" @onclick:stopPropagation=true></i>
+                                    <i class="fa fa-trash-can edit-icon !p-0 !text-red-button hover:!text-red-button-hover" @onclick="() => DeleteLink(group.ElementAt(0))" @onclick:stopPropagation=true></i>
                                 </div>
                             </div>
                             
@@ -180,7 +180,7 @@
                     <hr />
                     <section class="flex flex-col gap-2">
                         <div class="flex flex-row items-center gap-3 text-xs">
-                            <h5 class="font-normal text-stone-400 select-none">SUB-TASKS</h5>
+                            <h5 class="font-normal text-card-heading select-none">SUB-TASKS</h5>
                             <i @ref="_addSubtaskTrigger" class="fa fa-plus edit-icon !p-0" @onclick="() => _addSubtaskModal?.Open(_addSubtaskTrigger, _card)"></i>
                         </div>
                         @if (_card.Subtasks.Any())
@@ -206,7 +206,7 @@
                                         <input id="@subtaskId" type="checkbox" checked="@subtask.Completed" @onchange="(e) => OnSubtaskStatusChanged(e, subtask)" />
                                         <label for="@subtaskId">@subtask.Text</label>
                                         <i id="@subtaskId" class="fa fa-pencil edit-icon" @onclick="() => _editSubtaskModal?.Open(subtaskId, subtask)"></i>
-                                        <i class="fa fa-trash-can edit-icon !text-red-500 hover:!text-red-800" @onclick="() => DeleteSubtask(subtask)"></i>
+                                        <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="() => DeleteSubtask(subtask)"></i>
                                     </div>
                                     i++;
                                 }
@@ -215,7 +215,7 @@
                     </section>
                     <hr />
                     <section class="flex flex-col gap-4">
-                        <h5 class="text-xs font-normal text-stone-400 select-none">ATTACHMENTS</h5>
+                        <h5 class="text-xs font-normal text-card-heading select-none">ATTACHMENTS</h5>
                         <label class="add h-min w-full rounded-lg px-5 py-5 select-none" for="file-upload">
                             <i class="fa fa-file-arrow-down text-3xl"></i>
                             <label>Upload attachment</label>
@@ -224,14 +224,14 @@
                         <div class="flex flex-row flex-wrap items-center justify-start gap-2">
                             @foreach(var attachment in _card.Attachments) 
                             {
-                                <div class="flex w-min cursor-pointer flex-row items-center justify-center gap-2 rounded-lg px-2 py-2 outline-2 outline-gray-400 transition-all ease-in-out select-none hover:outline-gray-800"
+                                <div class="flex w-min cursor-pointer flex-row items-center justify-center gap-2 rounded-lg px-2 py-2 outline-2 outline-add-outline transition-all ease-in-out select-none hover:outline-add-outline-hover"
                                     @onclick="() => DownloadAttachment(attachment)">
                                     <div class="h-8 w-8 bg-cover bg-center" style="background-image: url('./images/icons/@AttachmentHelper.GetImageNameFromAttachment(attachment)');" />
                                     <div class="flex flex-col text-xs font-normal">
                                         <label class="cursor-pointer font-medium">@attachment.OriginalName</label>
                                         <div class="flex flex-row gap-2">
-                                            <label class="cursor-pointer text-gray-500">@AttachmentHelper.GetFileTypeFromAttachment(attachment)</label>
-                                            <label class="ml-auto cursor-pointer text-red-500 hover:text-red-800" @onclick="() => DeleteAttachment(attachment)" @onclick:stopPropagation=true><i class="fa fa-trash-can"></i></label>
+                                            <label class="cursor-pointer text-add-outline">@AttachmentHelper.GetFileTypeFromAttachment(attachment)</label>
+                                            <label class="ml-auto cursor-pointer text-red-button hover:text-red-button-hover" @onclick="() => DeleteAttachment(attachment)" @onclick:stopPropagation=true><i class="fa fa-trash-can"></i></label>
                                         </div>
                                     </div>
                                 </div>
@@ -241,7 +241,7 @@
                 }
                 else if (_tab == 1)
                 {
-                    <textarea class="h-24 w-full overflow-auto rounded-lg bg-slate-200 p-4 text-sm outline-0 outline-blue-300 transition-all ease-in-out focus:outline-2" 
+                    <textarea class="h-24 w-full overflow-auto rounded-lg bg-search-bar p-4 text-sm outline-0 outline-typing-outline transition-all ease-in-out focus:outline-2" 
                         @oninput="OnCommentTextChanged" value="@_commentText"
                         placeholder="Say what's on your mind ..."></textarea>
                     <div class="flex flex-row justify-end">
@@ -295,13 +295,13 @@
                             var activityId = $"activity_id_{i}";
 
                             <div class="flex flex-row items-center justify-between py-2 text-xs">
-                                <div class='ml-[-5px] h-2 w-2 rounded-full bg-gray-500 @(onlyFirstDates.Any(x => DateTime.Compare(activity.At, x) == 0) ? string.Empty : "opacity-0")'></div>
-                                <label class="ml-3 whitespace-nowrap text-gray-500 capitalize">@activity.At.ToString("MMM d")</label>
+                                <div class='ml-[-5px] h-2 w-2 rounded-full bg-add-outline @(onlyFirstDates.Any(x => DateTime.Compare(activity.At, x) == 0) ? string.Empty : "opacity-0")'></div>
+                                <label class="ml-3 whitespace-nowrap text-add-outline capitalize">@activity.At.ToString("MMM d")</label>
                                 <label class="ml-6"><label class="person-link" id="@activityId"
                                     @onclick="() => _mainLayout.UserInfoModal?.Open(activityId, activity.UserId)">
                                     @@@activity.User.DisplayName</label> @((MarkupString) activity.Text).
                                 </label>
-                                <label class="ml-auto whitespace-nowrap text-gray-500">@activity.At.ToElapsedString()</label>
+                                <label class="ml-auto whitespace-nowrap text-add-outline">@activity.At.ToElapsedString()</label>
                             </div>
 
                             lastDay = DateTime.Now;
@@ -312,13 +312,13 @@
                             var finalActivityId = $"activity_id_{i}";
                         }
                         <div class="flex flex-row items-center justify-between py-2 text-xs">
-                            <div class="ml-[-5px] h-2 w-2 rounded-full bg-gray-500"></div>
-                            <label class="ml-3 whitespace-nowrap text-gray-500 capitalize">@_card.CreatedAt.ToString("MMM d")</label>
+                            <div class="ml-[-5px] h-2 w-2 rounded-full bg-add-outline"></div>
+                            <label class="ml-3 whitespace-nowrap text-add-outline capitalize">@_card.CreatedAt.ToString("MMM d")</label>
                             <label class="ml-6"><label class="person-link" id="@finalActivityId"
                                 @onclick="() => _mainLayout.UserInfoModal?.Open(finalActivityId, _card.CreatedById)">
                                 @@@_card.CreatedBy.DisplayName</label> <b>created</b> this card.
                             </label>
-                            <label class="ml-auto whitespace-nowrap text-gray-500">@_card.CreatedAt.ToElapsedString()</label>
+                            <label class="ml-auto whitespace-nowrap text-add-outline">@_card.CreatedAt.ToElapsedString()</label>
                         </div>
                     </div>
                 }
@@ -327,7 +327,7 @@
                     <div class="flex w-full flex-col gap-3 text-sm select-none">
                         <div class="flex flex-row items-center justify-start gap-1">
                             <div class="flex flex-row items-center gap-2">
-                                <label>Total time:</label> <div class="rounded-lg bg-gray-200 px-1 py-0.5 font-bold text-gray-900">@(new TimeSpan(_card.TimeRecords.Select(x => ((x.EndedAt ?? DateTime.Now) - x.StartedAt).Ticks).Sum()).ToElapsedString())</div>
+                                <label>Total time:</label> <div class="rounded-lg bg-search-bar px-1 py-0.5 font-bold">@(new TimeSpan(_card.TimeRecords.Select(x => ((x.EndedAt ?? DateTime.Now) - x.StartedAt).Ticks).Sum()).ToElapsedString())</div>
                             </div>
                             @{
                                 var ongoingTimer = _card.TimeRecords.Where(x => x.UserId.Equals(_user.Id) && x.EndedAt == null).FirstOrDefault();
@@ -337,9 +337,9 @@
                                 <button class="px-2" id=@timeRecordCreateId @onclick="() => _addTimeRecordModal?.Open(timeRecordCreateId, _card)">Add time</button>
                                 @if (ongoingTimer is null)
                                 {
-                                    <button class='!bg-green-700 px-2 !hover:bg-green-900' @onclick="StartTimer">Start timer</button>
+                                    <button class='!bg-green-button px-2 hover:!bg-green-button-hover' @onclick="StartTimer">Start timer</button>
                                 } else {
-                                    <button class='!bg-red-400 px-2 !hover:bg-red-800' @onclick="() => EndTimer(ongoingTimer)">@_ongoingTimer.ToElapsedString()</button>
+                                    <button class='!bg-red-button px-2 !hover:bg-red-button-hover' @onclick="() => EndTimer(ongoingTimer)">@_ongoingTimer.ToElapsedString()</button>
                                 }
                             </div>
                         </div>
@@ -359,7 +359,7 @@
 
                                     <div class="flex flex-row items-center">
                                         <i id="@timeRecordId" class="fa fa-pencil edit-icon" @onclick="() => _editTimeRecordModal?.Open(timeRecordId, timeRecord)"></i>
-                                        <i class="fa fa-trash-can edit-icon !text-red-500 hover:!text-red-800" @onclick="() => DeleteTimeRecord(timeRecord)"></i>
+                                        <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="() => DeleteTimeRecord(timeRecord)"></i>
                                     </div>
                                 </div>
                             </div>
