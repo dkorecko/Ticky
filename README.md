@@ -130,9 +130,12 @@ services:
 
 ## 📷 Preview
 
-![](images/landing.png)
-![](images/board.png)
-![](images/card.png)
+![Image of the landing page in light mode](images/landing_light.png)
+![Image of the board in light mode](images/board_light.png)
+![Image of the card in light mode](images/card_light.png)
+![Image of the landing page in dark mode](images/landing_dark.png)
+![Image of the board in dark mode](images/board_dark.png)
+![Image of the card in dark mode](images/card_dark.png)
 
 ## 🛠️ Project Structure
 
