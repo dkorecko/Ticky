@@ -187,7 +187,7 @@
     private const string COLUMN_PREFIX = "column_";
 
     private Base.Entities.Board? _board;
-    private List<User> _members = new();
+    private List<User> _members = [];
 
     private CreateColumnModal? _createColumnModal;
     private EditColumnModal? _editColumnModal;
@@ -195,7 +195,7 @@
     private DeleteColumnModal? _deleteColumnModal;
     private DeleteTaskModal? _deleteTaskModal;
     private EditBoardMembershipsModal? _editBoardMembershipsModal;
-    private List<ElementReference> _avatars = new();
+    private List<ElementReference> _avatars = [];
     private ElementReference Avatars { set => _avatars.Add(value); }
     private ElementReference? _textElement;
 
@@ -433,7 +433,7 @@
             return null;
         }
 
-        _members = new();
+        _members = [];
 
         if (board.Memberships.Any())
             _members.AddRange(board.Memberships.Select(x => x.User));

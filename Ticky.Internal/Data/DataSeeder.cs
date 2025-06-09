@@ -97,7 +97,7 @@ public class DataSeeder
             TextColor = Color.FromArgb(255, 157, 23, 77)
         };
 
-        testBoard.Labels = new() { label };
+        testBoard.Labels = [label];
 
         var boardMembership = new BoardMembership
         {
