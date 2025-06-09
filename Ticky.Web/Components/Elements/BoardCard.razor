@@ -1,4 +1,4 @@
-@using Ticky.Base.Entities
+﻿@using Ticky.Base.Entities
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
@@ -21,7 +21,7 @@
 
         <div class="flex flex-col gap-2">
             <label class="cursor-pointer text-xl font-semibold text-card-heading">@Board.Name</label>
-            <label class="cursor-pointer text-xs text-add-outline">@Board.Description</label>
+            <label class="text-card-data-points cursor-pointer text-xs">@Board.Description</label>
         </div>
 
         <div class="mt-5 flex flex-row items-center justify-between">

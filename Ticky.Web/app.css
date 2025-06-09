@@ -14,13 +14,16 @@
     --color-cancel-button-hover: oklch(0.373 0.034 259.733); /* gray 700 */
     --color-red-button: oklch(0.637 0.237 25.331); /* red 500 */
     --color-red-button-hover: oklch(0.505 0.213 27.518); /* red 700 */
-
+    --color-green-button: oklch(0.527 0.154 150.069); /* green 700 */
+    --color-green-button-hover: oklch(0.393 0.095 152.535); /* green 900 */
     --color-backdrop: oklch(0.446 0.03 256.802); /* gray 600 */
     --color-modal: #fff; /* white */
 
     --color-dropdown-option: oklch(0.872 0.01 258.338); /* gray 300 */
     --color-icon: oklch(0.551 0.027 264.364); /* gray 500 */
     --color-icon-hover: oklch(0.21 0.034 264.665); /* gray 900 */
+    --color-icon-bg-hover: oklch(0.704 0.04 256.788); /* slate 400 */
+    --color-card-icon-bg-hover: oklch(0.872 0.01 258.338); /* gray 300 */
     --color-disabled-icon: oklch(0.872 0.01 258.338); /* gray 300 */
 
     --color-label-text: #fff; /* white */
@@ -28,6 +31,9 @@
     --color-card-data-points: oklch(0.551 0.027 264.364); /* gray 500 */
 
     --color-search-bar: oklch(0.929 0.013 255.508); /* slate 200 */
+    --color-full-dropdown: oklch(0.929 0.013 255.508); /* slate 200 */
+    --color-full-dropdown-hover: oklch(0.869 0.022 252.894); /* slate 300 */
+    --color-full-dropdown-disabled: oklch(0.967 0.003 264.542); /* gray 100 */
 
     --color-typing-outline: oklch(0.809 0.105 251.813); /* blue 300 */
 
@@ -39,17 +45,26 @@
     --color-tab-outline: oklch(0.707 0.022 261.325); /* gray 400 */
 
     --color-nav-link: oklch(0.554 0.046 257.417); /* slate 500 */
+    --color-nav-link-hover: oklch(0.595 0.2538 297); /* primary */
     --color-avatar-ring: #fff; /* white */
-    --color-button-text: oklch(0.968 0.007 247.896); /* slate 100 */
 
     --color-app-bg: oklch(0.869 0.022 252.894); /* slate 300 */
 
+    --color-button-text: oklch(0.968 0.007 247.896); /* slate 100 */
     --color-app-text: #000; /* black */
     --color-card-heading: oklch(0.279 0.041 260.031); /* slate 800 */
 
     --color-auth-gradient-start: oklch(0.777 0.152 181.912); /* teal 400 */
     --color-auth-gradient-via: oklch(0.714 0.203 305.504); /* purple 400 */
     --color-auth-gradient-to: oklch(0.595 0.2538 297); /* primary */
+
+    --color-checkbox-bg: oklch(0.707 0.022 261.325); /* gray 400 */
+    --color-divide: oklch(0.928 0.006 264.531); /* gray 200 */
+
+    --color-card-header-highlight: #000; /* black */
+    --color-card-edit-label: oklch(0.554 0.046 257.417); /* slate 500 */
+
+    --color-person-label-bg: oklch(0.929 0.013 255.508); /* slate 200 */
 
     --text-2xs: 0.65rem;
 }
@@ -59,30 +74,36 @@
         --color-primary: oklch(0.595 0.2538 297); /* purple 500 - same as light mode, as it's a vibrant accent */
         --color-primary-hover: oklch(0.700 0.280 297); /* Lighter hover for contrast on dark background */
 
-        --color-card-bg: oklch(0.18 0.005 247.896); /* Dark slate for card backgrounds */
-        --color-card-diff-bg: oklch(0.25 0.005 48.717); /* Slightly lighter dark stone for differentiated cards */
+        --color-card-bg: oklch(0.25 0.005 247.896); /* Dark slate for card backgrounds */
+        --color-card-diff-bg: oklch(0.32 0.005 48.717); /* Slightly lighter dark stone for differentiated cards */
 
-        --color-add-outline: oklch(0.45 0.027 264.364); /* Darker gray for outlines */
-        --color-add-outline-hover: oklch(0.65 0.034 264.665); /* Lighter gray on hover */
+        --color-add-outline: oklch(0.8 0.027 264.364); /* Darker gray for outlines */
+        --color-add-outline-hover: oklch(0.95 0.034 264.665); /* Lighter gray on hover */
 
         --color-cancel-button: oklch(0.45 0.027 264.364); /* Darker gray for cancel button */
         --color-cancel-button-hover: oklch(0.60 0.034 259.733); /* Lighter gray on hover */
-        --color-red-button: oklch(0.637 0.237 25.331); /* Red 500 - same as light mode for clear action */
+        --color-red-button: oklch(0.637 0.237 25.331); /* red 500 */
         --color-red-button-hover: oklch(0.700 0.250 25.331); /* Lighter red on hover */
-
+        --color-green-button: oklch(0.527 0.154 150.069); /* green 700 */
+        --color-green-button-hover: oklch(0.723 0.219 149.579); /* green 500 */
         --color-backdrop: oklch(0.1 0.01 256.802); /* Very dark gray for backdrop, near black */
         --color-modal: oklch(0.20 0.01 247.896); /* Dark background for modals */
 
         --color-dropdown-option: oklch(0.35 0.01 258.338); /* Darker gray for dropdown options */
         --color-icon: oklch(0.65 0.027 264.364); /* Lighter gray for icons */
         --color-icon-hover: oklch(0.85 0.034 264.665); /* Even lighter gray on hover */
-        --color-disabled-icon: oklch(0.40 0.01 258.338); /* Darker gray for disabled icons */
+        --color-icon-bg-hover: oklch(0.4 0.01 252.894);
+        --color-card-icon-bg-hover: oklch(0.4 0.005 247.896);
+        --color-disabled-icon: oklch(0.50 0.027 264.364); /* Darker gray for disabled icons */
 
         --color-label-text: oklch(0.90 0.01 250); /* Off-white for labels */
 
         --color-card-data-points: oklch(0.70 0.027 264.364); /* Lighter gray for data points */
 
         --color-search-bar: oklch(0.22 0.01 255.508); /* Dark slate for search bar */
+        --color-full-dropdown: oklch(0.22 0.01 255.508); /* slate 200 */
+        --color-full-dropdown-hover: oklch(0.35 0.01 255.508); /* slate 300 */
+        --color-full-dropdown-disabled: oklch(0.33 0.01 255.508);
 
         --color-typing-outline: oklch(0.65 0.105 251.813); /* Brighter blue for typing outline */
 
@@ -93,18 +114,28 @@
 
         --color-tab-outline: oklch(0.55 0.022 261.325); /* Mid-gray for tab outlines */
 
-        --color-nav-link: oklch(0.75 0.046 257.417); /* Lighter slate for navigation links */
+        --color-nav-link: oklch(0.85 0.04 257.417); /* Lighter slate for navigation links */
+        --color-nav-link-hover: oklch(0.8 0.2538 297); /* primary */
         --color-avatar-ring: oklch(0.90 0.01 250); /* Off-white for avatar ring */
-        --color-button-text: oklch(0.1 0.007 247.896); /* Dark text on primary buttons for contrast */
 
         --color-app-bg: oklch(0.12 0.01 252.894); /* Very dark main app background */
 
+        --color-button-text: oklch(0.968 0.007 247.896); /* slate 100 */
         --color-app-text: oklch(0.95 0.01 250); /* Near white for main app text */
         --color-card-heading: #fff; /* white */
 
         --color-auth-gradient-start: oklch(0.277 0.046 192.524); /* teal 950 */
         --color-auth-gradient-via: oklch(0.291 0.149 302.717); /* purple 950 */
         --color-auth-gradient-to: oklch(0.284 0.109 3.907); /* pink 950 */
+
+        --color-checkbox-bg: oklch(0.12 0.01 252.894); /* Very dark main app background */
+        --color-divide: oklch(0.45 0.006 264.531);
+        --color-card-header-highlight: #fff; /* white */
+        --color-card-edit-label: oklch(0.95 0.01 250);
+        --color-person-label-bg: oklch(0.20 0.01 247.896);
+        --color-scrollbar-track: oklch(0.15 0.005 250); /* Very dark gray for scrollbar track */
+        --color-scrollbar-thumb: oklch(0.50 0.01 250); /* Mid-gray for scrollbar thumb */
+        --color-scrollbar-thumb-hover: oklch(0.65 0.015 250); /* Lighter gray for scrollbar thumb on hover */
     }
 
     *,
@@ -112,8 +143,43 @@
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+        border-color: var(--color-divide, currentColor);
     }
+}
+
+option {
+    @apply bg-modal;
+}
+
+html {
+    color-scheme: dark;
+}
+
+[data-theme='dark'] body {
+    color-scheme: dark;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-track {
+    background: var(--color-scrollbar-track);
+    border-radius: 10px;  Optional: adds rounded corners to the track 
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+    background: var(--color-scrollbar-thumb);
+    border-radius: 10px;  Makes the thumb rounded 
+     Optional: Adds a subtle border around the thumb, making it appear "inset" 
+    border: 3px solid var(--color-scrollbar-track);
+}
+
+    [data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+        background: var(--color-scrollbar-thumb-hover);
+    }
+
+/* For Firefox 
+ Note: Firefox's scrollbar-color doesn't support a separate hover state for the thumb */
+[data-theme='dark'] html {
+    scrollbar-width: thin;  "auto" (default), "thin", or "none" 
+    scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
 }
 
 h1:focus {
@@ -140,13 +206,13 @@ input {
 .nav-link {
     @apply transition-all;
     @apply select-none;
-    @apply hover:text-primary;
+    @apply hover:text-nav-link-hover;
     @apply cursor-pointer;
     @apply z-10;
 }
 
 .active {
-    @apply text-primary;
+    @apply text-nav-link-hover;
 }
 
 .avatar {
@@ -272,8 +338,12 @@ input[type="checkbox"].switch{
 	cursor: pointer;
 	-webkit-transition: all .2s ease-in-out;
 	transition: all .2s ease-in-out;
-    @apply scale-50 bg-gray-400 shadow-sm;
+    @apply scale-50 bg-checkbox-bg shadow-sm;
   }
+
+[data-theme='dark'] input[type="checkbox"].switch {
+    @apply outline-3;
+}
   
   input[type="checkbox"].switch:checked{
 	@apply bg-primary;
@@ -318,18 +388,28 @@ input[type="checkbox"].switch{
     }
 
 @utility icon-button {
-    @apply bg-transparent cursor-pointer rounded-lg p-1 text-add-outline transition-all ease-in-out hover:text-add-outline-hover hover:bg-slate-400;
+    @apply bg-transparent cursor-pointer rounded-lg p-1 text-add-outline transition-all ease-in-out hover:text-add-outline-hover hover:bg-icon-bg-hover;
 }
 
 .card-button {
-    @apply icon-button hover:!bg-gray-300;
+    @apply icon-button hover:!bg-card-icon-bg-hover;
 }
 
 .board-card {
-    @apply flex h-min w-full cursor-pointer flex-col rounded-lg bg-card-bg px-5 py-5 shadow-sm transition-all ease-in-out select-none hover:shadow-xl hover:shadow-gray-500 sm:w-72 /*hover:scale-105*/;
+    @apply flex h-min w-full cursor-pointer flex-col rounded-lg bg-card-bg px-5 py-5 shadow-sm transition-all ease-in-out select-none hover:shadow-xl sm:w-72 /*hover:scale-105*/;
 }
+
+[data-theme=''] .board-card {
+    @apply hover:shadow-gray-500;
+}
+
+[data-theme='dark'] .board-card {
+    @apply hover:outline-1;
+}
+
+
 .board-card-data-point {
-    @apply flex cursor-pointer flex-row items-center justify-start gap-3 pl-1 text-xs text-add-outline;
+    @apply text-card-data-points flex cursor-pointer flex-row items-center justify-start gap-3 pl-1 text-xs;
 }
 
     .board-card-data-point > i {
@@ -361,7 +441,7 @@ input[type="checkbox"].switch{
 }
 
 .edit-task-label {
-    @apply w-24 overflow-hidden text-sm font-normal text-slate-500;
+    @apply text-card-edit-label w-24 overflow-hidden text-sm font-normal;
 }
 
 .edit-task-item {
@@ -369,8 +449,12 @@ input[type="checkbox"].switch{
 }
 
 .person-label {
-    @apply flex flex-row items-center justify-center gap-1
-        overflow-hidden rounded-full bg-slate-200 p-1 text-xs font-normal;
+    @apply bg-person-label-bg flex flex-row items-center
+        justify-center gap-1 overflow-hidden rounded-full p-1 text-xs font-normal;
+}
+
+[data-theme='dark'] .person-label {
+    @apply outline-2;
 }
 
     .person-label > div {
@@ -399,7 +483,7 @@ input[type="checkbox"].switch{
 }
 
 .priority-selector-item {
-    @apply flex cursor-pointer flex-row items-center justify-between px-2 py-2 transition-all ease-in-out hover:bg-slate-200;
+    @apply flex cursor-pointer flex-row items-center justify-between px-2 py-2 transition-all ease-in-out hover:bg-dropdown-option;
 }
 
 .person-link {

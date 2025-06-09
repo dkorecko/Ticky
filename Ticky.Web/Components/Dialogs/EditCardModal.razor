@@ -142,10 +142,10 @@
                     </tbody>
                 </table>
                 <div class="flex flex-row text-sm">
-                    <label data-active=@((_tab == 0).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-black" @onclick="() => _tab = 0">Description</label>
-                    <label data-active=@((_tab == 1).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-black" @onclick="() => _tab = 1">Comments</label>
-                    <label data-active=@((_tab == 2).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-black" @onclick="() => _tab = 2">Activity</label>
-                    <label data-active=@((_tab == 3).ToString()) class="cursor-pointer border-b-2 px-4 py-2 whitespace-nowrap transition-all select-none hover:border-add-outline data-[active=True]:border-black" @onclick="() => _tab = 3">Time Tracking</label>
+                    <label data-active=@((_tab == 0).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 0">Description</label>
+                    <label data-active=@((_tab == 1).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 1">Comments</label>
+                    <label data-active=@((_tab == 2).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 2">Activity</label>
+                    <label data-active=@((_tab == 3).ToString()) class="cursor-pointer border-b-2 px-4 py-2 whitespace-nowrap transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 3">Time Tracking</label>
                     <label class="w-full border-b-2 px-2 py-2"></label>
 
                 </div>
@@ -337,7 +337,7 @@
                                 <button class="px-2" id=@timeRecordCreateId @onclick="() => _addTimeRecordModal?.Open(timeRecordCreateId, _card)">Add time</button>
                                 @if (ongoingTimer is null)
                                 {
-                                    <button class='!bg-green-700 px-2 !hover:bg-green-900' @onclick="StartTimer">Start timer</button>
+                                    <button class='!bg-green-button px-2 hover:!bg-green-button-hover' @onclick="StartTimer">Start timer</button>
                                 } else {
                                     <button class='!bg-red-button px-2 !hover:bg-red-button-hover' @onclick="() => EndTimer(ongoingTimer)">@_ongoingTimer.ToElapsedString()</button>
                                 }

@@ -1,4 +1,4 @@
-@implements IDisposable
+﻿@implements IDisposable
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
@@ -52,9 +52,12 @@
             <div id="nav-button-underline" class="h-0.5 w-0 bg-primary transition-all ease-in-out"></div>
         </div>
     </div>
-    <NavLink class="ml-auto" href="/settings">
-        <div class="avatar avatar-border" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
-    </NavLink>
+    <div class="ml-auto flex flex-row items-center gap-5">
+        <span class="fa fa-circle-half-stroke cursor-pointer text-2xl text-nav-link transition-all hover:text-nav-link-hover" onclick="switchTheme()"></span>
+        <NavLink href="/settings">
+            <div class="avatar avatar-border" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
+        </NavLink>
+    </div>
 </nav>
 
 @code {
