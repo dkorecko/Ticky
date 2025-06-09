@@ -16,5 +16,5 @@ public class Column : AbstractDbEntity, IOrderable
     [Display(Name = "Automatic card ordering")]
     public OrderRule OrderRule { get; set; }
     public virtual Board Board { get; set; } = null!;
-    public virtual List<Card> Cards { get; set; } = new();
+    public virtual List<Card> Cards { get; set; } = [];
 }
