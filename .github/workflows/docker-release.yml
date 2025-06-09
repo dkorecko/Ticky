@@ -2,7 +2,7 @@ name: Build and Publish Docker image to GHCR
 
 on:
   release:
-    types: [published, prereleased]
+    types: [published]
 
 jobs:
   build-and-push:
