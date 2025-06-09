@@ -7,9 +7,7 @@
       "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
-    --color-red-300: oklch(80.8% 0.114 19.571);
     --color-red-500: oklch(63.7% 0.237 25.331);
-    --color-red-800: oklch(44.4% 0.177 26.899);
     --color-orange-500: oklch(70.5% 0.213 47.604);
     --color-yellow-500: oklch(79.5% 0.184 86.047);
     --color-green-400: oklch(79.2% 0.209 151.711);
@@ -71,6 +69,7 @@
     --color-card-blocked-text: oklch(0.444 0.177 26.899);
     --color-add-outline: oklch(0.551 0.027 264.364);
     --color-add-outline-hover: oklch(0.21 0.034 264.665);
+    --color-column-limit-reached: oklch(0.885 0.062 18.334);
     --color-cancel-button: oklch(0.551 0.027 264.364);
     --color-cancel-button-hover: oklch(0.373 0.034 259.733);
     --color-red-button: oklch(0.637 0.237 25.331);
@@ -731,8 +730,14 @@
   .bg-card-bg {
     background-color: var(--color-card-bg);
   }
+  .bg-card-blocked-bg {
+    background-color: var(--color-card-blocked-bg);
+  }
   .bg-card-diff-bg {
     background-color: var(--color-card-diff-bg);
+  }
+  .bg-column-limit-reached {
+    background-color: var(--color-column-limit-reached);
   }
   .bg-full-dropdown {
     background-color: var(--color-full-dropdown);
@@ -775,9 +780,6 @@
   }
   .bg-primary {
     background-color: var(--color-primary);
-  }
-  .bg-red-300 {
-    background-color: var(--color-red-300);
   }
   .bg-red-500 {
     background-color: var(--color-red-500);
@@ -1000,9 +1002,6 @@
   }
   .text-red-500 {
     color: var(--color-red-500);
-  }
-  .text-red-800 {
-    color: var(--color-red-800);
   }
   .text-red-button {
     color: var(--color-red-button);
@@ -1243,6 +1242,7 @@
     --color-card-blocked-text: oklch(0.808 0.114 19.571);
     --color-add-outline: oklch(0.8 0.027 264.364);
     --color-add-outline-hover: oklch(0.95 0.034 264.665);
+    --color-column-limit-reached: oklch(0.258 0.092 26.042);
     --color-cancel-button: oklch(0.45 0.027 264.364);
     --color-cancel-button-hover: oklch(0.60 0.034 259.733);
     --color-red-button: oklch(0.637 0.237 25.331);
