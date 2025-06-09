@@ -118,7 +118,7 @@
             Category = _linkCardsModel.Text
         });
 
-        var oppositeCategory = Constants.LINK_TYPE_PAIRS.ContainsKey(_linkCardsModel.Text) ? Constants.LINK_TYPE_PAIRS[_linkCardsModel.Text] : Constants.LINK_TYPE_PAIRS.First(x => x.Value.Equals(_linkCardsModel)).Key;
+        var oppositeCategory = Constants.LINK_TYPE_PAIRS.ContainsKey(_linkCardsModel.Text) ? Constants.LINK_TYPE_PAIRS[_linkCardsModel.Text] : Constants.LINK_TYPE_PAIRS.First(x => x.Value.Equals(_linkCardsModel.Text)).Key;
 
         targetCard.LinkedIssuesOne.Add(new CardLink
             {

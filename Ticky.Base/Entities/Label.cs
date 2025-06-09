@@ -12,6 +12,6 @@ namespace Ticky.Base.Entities
 
         public virtual Board Board { get; set; } = null!;
 
-        public virtual List<Card> OnCards { get; set; } = new();
+        public virtual List<Card> OnCards { get; set; } = [];
     }
 }

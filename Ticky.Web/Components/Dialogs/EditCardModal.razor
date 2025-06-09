@@ -198,13 +198,13 @@
                             <div class="flex flex-col gap-2 pl-3">
                                 @{
                                     i = 0;
-                                    var subtaskId = $"subtask_id_{i}";
                                 }
                                 @foreach (var subtask in _card.Subtasks.OrderBy(x => x.Index))
                                 {
+                                    var subtaskId = $"subtask_id_{i}";
                                     <div class="flex flex-row items-center gap-2 text-sm font-normal">
-                                        <input type="checkbox" checked="@subtask.Completed" @onchange="(e) => OnSubtaskStatusChanged(e, subtask)" />
-                                        <label>@subtask.Text</label>
+                                        <input id="@subtaskId" type="checkbox" checked="@subtask.Completed" @onchange="(e) => OnSubtaskStatusChanged(e, subtask)" />
+                                        <label for="@subtaskId">@subtask.Text</label>
                                         <i id="@subtaskId" class="fa fa-pencil edit-icon" @onclick="() => _editSubtaskModal?.Open(subtaskId, subtask)"></i>
                                         <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="() => DeleteSubtask(subtask)"></i>
                                     </div>
@@ -382,7 +382,7 @@
     public EventCallback OnSubmit { get; set; }
 
     private Card? _card;
-    private List<User> _members = new();
+    private List<User> _members = [];
 
     private ElementReference? _labelDiv;
     private ElementReference? _priorityDiv;
