@@ -71,6 +71,8 @@ services:
       - ./data/app/uploaded:/app/wwwroot/uploaded
     environment:
       - DB_HOST=ticky-db
+      - DB_NAME=ticky # Database name, can be customized
+      - DB_USERNAME=ticky # Database username, can be customized
       - DB_PASSWORD=your-secure-password
       #- FULLY_OFFLINE=true # Uncomment this if you want to disable the avatar service and run fully offline.
       - SMTP_ENABLED=true # Change this to false to ignore SMTP configuration and disable SMTP setup. Resetting password via typical password reset won't work (will need to be reset by an admin via the Admin Panel), as well as reminders and notifications. Can be enabled at any time.
@@ -84,16 +86,15 @@ services:
     depends_on:
       ticky-db:
         condition: service_healthy
-
   ticky-db:
     image: mysql:8
     container_name: ticky-db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ticky
-      MYSQL_USER: ticky
+      MYSQL_DATABASE: ticky # This should match DB_NAME in ticky-app container
+      MYSQL_USER: ticky # This should match DB_USERNAME in ticky-app container
       MYSQL_ROOT_PASSWORD: your-secure-password
-      MYSQL_PASSWORD: your-secure-password
+      MYSQL_PASSWORD: your-secure-password # This should match DB_PASSWORD
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 2s
@@ -102,7 +103,7 @@ services:
       - ./data/mysql:/var/lib/mysql
 ```
 
-2. Fill out environment variables within the `docker-compose.yaml` file, `your-secure-password` must be the same between `MYSQL_PASSWORD` and `DB_PASSWORD`.
+2. Fill out environment variables within the `docker-compose.yaml` file, `your-secure-password` must be the same between `MYSQL_PASSWORD` and `DB_PASSWORD`. Also make sure that `MYSQL_DATABASE` matches `DB_NAME` and `MYSQL_USER` matches `DB_USERNAME`.
 
 3. Run with Docker Compose:
 
