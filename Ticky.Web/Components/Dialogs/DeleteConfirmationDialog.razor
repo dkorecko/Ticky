@@ -24,7 +24,7 @@
     [Parameter]
     public EventCallback OnConfirmed { get; set; } = default!;
 
-    private string _entityName = typeof(T).Name.ToLower();
+    private string _entityName = typeof(T).Name.ToFriendlyName().ToLower();
     private T? _obj;
     private Modal? _dialog;
     private Func<Task>? _onSubmitDelegate { get; set; } = default!;
@@ -59,7 +59,7 @@
         if (_onSubmitDelegate is not null)
             await _onSubmitDelegate.Invoke();
 
-        MainLayout.RunNotification(new Notification($"{typeof(T).Name} deleted successfully."));
+        MainLayout.RunNotification(new Notification($"{typeof(T).Name.ToFriendlyName()} deleted successfully."));
         await OnConfirmed.InvokeAsync();
         await _dialog.Close();
     }
