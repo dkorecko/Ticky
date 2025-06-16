@@ -18,7 +18,7 @@ builder.Services.AddDbContextFactory<DataContext>(options =>
 #else
         builder.Configuration.GetConnectionString("Production")
 #endif
-        ?? $"Server={builder.Configuration.GetValue<string>("DB_HOST")};Database=ticky;Uid=ticky;Pwd={builder.Configuration.GetValue<string>("DB_PASSWORD")};";
+        ?? $"Server={builder.Configuration.GetValue<string>("DB_HOST")};Database={builder.Configuration.GetValue<string>("DB_NAME", "ticky")};Uid={builder.Configuration.GetValue<string>("DB_USERNAME", "ticky")};Pwd={builder.Configuration.GetValue<string>("DB_PASSWORD")};";
     options.UseMySql(
         connectionString,
         ServerVersion.Create(
