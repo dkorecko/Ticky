@@ -85,7 +85,7 @@
                 <div class="flex w-full flex-row flex-wrap gap-5">
                     @foreach (var board in _remainingBoards.OrderByDescending(x => x.Favorites.Any(y => y.BoardId.Equals(x.Id))).ThenByDescending(x => x.LastVisits.Select(y => y.VisitTime).OrderByDescending(y => y).FirstOrDefault()))
                     {
-                        <BoardCard Board="board" IsAdmin="board.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnDelete="async () => await RunNotification(typeof(Board), OperationType.Deleted)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" DeleteConfirmationDialog="_deleteBoardModal" />
+                        <BoardCard Board="board" IsAdmin="board.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" DeleteConfirmationDialog="_deleteBoardModal" />
                     }
                 </div>
             </section>

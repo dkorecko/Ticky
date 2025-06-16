@@ -22,7 +22,7 @@
     protected MainLayout MainLayout { get; set; } = default!;
 
     [Parameter]
-    public EventCallback<bool> OnConfirmed { get; set; } = default!;
+    public EventCallback OnConfirmed { get; set; } = default!;
 
     private string _entityName = typeof(T).Name.ToLower();
     private T? _obj;
