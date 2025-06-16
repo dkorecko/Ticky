@@ -10,7 +10,7 @@ public static class StringHelper
 
         for (int i = 0; i < str.Length; i++)
         {
-            if (i != 0 && str[i] >= 'A' && str[i] <= 'Z')
+            if (i != 0 && char.IsUpper(str[i]))
             {
                 sb.Append(' ');
                 sb.Append(char.ToLower(str[i]));
