@@ -31,7 +31,6 @@
                     <label class="font-bold">General settings</label>
                     <label class="text-sm opacity-70">All the most important settings for your profile, which do not belong to any other categories.</label>
                 </div>
-
                 <div class="settings-item">
                     <div class="flex flex-col text-sm">
                         <label class="font-bold opacity-90">Advanced card settings after creation</label>
@@ -39,7 +38,7 @@
                             after creating a card on the board.</label>
                     </div>
 
-                    <input type="checkbox" class="switch" value=@_user.AutomaticCardEdit @onchange=OnAutomaticCardEditChanged>
+                    <input type="checkbox" class="switch" checked=@_user.AutomaticCardEdit @onchange=OnAutomaticCardEditChanged>
                 </div>
 
                 <div class="settings-item">
@@ -49,7 +48,7 @@
                             initiate a deletion of an object.</label>
                     </div>
 
-                    <input type="checkbox" class="switch" value=@_user.InstantDelete @onchange=OnInstantDeleteChanged>
+                    <input type="checkbox" class="switch" checked=@_user.InstantDelete @onchange=OnInstantDeleteChanged>
                 </div>
 
                 <div class="settings-item">
@@ -60,7 +59,7 @@
                         </label>
                     </div>
 
-                    <input type="checkbox" class="switch" value=@_user.AutomaticDeadlineReminder @onchange=OnAutomaticDeadlineReminderChanged>
+                    <input type="checkbox" class="switch" checked=@_user.AutomaticDeadlineReminder @onchange=OnAutomaticDeadlineReminderChanged>
                 </div>
             } else if(_tab == 2)
             {
