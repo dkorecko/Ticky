@@ -54,6 +54,9 @@ public class CleanupHostedService : AbstractHostedService<CleanupHostedService>
             .Where(x => x != null)
             .ToListAsync();
 
+        if (!Directory.Exists(Constants.SAVE_UPLOADED_IMAGES_PATH))
+            return;
+
         var unlinkedUploadedImages = Directory
             .GetFiles(Constants.SAVE_UPLOADED_IMAGES_PATH)
             .Where(x =>
