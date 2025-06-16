@@ -5,7 +5,7 @@
     protected async Task RunNotification(Type type, OperationType operationType) 
     {
         await HandleUpdate();
-        MainLayout.RunNotification(new Notification($"{type.Name} {operationType.GetDisplayName()} successfully."));
+        MainLayout.RunNotification(new Notification($"{type.Name.ToFriendlyName()} {operationType.GetDisplayName()} successfully."));
     }
 
     protected virtual Task HandleUpdate()

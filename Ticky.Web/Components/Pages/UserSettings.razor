@@ -238,6 +238,8 @@
         user.InstantDelete = val;
 
         await db.SaveChangesAsync();
+
+        await RunNotification(typeof(UserSettings), OperationType.Edited);
     }
 
     private async void OnAutomaticCardEditChanged(ChangeEventArgs e)
@@ -257,6 +259,8 @@
         user.AutomaticCardEdit = val;
 
         await db.SaveChangesAsync();
+
+        await RunNotification(typeof(UserSettings), OperationType.Edited);
     }
 
     private async void OnAutomaticDeadlineReminderChanged(ChangeEventArgs e)
@@ -276,6 +280,8 @@
         user.AutomaticDeadlineReminder = val;
 
         await db.SaveChangesAsync();
+
+        await RunNotification(typeof(UserSettings), OperationType.Edited);
     }
 
     private void ShowUploadError(string message)
