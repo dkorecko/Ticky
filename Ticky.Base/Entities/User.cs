@@ -1,7 +1,13 @@
 namespace Ticky.Base.Entities;
 
-public class User : IdentityUser<int>, IDbEntry
+public class User : IdentityUser<int>, IDbEntry, IDeletable
 {
+    [NotMapped]
+    public string Name
+    {
+        get => DisplayName;
+    }
+
     public virtual Code? EmailVerificationCode { get; set; }
 
     public virtual List<ProjectMembership> ProjectMemberships { get; set; } = [];

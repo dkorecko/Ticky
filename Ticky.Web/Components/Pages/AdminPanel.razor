@@ -1,4 +1,4 @@
-﻿@page "/admin"
+@page "/admin"
 @using Ticky.Base.Entities
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ILogger<BoardSettings> _logger
@@ -6,7 +6,7 @@
 
 <AddUserModal @ref="_addUserModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.User), OperationType.Added)" />
 <EditUserModal @ref="_editUserModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.User), OperationType.Edited)" />
-<DeleteUserModal @ref="_deleteUserModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.User), OperationType.Deleted)" />
+<DeleteConfirmationDialog T="Ticky.Base.Entities.User" @ref="_deleteUserModal" OnConfirmed="HandleUpdate" />
 
 <div class="h-screen w-full">
     <section class="flex w-full max-w-4xl flex-grow flex-col gap-5 overflow-y-auto px-12 py-14">
@@ -45,7 +45,7 @@
                                 </div>
                                 <div class="bg-card-diff-bg flex w-full flex-col items-center gap-3 px-5 py-3">
                                     <button class="w-full" @onclick="() => _editUserModal?.Open(user.Id)">Edit</button>
-                                    <button class="w-full !bg-red-button hover:!bg-red-button-hover" @onclick="() => _deleteUserModal?.Open(user.Id, user.DisplayName)">Delete</button>
+                                    <button class="w-full !bg-red-button hover:!bg-red-button-hover" @onclick="() => _deleteUserModal!.OpenDialog(user)">Delete</button>
                                 </div>
                             </div>
                         }
@@ -69,7 +69,7 @@
     private List<User>? _users;
     private AddUserModal? _addUserModal;
     private EditUserModal? _editUserModal;
-    private DeleteUserModal? _deleteUserModal;
+    private DeleteConfirmationDialog<Ticky.Base.Entities.User>? _deleteUserModal;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

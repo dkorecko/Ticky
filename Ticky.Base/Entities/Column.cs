@@ -1,6 +1,6 @@
 namespace Ticky.Base.Entities;
 
-public class Column : AbstractDbEntity, IOrderable
+public class Column : AbstractDbEntity, IOrderable, IDeletable
 {
     public required string Name { get; set; }
     public required int BoardId { get; set; }

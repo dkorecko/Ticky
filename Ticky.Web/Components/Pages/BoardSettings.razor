@@ -6,7 +6,7 @@
 
 <AddLabelModal @ref="_addLabelModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.Label), OperationType.Added)" />
 <EditLabelModal @ref="_editLabelModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.Label), OperationType.Edited)" />
-<DeleteLabelModal @ref="_deleteLabelModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.Label), OperationType.Deleted)" />
+<DeleteConfirmationDialog T="Ticky.Base.Entities.Label" @ref="_deleteLabelModal" OnConfirmed="HandleUpdate"/>
 
 <div class="h-screen w-full">
     <section class="flex w-full max-w-4xl flex-grow flex-col gap-5 overflow-y-auto px-12 py-14">
@@ -38,7 +38,7 @@
                                 <Label LabelEntity="label" />
                                 <label class="ml-2 text-xs">Used on @label.OnCards.Count cards</label>
                                 <i class="fa fa-pencil edit-icon ml-2" @onclick="() => _editLabelModal?.Open(_board, label)"></i>
-                                <i class="fa fa-trash-can edit-icon hover:text-red-button-hover" @onclick="() => _deleteLabelModal?.Open(label.Id, label.Text, label.OnCards.Count)"></i>
+                                <i class="fa fa-trash-can edit-icon hover:text-red-button-hover" @onclick="() => _deleteLabelModal!.OpenDialog(label)"></i>
                             </div>
                         }
                     </div>
@@ -62,7 +62,7 @@
     private Base.Entities.Board? _board;
     private AddLabelModal? _addLabelModal;
     private EditLabelModal? _editLabelModal;
-    private DeleteLabelModal? _deleteLabelModal;
+    private DeleteConfirmationDialog<Base.Entities.Label>? _deleteLabelModal;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -90,7 +90,8 @@
         await base.HandleUpdate();
     }
 
-    private void GoToTab(int tabNumber) {
+    private void GoToTab(int tabNumber) 
+    {
         _tab = tabNumber;
     }
 }

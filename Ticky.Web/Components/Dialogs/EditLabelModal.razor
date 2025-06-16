@@ -53,14 +53,14 @@
         _label = label;
         _labelModel = new()
         {
-            Text = label.Text,
+            Text = label.Name,
             BackgroundColor = label.BackgroundColor,
             TextColor = label.TextColor
         };
         _showcaseLabel = new()
             {
                 BoardId = 0,
-                Text = label.Text,
+                Name = label.Name,
                 BackgroundColor = label.BackgroundColor,
                 TextColor = label.TextColor
             };
@@ -76,11 +76,11 @@
 
         if(string.IsNullOrWhiteSpace(str))
         {
-            _showcaseLabel.Text = "Example";
+            _showcaseLabel.Name = "Example";
             return;
         }
 
-        _showcaseLabel.Text = str;
+        _showcaseLabel.Name = str;
         _labelModel.Text = str;
     }
 
@@ -121,7 +121,7 @@
             return;
 
         targetLabel.BoardId = board.Id;
-        targetLabel.Text = _labelModel.Text;
+        targetLabel.Name = _labelModel.Text;
         targetLabel.TextColor = _labelModel.TextColor!.Value;
         targetLabel.BackgroundColor = _labelModel.BackgroundColor!.Value;
 

@@ -91,7 +91,7 @@ public class DataSeeder
 
         var label = new Label
         {
-            Text = "Important",
+            Name = "Important",
             BoardId = testBoard.Id,
             BackgroundColor = Color.FromArgb(255, 251, 207, 232),
             TextColor = Color.FromArgb(255, 157, 23, 77)
@@ -136,7 +136,7 @@ public class DataSeeder
 
         var testCard = new Card
         {
-            Text =
+            Name =
                 "This is a pretty long example task, just trying out the word wrapping and stuff.",
             Description = "AC:",
             Number = 1,

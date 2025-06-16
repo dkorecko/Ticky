@@ -77,9 +77,9 @@
         {
             var defaultLabels = new List<Ticky.Base.Entities.Label>
             {
-                new Ticky.Base.Entities.Label { Text = "Bug", TextColor = Color.White, BackgroundColor = Color.FromArgb(220, 38, 38), BoardId = _board.Id },
-                new Ticky.Base.Entities.Label { Text = "Feature", TextColor = Color.White, BackgroundColor = Color.FromArgb(16, 185, 129), BoardId = _board.Id },
-                new Ticky.Base.Entities.Label { Text = "Enhancement", TextColor = Color.White, BackgroundColor = Color.FromArgb(59, 130, 246), BoardId = _board.Id }
+                new Ticky.Base.Entities.Label { Name = "Bug", TextColor = Color.White, BackgroundColor = Color.FromArgb(220, 38, 38), BoardId = _board.Id },
+                new Ticky.Base.Entities.Label { Name = "Feature", TextColor = Color.White, BackgroundColor = Color.FromArgb(16, 185, 129), BoardId = _board.Id },
+                new Ticky.Base.Entities.Label { Name = "Enhancement", TextColor = Color.White, BackgroundColor = Color.FromArgb(59, 130, 246), BoardId = _board.Id }
             };
 
             _board.Labels.AddRange(defaultLabels);

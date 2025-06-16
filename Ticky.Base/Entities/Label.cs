@@ -1,8 +1,8 @@
 namespace Ticky.Base.Entities
 {
-    public class Label : AbstractDbEntity
+    public class Label : AbstractDbEntity, IDeletable
     {
-        public required string Text { get; set; }
+        public required string Name { get; set; }
 
         public required Color TextColor { get; set; }
 

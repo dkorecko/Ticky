@@ -47,7 +47,7 @@ namespace Ticky.Internal.Services
                 REMINDER,
                 new Dictionary<string, string>
                 {
-                    { Constants.Emails.Mappings.CARD_TEXT, reminder.Card.Text },
+                    { Constants.Emails.Mappings.CARD_TEXT, reminder.Card.Name },
                     {
                         Constants.Emails.Mappings.CARD_SCHEDULED_FOR,
                         reminder.At.ToReadableStringWithTime()
@@ -66,7 +66,7 @@ namespace Ticky.Internal.Services
                 DEADLINE_REMINDER,
                 new Dictionary<string, string>
                 {
-                    { Constants.Emails.Mappings.CARD_TEXT, card.Text },
+                    { Constants.Emails.Mappings.CARD_TEXT, card.Name },
                     {
                         Constants.Emails.Mappings.CARD_SCHEDULED_FOR,
                         card!.Deadline!.Value.ToReadableStringWithTime()

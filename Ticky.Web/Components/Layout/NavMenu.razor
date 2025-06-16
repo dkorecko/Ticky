@@ -24,7 +24,7 @@
                 <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-dropdown-option" @onclick='() => GoToTask(result.Column.BoardId, result.Id)'>
                     <div class="flex flex-row justify-between gap-3">
                         <label class="cursor-pointer whitespace-nowrap">@result.Column.Board.Code-@result.Number</label>
-                        <label class="cursor-pointer truncate whitespace-nowrap">@result.Text</label>
+                        <label class="cursor-pointer truncate whitespace-nowrap">@result.Name</label>
                     </div>
                     <label class="text-2xs cursor-pointer font-light">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</label>
                 </div>
@@ -133,7 +133,7 @@
                     .ThenInclude(x => x.Memberships)
             .Where(x => x.Column.Board.Project.Memberships.Any(membership => membership.UserId.Equals(_user.Id)) || 
                 x.Column.Board.Memberships.Any(membership => membership.UserId.Equals(_user.Id)))
-            .Where(x => x.Text.Contains(_searchTerm) || (x.Column.Board.Code + "-" + x.Number).Contains(_searchTerm))
+            .Where(x => x.Name.Contains(_searchTerm) || (x.Column.Board.Code + "-" + x.Number).Contains(_searchTerm))
             .Take(5)
             .ToListAsync();
 

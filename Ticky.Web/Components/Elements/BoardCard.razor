@@ -1,9 +1,8 @@
-﻿@using Ticky.Base.Entities
+@using Ticky.Base.Entities
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
 <EditBoardModal @ref="_editBoardModal" OnSubmit="OnEdit" />
-<DeleteBoardModal @ref="_deleteBoardModal" OnSubmit="OnDelete" />
 
 <div class="board-card" @onclick='GoToBoard'>
     <div class="flex w-full flex-row justify-end gap-2 align-middle">
@@ -12,7 +11,7 @@
         {
             <Dropdown Actions='new() {
                         { "Edit board", () => _editBoardModal?.Open(Board.Id) },
-                        { "Delete board", () => _deleteBoardModal?.Open(Board.Id, Board.Name) }
+                        { "Delete board", async () => await DeleteConfirmationDialog.OpenDialog(Board) }
                     }'>
                 <i class="fa fa-ellipsis card-button"></i>
             </Dropdown>
@@ -53,7 +52,7 @@
     public EventCallback OnEdit { get; set; }
 
     [Parameter]
-    public EventCallback OnDelete { get; set; }
+    public required DeleteConfirmationDialog<Board> DeleteConfirmationDialog { get; set; }
 
     [Parameter]
     public EventCallback<bool> OnFavorite { get; set; }
@@ -70,8 +69,6 @@
     public bool IsAdmin { get; set; }
 
     private EditBoardModal? _editBoardModal;
-
-    private DeleteBoardModal? _deleteBoardModal;
 
     private void GoToBoard() {
         _navigationManager.NavigateTo(_navigationManager.BaseUri + "boards/" + Board.Id);

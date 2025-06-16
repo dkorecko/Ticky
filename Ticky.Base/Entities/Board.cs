@@ -1,6 +1,6 @@
 namespace Ticky.Base.Entities;
 
-public class Board : AbstractDbEntity
+public class Board : AbstractDbEntity, IDeletable
 {
     [Required(AllowEmptyStrings = false)]
     public required string Name { get; set; }
