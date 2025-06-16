@@ -54,11 +54,13 @@ public class CleanupHostedService : AbstractHostedService<CleanupHostedService>
             .Where(x => x != null)
             .ToListAsync();
 
-        if (!Directory.Exists(Constants.SAVE_UPLOADED_IMAGES_PATH))
-            return;
+        var folderPath = Constants.SAVE_UPLOADED_IMAGES_PATH;
+
+        if (!Directory.Exists(folderPath))
+            Directory.CreateDirectory(folderPath);
 
         var unlinkedUploadedImages = Directory
-            .GetFiles(Constants.SAVE_UPLOADED_IMAGES_PATH)
+            .GetFiles(folderPath)
             .Where(x =>
                 !allProfilePictureNames.Contains(
                     x[(Math.Max(x.LastIndexOf('/'), x.LastIndexOf('\\')) + 1)..]
@@ -83,11 +85,13 @@ public class CleanupHostedService : AbstractHostedService<CleanupHostedService>
         var db = scope.ServiceProvider.GetService<DataContext>()!;
         var allFileNames = await db.Attachments.Select(x => x.FileName).ToListAsync();
 
-        if (!Directory.Exists(Constants.SAVE_UPLOADED_FILES_PATH))
-            Directory.CreateDirectory(Constants.SAVE_UPLOADED_FILES_PATH);
+        var folderPath = Constants.SAVE_UPLOADED_FILES_PATH;
+
+        if (!Directory.Exists(folderPath))
+            Directory.CreateDirectory(folderPath);
 
         var unlinkedAttachments = Directory
-            .GetFiles(Constants.SAVE_UPLOADED_FILES_PATH)
+            .GetFiles(folderPath)
             .Where(x =>
                 !allFileNames.Contains(x[(Math.Max(x.LastIndexOf('/'), x.LastIndexOf('\\')) + 1)..])
             )
