@@ -52,7 +52,7 @@
         _showcaseLabel = new()
             {
                 BoardId = board.Id,
-                Text = "Example",
+                Name = "Example",
                 BackgroundColor = Color.AliceBlue,
                 TextColor = Color.Black
             };
@@ -68,11 +68,11 @@
 
         if(string.IsNullOrWhiteSpace(str))
         {
-            _showcaseLabel.Text = "Example";
+            _showcaseLabel.Name = "Example";
             return;
         }
 
-        _showcaseLabel.Text = str;
+        _showcaseLabel.Name = str;
         _labelModel.Text = str;
     }
 
@@ -110,7 +110,7 @@
         board.Labels.Add(new Base.Entities.Label
         {
             BoardId = board.Id,
-            Text = _labelModel.Text,
+            Name = _labelModel.Text,
             TextColor = _labelModel.TextColor!.Value,
             BackgroundColor = _labelModel.BackgroundColor!.Value
         });

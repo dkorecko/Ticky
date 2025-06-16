@@ -7,7 +7,8 @@
 <CreateBoardModal @ref="_createBoardModal" OnSubmit="async () => await RunNotification(typeof(Board), OperationType.Added)" />
 <EditProjectModal @ref="_editProjectModal" OnSubmit="async () => await RunNotification(typeof(Project), OperationType.Edited)" />
 <EditProjectMembershipsModal @ref="_editProjectMembershipsModal" OnSubmit="async () => await RunNotification(typeof(ProjectMembership), OperationType.Edited)" />
-<DeleteProjectModal @ref="_deleteProjectModal" OnSubmit="async () => await RunNotification(typeof(Project), OperationType.Deleted)" />
+<DeleteConfirmationDialog T="Project" @ref="_deleteProjectModal" OnConfirmed="HandleUpdate" />
+<DeleteConfirmationDialog T="Ticky.Base.Entities.Board" @ref="_deleteBoardModal" OnConfirmed="HandleUpdate" />
 
 <div class="flex h-screen w-full flex-col gap-10 overflow-y-auto px-12 py-14">
     <div class="flex flex-row items-center justify-end gap-5">
@@ -32,7 +33,7 @@
                         {
                             <Dropdown Actions='new() {
                                 { "Edit project", () => _editProjectModal?.Open(project.Id)},
-                                { "Delete project", () => _deleteProjectModal?.Open(project.Id, project.Name) }
+                                { "Delete project", () => _deleteProjectModal?.OpenDialog(project) }
                             }'>
                                 <i class="fa fa-ellipsis icon-button"></i>
                             </Dropdown>
@@ -60,7 +61,7 @@
                 <div class="flex w-full flex-row flex-wrap gap-5">
                     @foreach (var board in project.Boards.OrderByDescending(x => x.Favorites.Any(y => y.BoardId.Equals(x.Id))).ThenByDescending(x => x.LastVisits.Select(y => y.VisitTime).OrderByDescending(y => y).FirstOrDefault()))
                     {
-                        <BoardCard Board="board" IsAdmin="board.Memberships.Any(x => x.UserId.Equals(_user.Id) && x.IsAdmin) || project.Memberships.Any(x => x.UserId.Equals(_user.Id) && x.IsAdmin)" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnDelete="async () => await RunNotification(typeof(Board), OperationType.Deleted)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" />
+                        <BoardCard Board="board" IsAdmin="board.Memberships.Any(x => x.UserId.Equals(_user.Id) && x.IsAdmin) || project.Memberships.Any(x => x.UserId.Equals(_user.Id) && x.IsAdmin)" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" DeleteConfirmationDialog="_deleteBoardModal" />
                     }
                     @if(project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin) 
                     {
@@ -84,7 +85,7 @@
                 <div class="flex w-full flex-row flex-wrap gap-5">
                     @foreach (var board in _remainingBoards.OrderByDescending(x => x.Favorites.Any(y => y.BoardId.Equals(x.Id))).ThenByDescending(x => x.LastVisits.Select(y => y.VisitTime).OrderByDescending(y => y).FirstOrDefault()))
                     {
-                        <BoardCard Board="board" IsAdmin="board.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnDelete="async () => await RunNotification(typeof(Board), OperationType.Deleted)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" />
+                        <BoardCard Board="board" IsAdmin="board.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" DeleteConfirmationDialog="_deleteBoardModal" />
                     }
                 </div>
             </section>
@@ -115,7 +116,9 @@
 
     private EditProjectMembershipsModal? _editProjectMembershipsModal;
 
-    private DeleteProjectModal? _deleteProjectModal;
+    private DeleteConfirmationDialog<Project>? _deleteProjectModal;
+
+    private DeleteConfirmationDialog<Ticky.Base.Entities.Board>? _deleteBoardModal;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

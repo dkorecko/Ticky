@@ -24,7 +24,7 @@
         <div class="h-[90vh] w-[33rem] overflow-y-scroll">
             <div class="flex flex-col gap-3 px-5 py-5">
                 <i class="edit-icon fa fa-x ml-auto" @onclick="async () => await Modal!.Close()"></i>
-                <textarea class="min-h-12 resize-none px-2 py-2 text-2xl font-bold transition-all ease-in-out" @onchange="OnTextChanged">@_card.Text</textarea>
+                <textarea class="min-h-12 resize-none px-2 py-2 text-2xl font-bold transition-all ease-in-out" @onchange="OnTextChanged">@_card.Name</textarea>
                 <hr />
                 <table class="ml-2 border-separate border-spacing-3">
                     <tbody>
@@ -167,7 +167,7 @@
                             <div class="flex cursor-pointer flex-col justify-between rounded-sm px-3 py-2 text-xs shadow outline-1 outline-add-outline transition-all ease-in-out hover:bg-dropdown-option">
                                 <div class="flex flex-row justify-between gap-3">
                                     <label class="cursor-pointer whitespace-nowrap">@linkedCard.Column.Board.Code-@linkedCard.Number</label>
-                                    <label class="cursor-pointer truncate whitespace-nowrap">@linkedCard.Text</label>
+                                    <label class="cursor-pointer truncate whitespace-nowrap">@linkedCard.Name</label>
                                 </div>
                                 <div class="flex flex-row items-center justify-between">
                                     <label class="text-2xs cursor-pointer font-light">Project @linkedCard.Column.Board.Project.Name — @linkedCard.Column.Name</label>
@@ -434,7 +434,7 @@
         if (card is null)
             return;
 
-        card.Text = e.Value?.ToString() ?? string.Empty;
+        card.Name = e.Value?.ToString() ?? string.Empty;
         card.Activities.Add(new Activity
         {
             Text = "<b>changed</b> the title",

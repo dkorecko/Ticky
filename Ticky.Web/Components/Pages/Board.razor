@@ -7,8 +7,8 @@
 
 <CreateColumnModal @ref="_createColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Added)" />
 <EditColumnModal @ref="_editColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Edited)" />
-<DeleteColumnModal @ref="_deleteColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Deleted)" />
-<DeleteTaskModal @ref="_deleteTaskModal" OnSubmit="async () => await RunNotification(typeof(Card), OperationType.Deleted)" />
+<DeleteConfirmationDialog T="Base.Entities.Column" @ref="_deleteColumnModal" OnConfirmed="HandleUpdate" />
+<DeleteConfirmationDialog T="Base.Entities.Card" @ref="_deleteTaskModal" OnConfirmed="HandleUpdate" />
 <EditCardModal @ref="_editCardModal" OnSubmit="OnTaskEdited" />
 <EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
 
@@ -75,7 +75,7 @@
 
                                         <Dropdown Actions='new() {
                                             { "Edit column", () => _editColumnModal?.Open(column.Id) },
-                                            { "Delete column", () => _deleteColumnModal?.Open(column.Id, column.Name) },
+                                            { "Delete column", async () => await OpenDeleteColumnDialog(column) },
                                             { $"{(column.Collapsed ? "Expand" : "Collapse")} column", async () => await ExpandOrCollapseColumn(column.Id) },
                                         }'>
                                             <i class="fa fa-ellipsis icon-button pr-1"></i>
@@ -92,7 +92,7 @@
                                         {
                                             <div class="mt-1"></div>
                                         }
-                                        <TaskCard Card="@context" BoardCode="@_board.Code" EditCardModal="_editCardModal" DeleteTaskModal="_deleteTaskModal" Members="_members" OnCardUpdated="HandleUpdate" />
+                                        <TaskCard Card="@context" BoardCode="@_board.Code" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" Members="_members" OnCardUpdated="HandleUpdate" />
                                     </SortableItemTemplate>
                                 </SortableList>
 
@@ -192,8 +192,8 @@
     private CreateColumnModal? _createColumnModal;
     private EditColumnModal? _editColumnModal;
     private EditCardModal? _editCardModal;
-    private DeleteColumnModal? _deleteColumnModal;
-    private DeleteTaskModal? _deleteTaskModal;
+    private DeleteConfirmationDialog<Base.Entities.Column>? _deleteColumnModal;
+    private DeleteConfirmationDialog<Base.Entities.Card>? _deleteTaskModal;
     private EditBoardMembershipsModal? _editBoardMembershipsModal;
     private List<ElementReference> _avatars = [];
     private ElementReference Avatars { set => _avatars.Add(value); }
@@ -462,7 +462,7 @@
         {
             column.Cards.Add(new Card
             {
-                Text = _createTaskModel.Text,
+                Name = _createTaskModel.Text,
                 ColumnId = columnId,
                 Index = IndexHelper.GetNextIndex(column.Cards),
                 CreatedAt = DateTime.Now,
@@ -512,6 +512,27 @@
         _createTaskModel.Text = str.ReplaceLineEndings(" ");
 
         StateHasChanged();
+    }
+
+    private async Task OpenDeleteColumnDialog(Column column)
+    {
+        ArgumentNullException.ThrowIfNull(_deleteColumnModal);
+
+        await _deleteColumnModal.OpenDialog(column, async () =>
+        {
+            using var db = _dbContextFactory.CreateDbContext();
+
+            var targetBoard = await db.Boards
+                .Include(x => x.Columns)
+            .FirstOrDefaultAsync(x => x.Id.Equals(column.BoardId));
+
+            if (targetBoard is null)
+                return;
+
+            targetBoard.Columns.FixIndices();
+
+            await db.SaveChangesAsync();
+        });
     }
 }
 

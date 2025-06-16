@@ -68,7 +68,7 @@
             card.Labels.RemoveAll(x => x.Id.Equals(label.Id));
             card.Activities.Add(new Activity
                 {
-                    Text = $"<b>removed</b> label <b>{label.Text}</b>",
+                    Text = $"<b>removed</b> label <b>{label.Name}</b>",
                     UserId = _user.Id,
                     CardId = card.Id,
                     At = DateTime.Now
@@ -82,7 +82,7 @@
             card.Labels.Add(targetLabel);
             card.Activities.Add(new Activity
                 {
-                    Text = $"<b>added</b> label <b>{label.Text}</b>",
+                    Text = $"<b>added</b> label <b>{label.Name}</b>",
                     UserId = _user.Id,
                     CardId = card.Id,
                     At = DateTime.Now
