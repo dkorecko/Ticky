@@ -23,14 +23,23 @@ export function init(id, group, pull, put, sort, handle, filter, component, forc
             let customChildNodes = Array.from(event.to.childNodes).filter(node => node.tagName === 'DIV');
             if (DEBUG_MODE) {
                 console.log(event)
-                console.log("remove item for update:");
+                console.log("onUpdate item:");
                 console.log(event.item);
+                console.log('event from: ', event.from)
                 console.log('event to: ', event.to)
                 console.log('event oldIndex: ', event.oldIndex)
                 console.log('event newIndex: ', event.newIndex)
                 console.log('event to childNodes: ', customChildNodes)
                 console.log('insert before: ', customChildNodes[event.oldIndex])
             }
+
+
+            if (customChildNodes.length === 1) {
+                if (DEBUG_MODE)
+                    console.log('ignoring move because moved into the same place')
+                return
+            }
+
             event.item.remove();
 
             if (event.oldIndex < event.newIndex)
@@ -51,8 +60,9 @@ export function init(id, group, pull, put, sort, handle, filter, component, forc
             let customChildNodes = Array.from(event.from.childNodes).filter(node => node.tagName === 'DIV');
             if (DEBUG_MODE) {
                 console.log(event)
-                console.log("remove item for update:");
+                console.log("onRemove item:");
                 console.log(event.item);
+                console.log('event from: ', event.from)
                 console.log('event to: ', event.to)
                 console.log('event oldIndex: ', event.oldIndex)
                 console.log('event newIndex: ', event.newIndex)
