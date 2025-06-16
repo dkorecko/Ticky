@@ -6,6 +6,7 @@ global using Microsoft.Extensions.Logging;
 global using Ticky.Base;
 global using Ticky.Base.DTOs;
 global using Ticky.Base.Entities;
+global using Ticky.Base.Entities.Abstractions;
 global using Ticky.Base.Enums;
 global using Ticky.Internal.Data;
 global using Ticky.Internal.Helpers;

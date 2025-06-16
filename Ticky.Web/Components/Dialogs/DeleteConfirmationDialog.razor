@@ -1,0 +1,66 @@
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@typeparam T where T : class, IDbEntry, IDeletable
+
+<Modal @ref=_dialog OnSubmitAttempted="HandleSubmit" RedSubmit=true Title=@($"Delete {_entityName} {_obj?.Name}")>
+    @if(_obj is null)
+    {
+        <Spinner/>
+    } else {
+        <p>
+            Are you sure you'd like to delete the @_entityName <b>@_obj.Name</b>?<br />
+            All data associated with this @_entityName will be deleted.<br />
+            <b>This action is irreversible.</b>
+        </p>
+    }
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+    protected MainLayout MainLayout { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<bool> OnConfirmed { get; set; } = default!;
+
+    private string _entityName = typeof(T).Name.ToLower();
+    private T? _obj;
+    private Modal? _dialog;
+    private Func<Task>? _onSubmitDelegate { get; set; } = default!;
+
+    public async Task OpenDialog(T obj, Func<Task>? onSubmitDelegate = null)
+    {
+        if (_dialog is null)
+            return;
+
+        _obj = obj;
+        _onSubmitDelegate = onSubmitDelegate;
+        StateHasChanged();
+
+        if (_user.InstantDelete)
+        {
+            await HandleSubmit();
+            return;
+        }
+
+        await _dialog.Show();
+    }
+
+    protected async Task HandleSubmit()
+    {
+        if (_dialog is null || _obj is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        await db.Set<T>().Where(x => x.Id.Equals(_obj.Id)).ExecuteDeleteAsync();
+
+        if (_onSubmitDelegate is not null)
+            await _onSubmitDelegate.Invoke();
+
+        MainLayout.RunNotification(new Notification($"{typeof(T).Name} deleted successfully."));
+        await OnConfirmed.InvokeAsync();
+        await _dialog.Close();
+    }
+}

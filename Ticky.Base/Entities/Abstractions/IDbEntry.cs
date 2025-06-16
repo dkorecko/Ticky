@@ -1,4 +1,4 @@
-namespace Ticky.Base.Entities;
+namespace Ticky.Base.Entities.Abstractions;
 
 public interface IDbEntry
 {

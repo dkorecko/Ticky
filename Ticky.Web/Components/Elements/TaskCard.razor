@@ -12,14 +12,14 @@
 
         <Dropdown Actions='new() {
                                 { "Edit task", async () => await EditCardModal.Open(Card.Id, Members) },
-                                { "Delete task", () => DeleteTaskModal?.Open(Card.Id, $"{BoardCode}-{Card.Number}") },
+                                { "Delete task", () => DeleteCardModal?.OpenDialog(Card) },
                                 { $"{(Card.Blocked ? "Unmark" : "Mark")} as blocked", async () => await ChangeBlockedStatus() }
                             }'>
             <i class="fa fa-ellipsis card-button pr-1"></i>
         </Dropdown>
     </div>
     <label class="cursor-pointer text-xs">
-        @Card.Text
+        @Card.Name
     </label>
     <div class="flex flex-row items-center justify-between gap-3">
         <div class="text-card-data-points flex w-full flex-row flex-wrap items-center justify-start gap-x-3 gap-y-1 text-xs">
@@ -63,7 +63,7 @@
     public required EditCardModal EditCardModal {get; set;}
 
     [Parameter]
-    public required DeleteTaskModal DeleteTaskModal { get; set; }
+    public required DeleteConfirmationDialog<Card> DeleteCardModal { get; set; }
 
     [Parameter]
     public required Card Card { get; set; }

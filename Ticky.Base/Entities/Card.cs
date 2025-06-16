@@ -1,8 +1,8 @@
 namespace Ticky.Base.Entities;
 
-public class Card : AbstractDbEntity, IOrderable
+public class Card : AbstractDbEntity, IOrderable, IDeletable
 {
-    public required string Text { get; set; }
+    public required string Name { get; set; }
     public string Description { get; set; } = string.Empty;
     public required int Number { get; set; }
     public required int Index { get; set; }
