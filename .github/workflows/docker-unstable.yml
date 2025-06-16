@@ -1,4 +1,4 @@
-name: Build and Publish Docker image to GHCR
+name: Build and publish unstable Docker image
 
 on:
   push:
