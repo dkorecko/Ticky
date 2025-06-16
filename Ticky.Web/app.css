@@ -153,12 +153,7 @@
     
 /* Regular checkbox styling */
 input[type="checkbox"]:not(.switch) {
-    height: 1rem;
-    width: 1rem;
-    border: 1px solid ;
-    border-radius: 0.25rem;
-    transition: background-color 0.2s, border-color 0.2s;
-    @apply cursor-pointer appearance-none bg-modal;
+    @apply h-4 w-4 cursor-pointer appearance-none rounded-sm border-1 border-add-outline bg-card-bg transition-all;
 }
 
 input[type="checkbox"]:not(.switch):checked {
