@@ -1293,14 +1293,18 @@
   }
 }
 input[type="checkbox"]:not(.switch) {
-  height: 1rem;
-  width: 1rem;
-  border: 1px solid;
-  border-radius: 0.25rem;
-  transition: background-color 0.2s, border-color 0.2s;
+  height: calc(var(--spacing) * 4);
+  width: calc(var(--spacing) * 4);
   cursor: pointer;
   appearance: none;
-  background-color: var(--color-modal);
+  border-radius: var(--radius-sm);
+  border-style: var(--tw-border-style);
+  border-width: 1px;
+  border-color: var(--color-add-outline);
+  background-color: var(--color-card-bg);
+  transition-property: all;
+  transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+  transition-duration: var(--tw-duration, var(--default-transition-duration));
 }
 input[type="checkbox"]:not(.switch):checked {
   background-color: var(--color-primary);
