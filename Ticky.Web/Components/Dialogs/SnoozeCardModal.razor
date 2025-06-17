@@ -1,0 +1,94 @@
+@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<ActionModal @ref=_modalRef Title="Snooze card">
+    @if(_card is null) {
+        <Spinner/>
+    } else {
+        <EditForm class="form p-2" Model="_snoozeCardModel" OnValidSubmit="SnoozeCard">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <Name For="() => _snoozeCardModel.At" />
+                <InputDate class="form-control" @bind-Value="_snoozeCardModel.At" min="@DateTime.Today.ToHtmlDateString()" />
+                <ValidationMessage For="() => _snoozeCardModel.At" />
+            </div>
+            <div class="form-group">
+                <Name For="() => _snoozeCardModel.Time" />
+                <InputSelect class="form-control" @bind-Value="_snoozeCardModel.Time">
+                    @{
+                        var baseTime = DateTime.Today;
+                    }
+
+                    @while(baseTime.Day.Equals(DateTime.Today.Day))
+                    {
+                        var stepTime = baseTime;
+                        <option selected='@(stepTime.Hour == 19 && stepTime.Minute == 0)' value="@stepTime.ToString("HH:mm")">@stepTime.ToString("HH:mm")</option>
+
+                        baseTime = baseTime.AddMinutes(15);
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => _snoozeCardModel.Time" />
+            </div>
+
+            <button type="submit">Set</button>
+        </EditForm>
+    }
+</ActionModal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback UpdateCard { get; set; }
+
+    private ActionModal? _modalRef;
+
+    private Card? _card;
+
+    private SnoozeCardModel _snoozeCardModel = new();
+
+    public void Open(ElementReference? triggerElement, Card card) {
+        _card = card;
+        _snoozeCardModel = new()
+            {
+                At = card.SnoozedUntil ?? DateTime.Today,
+                Time = (card.SnoozedUntil ?? DateTime.Today).ToString("HH:mm")
+            };
+        _modalRef?.Open(triggerElement);
+        StateHasChanged();
+    }
+
+    public async Task SnoozeCard() 
+    {
+        if(_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await db.Cards
+            .Include(x => x.Activities)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
+
+        if(card is null)
+            return;
+
+        var time = DateTime.ParseExact(_snoozeCardModel.Time, "HH:mm", null);
+
+        card.SnoozedUntil = new DateTime(_snoozeCardModel.At.Year, _snoozeCardModel.At.Month, _snoozeCardModel.At.Day, time.Hour, time.Minute, 0);
+        card.Activities.Add(new Activity
+        {
+            Text = $"<b>snoozed</b> this card until <b>{card.SnoozedUntil.Value.ToReadableStringWithTime()}</b>",
+            UserId = _user.Id,
+            CardId = card.Id,
+            At = DateTime.Now
+        });
+
+        await db.SaveChangesAsync();
+
+        _card = card;
+        StateHasChanged();
+        await UpdateCard.InvokeAsync();
+        _modalRef?.Close();
+    }
+}

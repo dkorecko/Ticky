@@ -104,6 +104,7 @@ builder.Services.AddScoped<MailService>();
 builder.Services.AddScoped<AvatarService>();
 builder.Services.AddScoped<CardNumberingService>();
 builder.Services.AddHostedService<CleanupHostedService>();
+builder.Services.AddHostedService<SnoozeHostedService>();
 
 if (Constants.SMTP_ENABLED)
     builder.Services.AddHostedService<ReminderHostedService>();
