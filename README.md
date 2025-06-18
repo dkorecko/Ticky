@@ -143,6 +143,10 @@ services:
 ![Image of the board in dark mode](images/board_dark.png)
 ![Image of the card in dark mode](images/card_dark.png)
 
+## 🤝 Community
+
+If you have any questions, need help setting up, want to share your feedback or discuss ideas and new features, then I have created a [Discord](https://discord.gg/DHCZqYwUUb) server. I’m always eager to hear from users and improve Ticky based on your needs.
+
 ## 🛠️ Project Structure
 
 - **Ticky.Base**: Core entities, models, and shared components.

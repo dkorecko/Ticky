@@ -463,7 +463,7 @@
 
         if (column is not null)
         {
-            column.Cards.Add(new Card
+            var newCard = new Card
             {
                 Name = _createTaskModel.Text,
                 ColumnId = columnId,
@@ -471,7 +471,15 @@
                 CreatedAt = DateTime.Now,
                 Number = await _cardNumberingService.GetNextNumberAsync(Id),
                 CreatedById = _user.Id
-            });
+            };
+
+            if(_user.AutomaticAssign)
+            {
+                var targetUser = await db.Users.FirstAsync(x => x.Id.Equals(_user.Id));
+                newCard.Assignees.Add(targetUser);
+            }
+
+            column.Cards.Add(newCard);
             await db.SaveChangesAsync();
         }
 
