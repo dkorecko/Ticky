@@ -18,4 +18,8 @@ public class Board : AbstractDbEntity, IDeletable
     public virtual List<Label> Labels { get; set; } = [];
     public virtual List<LastVisit> LastVisits { get; set; } = [];
     public virtual List<Favorite> Favorites { get; set; } = [];
+
+    public bool VerifyAccess(User user) =>
+        Memberships.Any(x => x.UserId.Equals(user.Id))
+        || Project.Memberships.Any(x => x.UserId.Equals(user.Id));
 }
