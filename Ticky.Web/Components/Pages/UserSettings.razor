@@ -1,4 +1,5 @@
 @page "/settings/{Tab:int?}"
+@using System.Reflection
 @using Ticky.Base.Entities
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ILogger<UserSettings> _logger
@@ -38,7 +39,7 @@
                             after creating a card on the board.</label>
                     </div>
 
-                    <input type="checkbox" class="switch" checked=@_user.AutomaticCardEdit @onchange=OnAutomaticCardEditChanged>
+                    <input type="checkbox" class="switch" checked=@_user.AutomaticCardEdit @onchange="(e) => OnSettingChanged(e, x => x.AutomaticCardEdit)">
                 </div>
 
                 <div class="settings-item">
@@ -48,7 +49,7 @@
                             initiate a deletion of an object.</label>
                     </div>
 
-                    <input type="checkbox" class="switch" checked=@_user.InstantDelete @onchange=OnInstantDeleteChanged>
+                    <input type="checkbox" class="switch" checked=@_user.InstantDelete @onchange="(e) => OnSettingChanged(e, x => x.InstantDelete)">
                 </div>
 
                 <div class="settings-item">
@@ -59,7 +60,18 @@
                         </label>
                     </div>
 
-                    <input type="checkbox" class="switch" checked=@_user.AutomaticDeadlineReminder @onchange=OnAutomaticDeadlineReminderChanged>
+                    <input type="checkbox" class="switch" checked=@_user.AutomaticDeadlineReminder @onchange="(e) => OnSettingChanged(e, x => x.AutomaticDeadlineReminder)">
+                </div>
+
+                <div class="settings-item">
+                    <div class="flex flex-col text-sm">
+                        <label class="font-bold opacity-90">Automatically assign self</label>
+                        <label class="w-4/5 max-w-2xl opacity-70">
+                            This option sets whether you will automatically assign yourself to created cards.
+                        </label>
+                    </div>
+
+                    <input type="checkbox" class="switch" checked=@_user.AutomaticAssign @onchange="(e) => OnSettingChanged(e, x => x.AutomaticAssign)">
                 </div>
             } else if(_tab == 2)
             {
@@ -220,7 +232,7 @@
         _tab = Math.Clamp(tabNumber, 1, 3);
     }
 
-    private async void OnInstantDeleteChanged(ChangeEventArgs e)
+    private async void OnSettingChanged(ChangeEventArgs e, Expression<Func<User, bool>> setter)
     {
         ArgumentNullException.ThrowIfNull(_user);
 
@@ -234,49 +246,9 @@
         if (user is null)
             return;
 
-        user.InstantDelete = val;
-
-        await db.SaveChangesAsync();
-
-        await RunNotification(typeof(UserSettings), OperationType.Edited);
-    }
-
-    private async void OnAutomaticCardEditChanged(ChangeEventArgs e)
-    {
-        ArgumentNullException.ThrowIfNull(_user);
-
-        if (e.Value is not bool val)
-            return;
-
-        using var db = _dbContextFactory.CreateDbContext();
-
-        var user = await db.Users.FirstOrDefaultAsync(x => x.Id.Equals(_user.Id));
-
-        if (user is null)
-            return;
-
-        user.AutomaticCardEdit = val;
-
-        await db.SaveChangesAsync();
-
-        await RunNotification(typeof(UserSettings), OperationType.Edited);
-    }
-
-    private async void OnAutomaticDeadlineReminderChanged(ChangeEventArgs e)
-    {
-        ArgumentNullException.ThrowIfNull(_user);
-
-        if (e.Value is not bool val)
-            return;
-
-        using var db = _dbContextFactory.CreateDbContext();
-
-        var user = await db.Users.FirstOrDefaultAsync(x => x.Id.Equals(_user.Id));
-
-        if (user is null)
-            return;
-
-        user.AutomaticDeadlineReminder = val;
+        if (setter.Body is MemberExpression memberExpression && memberExpression.Member is PropertyInfo propertyInfo && propertyInfo.PropertyType == typeof(bool))
+            propertyInfo.SetValue(user, val);
+        else throw new Exception("Invalid property provided.");
 
         await db.SaveChangesAsync();
 
