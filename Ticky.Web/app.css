@@ -165,7 +165,7 @@ option {
     @apply bg-modal;
 }
 
-html {
+html[data-theme='dark'] {
     color-scheme: dark;
 }
 
