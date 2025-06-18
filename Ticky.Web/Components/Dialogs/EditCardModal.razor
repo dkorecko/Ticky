@@ -310,7 +310,7 @@
 
                             <div class="flex flex-row items-center justify-between py-2 text-xs">
                                 <div class='ml-[-5px] h-2 w-2 rounded-full bg-add-outline @(onlyFirstDates.Any(x => DateTime.Compare(activity.At, x) == 0) ? string.Empty : "opacity-0")'></div>
-                                <label class="ml-3 whitespace-nowrap text-add-outline capitalize">@activity.At.ToString("MMM d")</label>
+                                <label class="ml-3 whitespace-nowrap text-add-outline capitalize">@activity.At.ToShortString()</label>
                                 <label class="ml-6"><label class="person-link" id="@activityId"
                                     @onclick="() => _mainLayout.UserInfoModal?.Open(activityId, activity.UserId)">
                                     @@@activity.User.DisplayName</label> @((MarkupString) activity.Text).
@@ -327,7 +327,7 @@
                         }
                         <div class="flex flex-row items-center justify-between py-2 text-xs">
                             <div class="ml-[-5px] h-2 w-2 rounded-full bg-add-outline"></div>
-                            <label class="ml-3 whitespace-nowrap text-add-outline capitalize">@_card.CreatedAt.ToString("MMM d")</label>
+                            <label class="ml-3 whitespace-nowrap text-add-outline capitalize">@_card.CreatedAt.ToShortString()</label>
                             <label class="ml-6"><label class="person-link" id="@finalActivityId"
                                 @onclick="() => _mainLayout.UserInfoModal?.Open(finalActivityId, _card.CreatedById)">
                                 @@@_card.CreatedBy.DisplayName</label> <b>created</b> this card.

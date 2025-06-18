@@ -1,4 +1,4 @@
-﻿namespace Ticky.Internal.Helpers;
+namespace Ticky.Internal.Helpers;
 
 public static class TimeHelper
 {
@@ -42,4 +42,9 @@ public static class TimeHelper
 
         return result.Trim();
     }
+
+    public static string ToShortString(this DateTime dateTime) =>
+        dateTime.Date == DateTime.Now.Date
+            ? dateTime.ToString("HH:mm")
+            : dateTime.ToString("MMM d");
 }
