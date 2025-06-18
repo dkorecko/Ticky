@@ -1212,6 +1212,11 @@
       margin-inline: -0.25rem;
     }
   }
+  .data-\[coloring\=Default\]\:text-card-data-points {
+    &[data-coloring="Default"] {
+      color: var(--color-card-data-points);
+    }
+  }
   .data-\[coloring\=Default\]\:text-gray-500 {
     &[data-coloring="Default"] {
       color: var(--color-gray-500);
