@@ -165,7 +165,11 @@ option {
     @apply bg-modal;
 }
 
+<<<<<<< fix/storing-time
+[data-theme='dark'] html {
+=======
 html[data-theme='dark'] {
+>>>>>>> main
     color-scheme: dark;
 }
 

@@ -11,5 +11,6 @@ public class ReminderModel
         "^([01][0-9]|2[0-3]):[0-5][0-9]$",
         ErrorMessage = "The time must be in HH:mm format."
     )]
-    public string Time { get; set; } = string.Empty;
+    public string Time { get; set; } =
+        DateTime.Now.AddHours(1).AddMinutes(-DateTime.Now.Minute).ToString("HH:mm");
 }
