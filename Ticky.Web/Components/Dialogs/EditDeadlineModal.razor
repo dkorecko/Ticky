@@ -82,7 +82,6 @@
                 Text = $"<b>set</b> the deadline for <b>{card.Deadline.Value.ToReadableStringWithTime()}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,
-                At = DateTime.Now
             });
 
         await db.SaveChangesAsync();

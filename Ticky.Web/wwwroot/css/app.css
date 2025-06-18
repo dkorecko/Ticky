@@ -37,8 +37,6 @@
     --text-sm--line-height: calc(1.25 / 0.875);
     --text-base: 1rem;
     --text-base--line-height: calc(1.5 / 1);
-    --text-lg: 1.125rem;
-    --text-lg--line-height: calc(1.75 / 1.125);
     --text-xl: 1.25rem;
     --text-xl--line-height: calc(1.75 / 1.25);
     --text-2xl: 1.5rem;
@@ -1217,11 +1215,6 @@
   .data-\[coloring\=Default\]\:text-card-data-points {
     &[data-coloring="Default"] {
       color: var(--color-card-data-points);
-    }
-  }
-  .data-\[coloring\=Default\]\:text-gray-500 {
-    &[data-coloring="Default"] {
-      color: var(--color-gray-500);
     }
   }
   .data-\[coloring\=Green\]\:bg-green-500 {

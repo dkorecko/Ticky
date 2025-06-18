@@ -299,23 +299,23 @@
                         @{
                             DateTime? lastDay = null;
                             i = 0;
-                            var onlyFirstDates = _card.Activities.OrderBy(x => x.At).GroupBy(x => x.At.Date).Select(x => x.OrderBy(y => y.At.Date).First()).Select(x => x.At).ToList();
+                            var onlyFirstDates = _card.Activities.OrderBy(x => x.CreatedAt).GroupBy(x => x.CreatedAt.Date).Select(x => x.OrderBy(y => y.CreatedAt.Date).First()).Select(x => x.CreatedAt).ToList();
 
                             onlyFirstDates.RemoveAll(x => x.Date.Equals(_card.CreatedAt.Date));
                             onlyFirstDates.Add(_card.CreatedAt);
                         }
-                        @foreach(var activity in _card.Activities.OrderByDescending(x => x.At))
+                        @foreach (var activity in _card.Activities.OrderByDescending(x => x.CreatedAt))
                         {
                             var activityId = $"activity_id_{i}";
 
                             <div class="flex flex-row items-center justify-between py-2 text-xs">
-                                <div class='ml-[-5px] h-2 w-2 rounded-full bg-add-outline @(onlyFirstDates.Any(x => DateTime.Compare(activity.At, x) == 0) ? string.Empty : "opacity-0")'></div>
-                                <label class="ml-3 whitespace-nowrap text-add-outline capitalize">@activity.At.ToShortString()</label>
+                                <div class='ml-[-5px] h-2 w-2 rounded-full bg-add-outline @(onlyFirstDates.Any(x => DateTime.Compare(activity.CreatedAt, x) == 0) ? string.Empty : "opacity-0")'></div>
+                                <label class="ml-3 whitespace-nowrap text-add-outline capitalize">@activity.CreatedAt.ToShortString()</label>
                                 <label class="ml-6"><label class="person-link" id="@activityId"
                                     @onclick="() => _mainLayout.UserInfoModal?.Open(activityId, activity.UserId)">
                                     @@@activity.User.DisplayName</label> @((MarkupString) activity.Text).
                                 </label>
-                                <label class="ml-auto whitespace-nowrap text-add-outline">@activity.At.ToElapsedString()</label>
+                                <label class="ml-auto whitespace-nowrap text-add-outline">@activity.CreatedAt.ToElapsedString()</label>
                             </div>
 
                             lastDay = DateTime.Now;
@@ -456,7 +456,6 @@
             Text = "<b>changed</b> the title",
             UserId = _user.Id,
             CardId = card.Id,
-            At = DateTime.Now
         });
 
         await db.SaveChangesAsync();
@@ -486,7 +485,6 @@
             Text = "<b>changed</b> the description",
             UserId = _user.Id,
             CardId = card.Id,
-            At = DateTime.Now
         });
 
         await db.SaveChangesAsync();
@@ -517,7 +515,6 @@
                 Text = $"<b>marked</b> the subtask <b>{targetSubtask.Text}</b> as <b>{(targetSubtask.Completed ? "completed" : "to be done")}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,
-                At = DateTime.Now
             });
 
         await db.SaveChangesAsync();
@@ -574,7 +571,6 @@
                 Text = "<b>posted</b> a comment",
                 UserId = _user.Id,
                 CardId = card.Id,
-                At = DateTime.Now
             });
 
         await db.SaveChangesAsync();
@@ -650,7 +646,6 @@
             Text = $"<b>deleted</b> time record of <b>{(timeRecord.EndedAt!.Value - timeRecord.StartedAt).ToElapsedString()}</b>",
             UserId = _user.Id,
             CardId = _card.Id,
-            At = DateTime.Now
         });
 
         await db.SaveChangesAsync();
@@ -682,7 +677,6 @@
                 Text = $"<b>moved</b> the card to <b>{targetColumn.Name}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,
-                At = DateTime.Now
             });
 
         await db.SaveChangesAsync();
@@ -712,7 +706,6 @@
             Text = $"<b>joined</b> the card",
             UserId = _user.Id,
             CardId = card.Id,
-            At = DateTime.Now
         });
 
         await db.SaveChangesAsync();
@@ -742,7 +735,6 @@
             Text = $"<b>left</b> the card",
             UserId = _user.Id,
             CardId = card.Id,
-            At = DateTime.Now
         });
 
         await db.SaveChangesAsync();
@@ -775,7 +767,6 @@
                 Text = $"<b>moved</b> the card to <b>{targetColumn.Name}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,
-                At = DateTime.Now
             });
 
         await db.SaveChangesAsync();
@@ -830,7 +821,6 @@
                 Text = $"<b>deleted</b> file named <b>{attachment.OriginalName}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,
-                At = DateTime.Now
                 });
 
         _mainLayout.RunNotification(new Notification($"File {attachment.OriginalName} deleted successfully."));
@@ -856,7 +846,6 @@
                 Text = $"<b>deleted</b> the reminder at <b>{reminder.At.ToReadableStringWithTime()}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,
-                At = DateTime.Now
             });
 
         await db.SaveChangesAsync();
@@ -880,7 +869,6 @@
                 Text = "<b>deleted</b> the deadline",
                 UserId = _user.Id,
                 CardId = card.Id,
-                At = DateTime.Now
             });
 
         await db.SaveChangesAsync();
@@ -904,7 +892,6 @@
                 Text = $"<b>deleted</b> subtask <b>{subtask.Text}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,
-                At = DateTime.Now
             });
 
         IndexHelper.FixIndices(card.Subtasks);
@@ -947,7 +934,6 @@
                     Text = $"<b>deleted</b> a linked issue <b>{targetLink.CardOne.Column.Board.Code}-{targetLink.CardOne.Number}</b> with <b>{targetLink.Category}</b> relationship",
                     UserId = _user.Id,
                     CardId = targetLink.CardTwoId,
-                    At = DateTime.Now
                 });
         }
 
@@ -958,7 +944,6 @@
                 Text = $"<b>deleted</b> a linked issue <b>{targetLink.CardTwo.Column.Board.Code}-{targetLink.CardTwo.Number}</b> with <b>{targetLink.Category}</b> relationship",
                 UserId = _user.Id,
                 CardId = targetLink.CardOneId,
-                At = DateTime.Now
             });
 
         await db.SaveChangesAsync();
@@ -1025,7 +1010,6 @@
                         Text = $"<b>uploaded</b> file named <b>{file.Name}</b>",
                         UserId = _user.Id,
                         CardId = card.Id,
-                        At = DateTime.Now
                     });
 
                 _mainLayout.RunNotification(new Notification($"File {file.Name} uploaded successfully."));
@@ -1120,7 +1104,6 @@
             Text = $"<b>unsnoozed</b> this card",
             UserId = _user.Id,
             CardId = card.Id,
-            At = DateTime.Now
         });
 
         await db.SaveChangesAsync();

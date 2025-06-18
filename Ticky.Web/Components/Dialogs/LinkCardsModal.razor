@@ -132,14 +132,12 @@
                 Text = $"<b>added</b> a linked issue <b>{targetCard.Column.Board.Code}-{targetCard.Number}</b> with <b>{_linkCardsModel.Text}</b> relationship",
                 UserId = _user.Id,
                 CardId = card.Id,
-                At = DateTime.Now
             });
         targetCard.Activities.Add(new Activity
             {
                 Text = $"<b>added</b> a linked issue <b>{card.Column.Board.Code}-{card.Number}</b> with <b>{oppositeCategory}</b> relationship",
                 UserId = _user.Id,
                 CardId = card.Id,
-                At = DateTime.Now
             });
 
         await db.SaveChangesAsync();

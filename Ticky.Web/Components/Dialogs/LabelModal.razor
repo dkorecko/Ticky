@@ -71,7 +71,6 @@
                     Text = $"<b>removed</b> label <b>{label.Name}</b>",
                     UserId = _user.Id,
                     CardId = card.Id,
-                    At = DateTime.Now
                 });
         } else {
             var targetLabel = await db.Labels.FirstOrDefaultAsync(x => x.Id.Equals(label.Id));
@@ -85,7 +84,6 @@
                     Text = $"<b>added</b> label <b>{label.Name}</b>",
                     UserId = _user.Id,
                     CardId = card.Id,
-                    At = DateTime.Now
                 });
         }
 

@@ -84,7 +84,6 @@
                 Text = $"<b>added</b> a reminder for <b>{newReminder.At.ToReadableStringWithTime()}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,
-                At = DateTime.Now
             });
 
         await db.SaveChangesAsync();
