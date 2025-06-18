@@ -13,6 +13,7 @@
 <EditSubtaskModal @ref=_editSubtaskModal UpdateCard="UpdateCard" />
 <EditDeadlineModal @ref=_editDeadlineModal UpdateCard="UpdateCard" />
 <LinkCardsModal @ref=_linkCardsModal UpdateCard="UpdateCard" />
+<SnoozeCardModal @ref=_snoozeCardModal UpdateCard="UpdateCard" />
 
 <Modal @ref="Modal" Title="Edit an existing task" DisableButtons=true>
     @if (_card is null)
@@ -125,6 +126,19 @@
                                     </div>
                                 }
                                 <i @ref="_editDeadlineTrigger" class="fa fa-pencil edit-icon" @onclick="() => _editDeadlineModal?.Open(_editDeadlineTrigger, _card)"></i>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="edit-task-label">Snooze</td>
+                            <td class="edit-task-item">
+                                @if (_card.SnoozedUntil.HasValue)
+                                {
+                                    <div class="card-label">
+                                        <label class="whitespace-nowrap">@_card.SnoozedUntil.Value.ToReadableStringWithTime()</label>
+                                        <i class="fa fa-trash-can cursor-pointer text-red-button transition-all ease-in-out hover:text-red-button-hover" @onclick="UnsnoozeCard"></i>
+                                    </div>
+                                }
+                                <i @ref="_snoozeTrigger" class="fa fa-moon edit-icon" @onclick="() => _snoozeCardModal?.Open(_snoozeTrigger, _card)"></i>
                             </td>
                         </tr>
                         <tr>
@@ -390,6 +404,7 @@
     private ElementReference? _addSubtaskTrigger;
     private ElementReference? _addReminderTrigger;
     private ElementReference? _editDeadlineTrigger;
+    private ElementReference? _snoozeTrigger;
     private LabelModal? _labelModal;
     private PriorityModal? _priorityModal;
     private AssigneesModal? _assigneesModal;
@@ -400,6 +415,7 @@
     private EditSubtaskModal? _editSubtaskModal;
     private EditDeadlineModal? _editDeadlineModal;
     private LinkCardsModal? _linkCardsModal;
+    private SnoozeCardModal? _snoozeCardModal;
 
     private int _tab = 0;
     private string _identifier = string.Empty;
@@ -1085,5 +1101,29 @@
             _lastColumnIndex = await db.Columns.Where(x => x.BoardId.Equals(card.Column.BoardId)).Select(x => x.Index).MaxAsync();
 
         return card;
+    }
+
+    private async Task UnsnoozeCard()
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        card.SnoozedUntil = null;
+        card.Activities.Add(new Activity
+        {
+            Text = $"<b>unsnoozed</b> this card",
+            UserId = _user.Id,
+            CardId = card.Id,
+            At = DateTime.Now
+        });
+
+        await db.SaveChangesAsync();
+        await UpdateCard();
     }
 }

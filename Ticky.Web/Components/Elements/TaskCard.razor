@@ -48,6 +48,10 @@
             {
                 <label class="card-data-point text-card-blocked-text"><i class="fa fa-flag"></i> Blocked</label>
             }
+            @if (Card.SnoozedUntil is not null)
+            {
+                <label class="card-data-point"><i class="fa fa-moon"></i> @(@Card.SnoozedUntil.Value.ToString("MMM d"))</label>
+            }
         </div>
         <div class="flex">
             @foreach(var assignee in Card.Assignees) 

@@ -1,4 +1,4 @@
-@page "/boards/{Id:int}/{CardId:int?}"
+﻿@page "/boards/{Id:int}/{CardId:int?}"
 @using Ticky.Base.Entities
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
@@ -48,18 +48,21 @@
             <section class="flex w-full flex-row gap-5">
                 <SortableList Class="flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
+                        @{
+                            var cardsCount = column.Cards.Where(x => !x.SnoozedUntil.HasValue).Count();
+                        }
                         <div class="board-column gap-1">
                             <div class="flex w-full flex-row items-center justify-between">
                                 <div class="flex flex-row items-center gap-2">
                                     <label>
                                         @column.Name
                                     </label>
-                                    <span class='text-2xs rounded-full p-0.5 shadow-sm @(column.MaxCards != 0 && column.Cards.Count >= column.MaxCards ? "bg-column-limit-reached" : "bg-card-bg")'>
+                                    <span class='text-2xs rounded-full p-0.5 shadow-sm @(column.MaxCards != 0 && cardsCount >= column.MaxCards ? "bg-column-limit-reached" : "bg-card-bg")'>
                                         @if(column.MaxCards == 0)
                                         {
-                                            <span>@column.Cards.Count</span>
+                                            <span>@cardsCount</span>
                                         } else {
-                                            <span>@column.Cards.Count/@column.MaxCards</span>
+                                            <span>@cardsCount/@column.MaxCards</span>
                                         }
                                     </span>
                                     @if (column.Collapsed)
@@ -86,7 +89,7 @@
 
                             @if(!column.Collapsed) 
                             {
-                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Class="min-h-[1rem] w-full" Group="group" Items="column.Cards.OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
+                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Class="min-h-[1rem] w-full" Group="group" Items="column.Cards.Where(x => !x.SnoozedUntil.HasValue).OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
                                     <SortableItemTemplate>
                                         @if(column.MaxCards == 1)
                                         {
@@ -96,7 +99,7 @@
                                     </SortableItemTemplate>
                                 </SortableList>
 
-                                @if(column.MaxCards == 0 || column.Cards.Count < column.MaxCards) 
+                                @if(column.MaxCards == 0 || cardsCount < column.MaxCards) 
                                 {
                                     <div data-active=@((_adding == column.Id).ToString()) @onclick="async () => await StartAddingToColumn(column.Id)" 
                                         class="add rounded-lg select-none p-5 h-min w-full to-task-card">
@@ -150,8 +153,8 @@
         <!-- Side section -->
         @if (_board is not null)
         {
-            var completedCards = _board.Columns.Where(x => x.Finished).SelectMany(x => x.Cards).Count();
-            var totalCards = _board.Columns.SelectMany(x => x.Cards).Count();
+            var completedCards = _board.Columns.Where(x => x.Finished).SelectMany(x => x.Cards).Where(x => !x.SnoozedUntil.HasValue).Count();
+            var totalCards = _board.Columns.SelectMany(x => x.Cards).Where(x => !x.SnoozedUntil.HasValue).Count();
 
             <label>Progress</label>
             <div class="flex flex-col gap-4">

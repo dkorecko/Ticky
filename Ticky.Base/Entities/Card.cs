@@ -24,4 +24,5 @@ public class Card : AbstractDbEntity, IOrderable, IDeletable
     public virtual List<TimeRecord> TimeRecords { get; set; } = [];
     public virtual List<CardLink> LinkedIssuesOne { get; set; } = [];
     public virtual List<CardLink> LinkedIssuesTwo { get; set; } = [];
+    public DateTime? SnoozedUntil { get; set; }
 }

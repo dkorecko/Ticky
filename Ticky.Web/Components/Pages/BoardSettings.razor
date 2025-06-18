@@ -6,7 +6,9 @@
 
 <AddLabelModal @ref="_addLabelModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.Label), OperationType.Added)" />
 <EditLabelModal @ref="_editLabelModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.Label), OperationType.Edited)" />
+<EditCardModal @ref="_editCardModal" OnSubmit="HandleUpdate" />
 <DeleteConfirmationDialog T="Ticky.Base.Entities.Label" @ref="_deleteLabelModal" OnConfirmed="HandleUpdate"/>
+<DeleteConfirmationDialog T="Base.Entities.Card" @ref="_deleteTaskModal" OnConfirmed="HandleUpdate" />
 
 <div class="h-screen w-full">
     <section class="flex w-full max-w-4xl flex-grow flex-col gap-5 overflow-y-auto px-12 py-14">
@@ -17,6 +19,7 @@
         <section
             class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-tab-outline px-1 py-1 text-sm">
             <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(1)">Labels</div>
+            <div data-active='@(_tab == 2 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(2)">Snoozed cards</div>
         </section>
 
         @if(_board is null)
@@ -44,6 +47,19 @@
                     </div>
 
                     <button @onclick="() => _addLabelModal?.Open(_board)">Create a label</button>
+                } else if(_tab == 2)
+                {
+                    <div class="flex flex-col py-5">
+                        <label class="font-bold">Snoozed cards</label>
+                        <label class="text-sm opacity-70">The list of cards that have been snoozed.</label>
+                    </div>
+
+                    <div class="flex flex-col gap-2 py-5">
+                        @foreach(var snoozedCard in _board.Columns.SelectMany(x => x.Cards).Where(x => x.SnoozedUntil.HasValue))
+                        {
+                            <TaskCard Card="snoozedCard" DeleteCardModal="_deleteTaskModal" EditCardModal="_editCardModal" BoardCode=@_board.Code Members="_members" OnCardUpdated="HandleUpdate"/>
+                        }
+                    </div>
                 }
             </section>
         }
@@ -60,9 +76,12 @@
     private int _tab = 1;
 
     private Base.Entities.Board? _board;
+    private List<User> _members = [];
     private AddLabelModal? _addLabelModal;
     private EditLabelModal? _editLabelModal;
+    private EditCardModal? _editCardModal;
     private DeleteConfirmationDialog<Base.Entities.Label>? _deleteLabelModal;
+    private DeleteConfirmationDialog<Base.Entities.Card>? _deleteTaskModal;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -79,11 +98,44 @@
         var board = await db.Boards
             .Include(x => x.Labels)
                 .ThenInclude(x => x.OnCards)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.CreatedBy)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Assignees)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Attachments)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Subtasks)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Labels)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.TimeRecords)
+            .Include(x => x.Project)
+                .ThenInclude(x => x.Memberships)
+                    .ThenInclude(x => x.User)
+            .Include(x => x.Memberships)
+                .ThenInclude(x => x.User)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id.Equals(Id));
 
         if (board is null)
             return;
+
+        _members = [];
+
+        if (board.Memberships.Any())
+            _members.AddRange(board.Memberships.Select(x => x.User));
+
+        if (board.Project.Memberships.Any())
+            _members.AddRange(board.Project.Memberships.Select(x => x.User));
+
+        _members = _members.DistinctBy(x => x.Id).ToList();
 
         _board = board;
 
