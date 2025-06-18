@@ -6,6 +6,7 @@
 @inject AvatarService _avatarService
 @inject UserManager<User> _userManager
 @inject ILogger<UserSettings> _logger
+@inject NavigationManager _navigationManager
 @inherits NotifiableBase
 @implements IDisposable
 
@@ -449,9 +450,18 @@
         using var db = _dbContextFactory.CreateDbContext();
 
         await db.Users.Where(x => x.Id.Equals(targetUser.Id)).ExecuteUpdateAsync(x => x.SetProperty(y => y.NeedsNewCredentials, false));
+
         targetUser.NeedsNewCredentials = false;
+        bool neededNewCredentials = _user.NeedsNewCredentials;
         _user = targetUser;
-        MainLayout.RunNotification(new("User updated successfully."));
+
+        if (neededNewCredentials) 
+        {
+            MainLayout.RunNotification(new("Your credentials have been successfully set."));
+            _navigationManager.NavigateTo("/");
+        }
+        else
+            MainLayout.RunNotification(new("User updated successfully."));
     }
 
 
