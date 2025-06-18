@@ -1217,11 +1217,6 @@
       color: var(--color-card-data-points);
     }
   }
-  .data-\[coloring\=Default\]\:text-gray-500 {
-    &[data-coloring="Default"] {
-      color: var(--color-gray-500);
-    }
-  }
   .data-\[coloring\=Green\]\:bg-green-500 {
     &[data-coloring="Green"] {
       background-color: var(--color-green-500);
