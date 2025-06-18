@@ -142,6 +142,16 @@
 
         _members = _members.DistinctBy(x => x.Id).ToList();
 
+        _members = [];
+
+        if (board.Memberships.Any())
+            _members.AddRange(board.Memberships.Select(x => x.User));
+
+        if (board.Project.Memberships.Any())
+            _members.AddRange(board.Project.Memberships.Select(x => x.User));
+
+        _members = _members.DistinctBy(x => x.Id).ToList();
+
         _board = board;
 
         await base.HandleUpdate();
