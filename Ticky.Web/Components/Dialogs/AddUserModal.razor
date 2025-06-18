@@ -78,7 +78,7 @@
             ProfilePictureFileName = await _avatarService.FetchAvatarAsync(_userModel.DisplayName)
         };
 
-        var result = await _userManager.CreateAsync(user);
+        var result = await _userManager.CreateAsync(user, _userModel.Password);
 
         if(!result.Succeeded)
         {
