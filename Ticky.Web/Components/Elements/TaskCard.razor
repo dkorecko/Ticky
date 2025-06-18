@@ -50,7 +50,11 @@
             }
             @if (Card.SnoozedUntil is not null)
             {
+<<<<<<< fix/storing-time
                 <label class="card-data-point"><i class="fa fa-moon"></i> @(Card.SnoozedUntil.Value.ToShortString())</label>
+=======
+                <label class="card-data-point"><i class="fa fa-moon"></i> @(@Card.SnoozedUntil.Value.ToString("MMM d"))</label>
+>>>>>>> main
             }
         </div>
         <div class="flex">
