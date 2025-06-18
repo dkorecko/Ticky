@@ -63,7 +63,6 @@
                     Text = $"<b>removed</b> the user <b>{targetUser.DisplayName}</b> from the assignees",
                     UserId = _user.Id,
                     CardId = card.Id,
-                    At = DateTime.Now
                 });
         }
         else {
@@ -73,7 +72,6 @@
                     Text = $"<b>added</b> the user <b>{targetUser.DisplayName}</b> as an assignee",
                     UserId = _user.Id,
                     CardId = card.Id,
-                    At = DateTime.Now
                 });
         }
 

@@ -70,7 +70,6 @@
                 Text = $"<b>changed</b> the time record from <b>{_oldTimeRecord}</b> to <b>{_timeRecordModel.Time}</b>",
                 UserId = _user.Id,
                 CardId = timeRecord.CardId,
-                At = DateTime.Now
             });
 
         await db.SaveChangesAsync();
