@@ -3,6 +3,7 @@
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ILogger<BoardSettings> _logger
 @inherits NotifiableBase
+@attribute [Authorize(Policy = Constants.Policies.RequireAdmin)]
 
 <AddUserModal @ref="_addUserModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.User), OperationType.Added)" />
 <EditUserModal @ref="_editUserModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.User), OperationType.Edited)" />

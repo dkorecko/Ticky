@@ -2,6 +2,7 @@
 @using Ticky.Base.Entities
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ILogger<BoardSettings> _logger
+@inject NavigationManager _navigationManager
 @inherits NotifiableBase
 
 <AddLabelModal @ref="_addLabelModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.Label), OperationType.Added)" />
@@ -124,8 +125,22 @@
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id.Equals(Id));
 
-        if (board is null)
+        if(board is null || !board.VerifyAccess(_user))
+        {
+            MainLayout.RunNotification(new("This board either does not exist or you do not have access.", NotificationType.Fail));
+            _navigationManager.NavigateTo("/");
             return;
+        }
+
+        _members = [];
+
+        if (board.Memberships.Any())
+            _members.AddRange(board.Memberships.Select(x => x.User));
+
+        if (board.Project.Memberships.Any())
+            _members.AddRange(board.Project.Memberships.Select(x => x.User));
+
+        _members = _members.DistinctBy(x => x.Id).ToList();
 
         _members = [];
 

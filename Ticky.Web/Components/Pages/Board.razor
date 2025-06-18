@@ -431,7 +431,9 @@
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id.Equals(Id));
 
-        if (board is null) {
+        if(board is null || !board.VerifyAccess(_user))
+        {
+            MainLayout.RunNotification(new("This board either does not exist or you do not have access.", NotificationType.Fail));
             _navigationManager.NavigateTo("/");
             return null;
         }
