@@ -23,7 +23,7 @@
                     @while(baseTime.Day.Equals(DateTime.Today.Day))
                     {
                         var stepTime = baseTime;
-                        <option selected='@(stepTime.Hour == 19 && stepTime.Minute == 0)' value="@stepTime.ToString("HH:mm")">@stepTime.ToString("HH:mm")</option>
+                        <option value="@stepTime.ToString("HH:mm")">@stepTime.ToString("HH:mm")</option>
 
                         baseTime = baseTime.AddMinutes(15);
                     }
@@ -54,7 +54,7 @@
         _snoozeCardModel = new()
             {
                 At = card.SnoozedUntil ?? DateTime.Today,
-                Time = (card.SnoozedUntil ?? DateTime.Today).ToString("HH:mm")
+                Time = (card.SnoozedUntil ?? DateTime.Now.AddHours(1).AddMinutes(-DateTime.Now.Minute)).ToString("HH:mm")
             };
         _modalRef?.Open(triggerElement);
         StateHasChanged();

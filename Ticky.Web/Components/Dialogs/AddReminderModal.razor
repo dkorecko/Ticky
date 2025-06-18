@@ -23,7 +23,7 @@
                     @while(baseTime.Day.Equals(DateTime.Today.Day))
                     {
                         var stepTime = baseTime;
-                        <option selected='@(stepTime.Hour == 19 && stepTime.Minute == 0)' value="@stepTime.ToString("HH:mm")">@stepTime.ToString("HH:mm")</option>
+                        <option value="@stepTime.ToString("HH:mm")">@stepTime.ToString("HH:mm")</option>
 
                         baseTime = baseTime.AddMinutes(15);
                     }
