@@ -4,6 +4,20 @@ let lastClosedY = null
 let lastClickTarget = null
 let lastOpenedFromTrigger = null
 
+function triggerConfetti(x, y) {
+    if (typeof confetti === 'undefined') {
+        console.warn('Confetti library not loaded. Skipping confetti trigger.')
+        return
+    }
+    confetti({
+        particleCount: 200,
+        angle: 20 + (Math.random()*170),
+        spread: 70,
+        origin: { y: y, x: x },
+        disableForReducedMotion: true
+    });
+}
+
 document.addEventListener('mouseup', (event) => {
     if (openDropdown) {
         if (openDropdown.contains(event.target))

@@ -1,8 +1,9 @@
-﻿@page "/boards/{Id:int}/{CardId:int?}"
+@page "/boards/{Id:int}/{CardId:int?}"
 @using Ticky.Base.Entities
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject CardNumberingService _cardNumberingService
+@inject IJSRuntime _js
 @inherits NotifiableBase
 
 <CreateColumnModal @ref="_createColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Added)" />
@@ -284,7 +285,7 @@
         await HandleUpdate();
     }
 
-    private async Task OnMovedFromColumn((int oldIndex, int newIndex, string oldColumnId, string newColumnId) args)
+    private async Task OnMovedFromColumn((int oldIndex, int newIndex, string oldColumnId, string newColumnId, double x, double y) args)
     {
         var oldColumnId = GetColumnIdFromString(args.oldColumnId);
         var newColumnId = GetColumnIdFromString(args.newColumnId);
@@ -333,6 +334,9 @@
 
         await db.SaveChangesAsync();
         await HandleUpdate();
+
+        if(newColumn.Finished)
+            await _js.InvokeVoidAsync("triggerConfetti", args.x, args.y);
     }
 
     protected override async Task HandleUpdate()
