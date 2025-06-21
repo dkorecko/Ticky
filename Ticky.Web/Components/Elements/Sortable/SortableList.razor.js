@@ -79,7 +79,7 @@ export function init(id, group, pull, put, sort, handle, filter, component, forc
             event.from.insertBefore(event.item, customChildNodes[event.oldIndex]);
 
             // Notify .NET to update its model and re-render
-            component.invokeMethodAsync('OnRemoveJS', oldIndex, newIndex, event.from.id, event.to.id);
+            component.invokeMethodAsync('OnRemoveJS', oldIndex, newIndex, event.from.id, event.to.id, event.originalEvent.clientX / event.originalEvent.view.outerWidth, event.originalEvent.clientY/event.originalEvent.view.outerHeight);
         },
         onMove: (event) => {
             // This event fires continually as you drag.
