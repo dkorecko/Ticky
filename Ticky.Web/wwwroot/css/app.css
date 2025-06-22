@@ -1236,6 +1236,16 @@
       background-color: var(--color-yellow-500);
     }
   }
+  .md\:w-64 {
+    @media (width >= 48rem) {
+      width: calc(var(--spacing) * 64);
+    }
+  }
+  .md\:flex-row {
+    @media (width >= 48rem) {
+      flex-direction: row;
+    }
+  }
   .lg\:relative {
     @media (width >= 64rem) {
       position: relative;
