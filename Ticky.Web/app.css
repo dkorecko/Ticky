@@ -328,7 +328,7 @@ button, .label-as-button > i {
 }
 
 .auth-card {
-    @apply flex w-[30rem] flex-col gap-12 rounded-lg bg-auth-bg px-12 py-24 shadow-2xl;
+    @apply mx-2 flex w-[30rem] flex-col gap-12 rounded-lg bg-auth-bg px-12 py-24 shadow-2xl;
 }
 
 .auth-form {
