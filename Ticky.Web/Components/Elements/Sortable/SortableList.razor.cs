@@ -33,7 +33,9 @@ namespace Ticky.Web.Components.Elements.Sortable
             int oldIndex,
             int newIndex,
             string oldColumnId,
-            string newColumnId
+            string newColumnId,
+            double x,
+            double y
         )> OnRemove { get; set; }
 
         [Parameter]
@@ -63,10 +65,17 @@ namespace Ticky.Web.Components.Elements.Sortable
         public void Dispose() => selfReference?.Dispose();
 
         [JSInvokable]
-        public void OnRemoveJS(int oldIndex, int newIndex, string fromId, string toId)
+        public void OnRemoveJS(
+            int oldIndex,
+            int newIndex,
+            string fromId,
+            string toId,
+            double x,
+            double y
+        )
         {
             // remove the item from the list
-            OnRemove.InvokeAsync((oldIndex, newIndex, fromId, toId));
+            OnRemove.InvokeAsync((oldIndex, newIndex, fromId, toId, x, y));
         }
 
         [JSInvokable]
