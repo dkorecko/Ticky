@@ -9,6 +9,8 @@ export function init(id, group, pull, put, sort, handle, filter, component, forc
 
     var sortable = new Sortable(htmlElement, {
         animation: 200,
+        delayOnTouchOnly: true,
+        delay: 200,
         group: {
             name: group,
             pull: pull || true,

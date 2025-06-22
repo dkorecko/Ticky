@@ -613,3 +613,7 @@ input[type="checkbox"].switch{
 .tooltip-wrapper:hover .tooltip-span {
     visibility: visible;
 }
+
+.sortable-chosen {
+    @apply animate-pulse border-2;
+}
