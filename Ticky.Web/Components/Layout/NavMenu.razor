@@ -2,6 +2,7 @@
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
+@inject SearchService _searchService
 
 <nav class="absolute bottom-0 z-10 w-full bg-card-bg px-10 py-2 lg:relative">
     <!-- Desktop version -->
@@ -69,6 +70,8 @@
 
     <!-- Mobile version -->
     <div class="flex w-full flex-row items-center justify-between text-nav-link lg:hidden">
+        <SearchModal @ref="_searchModal"/>
+
         <NavLink href="/">
             <img height="32" width="32" src='@Assets["/images/ticky.png"]' alt="Ticky app logo" />
         </NavLink>
@@ -78,9 +81,9 @@
                 <span class="fa fa-briefcase"></span>
             </NavLink>
         }
-        <NavLink class="nav-link">
+        <div class="nav-link" @onclick="() => _searchModal?.Open()">
             <span class="fa fa-magnifying-glass"></span>
-        </NavLink>
+        </div>
         <AuthorizeView Policy="@Constants.Policies.RequireAdmin">
             <NavLink class="nav-link" href="/admin">
                 <span class="fa fa-users"></span>
@@ -109,6 +112,7 @@
 
     private ElementReference? _triggerElement;
     private ElementReference? _dropdownElement;
+    private SearchModal? _searchModal;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -147,30 +151,7 @@
 
     private async void Filter(Object? obj = null, ElapsedEventArgs? e = null)
     {
-        if (string.IsNullOrWhiteSpace(_searchTerm))
-        {
-            _isLoading = false;
-            _resultCards = new();
-            await InvokeAsync(StateHasChanged);
-            return;
-        }
-
-        using var db = _dbContextFactory.CreateDbContext();
-
-        _resultCards = await db.Cards
-            .Include(x => x.Column)
-                .ThenInclude(x => x.Board)
-                    .ThenInclude(x => x.Project)
-                        .ThenInclude(x => x.Memberships)
-            .Include(x => x.Column)
-                .ThenInclude(x => x.Board)
-                    .ThenInclude(x => x.Memberships)
-            .Where(x => x.Column.Board.Project.Memberships.Any(membership => membership.UserId.Equals(_user.Id)) || 
-                x.Column.Board.Memberships.Any(membership => membership.UserId.Equals(_user.Id)))
-            .Where(x => x.Name.Contains(_searchTerm) || (x.Column.Board.Code + "-" + x.Number).Contains(_searchTerm))
-            .Take(5)
-            .ToListAsync();
-
+        _resultCards = await _searchService.SearchAsync(_searchTerm, _user);
         _isLoading = false;
         await InvokeAsync(StateHasChanged);
     }

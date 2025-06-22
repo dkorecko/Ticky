@@ -103,6 +103,7 @@ builder.Services.AddScoped<CodeService>();
 builder.Services.AddScoped<MailService>();
 builder.Services.AddScoped<AvatarService>();
 builder.Services.AddScoped<CardNumberingService>();
+builder.Services.AddScoped<SearchService>();
 builder.Services.AddHostedService<CleanupHostedService>();
 builder.Services.AddHostedService<SnoozeHostedService>();
 
