@@ -1,4 +1,4 @@
-﻿@implements IDisposable
+@implements IDisposable
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
@@ -93,7 +93,7 @@
         <Dropdown Actions='new() {
             { "User settings", () => _navigationManager.NavigateTo("/settings") },
             { "Switch theme", () => _js.InvokeVoidAsync("switchTheme") },
-            { "Log out", () => _navigationManager.NavigateTo("/auth/logout") },
+            { "Log out", () => _navigationManager.NavigateTo("/auth/logout", true) },
         }'>
             <div class="avatar avatar-border" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
         </Dropdown>
