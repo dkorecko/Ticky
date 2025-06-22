@@ -401,11 +401,20 @@
   .h-60 {
     height: calc(var(--spacing) * 60);
   }
+  .h-\[4vh\] {
+    height: 4vh;
+  }
+  .h-\[5vh\] {
+    height: 5vh;
+  }
   .h-\[75vh\] {
     height: 75vh;
   }
   .h-\[90vh\] {
     height: 90vh;
+  }
+  .h-\[96vh\] {
+    height: 96vh;
   }
   .h-full {
     height: 100%;
@@ -415,6 +424,9 @@
   }
   .h-screen {
     height: 100vh;
+  }
+  .max-h-\[75vh\] {
+    max-height: 75vh;
   }
   .max-h-\[80vh\] {
     max-height: 80vh;
@@ -610,6 +622,9 @@
   .gap-5 {
     gap: calc(var(--spacing) * 5);
   }
+  .gap-6 {
+    gap: calc(var(--spacing) * 6);
+  }
   .gap-8 {
     gap: calc(var(--spacing) * 8);
   }
@@ -621,14 +636,6 @@
   }
   .gap-y-1 {
     row-gap: calc(var(--spacing) * 1);
-  }
-  .divide-x {
-    :where(& > :not(:last-child)) {
-      --tw-divide-x-reverse: 0;
-      border-inline-style: var(--tw-border-style);
-      border-inline-start-width: calc(1px * var(--tw-divide-x-reverse));
-      border-inline-end-width: calc(1px * calc(1 - var(--tw-divide-x-reverse)));
-    }
   }
   .divide-y {
     :where(& > :not(:last-child)) {
@@ -655,11 +662,14 @@
   .overflow-auto {
     overflow: auto;
   }
-  .overflow-clip {
-    overflow: clip;
-  }
   .overflow-hidden {
     overflow: hidden;
+  }
+  .overflow-x-auto {
+    overflow-x: auto;
+  }
+  .overflow-x-clip {
+    overflow-x: clip;
   }
   .overflow-y-auto {
     overflow-y: auto;
@@ -862,6 +872,9 @@
   .py-5 {
     padding-block: calc(var(--spacing) * 5);
   }
+  .py-6 {
+    padding-block: calc(var(--spacing) * 6);
+  }
   .py-14 {
     padding-block: calc(var(--spacing) * 14);
   }
@@ -882,6 +895,9 @@
   }
   .pl-5 {
     padding-left: calc(var(--spacing) * 5);
+  }
+  .pl-12 {
+    padding-left: calc(var(--spacing) * 12);
   }
   .text-center {
     text-align: center;
@@ -948,6 +964,9 @@
   .font-semibold {
     --tw-font-weight: var(--font-weight-semibold);
     font-weight: var(--font-weight-semibold);
+  }
+  .text-ellipsis {
+    text-overflow: ellipsis;
   }
   .whitespace-nowrap {
     white-space: nowrap;
@@ -1236,14 +1255,45 @@
       background-color: var(--color-yellow-500);
     }
   }
+  .\32 xs\:flex {
+    @media (width >= 20rem) {
+      display: flex;
+    }
+  }
+  .sm\:gap-5 {
+    @media (width >= 40rem) {
+      gap: calc(var(--spacing) * 5);
+    }
+  }
+  .sm\:px-12 {
+    @media (width >= 40rem) {
+      padding-inline: calc(var(--spacing) * 12);
+    }
+  }
+  .md\:block {
+    @media (width >= 48rem) {
+      display: block;
+    }
+  }
   .md\:w-64 {
     @media (width >= 48rem) {
       width: calc(var(--spacing) * 64);
     }
   }
+  .md\:w-80 {
+    @media (width >= 48rem) {
+      width: calc(var(--spacing) * 80);
+    }
+  }
   .md\:flex-row {
     @media (width >= 48rem) {
       flex-direction: row;
+    }
+  }
+  .md\:text-xl {
+    @media (width >= 48rem) {
+      font-size: var(--text-xl);
+      line-height: var(--tw-leading, var(--text-xl--line-height));
     }
   }
   .lg\:relative {
@@ -1259,11 +1309,6 @@
   .lg\:hidden {
     @media (width >= 64rem) {
       display: none;
-    }
-  }
-  .lg\:flex-row {
-    @media (width >= 64rem) {
-      flex-direction: row;
     }
   }
 }
@@ -2190,7 +2235,7 @@ input[type="checkbox"].switch:checked:after {
   syntax: "*";
   inherits: false;
 }
-@property --tw-divide-x-reverse {
+@property --tw-divide-y-reverse {
   syntax: "*";
   inherits: false;
   initial-value: 0;
@@ -2199,11 +2244,6 @@ input[type="checkbox"].switch:checked:after {
   syntax: "*";
   inherits: false;
   initial-value: solid;
-}
-@property --tw-divide-y-reverse {
-  syntax: "*";
-  inherits: false;
-  initial-value: 0;
 }
 @property --tw-font-weight {
   syntax: "*";
@@ -2425,9 +2465,8 @@ input[type="checkbox"].switch:checked:after {
       --tw-rotate-z: initial;
       --tw-skew-x: initial;
       --tw-skew-y: initial;
-      --tw-divide-x-reverse: 0;
-      --tw-border-style: solid;
       --tw-divide-y-reverse: 0;
+      --tw-border-style: solid;
       --tw-font-weight: initial;
       --tw-shadow: 0 0 #0000;
       --tw-shadow-color: initial;

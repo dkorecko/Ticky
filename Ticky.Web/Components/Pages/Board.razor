@@ -12,15 +12,15 @@
 <EditCardModal @ref="_editCardModal" OnSubmit="OnTaskEdited" />
 <EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
 
-<div class="flex h-screen w-full flex-row divide-x divide-tab-outline">
-    <section class="flex flex-grow flex-col gap-10 overflow-auto px-12 py-14">
-        <!-- Board section -->
-        @if (_board is not null)
+<div class="flex w-screen flex-col divide-y divide-tab-outline">
+    <header class="flex h-[5vh] flex-row items-center justify-end gap-1 px-2 text-2xl font-bold sm:gap-5 sm:px-12">
+        @if(_board is null)
         {
-            <header class="flex flex-row justify-end gap-5 text-2xl font-bold">
-                <label class="mr-auto">@_board.Name <label class="text-2xs font-normal">(Project @_board.Project.Name)</label></label>
+            <Spinner/>
+        } else {
+            <label class="mr-auto text-sm text-ellipsis md:text-xl">@_board.Name <label class="text-2xs font-normal text-ellipsis">(Project @_board.Project.Name)</label></label>
 
-                <div class="flex flex-row gap-1">
+                <div class="hidden flex-row gap-1 2xs:flex">
                     @{
                         var i = 0;
                     }
@@ -42,9 +42,14 @@
                 @if (IsAdmin())
                 {
                     <a href="/boards/settings/@_board.Id"><i class="fa fa-gear icon-button"></i></a>
+                    <i class="fa fa-chart-simple icon-button" @onclick="SwitchStatsDisplay"></i>
                 }
-            </header>
-
+        }
+    </header>
+    <section class='flex flex-col gap-10 divide-y divide-tab-outline @(_statsShown ? "hidden md:block" : string.Empty) overflow-x-auto py-6 pl-12'>
+        <!-- Board section -->
+        @if (_board is not null)
+        {
             <section class="flex w-full flex-row gap-5">
                 <SortableList Class="flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
@@ -89,7 +94,7 @@
 
                             @if(!column.Collapsed) 
                             {
-                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Class="min-h-[1rem] w-full" Group="group" Items="column.Cards.Where(x => !x.SnoozedUntil.HasValue).OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
+                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Class="max-h-[75vh] min-h-[1rem] w-full overflow-y-auto" Group="group" Items="column.Cards.Where(x => !x.SnoozedUntil.HasValue).OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
                                     <SortableItemTemplate>
                                         @if(column.MaxCards == 1)
                                         {
@@ -137,7 +142,7 @@
 
                 @if (IsAdmin())
                 {
-                    <div class="add h-[75vh] w-64 rounded-lg" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id)+1 : 0);">
+                    <div class="add mt-1 h-[75vh] w-64 rounded-lg" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id)+1 : 0);">
                         <i class="fa fa-plus text-3xl"></i>
                         <label>New column</label>
                     </div>
@@ -149,32 +154,40 @@
             <Spinner />
         }
     </section>
-    <section class="flex w-80 flex-col gap-8 px-12 py-14">
-        <!-- Side section -->
-        @if (_board is not null)
-        {
-            var completedCards = _board.Columns.Where(x => x.Finished).SelectMany(x => x.Cards).Where(x => !x.SnoozedUntil.HasValue).Count();
-            var totalCards = _board.Columns.SelectMany(x => x.Cards).Where(x => !x.SnoozedUntil.HasValue).Count();
-
-            <label>Progress</label>
-            <div class="flex flex-col gap-4">
-                <div class="flex flex-col gap-1">
-                    <div class="flex flex-row justify-between text-xs">
-                        <label>Tasks completed</label>
-                        <label class="text-gray-500">@completedCards/@totalCards</label>
-                    </div>
-                    <div class="grid h-1 w-full rounded-lg">
-                        <div class="z-10 w-24 rounded-lg bg-pink-500 transition-all" style="grid-row: 1; grid-column: 1; width: @(Math.Round((double) completedCards/totalCards*100))%;"></div>
-                        <div class="rounded-lg bg-pink-300" style="grid-row: 1; grid-column: 1;"></div>
-                    </div>
-                </div>
+    @* @if(_statsShown) 
+    {
+        <section class="flex w-screen flex-col items-center gap-6 px-2 py-6 md:w-80">
+            <div class="flex w-full flex-row items-center justify-between">
+                <h1>Progress</h1>
+                <i class="fa fa-xmark text-icon hover:text-icon-hover" @onclick=SwitchStatsDisplay></i>
             </div>
-        }
-        else
-        {
-            <Spinner />
-        }
-    </section>
+            <div class="flex w-full flex-col gap-8">
+                <!-- Side section -->
+                @if (_board is not null)
+                {
+                    var completedCards = _board.Columns.Where(x => x.Finished).SelectMany(x => x.Cards).Where(x => !x.SnoozedUntil.HasValue).Count();
+                    var totalCards = _board.Columns.SelectMany(x => x.Cards).Where(x => !x.SnoozedUntil.HasValue).Count();
+
+                    <div class="flex flex-col gap-4">
+                        <div class="flex flex-col gap-1">
+                            <div class="flex flex-row justify-between text-xs">
+                                <label>Tasks completed</label>
+                                <label class="text-gray-500">@completedCards/@totalCards</label>
+                            </div>
+                            <div class="grid h-1 w-full rounded-lg">
+                                <div class="z-10 w-24 rounded-lg bg-pink-500 transition-all" style="grid-row: 1; grid-column: 1; width: @(Math.Round((double) completedCards/totalCards*100))%;"></div>
+                                <div class="rounded-lg bg-pink-300" style="grid-row: 1; grid-column: 1;"></div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <Spinner />
+                }
+            </div>
+        </section>
+    } *@
 </div>
 
 @code {
@@ -205,6 +218,7 @@
     private CreateTaskModel _createTaskModel = new();
     private bool _justAdded;
     private int _adding;
+    private bool _statsShown;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -245,6 +259,12 @@
             _editCardModal?.Open(CardId.Value, _members);
 
         await MainLayout.UpdateRecentBoard();
+    }
+
+    private void SwitchStatsDisplay()
+    {
+        _statsShown = !_statsShown;
+        StateHasChanged();
     }
 
     private int GetColumnIdFromString(string str)

@@ -69,6 +69,8 @@
     --color-person-label-bg: oklch(0.929 0.013 255.508); /* slate 200 */
 
     --text-2xs: 0.65rem;
+    --breakpoint-xs: 30rem;
+    --breakpoint-2xs: 20rem;
 }
 
 @layer base {
