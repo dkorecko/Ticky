@@ -615,5 +615,13 @@ input[type="checkbox"].switch{
 }
 
 .sortable-chosen {
-    @apply animate-pulse border-2;
+    @apply animate-pulse;
+}
+
+[data-theme='dark'] .sortable-chosen {
+    @apply border-2;
+}
+
+[data-theme=''] .sortable-chosen {
+    @apply shadow-2xl;
 }
