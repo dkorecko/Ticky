@@ -1,9 +1,10 @@
-@implements IDisposable
+﻿@implements IDisposable
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
 
-<nav class="absolute bottom-0 w-full bg-card-bg px-10 py-2 lg:relative">
+<nav class="absolute bottom-0 z-10 w-full bg-card-bg px-10 py-2 lg:relative">
+    <!-- Desktop version -->
     <div class="hidden w-full flex-row justify-center self-center lg:flex">
         <div class="mr-auto flex flex-row items-center gap-5">
             <NavLink href="/">
@@ -66,6 +67,7 @@
         </div>
     </div>
 
+    <!-- Mobile version -->
     <div class="flex w-full flex-row items-center justify-between text-nav-link lg:hidden">
         <NavLink href="/">
             <img height="32" width="32" src='@Assets["/images/ticky.png"]' alt="Ticky app logo" />
