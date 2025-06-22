@@ -1261,6 +1261,11 @@
       display: none;
     }
   }
+  .lg\:flex-row {
+    @media (width >= 64rem) {
+      flex-direction: row;
+    }
+  }
 }
 @layer base {
   [data-theme='dark'] {
