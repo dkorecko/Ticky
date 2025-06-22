@@ -74,5 +74,25 @@ function onDropdownTriggerClicked(clientX, clientY, dropdownElement) {
     dropdownElement.classList.remove('hidden')
     dropdownElement.style.top = clientY + 5 + 'px'
     dropdownElement.style.left = clientX + 5 + 'px'
+
+    const rect = dropdownElement.getBoundingClientRect()
+    const mostRightPoint = rect.width + clientX + 5
+    const mostBottomPoint = rect.height + clientY + 5
+
+    console.log(rect)
+    console.log(window.screen)
+
+    if (mostRightPoint > window.screen.width) {
+        console.log('left offset')
+        console.log(window.screen.width - rect.width + 'px')
+        dropdownElement.style.left = window.screen.width - rect.width + 'px'
+    }
+
+    if (mostBottomPoint > window.screen.height) {
+        console.log('top offset')
+        console.log(window.screen.height - rect.height + 'px')
+        dropdownElement.style.top = window.screen.height - rect.height + 'px'
+    }
+
     openDropdown = dropdownElement
 }
