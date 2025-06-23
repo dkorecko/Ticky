@@ -46,11 +46,11 @@
                 }
         }
     </header>
-    <section class='flex w-screen flex-row gap-10 divide-x divide-tab-outline pl-12'>
+    <section class='flex w-screen flex-row divide-x divide-tab-outline'>
         <!-- Board section -->
         @if (_board is not null)
         {
-            <section class="w-full flex-row gap-5 overflow-x-auto @(_statsShown ? "hidden md:flex" : "flex") py-6">
+            <section class="ml-12 w-full flex-row gap-5 overflow-x-auto @(_statsShown ? "hidden md:flex" : "flex") py-6">
                 <SortableList Class="flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
                         @{

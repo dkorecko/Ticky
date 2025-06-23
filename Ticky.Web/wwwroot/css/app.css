@@ -318,6 +318,9 @@
   .ml-6 {
     margin-left: calc(var(--spacing) * 6);
   }
+  .ml-12 {
+    margin-left: calc(var(--spacing) * 12);
+  }
   .ml-\[-5px\] {
     margin-left: -5px;
   }
