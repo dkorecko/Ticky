@@ -50,8 +50,8 @@
         <!-- Board section -->
         @if (_board is not null)
         {
-            <section class="ml-12 w-full flex-row gap-5 overflow-x-auto @(_statsShown ? "hidden md:flex" : "flex") py-6">
-                <SortableList Class="flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
+            <section class="w-full flex-row gap-5 overflow-x-auto @(_statsShown ? "hidden md:flex" : "flex") py-6">
+                <SortableList Class="ml-12 flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
                         @{
                             var cardsCount = column.Cards.Where(x => !x.SnoozedUntil.HasValue).Count();
@@ -154,7 +154,7 @@
                 <section class="flex w-screen flex-col items-center gap-6 px-2 py-6 md:w-80">
                     <div class="flex w-full flex-row items-center justify-between">
                         <h1>Progress</h1>
-                        <i class="fa fa-xmark text-icon hover:text-icon-hover" @onclick=SwitchStatsDisplay></i>
+                        <i class="fa fa-xmark icon-button" @onclick=SwitchStatsDisplay></i>
                     </div>
                     <div class="flex w-full flex-col gap-8">
                         <!-- Side section -->
