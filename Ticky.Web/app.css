@@ -620,10 +620,10 @@ input[type="checkbox"].switch{
     @apply animate-pulse;
 }
 
-[data-theme='dark'] .sortable-chosen {
+[data-theme='dark'] .task-card.sortable-chosen {
     @apply border-2;
 }
 
-[data-theme=''] .sortable-chosen {
+[data-theme=''] .task-card.sortable-chosen {
     @apply shadow-2xl;
 }
