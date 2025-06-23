@@ -56,6 +56,11 @@ namespace Ticky.Base
             public const string Admin = "Admin";
         }
 
+        public static class StorageKeys
+        {
+            public const string BoardPreferences = "Ticky_BoardPreferences";
+        }
+
         public static readonly string WWW_ROOT = $"{AppDomain.CurrentDomain.BaseDirectory}/wwwroot";
         public static readonly string SAVE_UPLOADED_PATH = $"wwwroot/uploaded";
         public static readonly string SAVE_UPLOADED_IMAGES_PATH = $"{SAVE_UPLOADED_PATH}/images";

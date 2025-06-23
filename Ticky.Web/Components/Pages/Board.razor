@@ -1,8 +1,9 @@
-﻿@page "/boards/{Id:int}/{CardId:int?}"
+@page "/boards/{Id:int}/{CardId:int?}"
 @using Ticky.Base.Entities
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject CardNumberingService _cardNumberingService
+@inject ProtectedLocalStorage _protectedLocalStorage
 @inherits NotifiableBase
 
 <CreateColumnModal @ref="_createColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Added)" />
@@ -50,7 +51,7 @@
         <!-- Board section -->
         @if (_board is not null)
         {
-            <section class="w-full flex-row gap-5 overflow-x-auto @(_statsShown ? "hidden md:flex" : "flex") py-6">
+            <section class="w-full flex-row gap-5 overflow-x-auto @(_preferences.ShowStats ? "hidden md:flex" : "flex") py-6">
                 <SortableList Class="ml-12 flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
                         @{
@@ -149,7 +150,7 @@
                 }
             </section>
             
-            if(_statsShown) 
+            if(_preferences.ShowStats) 
             {
                 <section class="flex w-screen flex-col items-center gap-6 px-2 py-6 md:w-80">
                     <div class="flex w-full flex-row items-center justify-between">
@@ -219,12 +220,19 @@
     private CreateTaskModel _createTaskModel = new();
     private bool _justAdded;
     private int _adding;
-    private bool _statsShown;
+    private BoardPreferencesModel _preferences = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
             return;
+
+        var boardPreferences = await _protectedLocalStorage.GetAsync<BoardPreferencesModel>(Constants.StorageKeys.BoardPreferences);
+
+        if(!boardPreferences.Success)
+            return;
+
+        _preferences = boardPreferences.Value ?? new();
 
         await HandleUpdate();
 
@@ -262,9 +270,12 @@
         await MainLayout.UpdateRecentBoard();
     }
 
-    private void SwitchStatsDisplay()
+    private async Task SwitchStatsDisplay()
     {
-        _statsShown = !_statsShown;
+        _preferences.ShowStats = !_preferences.ShowStats;
+
+        await _protectedLocalStorage.SetAsync(Constants.StorageKeys.BoardPreferences, _preferences);
+
         StateHasChanged();
     }
 
