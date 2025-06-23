@@ -252,7 +252,7 @@ input {
 }
 
 .board-column {
-    @apply flex w-64 flex-col items-center;
+    @apply flex min-w-64 flex-col items-center;
 }
 
 .task-card {

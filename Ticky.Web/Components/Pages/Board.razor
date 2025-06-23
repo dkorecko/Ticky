@@ -46,11 +46,11 @@
                 }
         }
     </header>
-    <section class='flex flex-col gap-10 divide-y divide-tab-outline @(_statsShown ? "hidden md:block" : string.Empty) overflow-x-auto py-6 pl-12'>
+    <section class='flex w-screen flex-row gap-10 divide-x divide-tab-outline pl-12'>
         <!-- Board section -->
         @if (_board is not null)
         {
-            <section class="flex w-full flex-row gap-5">
+            <section class="w-full flex-row gap-5 overflow-x-auto @(_statsShown ? "hidden md:flex" : "flex") py-6">
                 <SortableList Class="flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
                         @{
@@ -142,52 +142,53 @@
 
                 @if (IsAdmin())
                 {
-                    <div class="add mt-1 mr-12 h-[75vh] w-64 min-w-64 rounded-lg px-8" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id)+1 : 0);">
+                    <div class="add mt-1 mr-12 h-[75vh] min-w-64 rounded-lg px-8" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id)+1 : 0);">
                         <i class="fa fa-plus text-3xl"></i>
                         <label>New column</label>
                     </div>
                 }
             </section>
+            
+            if(_statsShown) 
+            {
+                <section class="flex w-screen flex-col items-center gap-6 px-2 py-6 md:w-80">
+                    <div class="flex w-full flex-row items-center justify-between">
+                        <h1>Progress</h1>
+                        <i class="fa fa-xmark text-icon hover:text-icon-hover" @onclick=SwitchStatsDisplay></i>
+                    </div>
+                    <div class="flex w-full flex-col gap-8">
+                        <!-- Side section -->
+                        @if (_board is not null)
+                        {
+                            var completedCards = _board.Columns.Where(x => x.Finished).SelectMany(x => x.Cards).Where(x => !x.SnoozedUntil.HasValue).Count();
+                            var totalCards = _board.Columns.SelectMany(x => x.Cards).Where(x => !x.SnoozedUntil.HasValue).Count();
+
+                            <div class="flex flex-col gap-4">
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex flex-row justify-between text-xs">
+                                        <label>Tasks completed</label>
+                                        <label class="text-gray-500">@completedCards/@totalCards</label>
+                                    </div>
+                                    <div class="grid h-1 w-full rounded-lg">
+                                        <div class="z-10 w-24 rounded-lg bg-pink-500 transition-all" style="grid-row: 1; grid-column: 1; width: @(Math.Round((double) completedCards/totalCards*100))%;"></div>
+                                        <div class="rounded-lg bg-pink-300" style="grid-row: 1; grid-column: 1;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <Spinner />
+                        }
+                    </div>
+                </section>
+            }
         }
         else
         {
             <Spinner />
         }
     </section>
-    @* @if(_statsShown) 
-    {
-        <section class="flex w-screen flex-col items-center gap-6 px-2 py-6 md:w-80">
-            <div class="flex w-full flex-row items-center justify-between">
-                <h1>Progress</h1>
-                <i class="fa fa-xmark text-icon hover:text-icon-hover" @onclick=SwitchStatsDisplay></i>
-            </div>
-            <div class="flex w-full flex-col gap-8">
-                <!-- Side section -->
-                @if (_board is not null)
-                {
-                    var completedCards = _board.Columns.Where(x => x.Finished).SelectMany(x => x.Cards).Where(x => !x.SnoozedUntil.HasValue).Count();
-                    var totalCards = _board.Columns.SelectMany(x => x.Cards).Where(x => !x.SnoozedUntil.HasValue).Count();
-
-                    <div class="flex flex-col gap-4">
-                        <div class="flex flex-col gap-1">
-                            <div class="flex flex-row justify-between text-xs">
-                                <label>Tasks completed</label>
-                                <label class="text-gray-500">@completedCards/@totalCards</label>
-                            </div>
-                            <div class="grid h-1 w-full rounded-lg">
-                                <div class="z-10 w-24 rounded-lg bg-pink-500 transition-all" style="grid-row: 1; grid-column: 1; width: @(Math.Round((double) completedCards/totalCards*100))%;"></div>
-                                <div class="rounded-lg bg-pink-300" style="grid-row: 1; grid-column: 1;"></div>
-                            </div>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <Spinner />
-                }
-            </div>
-        </section>
-    } *@
 </div>
 
 @code {
