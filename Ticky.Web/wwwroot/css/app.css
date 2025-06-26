@@ -488,9 +488,6 @@
   .w-100 {
     width: calc(var(--spacing) * 100);
   }
-  .w-\[33rem\] {
-    width: 33rem;
-  }
   .w-full {
     width: 100%;
   }
@@ -1281,11 +1278,6 @@
       display: block;
     }
   }
-  .sm\:hidden {
-    @media (width >= 40rem) {
-      display: none;
-    }
-  }
   .sm\:gap-5 {
     @media (width >= 40rem) {
       gap: calc(var(--spacing) * 5);
@@ -1294,11 +1286,6 @@
   .sm\:px-12 {
     @media (width >= 40rem) {
       padding-inline: calc(var(--spacing) * 12);
-    }
-  }
-  .md\:block {
-    @media (width >= 48rem) {
-      display: block;
     }
   }
   .md\:flex {
