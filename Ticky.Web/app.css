@@ -155,7 +155,7 @@
     
 /* Regular checkbox styling */
 input[type="checkbox"]:not(.switch) {
-    @apply h-4 w-4 cursor-pointer appearance-none rounded-sm border-1 border-add-outline bg-card-bg transition-all;
+    @apply h-4 w-4 min-w-4 cursor-pointer appearance-none rounded-sm border-1 border-add-outline bg-card-bg transition-all;
 }
 
 input[type="checkbox"]:not(.switch):checked {
