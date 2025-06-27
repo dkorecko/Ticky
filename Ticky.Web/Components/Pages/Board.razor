@@ -229,11 +229,7 @@
             return;
 
         var boardPreferences = await _protectedLocalStorage.GetAsync<BoardPreferencesModel>(Constants.StorageKeys.BoardPreferences);
-
-        if(!boardPreferences.Success)
-            return;
-
-        _preferences = boardPreferences.Value ?? new();
+        _preferences = (boardPreferences.Success ? boardPreferences.Value : new()) ?? new();
 
         await HandleUpdate();
 
