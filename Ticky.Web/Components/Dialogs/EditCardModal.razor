@@ -321,7 +321,7 @@
                             var activityId = $"activity_id_{i}";
 
                             <div class="flex flex-row items-center justify-between py-2 text-xs">
-                                <div class='ml-[-5px] h-2 w-2 rounded-full bg-add-outline @(onlyFirstDates.Any(x => DateTime.Compare(activity.CreatedAt, x) == 0) ? string.Empty : "opacity-0")'></div>
+                                <div class='ml-[-5px] h-2 max-w-2 min-w-2 rounded-full bg-add-outline @(onlyFirstDates.Any(x => DateTime.Compare(activity.CreatedAt, x) == 0) ? string.Empty : "opacity-0")'></div>
                                 <label class="ml-3 whitespace-nowrap text-add-outline capitalize">@activity.CreatedAt.ToShortString()</label>
                                 <label class="ml-6"><label class="person-link" id="@activityId"
                                     @onclick="() => _mainLayout.UserInfoModal?.Open(activityId, activity.UserId)">

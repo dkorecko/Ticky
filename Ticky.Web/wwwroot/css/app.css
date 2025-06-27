@@ -497,11 +497,26 @@
   .w-screen {
     width: 100vw;
   }
+  .max-w-2 {
+    max-width: calc(var(--spacing) * 2);
+  }
   .max-w-2xl {
     max-width: var(--container-2xl);
   }
   .max-w-4xl {
     max-width: var(--container-4xl);
+  }
+  .max-w-\[1300px\] {
+    max-width: 1300px;
+  }
+  .max-w-\[1500px\] {
+    max-width: 1500px;
+  }
+  .max-w-\[1920px\] {
+    max-width: 1920px;
+  }
+  .min-w-2 {
+    min-width: calc(var(--spacing) * 2);
   }
   .min-w-64 {
     min-width: calc(var(--spacing) * 64);
@@ -1395,6 +1410,7 @@
 input[type="checkbox"]:not(.switch) {
   height: calc(var(--spacing) * 4);
   width: calc(var(--spacing) * 4);
+  min-width: calc(var(--spacing) * 4);
   cursor: pointer;
   appearance: none;
   border-radius: var(--radius-sm);
