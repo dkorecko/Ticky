@@ -37,8 +37,6 @@
     --text-sm--line-height: calc(1.25 / 0.875);
     --text-base: 1rem;
     --text-base--line-height: calc(1.5 / 1);
-    --text-lg: 1.125rem;
-    --text-lg--line-height: calc(1.75 / 1.125);
     --text-xl: 1.25rem;
     --text-xl--line-height: calc(1.75 / 1.25);
     --text-2xl: 1.5rem;
@@ -1499,7 +1497,7 @@ input {
 }
 .board-column {
   display: flex;
-  min-width: calc(var(--spacing) * 64);
+  width: calc(var(--spacing) * 64);
   flex-direction: column;
   align-items: center;
 }
