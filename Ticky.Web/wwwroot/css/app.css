@@ -58,6 +58,7 @@
     --radius-lg: 0.5rem;
     --radius-2xl: 1rem;
     --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     --default-transition-duration: 150ms;
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     --default-font-family: var(--font-sans);
@@ -304,6 +305,9 @@
   .mt-5 {
     margin-top: calc(var(--spacing) * 5);
   }
+  .mr-12 {
+    margin-right: calc(var(--spacing) * 12);
+  }
   .mr-auto {
     margin-right: auto;
   }
@@ -318,6 +322,9 @@
   }
   .ml-6 {
     margin-left: calc(var(--spacing) * 6);
+  }
+  .ml-12 {
+    margin-left: calc(var(--spacing) * 12);
   }
   .ml-\[-5px\] {
     margin-left: -5px;
@@ -411,11 +418,20 @@
   .h-60 {
     height: calc(var(--spacing) * 60);
   }
+  .h-\[4vh\] {
+    height: 4vh;
+  }
+  .h-\[5vh\] {
+    height: 5vh;
+  }
   .h-\[75vh\] {
     height: 75vh;
   }
   .h-\[90vh\] {
     height: 90vh;
+  }
+  .h-\[96vh\] {
+    height: 96vh;
   }
   .h-full {
     height: 100%;
@@ -425,6 +441,9 @@
   }
   .h-screen {
     height: 100vh;
+  }
+  .max-h-\[75vh\] {
+    max-height: 75vh;
   }
   .max-h-\[80vh\] {
     max-height: 80vh;
@@ -477,9 +496,6 @@
   .w-60 {
     width: calc(var(--spacing) * 60);
   }
-  .w-64 {
-    width: calc(var(--spacing) * 64);
-  }
   .w-72 {
     width: calc(var(--spacing) * 72);
   }
@@ -488,9 +504,6 @@
   }
   .w-100 {
     width: calc(var(--spacing) * 100);
-  }
-  .w-\[33rem\] {
-    width: 33rem;
   }
   .w-full {
     width: 100%;
@@ -507,6 +520,8 @@
   .max-w-4xl {
     max-width: var(--container-4xl);
   }
+  .min-w-64 {
+    min-width: calc(var(--spacing) * 64);
   .min-w-0 {
     min-width: calc(var(--spacing) * 0);
   }
@@ -686,11 +701,14 @@
   .overflow-auto {
     overflow: auto;
   }
-  .overflow-clip {
-    overflow: clip;
-  }
   .overflow-hidden {
     overflow: hidden;
+  }
+  .overflow-x-auto {
+    overflow-x: auto;
+  }
+  .overflow-x-clip {
+    overflow-x: clip;
   }
   .overflow-y-auto {
     overflow-y: auto;
@@ -905,6 +923,9 @@
   .py-5 {
     padding-block: calc(var(--spacing) * 5);
   }
+  .py-6 {
+    padding-block: calc(var(--spacing) * 6);
+  }
   .py-14 {
     padding-block: calc(var(--spacing) * 14);
   }
@@ -995,6 +1016,9 @@
   .font-semibold {
     --tw-font-weight: var(--font-weight-semibold);
     font-weight: var(--font-weight-semibold);
+  }
+  .text-ellipsis {
+    text-overflow: ellipsis;
   }
   .whitespace-nowrap {
     white-space: nowrap;
@@ -1290,6 +1314,29 @@
       background-color: var(--color-yellow-500);
     }
   }
+  .\32 xs\:flex {
+    @media (width >= 20rem) {
+      display: flex;
+    }
+  }
+  .sm\:\!hidden {
+    @media (width >= 40rem) {
+      display: none !important;
+    }
+  }
+  .sm\:block {
+    @media (width >= 40rem) {
+      display: block;
+    }
+  }
+  .sm\:gap-5 {
+    @media (width >= 40rem) {
+      gap: calc(var(--spacing) * 5);
+    }
+  }
+  .sm\:px-12 {
+    @media (width >= 40rem) {
+      padding-inline: calc(var(--spacing) * 12);
   .sm\:flex {
     @media (width >= 40rem) {
       display: flex;
@@ -1347,6 +1394,14 @@
       display: flex;
     }
   }
+  .md\:w-64 {
+    @media (width >= 48rem) {
+      width: calc(var(--spacing) * 64);
+    }
+  }
+  .md\:w-80 {
+    @media (width >= 48rem) {
+      width: calc(var(--spacing) * 80);
   .md\:w-80 {
     @media (width >= 48rem) {
       width: calc(var(--spacing) * 80);
@@ -1362,6 +1417,10 @@
       flex-direction: row;
     }
   }
+  .md\:text-xl {
+    @media (width >= 48rem) {
+      font-size: var(--text-xl);
+      line-height: var(--tw-leading, var(--text-xl--line-height));
   .md\:gap-5 {
     @media (width >= 48rem) {
       gap: calc(var(--spacing) * 5);
@@ -1598,7 +1657,7 @@ input {
 }
 .board-column {
   display: flex;
-  width: calc(var(--spacing) * 64);
+  min-width: calc(var(--spacing) * 64);
   flex-direction: column;
   align-items: center;
 }
@@ -1774,6 +1833,7 @@ button, .label-as-button > i {
   line-height: var(--tw-leading, var(--text-base--line-height)) !important;
 }
 .auth-card {
+  margin-inline: calc(var(--spacing) * 2);
   display: flex;
   width: 30rem;
   flex-direction: column;
@@ -2306,6 +2366,17 @@ input[type="checkbox"].switch:checked:after {
 .tooltip-wrapper:hover .tooltip-span {
   visibility: visible;
 }
+.sortable-chosen {
+  animation: var(--animate-pulse);
+}
+[data-theme='dark'] .task-card.sortable-chosen {
+  border-style: var(--tw-border-style);
+  border-width: 2px;
+}
+[data-theme=''] .task-card.sortable-chosen {
+  --tw-shadow: 0 25px 50px -12px var(--tw-shadow-color, rgb(0 0 0 / 0.25));
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+}
 @property --tw-outline-style {
   syntax: "*";
   inherits: false;
@@ -2561,6 +2632,11 @@ input[type="checkbox"].switch:checked:after {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
   }
 }
 @layer properties {

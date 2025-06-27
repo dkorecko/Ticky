@@ -69,6 +69,8 @@
     --color-person-label-bg: oklch(0.929 0.013 255.508); /* slate 200 */
 
     --text-2xs: 0.65rem;
+    --breakpoint-xs: 30rem;
+    --breakpoint-2xs: 20rem;
 }
 
 @layer base {
@@ -250,7 +252,7 @@ input {
 }
 
 .board-column {
-    @apply flex w-64 flex-col items-center;
+    @apply flex min-w-64 flex-col items-center;
 }
 
 .task-card {
@@ -328,7 +330,7 @@ button, .label-as-button > i {
 }
 
 .auth-card {
-    @apply flex w-[30rem] flex-col gap-12 rounded-lg bg-auth-bg px-12 py-24 shadow-2xl;
+    @apply mx-2 flex w-[30rem] flex-col gap-12 rounded-lg bg-auth-bg px-12 py-24 shadow-2xl;
 }
 
 .auth-form {
@@ -612,4 +614,16 @@ input[type="checkbox"].switch{
 
 .tooltip-wrapper:hover .tooltip-span {
     visibility: visible;
+}
+
+.sortable-chosen {
+    @apply animate-pulse;
+}
+
+[data-theme='dark'] .task-card.sortable-chosen {
+    @apply border-2;
+}
+
+[data-theme=''] .task-card.sortable-chosen {
+    @apply shadow-2xl;
 }

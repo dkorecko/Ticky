@@ -1,4 +1,4 @@
-@using Ticky.Base.Entities
+﻿@using Ticky.Base.Entities
 @inherits AbstractModal
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
@@ -22,7 +22,7 @@
     }
     else
     {
-        <div class="h-[90vh] w-[33rem] overflow-y-scroll">
+        <div class="h-[90vh] overflow-y-scroll">
             <div class="flex flex-col gap-3 px-5 py-5">
                 <i class="edit-icon fa fa-x ml-auto" @onclick="async () => await Modal!.Close()"></i>
                 <textarea class="min-h-12 resize-none px-2 py-2 text-2xl font-bold transition-all ease-in-out" @onchange="OnTextChanged">@_card.Name</textarea>
@@ -156,10 +156,22 @@
                     </tbody>
                 </table>
                 <div class="flex flex-row text-sm">
-                    <label data-active=@((_tab == 0).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 0">Description</label>
-                    <label data-active=@((_tab == 1).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 1">Comments</label>
-                    <label data-active=@((_tab == 2).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 2">Activity</label>
-                    <label data-active=@((_tab == 3).ToString()) class="cursor-pointer border-b-2 px-4 py-2 whitespace-nowrap transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 3">Time Tracking</label>
+                    <label data-active=@((_tab == 0).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 0">
+                        <label class="hidden sm:block">Description</label>
+                        <i class="fa fa-circle-info sm:!hidden"></i>
+                    </label>
+                    <label data-active=@((_tab == 1).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 1">
+                        <label class="hidden sm:block">Comments</label>
+                        <i class="fa fa-comments sm:!hidden"></i>
+                    </label>
+                    <label data-active=@((_tab == 2).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 2">
+                        <label class="hidden sm:block">Activity</label>
+                        <i class="fa fa-rotate-right sm:!hidden"></i>
+                    </label>
+                    <label data-active=@((_tab == 3).ToString()) class="cursor-pointer border-b-2 px-4 py-2 whitespace-nowrap transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 3">
+                        <label class="hidden sm:block">Time Tracking</label>
+                        <i class="fa fa-clock sm:!hidden"></i>
+                    </label>
                     <label class="w-full border-b-2 px-2 py-2"></label>
 
                 </div>

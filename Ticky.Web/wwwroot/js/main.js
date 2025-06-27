@@ -88,5 +88,18 @@ function onDropdownTriggerClicked(clientX, clientY, dropdownElement) {
     dropdownElement.classList.remove('hidden')
     dropdownElement.style.top = clientY + 5 + 'px'
     dropdownElement.style.left = clientX + 5 + 'px'
+
+    const rect = dropdownElement.getBoundingClientRect()
+    const mostRightPoint = rect.width + clientX + 5
+    const mostBottomPoint = rect.height + clientY + 5
+
+    if (mostRightPoint > window.innerWidth) {
+        dropdownElement.style.left = window.innerWidth - rect.width + 'px'
+    }
+
+    if (mostBottomPoint > window.innerHeight) {
+        dropdownElement.style.top = window.innerHeight - rect.height + 'px'
+    }
+
     openDropdown = dropdownElement
 }

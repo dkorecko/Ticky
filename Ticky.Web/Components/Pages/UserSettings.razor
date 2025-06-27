@@ -1,4 +1,4 @@
-@page "/settings/{Tab:int?}"
+﻿@page "/settings/{Tab:int?}"
 @using System.Reflection
 @using Ticky.Base.Entities
 @inject IDbContextFactory<DataContext> _dbContextFactory
@@ -81,7 +81,7 @@
                     <label class="text-sm opacity-70">Here you can change your profile picture.</label>
                 </div>
 
-                <div class="flex flex-row items-center justify-around py-5">
+                <div class="flex flex-col items-center justify-around gap-2 py-5 md:flex-row">
                     <div class="flex flex-col items-center">
                         <div class="h-60 w-60 bg-cover bg-center" 
                             style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user.ProfilePictureFileName?v=@DateTime.Now.Ticks');"/>

@@ -1,0 +1,80 @@
+@using Ticky.Base.Entities
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject NavigationManager _navigationManager
+@inherits AbstractModal
+@implements IDisposable
+@inject IJSRuntime _js
+@inject SearchService _searchService
+
+<Modal @ref="Modal" Title="Search" DisableButtons=true>
+    <input class="w-80 rounded-2xl bg-search-bar p-2 text-center text-xs" type="search"
+           placeholder="Search for tasks ..." @oninput="UpdateSearchTerm"/>
+
+    @if(_isLoading)
+    {
+        <Spinner/>
+    } else {
+        foreach(var card in _resultCards)
+        {
+            <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-dropdown-option" @onclick='() => GoToTask(card.Column.BoardId, card.Id)'>
+                <div class="flex flex-row justify-between gap-3">
+                    <label class="cursor-pointer whitespace-nowrap">@card.Column.Board.Code-@card.Number</label>
+                    <label class="cursor-pointer truncate whitespace-nowrap">@card.Name</label>
+                </div>
+                <label class="text-2xs cursor-pointer font-light">Project @card.Column.Board.Project.Name – @card.Column.Board.Name</label>
+            </div>
+        }
+    }
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    private Timer? _timer;
+    private string? _searchTerm;
+    private bool _isLoading;
+
+    private List<Card> _resultCards = [];
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        StateHasChanged();
+
+        _timer = new Timer(2000);
+        _timer.Stop();
+        _timer.Elapsed += Filter;
+        _timer.AutoReset = false;
+    }
+
+    private void UpdateSearchTerm(ChangeEventArgs e)
+    {
+        _searchTerm = e.Value as string;
+
+        _timer?.Stop();
+        _timer?.Start();
+
+        _isLoading = true;
+        StateHasChanged();
+    }
+
+    private async Task GoToTask(int boardId, int cardId)
+    {
+        await Modal!.Close();
+        _navigationManager.NavigateTo($"/boards/{boardId}/{cardId}");
+        await _js.InvokeVoidAsync("closeDropdowns");
+    }
+
+    private async void Filter(Object? obj = null, ElapsedEventArgs? e = null)
+    {
+        _resultCards = await _searchService.SearchAsync(_searchTerm, _user);
+        _isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void IDisposable.Dispose()
+        => _timer?.Dispose();
+}

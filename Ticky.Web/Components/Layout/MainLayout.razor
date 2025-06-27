@@ -1,4 +1,4 @@
-@using Ticky.Base.Entities
+﻿@using Ticky.Base.Entities
 @inherits LayoutComponentBase
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject NavigationManager _navigationManager
@@ -8,10 +8,10 @@
 <CascadingValue Name="@Constants.CascadingParameters.CurrentAccount" Value="@_user">
     <Notifications @ref="_notifications" />
     <CascadingValue Name="@Constants.CascadingParameters.MainLayout" Value="this">
-        <div class="h-screen overflow-clip">
+        <div>
             <NavMenu/>
 
-            <main>
+            <main class="h-[96vh] overflow-x-clip overflow-y-auto">
                 @if(_user is null)
                 {
                     <Spinner/>
