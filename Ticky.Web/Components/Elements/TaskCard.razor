@@ -1,4 +1,4 @@
-﻿@using Ticky.Base.Entities
+@using Ticky.Base.Entities
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
 <div data-blocked="@Card.Blocked.ToString()" class="task-card" @onclick="() => EditCardModal.Open(Card.Id, Members)">
@@ -51,6 +51,10 @@
             @if (Card.SnoozedUntil is not null)
             {
                 <label class="card-data-point"><i class="fa fa-moon"></i> @(Card.SnoozedUntil.Value.ToShortString())</label>
+            }
+            @if (!string.IsNullOrWhiteSpace(Card.Description))
+            {
+                <label class="card-data-point"><i class="fa fa-align-left"></i></label>
             }
         </div>
         <div class="flex">
