@@ -93,12 +93,12 @@ function onDropdownTriggerClicked(clientX, clientY, dropdownElement) {
     const mostRightPoint = rect.width + clientX + 5
     const mostBottomPoint = rect.height + clientY + 5
 
-    if (mostRightPoint > window.screen.width) {
-        dropdownElement.style.left = window.screen.width - rect.width + 'px'
+    if (mostRightPoint > window.innerWidth) {
+        dropdownElement.style.left = window.innerWidth - rect.width + 'px'
     }
 
-    if (mostBottomPoint > window.screen.height) {
-        dropdownElement.style.top = window.screen.height - rect.height + 'px'
+    if (mostBottomPoint > window.innerHeight) {
+        dropdownElement.style.top = window.innerHeight - rect.height + 'px'
     }
 
     openDropdown = dropdownElement
