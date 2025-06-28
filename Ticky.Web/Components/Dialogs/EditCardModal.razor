@@ -1,4 +1,4 @@
-﻿@using Ticky.Base.Entities
+@using Ticky.Base.Entities
 @inherits AbstractModal
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
@@ -1022,7 +1022,9 @@
                         Text = $"<b>uploaded</b> file named <b>{file.Name}</b>",
                         UserId = _user.Id,
                         CardId = card.Id,
-                    });
+                });
+
+                await db.SaveChangesAsync();
 
                 _mainLayout.RunNotification(new Notification($"File {file.Name} uploaded successfully."));
             }
@@ -1033,7 +1035,6 @@
             }
         }
 
-        await db.SaveChangesAsync();
         await UpdateCard();
     }
 
