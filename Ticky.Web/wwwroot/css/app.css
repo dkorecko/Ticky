@@ -509,12 +509,6 @@
   .max-w-\[1300px\] {
     max-width: 1300px;
   }
-  .max-w-\[1500px\] {
-    max-width: 1500px;
-  }
-  .max-w-\[1920px\] {
-    max-width: 1920px;
-  }
   .min-w-2 {
     min-width: calc(var(--spacing) * 2);
   }
