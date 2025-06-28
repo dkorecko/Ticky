@@ -108,7 +108,7 @@
 
                                 @if(column.MaxCards == 0 || cardsCount < column.MaxCards) 
                                 {
-                                    <div data-active=@((_adding == column.Id).ToString()) @onclick="async () => await StartAddingToColumn(column.Id)" 
+                                    <div data-active=@((_adding == column.Id).ToString()) @onclick="() => StartAddingToColumn(column.Id)" 
                                         class="add rounded-lg select-none p-5 h-min w-full to-task-card">
                                         @if(_adding != column.Id) {
                                             <i class="fa fa-plus text-3xl"></i>
@@ -129,8 +129,7 @@
 
                                                                await AttemptCreateTaskSubmit(column.Id);
                                                            }'
-                                                           autofocus
-                                            placeholder="What is the description?" wrap="soft"/>
+                                                           autofocus placeholder="Describe the task ..." wrap="soft"/>
 
                                             <hr class="border-t-tab-outline">
                                             <button class="w-full" @onclick="() => AttemptCreateTaskSubmit(column.Id)">Create</button>
@@ -403,18 +402,24 @@
         await HandleUpdate();
     }
 
-    private async Task StartAddingToColumn(int columnId)
+    private void StartAddingToColumn(int columnId)
     {
         _adding = columnId;
 
         StateHasChanged();
 
+        _ = FocusCardCreation();
+    }
+
+    private async Task FocusCardCreation()
+    {
+        await Task.Delay(10);
+
         if (_textElement is null)
             return;
 
-        await Task.Delay(10);
         await _textElement.Value.FocusAsync();
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ExpandOrCollapseColumn(int columnId)
