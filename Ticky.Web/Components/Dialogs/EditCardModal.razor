@@ -1,4 +1,3 @@
-@using Ticky.Base.Entities
 @inherits AbstractModal
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
@@ -89,7 +88,7 @@
                             <td class="edit-task-label">Labels</td>
                             <td class="edit-task-item">
                                 @foreach(var label in _card.Labels) {
-                                    <Label LabelEntity="label"></Label>
+                                    <LabelView Label="label"></LabelView>
                                 }
                                 <i @ref="_labelDiv" class="fa fa-pencil edit-icon" @onclick="() => _labelModal?.Open(_labelDiv, _card, _card.Column.Board.Labels)"></i>
                             </td>

@@ -1,6 +1,5 @@
-﻿@page "/settings/{Tab:int?}"
+@page "/settings/{Tab:int?}"
 @using System.Reflection
-@using Ticky.Base.Entities
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ILogger<UserSettings> _logger
 @inject AvatarService _avatarService

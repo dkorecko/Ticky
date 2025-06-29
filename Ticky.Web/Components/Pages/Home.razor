@@ -1,5 +1,4 @@
 @page "/"
-@using Ticky.Base.Entities
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inherits NotifiableBase
 
@@ -8,7 +7,7 @@
 <EditProjectModal @ref="_editProjectModal" OnSubmit="async () => await RunNotification(typeof(Project), OperationType.Edited)" />
 <EditProjectMembershipsModal @ref="_editProjectMembershipsModal" OnSubmit="async () => await RunNotification(typeof(ProjectMembership), OperationType.Edited)" />
 <DeleteConfirmationDialog T="Project" @ref="_deleteProjectModal" OnConfirmed="HandleUpdate" />
-<DeleteConfirmationDialog T="Ticky.Base.Entities.Board" @ref="_deleteBoardModal" OnConfirmed="HandleUpdate" />
+<DeleteConfirmationDialog T="Board" @ref="_deleteBoardModal" OnConfirmed="HandleUpdate" />
 
 <div class="flex h-screen w-full flex-col gap-10 overflow-y-auto px-12 py-14">
     <div class="flex flex-row items-center justify-end gap-5">
@@ -106,7 +105,7 @@
 
     private IEnumerable<Project>? _projects;
 
-    private IEnumerable<Ticky.Base.Entities.Board>? _remainingBoards;
+    private IEnumerable<Board>? _remainingBoards;
 
     private CreateProjectModal? _createProjectModal;
 
@@ -118,7 +117,7 @@
 
     private DeleteConfirmationDialog<Project>? _deleteProjectModal;
 
-    private DeleteConfirmationDialog<Ticky.Base.Entities.Board>? _deleteBoardModal;
+    private DeleteConfirmationDialog<Board>? _deleteBoardModal;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -161,7 +160,7 @@
         return projects;
     }
 
-    private async Task<IEnumerable<Ticky.Base.Entities.Board>> LoadRemainingBoardsAsync()
+    private async Task<IEnumerable<Board>> LoadRemainingBoardsAsync()
     {
         using var db = _dbContextFactory.CreateDbContext();
 

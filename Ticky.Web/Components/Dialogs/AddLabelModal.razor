@@ -28,7 +28,7 @@
 
             <div class="form-group">
                 <label>Preview:</label>
-                <Label LabelEntity="_showcaseLabel"/>
+                <LabelView Label="_showcaseLabel"/>
             </div>
         </EditForm>
     }
@@ -43,7 +43,7 @@
 
     private Board? _board;
     private LabelModel _labelModel = new();
-    private Base.Entities.Label? _showcaseLabel;
+    private Label? _showcaseLabel;
     private EditContext? _editContext;
 
     public void Open(Board board) {
@@ -107,7 +107,7 @@
         if(board is null)
             return;
 
-        board.Labels.Add(new Base.Entities.Label
+        board.Labels.Add(new Label
         {
             BoardId = board.Id,
             Name = _labelModel.Text,
