@@ -1,13 +1,12 @@
-﻿@page "/admin"
-@using Ticky.Base.Entities
+@page "/admin"
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ILogger<BoardSettings> _logger
 @inherits NotifiableBase
 @attribute [Authorize(Policy = Constants.Policies.RequireAdmin)]
 
-<AddUserModal @ref="_addUserModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.User), OperationType.Added)" />
-<EditUserModal @ref="_editUserModal" OnSubmit="() => RunNotification(typeof(Ticky.Base.Entities.User), OperationType.Edited)" />
-<DeleteConfirmationDialog T="Ticky.Base.Entities.User" @ref="_deleteUserModal" OnConfirmed="HandleUpdate" />
+<AddUserModal @ref="_addUserModal" OnSubmit="() => RunNotification(typeof(User), OperationType.Added)" />
+<EditUserModal @ref="_editUserModal" OnSubmit="() => RunNotification(typeof(User), OperationType.Edited)" />
+<DeleteConfirmationDialog T="User" @ref="_deleteUserModal" OnConfirmed="HandleUpdate" />
 
 <div class="h-screen w-full">
     <section class="flex w-full max-w-4xl flex-grow flex-col gap-5 overflow-y-auto px-12 py-14">
@@ -70,7 +69,7 @@
     private List<User>? _users;
     private AddUserModal? _addUserModal;
     private EditUserModal? _editUserModal;
-    private DeleteConfirmationDialog<Ticky.Base.Entities.User>? _deleteUserModal;
+    private DeleteConfirmationDialog<User>? _deleteUserModal;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

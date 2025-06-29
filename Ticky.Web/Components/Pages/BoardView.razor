@@ -1,5 +1,4 @@
 @page "/boards/{Id:int}/{CardId:int?}"
-@using Ticky.Base.Entities
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject CardNumberingService _cardNumberingService
@@ -9,8 +8,8 @@
 
 <CreateColumnModal @ref="_createColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Added)" />
 <EditColumnModal @ref="_editColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Edited)" />
-<DeleteConfirmationDialog T="Base.Entities.Column" @ref="_deleteColumnModal" OnConfirmed="HandleUpdate" />
-<DeleteConfirmationDialog T="Base.Entities.Card" @ref="_deleteTaskModal" OnConfirmed="HandleUpdate" />
+<DeleteConfirmationDialog T="Column" @ref="_deleteColumnModal" OnConfirmed="HandleUpdate" />
+<DeleteConfirmationDialog T="Card" @ref="_deleteTaskModal" OnConfirmed="HandleUpdate" />
 <EditCardModal @ref="_editCardModal" OnSubmit="OnTaskEdited" />
 <EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
 
@@ -204,14 +203,14 @@
 
     private const string COLUMN_PREFIX = "column_";
 
-    private Base.Entities.Board? _board;
+    private Board? _board;
     private List<User> _members = [];
 
     private CreateColumnModal? _createColumnModal;
     private EditColumnModal? _editColumnModal;
     private EditCardModal? _editCardModal;
-    private DeleteConfirmationDialog<Base.Entities.Column>? _deleteColumnModal;
-    private DeleteConfirmationDialog<Base.Entities.Card>? _deleteTaskModal;
+    private DeleteConfirmationDialog<Column>? _deleteColumnModal;
+    private DeleteConfirmationDialog<Card>? _deleteTaskModal;
     private EditBoardMembershipsModal? _editBoardMembershipsModal;
     private List<ElementReference> _avatars = [];
     private ElementReference Avatars { set => _avatars.Add(value); }
@@ -449,7 +448,7 @@
         await HandleUpdate();
     }
 
-    private async Task<Base.Entities.Board?> LoadBoardAsync()
+    private async Task<Board?> LoadBoardAsync()
     {
         using var db = _dbContextFactory.CreateDbContext();
 

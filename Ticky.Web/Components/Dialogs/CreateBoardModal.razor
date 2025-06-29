@@ -1,4 +1,3 @@
-@using Ticky.Base.Entities
 @inherits AbstractModal
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
@@ -75,11 +74,11 @@
 
         if (project is not null)
         {
-            var defaultLabels = new List<Ticky.Base.Entities.Label>
+            var defaultLabels = new List<Label>
             {
-                new Ticky.Base.Entities.Label { Name = "Bug", TextColor = Color.White, BackgroundColor = Color.FromArgb(220, 38, 38), BoardId = _board.Id },
-                new Ticky.Base.Entities.Label { Name = "Feature", TextColor = Color.White, BackgroundColor = Color.FromArgb(16, 185, 129), BoardId = _board.Id },
-                new Ticky.Base.Entities.Label { Name = "Enhancement", TextColor = Color.White, BackgroundColor = Color.FromArgb(59, 130, 246), BoardId = _board.Id }
+                new Label { Name = "Bug", TextColor = Color.White, BackgroundColor = Color.FromArgb(220, 38, 38), BoardId = _board.Id },
+                new Label { Name = "Feature", TextColor = Color.White, BackgroundColor = Color.FromArgb(16, 185, 129), BoardId = _board.Id },
+                new Label { Name = "Enhancement", TextColor = Color.White, BackgroundColor = Color.FromArgb(59, 130, 246), BoardId = _board.Id }
             };
 
             _board.Labels.AddRange(defaultLabels);

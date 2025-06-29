@@ -1,4 +1,3 @@
-@using Ticky.Base.Entities
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
 <ActionModal @ref=_modalRef Title="Labels">
@@ -11,7 +10,7 @@
                 @foreach (var label in _labels)
                 {
                     <div class="priority-selector-item" @onclick="() => OnSelect(label)">
-                        <Label LabelEntity="label"/>
+                        <LabelView Label="label"/>
 
                         @if (_card.Labels.Any(x => x.Id.Equals(label.Id)))
                         {
@@ -38,15 +37,15 @@
 
     private Card? _card;
 
-    private List<Base.Entities.Label>? _labels;
+    private List<Label>? _labels;
 
-    public void Open(ElementReference? triggerElement, Card card, List<Base.Entities.Label> labels) {
+    public void Open(ElementReference? triggerElement, Card card, List<Label> labels) {
         _card = card;
         _labels = labels;
         _modalRef?.Open(triggerElement);
     }
 
-    public async Task OnSelect(Base.Entities.Label label)
+    public async Task OnSelect(Label label)
     {
         if(_card is null)
             return;

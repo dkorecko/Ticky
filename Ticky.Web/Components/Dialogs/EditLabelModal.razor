@@ -1,4 +1,3 @@
-@using Ticky.Base.Entities
 @inherits AbstractModal
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
@@ -29,7 +28,7 @@
 
             <div class="form-group">
                 <label>Preview:</label>
-                <Label LabelEntity="_showcaseLabel"/>
+                <LabelView Label="_showcaseLabel"/>
             </div>
         </EditForm>
     }
@@ -43,12 +42,12 @@
     public EventCallback OnSubmit { get; set; }
 
     private Board? _board;
-    private Base.Entities.Label? _label;
+    private Label? _label;
     private LabelModel _labelModel = new();
-    private Base.Entities.Label? _showcaseLabel;
+    private Label? _showcaseLabel;
     private EditContext? _editContext;
 
-    public void Open(Board board, Base.Entities.Label label) {
+    public void Open(Board board, Label label) {
         _board = board;
         _label = label;
         _labelModel = new()
