@@ -221,11 +221,23 @@
     private bool _justAdded;
     private int _adding;
     private BoardPreferencesModel _preferences = new();
+    private int? _initialCardId;
+
+    protected override void OnParametersSet()
+    {
+        if (_board is null || !CardId.HasValue || _initialCardId == CardId)
+            return;
+
+        _initialCardId = CardId;
+        _editCardModal?.Open(CardId.Value, _members);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
             return;
+
+        _initialCardId = CardId;
 
         var boardPreferences = await _protectedLocalStorage.GetAsync<BoardPreferencesModel>(Constants.StorageKeys.BoardPreferences);
         _preferences = (boardPreferences.Success ? boardPreferences.Value : new()) ?? new();
