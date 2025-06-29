@@ -1432,19 +1432,18 @@ html[data-theme='dark'] {
 [data-theme='dark'] ::-webkit-scrollbar-track {
   background: var(--color-scrollbar-track);
   border-radius: 10px;
-  Optional: adds rounded corners to the track;
 }
 [data-theme='dark'] ::-webkit-scrollbar-thumb {
   background: var(--color-scrollbar-thumb);
   border-radius: 10px;
-  Makes the thumb rounded Optional: Adds a subtle border around the thumb, making it appear "inset" border: 3px solid var(--color-scrollbar-track);
+  border: 3px solid var(--color-scrollbar-track);
 }
 [data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
   background: var(--color-scrollbar-thumb-hover);
 }
 [data-theme='dark'] html {
   scrollbar-width: thin;
-  "auto" (default), "thin", or "none" scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+  scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
 }
 h1:focus {
   outline: none;

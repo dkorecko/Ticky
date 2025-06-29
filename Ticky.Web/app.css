@@ -177,13 +177,12 @@ html[data-theme='dark'] {
 
 [data-theme='dark'] ::-webkit-scrollbar-track {
     background: var(--color-scrollbar-track);
-    border-radius: 10px;  Optional: adds rounded corners to the track 
+    border-radius: 10px;
 }
 
 [data-theme='dark'] ::-webkit-scrollbar-thumb {
     background: var(--color-scrollbar-thumb);
-    border-radius: 10px;  Makes the thumb rounded 
-     Optional: Adds a subtle border around the thumb, making it appear "inset" 
+    border-radius: 10px;
     border: 3px solid var(--color-scrollbar-track);
 }
 
@@ -194,7 +193,7 @@ html[data-theme='dark'] {
 /* For Firefox 
  Note: Firefox's scrollbar-color doesn't support a separate hover state for the thumb */
 [data-theme='dark'] html {
-    scrollbar-width: thin;  "auto" (default), "thin", or "none" 
+    scrollbar-width: thin;
     scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
 }
 
