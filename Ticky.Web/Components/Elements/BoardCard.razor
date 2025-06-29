@@ -61,7 +61,7 @@
 
     private List<User> _members
     {
-        get => Board.Memberships.Select(x => x.User).Concat(Board.Project?.Memberships?.Select(x => x.User) ?? new List<User>()).DistinctBy(x => x.Id).ToList();
+        get => (Board.Memberships.Select(x => x.User).Concat(Board.Project?.Memberships?.Select(x => x.User) ?? [])).DistinctBy(x => x.Id).ToList();
     }
 
     [Parameter]
