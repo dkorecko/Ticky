@@ -169,6 +169,7 @@
                 .ThenInclude(x => x.User)
             .Include(x => x.Project)
                 .ThenInclude(x => x.Memberships)
+                    .ThenInclude(x => x.User)
             .Include(x => x.Favorites)
             .Where(x => x.Memberships.Any(membership => membership.UserId.Equals(_user.Id)))
             .Include(x => x.Columns)
