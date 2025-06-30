@@ -1,4 +1,4 @@
-@page "/boards/{Id:int}/{CardId:int?}"
+﻿@page "/boards/{Id:int}/{CardId:int?}"
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject CardNumberingService _cardNumberingService
@@ -14,7 +14,7 @@
 <EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
 
 <div class="flex w-screen flex-col divide-y divide-tab-outline">
-    <header class="flex h-[5vh] flex-row items-center justify-end gap-1 px-2 text-2xl font-bold sm:gap-5 sm:px-12">
+    <header class="flex flex-row items-center justify-end gap-1 px-2 py-2 text-2xl font-bold sm:gap-5 sm:px-12">
         @if(_board is null)
         {
             <Spinner/>
