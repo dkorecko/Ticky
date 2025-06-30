@@ -1,4 +1,4 @@
-﻿@page "/boards/{Id:int}/{CardId:int?}"
+@page "/boards/{Id:int}/{CardId:int?}"
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject CardNumberingService _cardNumberingService
@@ -58,7 +58,7 @@
                         @{
                             var cardsCount = column.Cards.Where(x => !x.SnoozedUntil.HasValue).Count();
                         }
-                        <div id=@($"column-{column.Index}") class="board-column gap-1">
+                        <div class="board-column gap-1">
                             <div class="flex w-full flex-row items-center justify-between">
                                 <div class="flex flex-row items-center gap-2">
                                     <label>
