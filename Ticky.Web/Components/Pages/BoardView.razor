@@ -5,6 +5,7 @@
 @inject ProtectedLocalStorage _protectedLocalStorage
 @inject IJSRuntime _js
 @inherits NotifiableBase
+@implements IDisposable
 
 <CreateColumnModal @ref="_createColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Added)" />
 <EditColumnModal @ref="_editColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Edited)" />
@@ -14,7 +15,7 @@
 <EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
 
 <div class="flex w-screen flex-col divide-y divide-tab-outline">
-    <header class="flex flex-row items-center justify-end gap-1 px-2 py-2 text-2xl font-bold sm:gap-5 sm:px-12">
+    <header id="board-header" class="flex flex-row items-center justify-end gap-1 px-2 py-2 text-2xl font-bold sm:gap-5 sm:px-12">
         @if(_board is null)
         {
             <Spinner/>
@@ -51,13 +52,13 @@
         <!-- Board section -->
         @if (_board is not null)
         {
-            <section class="w-full flex-row gap-5 overflow-x-auto @(_preferences.ShowStats ? "hidden md:flex" : "flex") py-6">
+            <section id="board-section" class="w-full flex-row gap-5 overflow-x-auto @(_preferences.ShowStats ? "hidden md:flex" : "flex") py-6">
                 <SortableList Class="ml-12 flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
                         @{
                             var cardsCount = column.Cards.Where(x => !x.SnoozedUntil.HasValue).Count();
                         }
-                        <div class="board-column gap-1">
+                        <div id=@($"column-{column.Index}") class="board-column gap-1">
                             <div class="flex w-full flex-row items-center justify-between">
                                 <div class="flex flex-row items-center gap-2">
                                     <label>
@@ -95,7 +96,7 @@
 
                             @if(!column.Collapsed) 
                             {
-                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Class="max-h-[75vh] min-h-[1rem] w-full overflow-y-auto" Group="group" Items="column.Cards.Where(x => !x.SnoozedUntil.HasValue).OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
+                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="column.Cards.Where(x => !x.SnoozedUntil.HasValue).OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
                                     <SortableItemTemplate>
                                         @if(column.MaxCards == 1)
                                         {
@@ -221,6 +222,7 @@
     private int _adding;
     private BoardPreferencesModel _preferences = new();
     private int? _initialCardId;
+    private DotNetObjectReference<BoardView>? objRef;
 
     protected override void OnParametersSet()
     {
@@ -235,7 +237,8 @@
     {
         if (!firstRender)
             return;
-
+        
+        objRef = DotNetObjectReference.Create(this);
         _initialCardId = CardId;
 
         var boardPreferences = await _protectedLocalStorage.GetAsync<BoardPreferencesModel>(Constants.StorageKeys.BoardPreferences);
@@ -381,6 +384,8 @@
     {
         _board = await LoadBoardAsync();
         StateHasChanged();
+
+        await _js.InvokeVoidAsync("scaleInitialize");
     }
 
     private async Task OnTaskCreated()
@@ -594,6 +599,11 @@
 
             await db.SaveChangesAsync();
         });
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
     }
 }
 
