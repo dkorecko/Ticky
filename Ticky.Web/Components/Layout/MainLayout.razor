@@ -7,10 +7,10 @@
 <CascadingValue Name="@Constants.CascadingParameters.CurrentAccount" Value="@_user">
     <Notifications @ref="_notifications" />
     <CascadingValue Name="@Constants.CascadingParameters.MainLayout" Value="this">
-        <div>
+        <div class="h-screen">
             <NavMenu/>
 
-            <main class="h-[96vh] overflow-x-clip overflow-y-auto">
+            <main class="overflow-x-clip overflow-y-auto">
                 @if(_user is null)
                 {
                     <Spinner/>
