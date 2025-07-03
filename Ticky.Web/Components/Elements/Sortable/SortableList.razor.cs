@@ -10,6 +10,9 @@ namespace Ticky.Web.Components.Elements.Sortable
         private DotNetObjectReference<SortableList<T>>? selfReference;
 
         [Parameter]
+        public int Animation { get; set; } = 200;
+
+        [Parameter]
         public string? Filter { get; set; }
 
         [Parameter]
@@ -106,7 +109,8 @@ namespace Ticky.Web.Components.Elements.Sortable
                     Filter,
                     selfReference,
                     ForceFallback,
-                    Direction
+                    Direction,
+                    Animation
                 );
             }
         }
