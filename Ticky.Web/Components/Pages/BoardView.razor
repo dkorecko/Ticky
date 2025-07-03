@@ -96,7 +96,7 @@
 
                             @if(!column.Collapsed) 
                             {
-                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="column.Cards.Where(x => !x.SnoozedUntil.HasValue).OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
+                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Animation=@(_board.DisableSortingAnimations ? 0 : 200) Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="column.Cards.Where(x => !x.SnoozedUntil.HasValue).OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
                                     <SortableItemTemplate>
                                         @if(column.MaxCards == 1)
                                         {

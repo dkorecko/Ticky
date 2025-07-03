@@ -1,4 +1,4 @@
-export function init(id, group, pull, put, sort, handle, filter, component, forceFallback, direction) {
+export function init(id, group, pull, put, sort, handle, filter, component, forceFallback, direction, animation) {
 
     const DEBUG_MODE = false;
     if (DEBUG_MODE) {
@@ -8,7 +8,7 @@ export function init(id, group, pull, put, sort, handle, filter, component, forc
     let htmlElement = document.getElementById(id);
 
     var sortable = new Sortable(htmlElement, {
-        animation: 200,
+        animation: animation,
         delayOnTouchOnly: true,
         delay: 200,
         group: {

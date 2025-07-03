@@ -1,4 +1,5 @@
 @page "/boards/settings/{Id:int}"
+@using System.Reflection
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ILogger<BoardSettings> _logger
 @inject NavigationManager _navigationManager
@@ -18,8 +19,9 @@
 
         <section
             class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-tab-outline px-1 py-1 text-sm">
-            <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(1)">Labels</div>
-            <div data-active='@(_tab == 2 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(2)">Snoozed cards</div>
+            <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(1)">General</div>
+            <div data-active='@(_tab == 2 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(2)">Labels</div>
+            <div data-active='@(_tab == 3 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(3)">Snoozed cards</div>
         </section>
 
         @if(_board is null)
@@ -27,7 +29,21 @@
             <Spinner/>
         } else {
             <section class="flex w-full flex-col divide-y divide-tab-outline">
-                @if (_tab == 1)
+                @if(_tab == 1)
+                {
+                    <div class="flex flex-col py-5">
+                        <label class="font-bold">Board settings</label>
+                        <label class="text-sm opacity-70">All the most important settings for this specific board, which do not belong to any other categories.</label>
+                    </div>
+                    <div class="settings-item">
+                        <div class="flex flex-col text-sm">
+                            <label class="font-bold opacity-90">Disable sorting animations</label>
+                            <label class="w-4/5 max-w-2xl opacity-70">With many cards in a column, animating their movement can cause lag. If you're experiencing this or prefer a quicker snap to position, enable this option.'</label>
+                        </div>
+
+                        <input type="checkbox" class="switch" checked=@_board.DisableSortingAnimations @onchange="(e) => OnSettingChanged(e, x => x.DisableSortingAnimations)">
+                    </div>
+                } else if (_tab == 2)
                 {
                     <div class="flex flex-col py-5">
                         <label class="font-bold">Labels</label>
@@ -47,7 +63,7 @@
                     </div>
 
                     <button @onclick="() => _addLabelModal?.Open(_board)">Create a label</button>
-                } else if(_tab == 2)
+                } else if(_tab == 3)
                 {
                     <div class="flex flex-col py-5">
                         <label class="font-bold">Snoozed cards</label>
@@ -159,5 +175,28 @@
     private void GoToTab(int tabNumber) 
     {
         _tab = tabNumber;
+    }
+
+    private async void OnSettingChanged(ChangeEventArgs e, Expression<Func<Board, bool>> setter)
+    {
+        ArgumentNullException.ThrowIfNull(_board);
+
+        if (e.Value is not bool val)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var board = await db.Boards.FirstOrDefaultAsync(x => x.Id.Equals(_board.Id));
+
+        if (board is null)
+            return;
+
+        if (setter.Body is MemberExpression memberExpression && memberExpression.Member is PropertyInfo propertyInfo && propertyInfo.PropertyType == typeof(bool))
+            propertyInfo.SetValue(board, val);
+        else throw new Exception("Invalid property provided.");
+
+        await db.SaveChangesAsync();
+
+        await RunNotification(typeof(BoardSettings), OperationType.Edited);
     }
 }
