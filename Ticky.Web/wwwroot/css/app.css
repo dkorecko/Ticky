@@ -2111,12 +2111,14 @@ input[type="checkbox"].switch:checked:after {
   pointer-events: none;
 }
 .element-spinner {
-  border: 4px solid silver;
-  border-top: 4px solid rgb(148, 71, 255);
   border-radius: 50%;
   width: 40px;
   height: 40px;
   animation: spin 1s ease-in-out infinite;
+  border-style: var(--tw-border-style);
+  border-width: 4px;
+  border-color: var(--color-card-bg);
+  border-top-color: var(--color-primary);
 }
 @keyframes spin {
   to {
