@@ -24,7 +24,7 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Labels and Priorities**: Organize tasks with custom labels and priority levels. Label colors are fully customizable.
 - **Attachments**: Upload and manage files associated with tasks.
 - **Reminders**: Set email reminders for tasks.
-- **Task Linking**: Link related tasks together (Jira-like).
+- **Card Linking**: Link related cards together (Jira-like).
 - **Activity Tracking**: Monitor all changes and activities on tasks.
 - **Comments**: Leave comments on cards to discuss and provide other useful information.
 - **User Management**: You can add users on the project level or on the board level, choosing between a Member and an Admin role.

@@ -102,7 +102,7 @@
                                         {
                                             <div class="mt-1"></div>
                                         }
-                                        <TaskCard Card="@context" BoardCode="@_board.Code" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" Members="_members" OnCardUpdated="HandleUpdate" />
+                                        <CardView Card="@context" BoardCode="@_board.Code" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" Members="_members" OnCardUpdated="HandleUpdate" />
                                     </SortableItemTemplate>
                                 </SortableList>
 
@@ -217,7 +217,7 @@
     private ElementReference Avatars { set => _avatars.Add(value); }
     private ElementReference? _textElement;
 
-    private CreateTaskModel _createTaskModel = new();
+    private CreateCardModel _createTaskModel = new();
     private bool _justAdded;
     private int _adding;
     private BoardPreferencesModel _preferences = new();
