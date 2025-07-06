@@ -13,6 +13,7 @@
 <EditDeadlineModal @ref=_editDeadlineModal UpdateCard="UpdateCard" />
 <LinkCardsModal @ref=_linkCardsModal UpdateCard="UpdateCard" />
 <SnoozeCardModal @ref=_snoozeCardModal UpdateCard="UpdateCard" />
+<AddOrEditRepeatModal @ref=_repeatCardModal UpdateCard="UpdateCard" />
 
 <Modal @ref="Modal" Title="Edit an existing task" DisableButtons=true>
     @if (_card is null)
@@ -138,6 +139,19 @@
                                     </div>
                                 }
                                 <i @ref="_snoozeTrigger" class="fa fa-moon edit-icon" @onclick="() => _snoozeCardModal?.Open(_snoozeTrigger, _card)"></i>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="edit-task-label">Repeat</td>
+                            <td class="edit-task-item">
+                                @if (_card.RepeatInfo is not null)
+                                {
+                                    <div class="card-label">
+                                        <label class="whitespace-nowrap">@_card.RepeatInfo.GetRepeatString()</label>
+                                        <i class="fa fa-trash-can cursor-pointer text-red-button transition-all ease-in-out hover:text-red-button-hover" @onclick="RemoveRepeat"></i>
+                                    </div>
+                                }
+                                <i @ref="_repeatTrigger" class="fa fa-repeat edit-icon" @onclick="() => _repeatCardModal?.Open(_repeatTrigger, _card)"></i>
                             </td>
                         </tr>
                         <tr>
@@ -416,6 +430,7 @@
     private ElementReference? _addReminderTrigger;
     private ElementReference? _editDeadlineTrigger;
     private ElementReference? _snoozeTrigger;
+    private ElementReference? _repeatTrigger;
     private LabelModal? _labelModal;
     private PriorityModal? _priorityModal;
     private AssigneesModal? _assigneesModal;
@@ -427,6 +442,7 @@
     private EditDeadlineModal? _editDeadlineModal;
     private LinkCardsModal? _linkCardsModal;
     private SnoozeCardModal? _snoozeCardModal;
+    private AddOrEditRepeatModal? _repeatCardModal;
 
     private int _tab = 0;
     private string _identifier = string.Empty;
@@ -1114,6 +1130,29 @@
         card.Activities.Add(new Activity
         {
             Text = $"<b>unsnoozed</b> this card",
+            UserId = _user.Id,
+            CardId = card.Id,
+        });
+
+        await db.SaveChangesAsync();
+        await UpdateCard();
+    }
+
+    private async Task RemoveRepeat()
+    {
+        if (_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await GetCard(db, _card.Id);
+
+        if (card is null)
+            return;
+
+        card.RepeatInfo = null;
+        card.Activities.Add(new Activity
+        {
+            Text = $"<b>turned repeating off</b> for this card",
             UserId = _user.Id,
             CardId = card.Id,
         });

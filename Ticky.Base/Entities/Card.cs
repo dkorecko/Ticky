@@ -1,3 +1,5 @@
+using Ticky.Base.Entities.Owned;
+
 namespace Ticky.Base.Entities;
 
 public class Card : AbstractDbEntity, IOrderable, IDeletable
@@ -24,5 +26,8 @@ public class Card : AbstractDbEntity, IOrderable, IDeletable
     public virtual List<TimeRecord> TimeRecords { get; set; } = [];
     public virtual List<CardLink> LinkedIssuesOne { get; set; } = [];
     public virtual List<CardLink> LinkedIssuesTwo { get; set; } = [];
+
+    public RepeatInfo? RepeatInfo { get; set; }
+
     public DateTime? SnoozedUntil { get; set; }
 }
