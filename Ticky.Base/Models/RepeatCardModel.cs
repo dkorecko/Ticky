@@ -44,6 +44,12 @@ public class RepeatCardModel
     )]
     public string Time { get; set; } = string.Empty;
 
+    [Display(Name = "Target column for the new card")]
+    public int? TargetColumnId { get; set; }
+
+    [Display(Name = "Where in column to place the new card")]
+    public CardPlacement CardPlacement { get; set; } = CardPlacement.Top;
+
     public string? GetRelevantSelectedValue() =>
         Type switch
         {

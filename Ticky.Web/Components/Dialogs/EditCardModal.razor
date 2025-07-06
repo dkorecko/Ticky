@@ -16,7 +16,7 @@
 <AddOrEditRepeatModal @ref=_repeatCardModal UpdateCard="UpdateCard" />
 
 <Modal @ref="Modal" Title="Edit an existing task" DisableButtons=true>
-    @if (_card is null)
+    @if (_card is null || _columns is null)
     {
         <Spinner />
     }
@@ -151,7 +151,7 @@
                                         <i class="fa fa-trash-can cursor-pointer text-red-button transition-all ease-in-out hover:text-red-button-hover" @onclick="RemoveRepeat"></i>
                                     </div>
                                 }
-                                <i @ref="_repeatTrigger" class="fa fa-repeat edit-icon" @onclick="() => _repeatCardModal?.Open(_repeatTrigger, _card)"></i>
+                                <i @ref="_repeatTrigger" class="fa fa-repeat edit-icon" @onclick="() => _repeatCardModal?.Open(_repeatTrigger, _card, _columns)"></i>
                             </td>
                         </tr>
                         <tr>
@@ -422,6 +422,7 @@
 
     private Card? _card;
     private List<User> _members = [];
+    private List<Column>? _columns;
 
     private ElementReference? _labelDiv;
     private ElementReference? _priorityDiv;
@@ -451,7 +452,7 @@
     private System.Timers.Timer? _timer;
     private TimeSpan _ongoingTimer;
 
-    public async Task Open(int cardId, List<User> members)
+    public async Task Open(int cardId, List<User> members, List<Column> columns)
     {
         using var db = _dbContextFactory.CreateDbContext();
         _card = await GetNoTrackingCard(db, cardId);
@@ -460,6 +461,7 @@
             return;
 
         _members = members;
+        _columns = columns;
 
         _identifier = $"{_card.Column.Board.Code}-{_card.Number}";
         UpdateTimer();

@@ -13,6 +13,10 @@ public class RepeatInfo
 
     public DateTime LastRepeat { get; set; } = DateTime.Now;
 
+    public required CardPlacement CardPlacement { get; set; }
+
+    public int? TargetColumnId { get; set; }
+
     public string GetRepeatString() =>
         Type switch
         {
