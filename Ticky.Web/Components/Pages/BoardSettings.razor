@@ -87,7 +87,7 @@
                     <div class="flex flex-col gap-2 py-5">
                         @foreach(var repeatCard in _board.Columns.SelectMany(x => x.Cards).Where(x => x.RepeatInfo is not null))
                         {
-                            <CardView Card="repeatCard" DeleteCardModal="_deleteCardModal" EditCardModal="_editCardModal" BoardCode=@_board.Code Members="_members" OnCardUpdated="HandleUpdate"/>
+                            <CardView Card="repeatCard" DeleteCardModal="_deleteCardModal" EditCardModal="_editCardModal" BoardCode=@_board.Code Members="_members" OnCardUpdated="HandleUpdate" LongFormRepeat=true/>
                         }
                     </div>
                 }

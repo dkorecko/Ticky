@@ -55,6 +55,10 @@
             {
                 <label class="card-data-point"><i class="fa fa-align-left"></i></label>
             }
+            @if(Card.RepeatInfo is not null)
+            {
+                <label class="card-data-point"><i class="fa fa-repeat"></i> @(LongFormRepeat ? $"{Card.RepeatInfo.GetRepeatString()}, next repeat {Card.CalculateNextRepeat().ToReadableStringWithTime()}" : string.Empty)</label>
+            }
         </div>
         <div class="flex">
             @foreach(var assignee in Card.Assignees) 
@@ -80,6 +84,9 @@
 
     [Parameter]
     public required List<User> Members { get; set; }
+
+    [Parameter]
+    public bool LongFormRepeat { get; set; }
 
     [Parameter]
     public EventCallback OnCardUpdated { get; set; }

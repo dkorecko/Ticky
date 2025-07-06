@@ -11,6 +11,8 @@ public class RepeatInfo
 
     public string? Selected { get; set; }
 
+    public DateTime LastRepeat { get; set; } = DateTime.Now;
+
     public string GetRepeatString() =>
         Type switch
         {

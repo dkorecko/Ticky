@@ -33,6 +33,7 @@ public class RepeatCardModel
         RepeatType.AfterXthMonth,
         RepeatType.AfterXthYear
     )]
+    [Range(1, 999)]
     public int? Number { get; set; }
 
     [Display(Name = "Time of day for the repeat to occur")]

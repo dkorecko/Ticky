@@ -147,7 +147,7 @@
                                 @if (_card.RepeatInfo is not null)
                                 {
                                     <div class="card-label">
-                                        <label class="whitespace-nowrap">@_card.RepeatInfo.GetRepeatString()</label>
+                                        <label class="whitespace-nowrap">@_card.RepeatInfo.GetRepeatString() (next on @_card.CalculateNextRepeat().ToReadableStringWithTime())</label>
                                         <i class="fa fa-trash-can cursor-pointer text-red-button transition-all ease-in-out hover:text-red-button-hover" @onclick="RemoveRepeat"></i>
                                     </div>
                                 }
