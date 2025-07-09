@@ -106,6 +106,7 @@ builder.Services.AddScoped<CardNumberingService>();
 builder.Services.AddScoped<SearchService>();
 builder.Services.AddHostedService<CleanupHostedService>();
 builder.Services.AddHostedService<SnoozeHostedService>();
+builder.Services.AddHostedService<RepeatHostedService>();
 
 if (Constants.SMTP_ENABLED)
     builder.Services.AddHostedService<ReminderHostedService>();

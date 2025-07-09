@@ -69,7 +69,7 @@ public class Card : AbstractDbEntity, IOrderable, IDeletable
         switch (RepeatInfo.Type)
         {
             case RepeatType.Daily:
-                return finalDate.AddDays(1);
+                return finalDate > DateTime.Now ? finalDate : finalDate.AddDays(1);
             case RepeatType.WeekDays:
             {
                 var allowedDaysOfWeek = RepeatInfo.Selected!.Split(',').Select(x => x).ToList();
