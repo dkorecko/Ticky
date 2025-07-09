@@ -45,6 +45,7 @@ public class RepeatCardModel
     public string Time { get; set; } = string.Empty;
 
     [Display(Name = "Target column for the new card")]
+    [Required]
     public int? TargetColumnId { get; set; }
 
     [Display(Name = "Where in column to place the new card")]

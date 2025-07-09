@@ -90,6 +90,7 @@
             <div class="form-group">
                 <Name For="() => _repeatModel.TargetColumnId" />
                 <InputSelect class="form-control" @bind-Value="_repeatModel.TargetColumnId">
+                    <option value="0"></option>
                     @foreach (var column in _columns.OrderBy(x => x.Index))
                     {
                         if (_repeatModel.TargetColumnId.Equals(column.Id))
