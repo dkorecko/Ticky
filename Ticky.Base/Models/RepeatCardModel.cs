@@ -27,11 +27,7 @@ public class RepeatCardModel
         RepeatType.EveryXthDay,
         RepeatType.EveryXthWeek,
         RepeatType.EveryXthMonth,
-        RepeatType.EveryXthYear,
-        RepeatType.AfterXthDay,
-        RepeatType.AfterXthWeek,
-        RepeatType.AfterXthMonth,
-        RepeatType.AfterXthYear
+        RepeatType.EveryXthYear
     )]
     [Range(1, 999)]
     public int? Number { get; set; }

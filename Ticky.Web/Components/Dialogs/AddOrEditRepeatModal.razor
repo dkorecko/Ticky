@@ -42,7 +42,7 @@
                     <ValidationMessage For="() => _repeatModel.SelectedMonthDays" />
                 </div>
             }
-            else if (_repeatModel.Type >= RepeatType.EveryXthDay && _repeatModel.Type <= RepeatType.AfterXthYear)
+            else if (_repeatModel.Type >= RepeatType.EveryXthDay && _repeatModel.Type <= RepeatType.EveryXthYear)
             {
                 <div class="form-group">
                     <Name For="() => _repeatModel.Number" />

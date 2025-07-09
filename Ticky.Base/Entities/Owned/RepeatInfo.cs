@@ -28,10 +28,6 @@ public class RepeatInfo
             RepeatType.EveryXthWeek => $"Every {Number} weeks",
             RepeatType.EveryXthMonth => $"Every {Number} months",
             RepeatType.EveryXthYear => $"Every {Number} years",
-            RepeatType.AfterXthDay => $"After {Number} days",
-            RepeatType.AfterXthWeek => $"After {Number} weeks",
-            RepeatType.AfterXthMonth => $"After {Number} months",
-            RepeatType.AfterXthYear => $"After {Number} years",
             _ => "No repeat"
         };
 }

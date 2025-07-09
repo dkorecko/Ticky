@@ -21,17 +21,5 @@ public enum RepeatType
     EveryXthMonth = 120,
 
     [Display(Name = "Every x years")]
-    EveryXthYear = 130,
-
-    [Display(Name = "After x days")]
-    AfterXthDay = 140,
-
-    [Display(Name = "After x weeks")]
-    AfterXthWeek = 150,
-
-    [Display(Name = "After x months")]
-    AfterXthMonth = 160,
-
-    [Display(Name = "After x years")]
-    AfterXthYear = 170
+    EveryXthYear = 130
 }
