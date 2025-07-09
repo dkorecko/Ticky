@@ -29,6 +29,7 @@ public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
             .Include(x => x.Activities)
             .Include(x => x.LinkedIssuesOne)
             .Include(x => x.LinkedIssuesTwo)
+            .ThenInclude(x => x.CardOne)
             .Where(x => x.RepeatInfo != null)
             .ToListAsync();
 
@@ -115,6 +116,46 @@ public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
                 }
             );
 
+            var oppositeCategory = Constants.LINK_TYPE_PAIRS.ContainsKey(Constants.REPEATED_KEY)
+                ? Constants.LINK_TYPE_PAIRS[Constants.REPEATED_KEY]
+                : Constants.LINK_TYPE_PAIRS.First(x => x.Value.Equals(Constants.REPEATED_KEY)).Key;
+
+            foreach (var linkedIssueOne in card.LinkedIssuesOne)
+            {
+                if (
+                    linkedIssueOne.Category.Equals(Constants.REPEATED_KEY)
+                    || linkedIssueOne.Category.Equals(oppositeCategory)
+                )
+                    continue;
+
+                newCard.LinkedIssuesOne.Add(
+                    new()
+                    {
+                        CardOneId = newCard.Id,
+                        CardTwoId = linkedIssueOne.CardTwoId,
+                        Category = linkedIssueOne.Category
+                    }
+                );
+            }
+
+            foreach (var linkedIssueTwo in card.LinkedIssuesTwo)
+            {
+                if (
+                    linkedIssueTwo.Category.Equals(Constants.REPEATED_KEY)
+                    || linkedIssueTwo.Category.Equals(oppositeCategory)
+                )
+                    continue;
+
+                newCard.LinkedIssuesTwo.Add(
+                    new()
+                    {
+                        CardOneId = linkedIssueTwo.CardOneId,
+                        CardTwoId = newCard.Id,
+                        Category = linkedIssueTwo.Category
+                    }
+                );
+            }
+
             newCard.LinkedIssuesOne.Add(
                 new()
                 {
@@ -123,10 +164,6 @@ public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
                     Category = Constants.REPEATED_KEY
                 }
             );
-
-            var oppositeCategory = Constants.LINK_TYPE_PAIRS.ContainsKey(Constants.REPEATED_KEY)
-                ? Constants.LINK_TYPE_PAIRS[Constants.REPEATED_KEY]
-                : Constants.LINK_TYPE_PAIRS.First(x => x.Value.Equals(Constants.REPEATED_KEY)).Key;
 
             newCard.LinkedIssuesTwo.Add(
                 new()
