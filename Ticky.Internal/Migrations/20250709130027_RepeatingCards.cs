@@ -6,11 +6,23 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Ticky.Internal.Migrations
 {
     /// <inheritdoc />
-    public partial class RepeatCards : Migration
+    public partial class RepeatingCards : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<int>(
+                name: "RepeatInfo_CardPlacement",
+                table: "Cards",
+                type: "int",
+                nullable: true);
+
+            migrationBuilder.AddColumn<DateTime>(
+                name: "RepeatInfo_LastRepeat",
+                table: "Cards",
+                type: "datetime(6)",
+                nullable: true);
+
             migrationBuilder.AddColumn<int>(
                 name: "RepeatInfo_Number",
                 table: "Cards",
@@ -23,6 +35,12 @@ namespace Ticky.Internal.Migrations
                 type: "longtext",
                 nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.AddColumn<int>(
+                name: "RepeatInfo_TargetColumnId",
+                table: "Cards",
+                type: "int",
+                nullable: true);
 
             migrationBuilder.AddColumn<TimeOnly>(
                 name: "RepeatInfo_Time",
@@ -41,11 +59,23 @@ namespace Ticky.Internal.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
+                name: "RepeatInfo_CardPlacement",
+                table: "Cards");
+
+            migrationBuilder.DropColumn(
+                name: "RepeatInfo_LastRepeat",
+                table: "Cards");
+
+            migrationBuilder.DropColumn(
                 name: "RepeatInfo_Number",
                 table: "Cards");
 
             migrationBuilder.DropColumn(
                 name: "RepeatInfo_Selected",
+                table: "Cards");
+
+            migrationBuilder.DropColumn(
+                name: "RepeatInfo_TargetColumnId",
                 table: "Cards");
 
             migrationBuilder.DropColumn(

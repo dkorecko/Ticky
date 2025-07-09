@@ -12,8 +12,8 @@ using Ticky.Internal.Data;
 namespace Ticky.Internal.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250706180938_NeededData")]
-    partial class NeededData
+    [Migration("20250709130027_RepeatingCards")]
+    partial class RepeatingCards
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
