@@ -83,7 +83,7 @@ jobs:
         run: |
           docker run -p 8080:8080 -d --name ticky-test --platform linux/${{ matrix.arch }} ghcr.io/${{ env.REPO_LOWER }}:unstable
           sleep 50
-          curl http://localhost:8080/api/health
           docker logs ticky-test
+          curl http://localhost:8080/api/health
           docker stop ticky-test
           docker rm ticky-test
