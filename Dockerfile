@@ -13,10 +13,10 @@ COPY ["Ticky.Internal/Ticky.Internal.csproj", "Ticky.Internal/"]
 COPY ["Ticky.Base/Ticky.Base.csproj", "Ticky.Base/"]
 RUN dotnet restore "Ticky.Web/Ticky.Web.csproj" -a "$TARGETARCH"
 COPY . .
-RUN dotnet build "Ticky.Web/Ticky.Web.csproj" -c Release -o /app/build -a "$TARGETARCH"
+RUN dotnet build "Ticky.Web/Ticky.Web.csproj" -c Release -o /app/build -a "$TARGETARCH" --no-restore
 
 FROM build AS publish
-RUN dotnet publish "Ticky.Web/Ticky.Web.csproj" -c Release -o /app/publish -a "$TARGETARCH" --no-restore
+RUN dotnet publish "Ticky.Web/Ticky.Web.csproj" -c Release -o /app/publish -a "$TARGETARCH" --no-restore --no-build
 
 FROM base AS final
 WORKDIR /app
