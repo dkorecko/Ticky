@@ -133,6 +133,8 @@ builder.Services.AddAuthorization(options =>
     );
 });
 
+builder.Services.AddControllers();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -158,6 +160,7 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapControllers();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.MapRazorPages();
 
