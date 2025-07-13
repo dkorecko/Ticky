@@ -174,11 +174,12 @@ public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
                 }
             );
 
+            var newIdentifier = $"{card.Column.Board.Code}-{newCard.Number}";
             card.Activities.Add(
                 new()
                 {
                     CardId = card.Id,
-                    Text = $"<b>created</b> repeat card <b>{identifier}</b>",
+                    Text = $"<b>created</b> repeat card <b>{newIdentifier}</b>",
                     UserId = card.CreatedById
                 }
             );
