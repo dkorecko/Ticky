@@ -102,7 +102,7 @@
                                         {
                                             <div class="mt-1"></div>
                                         }
-                                        <CardView Card="@context" BoardCode="@_board.Code" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" Members="_members" OnCardUpdated="HandleUpdate" />
+                                        <CardView Card="@context" BoardCode="@_board.Code" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns"/>
                                     </SortableItemTemplate>
                                 </SortableList>
 
@@ -230,7 +230,7 @@
             return;
 
         _initialCardId = CardId;
-        _editCardModal?.Open(CardId.Value, _members);
+        _editCardModal?.Open(CardId.Value, _members, _board.Columns);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -275,7 +275,7 @@
         await db.SaveChangesAsync();
 
         if(CardId.HasValue)
-            _editCardModal?.Open(CardId.Value, _members);
+            _editCardModal?.Open(CardId.Value, _members, _board.Columns);
 
         await MainLayout.UpdateRecentBoard();
     }
@@ -393,7 +393,7 @@
         await RunNotification(typeof(Card), OperationType.Added);
 
         if(_board is not null && _user.AutomaticCardEdit)
-            _editCardModal?.Open(_board.Columns.SelectMany(x => x.Cards).ToList().OrderByDescending(x => x.CreatedAt).First().Id, _members);
+            _editCardModal?.Open(_board.Columns.SelectMany(x => x.Cards).ToList().OrderByDescending(x => x.CreatedAt).First().Id, _members, _board.Columns);
     }
 
     private async Task OnTaskEdited()

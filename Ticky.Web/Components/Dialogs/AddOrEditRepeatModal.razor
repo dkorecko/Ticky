@@ -1,0 +1,197 @@
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<ActionModal @ref=_modalRef Title="Repeat card [BETA]">
+    @if(_card is null || _columns is null) 
+    {
+        <Spinner/>
+    } else {
+        <EditForm class="form p-2" Model="_repeatModel" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <Name For="() => _repeatModel.Type" />
+                <InputSelect class="form-control" @bind-Value="_repeatModel.Type">
+                    @foreach (Enum enumValue in Enum.GetValues(typeof(RepeatType)))
+                    {
+                        if (_repeatModel.Type.Equals(enumValue))
+                        {
+                            <option selected value="@enumValue">@enumValue.GetDisplayName()</option>
+                        }
+                        else
+                        {
+                            <option value="@enumValue">@enumValue.GetDisplayName()</option>
+                        }
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => _repeatModel.Type" />
+            </div>
+
+            @if(_repeatModel.Type == RepeatType.WeekDays)
+            {
+                <div class="form-group">
+                    <Name For="() => _repeatModel.SelectedWeekDays" />
+                    <InputText class="form-control" @bind-Value="_repeatModel.SelectedWeekDays" placeholder="Mon,Tue,Sun" />
+                    <ValidationMessage For="() => _repeatModel.SelectedWeekDays" />
+                </div>
+            }
+            else if(_repeatModel.Type == RepeatType.MonthDayNumber)
+            {
+                <div class="form-group">
+                    <Name For="() => _repeatModel.SelectedMonthDays" />
+                    <InputText class="form-control" @bind-Value="_repeatModel.SelectedMonthDays" placeholder="1,15,31" />
+                    <ValidationMessage For="() => _repeatModel.SelectedMonthDays" />
+                </div>
+            }
+            else if (_repeatModel.Type >= RepeatType.EveryXthDay && _repeatModel.Type <= RepeatType.EveryXthYear)
+            {
+                <div class="form-group">
+                    <Name For="() => _repeatModel.Number" />
+                    <InputNumber class="form-control" @bind-Value="_repeatModel.Number" />
+                    <ValidationMessage For="() => _repeatModel.Number" />
+                </div>
+            }
+
+            <div class="form-group">
+                <Name For="() => _repeatModel.Time" />
+                <InputSelect class="form-control" @bind-Value="_repeatModel.Time">
+                    @{
+                        var baseTime = DateTime.Today;
+                    }
+
+                    @while(baseTime.Day.Equals(DateTime.Today.Day))
+                    {
+                        var stepTime = baseTime;
+                        <option value="@stepTime.ToString("HH:mm")">@stepTime.ToString("HH:mm")</option>
+
+                        baseTime = baseTime.AddMinutes(15);
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => _repeatModel.Time" />
+            </div>
+
+            <div class="form-group">
+                <Name For="() => _repeatModel.CardPlacement" />
+                <InputSelect class="form-control" @bind-Value="_repeatModel.CardPlacement">
+                    @foreach (Enum enumValue in Enum.GetValues(typeof(CardPlacement)))
+                    {
+                        if (_repeatModel.CardPlacement.Equals(enumValue))
+                        {
+                            <option selected value="@enumValue">@enumValue.GetDisplayName()</option>
+                        }
+                        else
+                        {
+                            <option value="@enumValue">@enumValue.GetDisplayName()</option>
+                        }
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => _repeatModel.CardPlacement" />
+            </div>
+
+            <div class="form-group">
+                <Name For="() => _repeatModel.TargetColumnId" />
+                <InputSelect class="form-control" @bind-Value="_repeatModel.TargetColumnId">
+                    <option value="0"></option>
+                    @foreach (var column in _columns.OrderBy(x => x.Index))
+                    {
+                        if (_repeatModel.TargetColumnId.Equals(column.Id))
+                        {
+                            <option selected value="@column.Id">@column.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@column.Id">@column.Name</option>
+                        }
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => _repeatModel.TargetColumnId" />
+            </div>
+
+            <button type="submit">Set</button>
+        </EditForm>
+    }
+</ActionModal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback UpdateCard { get; set; }
+
+    private ActionModal? _modalRef;
+
+    private Card? _card;
+
+    private RepeatCardModel _repeatModel = new();
+    private List<Column>? _columns;
+
+    public void Open(ElementReference? triggerElement, Card card, List<Column> columns) 
+    {
+        _card = card;
+
+        _repeatModel = new()
+            {
+                Time = DateTime.Now.AddHours(1).AddMinutes(-DateTime.Now.Minute).ToString("HH:mm")
+            };
+
+        if(card.RepeatInfo is not null) 
+        {
+            _repeatModel = new()
+                {
+                    Type = card.RepeatInfo.Type,
+                    Time = card.RepeatInfo.Time.ToString("HH:mm"),
+                    Number = card.RepeatInfo.Number,
+                    CardPlacement = card.RepeatInfo.CardPlacement,
+                    TargetColumnId = card.RepeatInfo.TargetColumnId
+                };
+
+            _repeatModel.SetRelevantSelectedValue(card.RepeatInfo.Selected);
+        }
+
+        _columns = columns;
+
+        _modalRef?.Open(triggerElement);
+        StateHasChanged();
+    }
+
+    public async Task OnValidSubmit() 
+    {
+        if(_card is null)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var card = await db.Cards
+            .Include(x => x.Activities)
+            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
+
+        if(card is null)
+            return;
+
+        var time = DateTime.ParseExact(_repeatModel.Time, "HH:mm", null);
+
+        card.RepeatInfo = new()
+        {
+            Type = _repeatModel.Type,
+            Time = TimeOnly.FromDateTime(time),
+            Number = _repeatModel.Number,
+            Selected = _repeatModel.GetRelevantSelectedValue(),
+            CardPlacement = _repeatModel.CardPlacement,
+            TargetColumnId = _repeatModel.TargetColumnId
+        };
+
+        card.Activities.Add(new Activity
+        {
+            Text = $"<b>set up card repeat</b> for this card for <b>{card.RepeatInfo.Type.GetDisplayName()}</b>",
+            UserId = _user.Id,
+            CardId = card.Id,
+        });
+
+        await db.SaveChangesAsync();
+
+        _card = card;
+        StateHasChanged();
+        await UpdateCard.InvokeAsync();
+        _modalRef?.Close();
+    }
+}

@@ -22,6 +22,7 @@
             <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(1)">General</div>
             <div data-active='@(_tab == 2 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(2)">Labels</div>
             <div data-active='@(_tab == 3 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(3)">Snoozed cards</div>
+            <div data-active='@(_tab == 4 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(4)">Repeating cards [BETA]</div>
         </section>
 
         @if(_board is null)
@@ -73,7 +74,20 @@
                     <div class="flex flex-col gap-2 py-5">
                         @foreach(var snoozedCard in _board.Columns.SelectMany(x => x.Cards).Where(x => x.SnoozedUntil.HasValue))
                         {
-                            <CardView Card="snoozedCard" DeleteCardModal="_deleteCardModal" EditCardModal="_editCardModal" BoardCode=@_board.Code Members="_members" OnCardUpdated="HandleUpdate"/>
+                            <CardView Card="snoozedCard" DeleteCardModal="_deleteCardModal" EditCardModal="_editCardModal" BoardCode=@_board.Code Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns"/>
+                        }
+                    </div>
+                }  else if(_tab == 4)
+                {
+                    <div class="flex flex-col py-5">
+                        <label class="font-bold">Repeat cards [BETA]</label>
+                        <label class="text-sm opacity-70">The list of cards that are created on a repeating basis.</label>
+                    </div>
+
+                    <div class="flex flex-col gap-2 py-5">
+                        @foreach(var repeatCard in _board.Columns.SelectMany(x => x.Cards).Where(x => x.RepeatInfo is not null))
+                        {
+                            <CardView Card="repeatCard" DeleteCardModal="_deleteCardModal" EditCardModal="_editCardModal" BoardCode=@_board.Code Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns" LongFormRepeat=true/>
                         }
                     </div>
                 }

@@ -1,6 +1,6 @@
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
-<div data-blocked="@Card.Blocked.ToString()" class="task-card" @onclick="() => EditCardModal.Open(Card.Id, Members)">
+<div data-blocked="@Card.Blocked.ToString()" class="task-card" @onclick="() => EditCardModal.Open(Card.Id, Members, Columns)">
     <div class="flex flex-row items-center justify-between gap-2">
         <div class="flex flex-row flex-wrap items-center justify-start gap-1">
             <PriorityLabel Priority="Card.Priority"/>
@@ -10,7 +10,7 @@
         </div>
 
         <Dropdown Actions='new() {
-                                { "Edit task", async () => await EditCardModal.Open(Card.Id, Members) },
+                                { "Edit task", async () => await EditCardModal.Open(Card.Id, Members, Columns) },
                                 { "Delete task", () => DeleteCardModal?.OpenDialog(Card) },
                                 { $"{(Card.Blocked ? "Unmark" : "Mark")} as blocked", async () => await ChangeBlockedStatus() }
                             }'>
@@ -55,6 +55,10 @@
             {
                 <label class="card-data-point"><i class="fa fa-align-left"></i></label>
             }
+            @if(Card.RepeatInfo is not null)
+            {
+                <label class="card-data-point"><i class="fa fa-repeat"></i> @(LongFormRepeat ? $"{Card.RepeatInfo.GetRepeatString()}, next repeat {Card.CalculateNextRepeat().ToReadableStringWithTime()}" : string.Empty)</label>
+            }
         </div>
         <div class="flex">
             @foreach(var assignee in Card.Assignees) 
@@ -80,6 +84,12 @@
 
     [Parameter]
     public required List<User> Members { get; set; }
+
+    [Parameter]
+    public required List<Column> Columns { get; set; }
+
+    [Parameter]
+    public bool LongFormRepeat { get; set; }
 
     [Parameter]
     public EventCallback OnCardUpdated { get; set; }

@@ -37,6 +37,7 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Able to do fully offline**: Ability to run fully offline, disabling the avatar service, having all the files bundled on the server and not using SMTP.
 - **Dark Mode**: A sleek dark mode for less strain on your eyes.
 - **Snooze Cards**: Reduce clutter by snoozing cards that cannot be worked on just yet.
+- **Repeat Cards**: Automatically repeat cards at specified intervals, perfect for recurring tasks.
 - **Responsive Design**: Take your tasks with you, no matter whether you are at your computer or running errands with just your phone.
 - **Completion Confetti**: Feel the satisfaction of completing each task with a bunch of confetti, there to celebrate your success.
 - ... and more!
@@ -45,7 +46,6 @@ Ticky is packed with powerful features designed to make your task management sea
 
 I'm constantly working to make Ticky even better! Here's a glimpse of what's in my plans:
 
-- Repeat cards
 - Real-time updates
 - Swimlanes
 - Ability to move sub-tasks
