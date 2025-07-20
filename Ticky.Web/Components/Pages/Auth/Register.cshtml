@@ -5,12 +5,27 @@
     <section class="auth-card">
         <div class="flex flex-col gap-1">
             <h1 class="text-3xl font-extrabold">Welcome!</h1>
-            @if (Constants.SMTP_ENABLED)
+            @if (Constants.SMTP_ENABLED && !Constants.DISABLE_USER_SIGNUPS)
             {
                 <label class="opacity-40">Please provide some info for us to create an account for you</label>
             }
         </div>
-        @if(Constants.SMTP_ENABLED) 
+        @if(Constants.DISABLE_USER_SIGNUPS || !Constants.SMTP_ENABLED)
+        {
+            <div class="auth-form">
+                @if(Constants.DISABLE_USER_SIGNUPS)
+                {
+                    <label class="auth-label">User signups are currently disabled. Please contact the administrator if you need an account.</label>
+                } else {
+                    <label class="auth-label">SMTP is not configured, please contact the administrator to create your account manually.</label>
+                }
+                <div class="flex flex-row items-center justify-center gap-1">
+                    <div class="text-auth-bottom-text text-xs font-normal">Already have an account?</div>
+                    <a class="auth-link" href="/auth/login">Log in</a>
+                </div>
+            </div>
+        }
+        else
         {
             @using (Html.BeginForm(FormMethod.Post, true, new { @class = "auth-form" }))
             {
@@ -43,15 +58,6 @@
                     <a class="auth-link" href="/auth/login">Log in</a>
                 </div>
             }
-        } else
-        {
-            <div class="auth-form">
-                <label class="auth-label">SMTP is not configured, please contact the administrator to create your account manually.</label>
-                <div class="flex flex-row items-center justify-center gap-1">
-                    <div class="text-auth-bottom-text text-xs font-normal">Already have an account?</div>
-                    <a class="auth-link" href="/auth/login">Log in</a>
-                </div>
-            </div>
         }
     </section>
 </main>

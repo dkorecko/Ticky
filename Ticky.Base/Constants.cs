@@ -4,6 +4,7 @@ namespace Ticky.Base
     {
         public static bool SMTP_ENABLED = true;
         public static bool FULLY_OFFLINE;
+        public static bool DISABLE_USER_SIGNUPS = false;
 
         public static class CascadingParameters
         {

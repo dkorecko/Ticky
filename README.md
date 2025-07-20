@@ -27,7 +27,7 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Card Linking**: Link related cards together (Jira-like).
 - **Activity Tracking**: Monitor all changes and activities on tasks.
 - **Comments**: Leave comments on cards to discuss and provide other useful information.
-- **User Management**: You can add users on the project level or on the board level, choosing between a Member and an Admin role.
+- **User Management**: You can add users on the project level or on the board level, choosing between a Member and an Admin role. Also possible to disable user signups.
 - **Admin Panel**: For creating, editing and deleting users as an admin. Mostly for when not using SMTP.
 - **Email Notifications**: Receive notifications for deadlines, and reminders.
 - **Progress**: Track your progress within a board by seeing how many tasks have already been completed.
@@ -80,6 +80,7 @@ services:
       - DB_USERNAME=ticky # Database username, can be customized
       - DB_PASSWORD=your-secure-password
       #- FULLY_OFFLINE=true # Uncomment this if you want to disable the avatar service and run fully offline.
+      #- DISABLE_USER_SIGNUPS=true # Uncomment to disable user self-registration. When true, only admins can create new users via the Admin Panel.
       - SMTP_ENABLED=true # Change this to false to ignore SMTP configuration and disable SMTP setup. Resetting password via typical password reset won't work (will need to be reset by an admin via the Admin Panel), as well as reminders and notifications. Can be enabled at any time.
       - SMTP_HOST=your-smtp-host
       - SMTP_PORT=your-smtp-port
