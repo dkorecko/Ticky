@@ -2,7 +2,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 
 <InputSelect class="form-control" TValue=string Value="_selectedValue" ValueChanged="@(OnValueChanged)" ValueExpression="@(() => _selectedValue)">
-    @foreach (var time in TimeOptions)
+    @foreach (var time in GetTimeOptions())
     {
         <option value="@time">@time</option>
     }
@@ -17,25 +17,30 @@
     [Parameter]
     public EventCallback<string> ValueChanged { get; set; }
 
+    private List<string>? _timeOptions;
+
     protected override void OnParametersSet()
     {
         if (_selectedValue != Value)
             _selectedValue = Value;
+
+        _timeOptions = null;
     }
 
     private async Task OnValueChanged(string value)
     {
-		if(_selectedValue == value)
-			return;
-			
-    	_selectedValue = value;
+        if (_selectedValue == value)
+            return;
+
+        _selectedValue = value;
         await ValueChanged.InvokeAsync(value);
     }
 
-    private List<string> TimeOptions => GenerateTimeOptions();
-
-    private List<string> GenerateTimeOptions()
+    private List<string> GetTimeOptions()
     {
+        if(_timeOptions != null)
+            return _timeOptions;
+
         var options = new List<string>();
         var start = TimeSpan.Zero;
         var end = new TimeSpan(23, 45, 0);
