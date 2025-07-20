@@ -1,0 +1,48 @@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+
+<InputSelect class="form-control" TValue=string Value="_selectedValue" ValueChanged="@(OnValueChanged)" ValueExpression="@(() => _selectedValue)">
+    @foreach (var time in TimeOptions)
+    {
+        <option value="@time">@time</option>
+    }
+</InputSelect>
+
+@code {
+    private string _selectedValue = string.Empty;
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (_selectedValue != Value)
+            _selectedValue = Value;
+    }
+
+    private async Task OnValueChanged(string value)
+    {
+		if(_selectedValue == value)
+			return;
+			
+    	_selectedValue = value;
+        await ValueChanged.InvokeAsync(value);
+    }
+
+    private List<string> TimeOptions => GenerateTimeOptions();
+
+    private List<string> GenerateTimeOptions()
+    {
+        var options = new List<string>();
+        var start = TimeSpan.Zero;
+        var end = new TimeSpan(23, 45, 0);
+        for (var time = start; time <= end; time = time.Add(TimeSpan.FromMinutes(15)))
+        {
+            options.Add(time.ToString(@"hh\:mm"));
+        }
+        return options;
+    }
+}

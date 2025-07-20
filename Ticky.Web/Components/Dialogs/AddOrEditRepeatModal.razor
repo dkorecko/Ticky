@@ -53,19 +53,7 @@
 
             <div class="form-group">
                 <Name For="() => _repeatModel.Time" />
-                <InputSelect class="form-control" @bind-Value="_repeatModel.Time">
-                    @{
-                        var baseTime = DateTime.Today;
-                    }
-
-                    @while(baseTime.Day.Equals(DateTime.Today.Day))
-                    {
-                        var stepTime = baseTime;
-                        <option value="@stepTime.ToString("HH:mm")">@stepTime.ToString("HH:mm")</option>
-
-                        baseTime = baseTime.AddMinutes(15);
-                    }
-                </InputSelect>
+                <TimeSelect @bind-Value="_repeatModel.Time" />
                 <ValidationMessage For="() => _repeatModel.Time" />
             </div>
 

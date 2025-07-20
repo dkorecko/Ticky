@@ -14,19 +14,7 @@
             </div>
             <div class="form-group">
                 <Name For="() => _deadlineModel.Time" />
-                <InputSelect class="form-control" @bind-Value="_deadlineModel.Time">
-                    @{
-                        var baseTime = DateTime.Today;
-                    }
-
-                    @while(baseTime.Day.Equals(DateTime.Today.Day))
-                    {
-                        var stepTime = baseTime;
-                        <option value="@stepTime.ToString("HH:mm")">@stepTime.ToString("HH:mm")</option>
-
-                        baseTime = baseTime.AddMinutes(15);
-                    }
-                </InputSelect>
+                <TimeSelect @bind-Value="_deadlineModel.Time" />
                 <ValidationMessage For="() => _deadlineModel.Time" />
             </div>
 

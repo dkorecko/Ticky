@@ -14,19 +14,7 @@
             </div>
             <div class="form-group">
                 <Name For="() => _reminderModel.Time" />
-                <InputSelect class="form-control" @bind-Value="_reminderModel.Time">
-                    @{
-                        var baseTime = DateTime.Today;
-                    }
-
-                    @while(baseTime.Day.Equals(DateTime.Today.Day))
-                    {
-                        var stepTime = baseTime;
-                        <option value="@stepTime.ToString("HH:mm")">@stepTime.ToString("HH:mm")</option>
-
-                        baseTime = baseTime.AddMinutes(15);
-                    }
-                </InputSelect>
+                <TimeSelect @bind-Value="_reminderModel.Time" />
                 <ValidationMessage For="() => _reminderModel.Time" />
             </div>
 
