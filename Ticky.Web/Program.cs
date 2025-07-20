@@ -57,14 +57,14 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 });
 
 Constants.FULLY_OFFLINE = builder.Configuration.GetValue("FULLY_OFFLINE", true);
+Constants.DISABLE_USER_SIGNUPS = builder.Configuration.GetValue("DISABLE_USER_SIGNUPS", false);
+Constants.SMTP_ENABLED = builder.Configuration.GetValue("SMTP_ENABLED", false);
 
 var mailKitOptions = builder.Configuration.GetSection("Email").Get<MailKitOptions>();
 
-if (mailKitOptions is null)
+if (Constants.SMTP_ENABLED)
 {
-    Constants.SMTP_ENABLED = builder.Configuration.GetValue("SMTP_ENABLED", false);
-
-    if (Constants.SMTP_ENABLED)
+    if (mailKitOptions is null)
     {
         mailKitOptions = new MailKitOptions
         {
@@ -77,11 +77,8 @@ if (mailKitOptions is null)
             Security = builder.Configuration.GetValue("SMTP_SECURITY", true)
         };
     }
-}
 
-if (
-    Constants.SMTP_ENABLED
-    && (
+    if (
         mailKitOptions is null
         || mailKitOptions.Server is null
         || mailKitOptions.SenderEmail is null
@@ -90,16 +87,15 @@ if (
         || mailKitOptions.SenderName is null
         || mailKitOptions.Account is null
     )
-)
-{
-    throw new InvalidOperationException(
-        "Some parts of the SMTP configuration are missing. Please add the necessary environment variables. Check the repository for more information: https://github.com/dkorecko/Ticky."
-    );
+    {
+        throw new InvalidOperationException(
+            "Some parts of the SMTP configuration are missing. Please add the necessary environment variables. Check the repository for more information: https://github.com/dkorecko/Ticky."
+        );
+    }
 }
 
-builder.Services.AddMailKit(config => config.UseMailKit(mailKitOptions));
-
 builder.Services.AddScoped<CodeService>();
+builder.Services.AddMailKit(config => config.UseMailKit(mailKitOptions));
 builder.Services.AddScoped<MailService>();
 builder.Services.AddScoped<AvatarService>();
 builder.Services.AddScoped<CardNumberingService>();

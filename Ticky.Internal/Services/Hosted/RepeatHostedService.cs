@@ -1,5 +1,3 @@
-using Ticky.Base.Models;
-
 namespace Ticky.Internal.Services.Hosted;
 
 public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
