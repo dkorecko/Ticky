@@ -17,14 +17,12 @@
     [Parameter]
     public EventCallback<string> ValueChanged { get; set; }
 
-    private List<string>? _timeOptions;
+    private static List<string>? _timeOptions;
 
     protected override void OnParametersSet()
     {
         if (_selectedValue != Value)
             _selectedValue = Value;
-
-        _timeOptions = null;
     }
 
     private async Task OnValueChanged(string value)
@@ -36,7 +34,7 @@
         await ValueChanged.InvokeAsync(value);
     }
 
-    private List<string> GetTimeOptions()
+    private static List<string> GetTimeOptions()
     {
         if(_timeOptions != null)
             return _timeOptions;
