@@ -1749,6 +1749,8 @@ input[type="checkbox"].switch:checked:after {
   transition-duration: var(--tw-duration, var(--default-transition-duration));
   --tw-ease: var(--ease-in-out);
   transition-timing-function: var(--ease-in-out);
+  -webkit-user-select: none;
+  user-select: none;
   &:hover {
     @media (hover: hover) {
       background-color: var(--color-slate-400);
