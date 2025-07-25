@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Ticky.Base.Models;
 
 namespace Ticky.Internal.Services;
@@ -41,126 +41,137 @@ public class TrelloImportService
             }
         }
 
-        var board = new Board
+        using var transaction = await db.Database.BeginTransactionAsync();
+
+        try
         {
-            Name = importDto.Name,
-            Description = importDto.Description,
-            ProjectId = projectId,
-            Code = importModel.Code
-        };
-
-        foreach (var label in importDto.Labels)
-        {
-            var (textColor, backgroundColor) = GetLabelColorsFromName(label.Color);
-
-            board.Labels.Add(
-                new Label
-                {
-                    Name = label.Name,
-                    BoardId = board.Id,
-                    TextColor = textColor,
-                    BackgroundColor = backgroundColor
-                }
-            );
-        }
-
-        int columnIndex = 0;
-        int cardNumber = 1;
-
-        foreach (var list in importDto.Lists)
-        {
-            if (list.Closed)
-                continue;
-
-            var column = new Column
+            var board = new Board
             {
-                Name = list.Name,
-                BoardId = board.Id,
-                Index = columnIndex,
-                MaxCards = list.SoftLimit ?? 0,
-                Finished =
-                    importDto
-                        .Cards.Where(x => x.IdList.Equals(list.Id))
-                        .Any(x => x.DueComplete || x.DateCompleted.HasValue)
-                    || list.Name.Contains("Done")
-                    || list.Name.Contains("🎉")
+                Name = importDto.Name,
+                Description = importDto.Description,
+                ProjectId = projectId,
+                Code = importModel.Code
             };
 
-            int columnCardIndex = 0;
-            foreach (var card in importDto.Cards.Where(x => x.IdList.Equals(list.Id)))
+            foreach (var label in importDto.Labels)
             {
-                var newCard = new Card
-                {
-                    Name = card.Name,
-                    Description = card.Description,
-                    Index = columnCardIndex,
-                    Deadline = card.Due,
-                    CreatedById = card.IdMemberCreator is not null
-                        ? (
-                            trelloIdToUser.GetValueOrDefault(card.IdMemberCreator)?.Id
-                            ?? currentUserId
-                        )
-                        : currentUserId,
-                    Number = cardNumber,
-                    ColumnId = column.Id,
-                };
+                var (textColor, backgroundColor) = GetLabelColorsFromName(label.Color);
 
-                if (card.DueReminder.HasValue && card.Due.HasValue)
-                    newCard.Reminders.Add(
-                        new Reminder
-                        {
-                            At = card.Due.Value.AddDays(card.DueReminder.Value),
-                            CardId = newCard.Id
-                        }
-                    );
-
-                var appliedLabels = card
-                    .IdLabels.Select(x => importDto.Labels.First(l => l.Id.Equals(x)))
-                    .Select(x => board.Labels.First(y => y.Name.Equals(x.Name)));
-
-                if (appliedLabels.Any())
-                    newCard.Labels.AddRange(appliedLabels);
-
-                int subtaskIndex = 0;
-                foreach (
-                    var checklists in importDto
-                        .Checklists.Where(x => x.IdCard.Equals(card.Id))
-                        .Select(x => x.CheckItems)
-                )
-                {
-                    foreach (var checklist in checklists)
+                board.Labels.Add(
+                    new Label
                     {
-                        newCard.Subtasks.Add(
-                            new()
-                            {
-                                CardId = newCard.Id,
-                                Text = checklist.Name,
-                                Index = subtaskIndex,
-                                Completed = checklist.State == "complete"
-                            }
-                        );
-                        subtaskIndex++;
+                        Name = label.Name,
+                        BoardId = board.Id,
+                        TextColor = textColor,
+                        BackgroundColor = backgroundColor
                     }
-                }
-
-                foreach (var cardMember in card.IdMembers)
-                {
-                    if (trelloIdToUser.TryGetValue(cardMember, out var user))
-                        newCard.Assignees.Add(user);
-                }
-
-                column.Cards.Add(newCard);
-                cardNumber++;
-                columnCardIndex++;
+                );
             }
 
-            board.Columns.Add(column);
-            columnIndex++;
+            int columnIndex = 0;
+            int cardNumber = 1;
+
+            foreach (var list in importDto.Lists)
+            {
+                if (list.Closed)
+                    continue;
+
+                var column = new Column
+                {
+                    Name = list.Name,
+                    BoardId = board.Id,
+                    Index = columnIndex,
+                    MaxCards = list.SoftLimit ?? 0,
+                    Finished =
+                        importDto
+                            .Cards.Where(x => x.IdList.Equals(list.Id))
+                            .Any(x => x.DueComplete || x.DateCompleted.HasValue)
+                        || list.Name.Contains("Done")
+                        || list.Name.Contains("🎉")
+                };
+
+                int columnCardIndex = 0;
+                foreach (var card in importDto.Cards.Where(x => x.IdList.Equals(list.Id)))
+                {
+                    var newCard = new Card
+                    {
+                        Name = card.Name,
+                        Description = card.Description,
+                        Index = columnCardIndex,
+                        Deadline = card.Due,
+                        CreatedById = card.IdMemberCreator is not null
+                            ? (
+                                trelloIdToUser.GetValueOrDefault(card.IdMemberCreator)?.Id
+                                ?? currentUserId
+                            )
+                            : currentUserId,
+                        Number = cardNumber,
+                        ColumnId = column.Id,
+                    };
+
+                    if (card.DueReminder.HasValue && card.Due.HasValue)
+                        newCard.Reminders.Add(
+                            new Reminder
+                            {
+                                At = card.Due.Value.AddMinutes(-card.DueReminder.Value),
+                                CardId = newCard.Id
+                            }
+                        );
+
+                    var appliedLabels = card
+                        .IdLabels.Select(x => importDto.Labels.First(l => l.Id.Equals(x)))
+                        .Select(x => board.Labels.First(y => y.Name.Equals(x.Name)));
+
+                    if (appliedLabels.Any())
+                        newCard.Labels.AddRange(appliedLabels);
+
+                    int subtaskIndex = 0;
+                    foreach (
+                        var checklists in importDto
+                            .Checklists.Where(x => x.IdCard.Equals(card.Id))
+                            .Select(x => x.CheckItems)
+                    )
+                    {
+                        foreach (var checklist in checklists)
+                        {
+                            newCard.Subtasks.Add(
+                                new()
+                                {
+                                    CardId = newCard.Id,
+                                    Text = checklist.Name,
+                                    Index = subtaskIndex,
+                                    Completed = checklist.State == "complete"
+                                }
+                            );
+                            subtaskIndex++;
+                        }
+                    }
+
+                    foreach (var cardMember in card.IdMembers)
+                    {
+                        if (trelloIdToUser.TryGetValue(cardMember, out var user))
+                            newCard.Assignees.Add(user);
+                    }
+
+                    column.Cards.Add(newCard);
+                    cardNumber++;
+                    columnCardIndex++;
+                }
+
+                board.Columns.Add(column);
+                columnIndex++;
+            }
+
+            db.Boards.Add(board);
+
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
-
-        db.Boards.Add(board);
-
-        await db.SaveChangesAsync();
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     private (Color textColor, Color backgroundColor) GetLabelColorsFromName(string colorName)
