@@ -19,10 +19,10 @@
 
         <section
             class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-tab-outline px-1 py-1 text-sm">
-            <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(1)">General</div>
-            <div data-active='@(_tab == 2 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(2)">Labels</div>
-            <div data-active='@(_tab == 3 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(3)">Snoozed cards</div>
-            <div data-active='@(_tab == 4 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(4)">Repeating cards [BETA]</div>
+            <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="async () => await GoToTab(1)">General</div>
+            <div data-active='@(_tab == 2 ? "true" : "false")' class="settings-menu-item" @onclick="async () => await GoToTab(2)">Labels</div>
+            <div data-active='@(_tab == 3 ? "true" : "false")' class="settings-menu-item" @onclick="async () => await GoToTab(3)">Snoozed cards</div>
+            <div data-active='@(_tab == 4 ? "true" : "false")' class="settings-menu-item" @onclick="async () => await GoToTab(4)">Repeating cards [BETA]</div>
         </section>
 
         @if(_board is null)
@@ -46,24 +46,32 @@
                     </div>
                 } else if (_tab == 2)
                 {
-                    <div class="flex flex-col py-5">
-                        <label class="font-bold">Labels</label>
-                        <label class="text-sm opacity-70">The settings for what labels are available for assignment to cards.</label>
-                    </div>
+                    if(_labels is null)
+                    {
+                        <Spinner />
+                    } else {
+                        <div class="flex flex-col py-5">
+                            <label class="font-bold">Labels</label>
+                            <label class="text-sm opacity-70">The settings for what labels are available for assignment to cards.</label>
+                        </div>
 
-                    <div class="flex flex-col gap-2 py-5">
-                        @foreach (var label in _board.Labels)
-                        {
-                            <div class="flex flex-row items-center">
-                                <LabelView Label="label" />
-                                <label class="ml-2 text-xs">Used on @label.OnCards.Count cards</label>
-                                <i class="fa fa-pencil edit-icon ml-2" @onclick="() => _editLabelModal?.Open(_board, label)"></i>
-                                <i class="fa fa-trash-can edit-icon hover:text-red-button-hover" @onclick="() => _deleteLabelModal!.OpenDialog(label)"></i>
-                            </div>
-                        }
-                    </div>
+                        <div class="flex flex-col gap-2 py-5">
+                            @foreach (var label in _labels)
+                            {
+                                <div class="flex flex-row items-center">
+                                    <LabelView Label="label" />
+                                    <label class="ml-2 text-xs">Used on @label.OnCards.Count cards</label>
+                                    <i class="fa fa-pencil edit-icon ml-2" @onclick="() => _editLabelModal?.Open(_board, label)"></i>
+                                    <i class="fa fa-trash-can edit-icon hover:text-red-button-hover" @onclick="() => _deleteLabelModal!.OpenDialog(label)"></i>
+                                </div>
+                            }
+                        </div>
 
-                    <button @onclick="() => _addLabelModal?.Open(_board)">Create a label</button>
+                        <button @onclick="() => _addLabelModal?.Open(_board)">Create a label</button>
+                    }
+                } else if(_cards is null)
+                {
+                    <Spinner/>
                 } else if(_tab == 3)
                 {
                     <div class="flex flex-col py-5">
@@ -72,12 +80,12 @@
                     </div>
 
                     <div class="flex flex-col gap-2 py-5">
-                        @foreach(var snoozedCard in _board.Columns.SelectMany(x => x.Cards).Where(x => x.SnoozedUntil.HasValue))
+                        @foreach(var snoozedCard in _cards)
                         {
                             <CardView Card="snoozedCard" DeleteCardModal="_deleteCardModal" EditCardModal="_editCardModal" BoardCode=@_board.Code Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns"/>
                         }
                     </div>
-                }  else if(_tab == 4)
+                } else if(_tab == 4)
                 {
                     <div class="flex flex-col py-5">
                         <label class="font-bold">Repeat cards [BETA]</label>
@@ -85,7 +93,7 @@
                     </div>
 
                     <div class="flex flex-col gap-2 py-5">
-                        @foreach(var repeatCard in _board.Columns.SelectMany(x => x.Cards).Where(x => x.RepeatInfo is not null))
+                        @foreach(var repeatCard in _cards)
                         {
                             <CardView Card="repeatCard" DeleteCardModal="_deleteCardModal" EditCardModal="_editCardModal" BoardCode=@_board.Code Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns" LongFormRepeat=true/>
                         }
@@ -107,6 +115,8 @@
 
     private Board? _board;
     private List<User> _members = [];
+    private List<Label>? _labels;
+    private List<Card>? _cards;
     private AddLabelModal? _addLabelModal;
     private EditLabelModal? _editLabelModal;
     private EditCardModal? _editCardModal;
@@ -118,34 +128,15 @@
         if (!firstRender)
             return;
 
+        await CheckUserAccess();
         await HandleUpdate();
     }
 
-    protected override async Task HandleUpdate()
+    private async Task CheckUserAccess()
     {
         using var db = _dbContextFactory.CreateDbContext();
 
         var board = await db.Boards
-            .Include(x => x.Labels)
-                .ThenInclude(x => x.OnCards)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.CreatedBy)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.Assignees)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.Attachments)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.Subtasks)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.Labels)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.TimeRecords)
             .Include(x => x.Project)
                 .ThenInclude(x => x.Memberships)
                     .ThenInclude(x => x.User)
@@ -154,7 +145,7 @@
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id.Equals(Id));
 
-        if(board is null || !board.VerifyAccess(_user))
+        if (board is null || !board.VerifyAccess(_user))
         {
             MainLayout.RunNotification(new("This board either does not exist or you do not have access.", NotificationType.Fail));
             _navigationManager.NavigateTo("/");
@@ -180,15 +171,51 @@
             _members.AddRange(board.Project.Memberships.Select(x => x.User));
 
         _members = _members.DistinctBy(x => x.Id).ToList();
-
         _board = board;
+    }
+
+    protected override async Task HandleUpdate()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        if (_tab == 1)
+            _board = await db.Boards
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id.Equals(Id));
+        else if (_tab == 2)
+            _labels = await db.Labels
+                .Where(x => x.BoardId.Equals(Id))
+                .Include(x => x.OnCards)
+                .AsNoTracking()
+                .ToListAsync();
+        else if (_tab == 3)
+            _cards = await db.Boards
+                .Include(x => x.Columns)
+                .SelectMany(x => x.Columns)
+                .Include(x => x.Cards)
+                .SelectMany(x => x.Cards)
+                .Where(x => x.SnoozedUntil.HasValue)
+                .IncludeCardViewRequiredProperties()
+                .AsNoTracking()
+                .ToListAsync();
+        else if (_tab == 4)
+            _cards = await db.Boards
+                .Include(x => x.Columns)
+                .SelectMany(x => x.Columns)
+                .Include(x => x.Cards)
+                .SelectMany(x => x.Cards)
+                .Where(x => x.RepeatInfo != null)
+                .IncludeCardViewRequiredProperties()
+                .AsNoTracking()
+                .ToListAsync();
 
         await base.HandleUpdate();
     }
 
-    private void GoToTab(int tabNumber) 
+    private async Task GoToTab(int tabNumber) 
     {
         _tab = tabNumber;
+        await HandleUpdate();
     }
 
     private async void OnSettingChanged(ChangeEventArgs e, Expression<Func<Board, bool>> setter)
