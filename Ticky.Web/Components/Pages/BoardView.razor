@@ -1,4 +1,5 @@
 @page "/boards/{Id:int}/{CardId:int?}"
+@using System.Security.Cryptography
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject CardNumberingService _cardNumberingService
@@ -237,12 +238,19 @@
     {
         if (!firstRender)
             return;
-        
+
         objRef = DotNetObjectReference.Create(this);
         _initialCardId = CardId;
 
-        var boardPreferences = await _protectedLocalStorage.GetAsync<BoardPreferencesModel>(Constants.StorageKeys.BoardPreferences);
-        _preferences = (boardPreferences.Success ? boardPreferences.Value : new()) ?? new();
+        try
+        {
+            var boardPreferences = await _protectedLocalStorage.GetAsync<BoardPreferencesModel>(Constants.StorageKeys.BoardPreferences);
+            _preferences = (boardPreferences.Success ? boardPreferences.Value : new()) ?? new();
+        }
+        catch(CryptographicException)
+        {
+            _preferences = new();
+        }
 
         await HandleUpdate();
 
