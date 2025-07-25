@@ -1,4 +1,4 @@
-﻿@using System.Text.Json
+@using System.Text.Json
 @inherits AbstractModal
 @inject ILogger<ImportModal> _logger
 @inject TrelloImportService _trelloImportService
@@ -51,11 +51,11 @@
 
         @if(_model.ImportDto is not null && _model.MemberIdentifiers is not null)
         {
-            <div>
+            <p>
                 We have detected the following members (by their username) in your import file. <br/>
                 Please provide e-mail addresses/full names they are using in Ticky so we can assign them to the imported cards (this will not grant them access to the board). <br/>
                 If the e-mail/full name is not found, it will be ignored instead of showing an error due to privacy concerns.
-            </div>
+            </p>
             @foreach (var i in Enumerable.Range(0, _model.MemberIdentifiers.Count()))
             {
                 var member = _model.ImportDto.Members[i];
