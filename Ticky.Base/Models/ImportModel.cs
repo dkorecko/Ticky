@@ -12,4 +12,6 @@ public class ImportModel
     [MaxLength(5)]
     [RegularExpression("^[A-Z]*$", ErrorMessage = "The code must be in upper-case.")]
     public string Code { get; set; } = string.Empty;
+
+    public string[]? MemberIdentifiers { get; set; }
 }

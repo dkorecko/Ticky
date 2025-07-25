@@ -21,6 +21,26 @@ public class TrelloImportService
         using var db = _dbContextFactory.CreateDbContext();
         var importDto = importModel.ImportDto!;
 
+        Dictionary<string, User> trelloIdToUser = new();
+
+        if (importModel.MemberIdentifiers is not null && importModel.MemberIdentifiers.Length != 0)
+        {
+            for (int i = 0; i < importModel.MemberIdentifiers.Length; i++)
+            {
+                var identifier = importModel.MemberIdentifiers[i];
+                var trelloId = importDto.Members[i].Id;
+
+                var user = await db.Users.FirstOrDefaultAsync(x =>
+                    identifier.Equals(x.Email) || identifier.Equals(x.DisplayName)
+                );
+
+                if (user is null)
+                    continue;
+
+                trelloIdToUser.Add(trelloId, user);
+            }
+        }
+
         var board = new Board
         {
             Name = importDto.Name,
@@ -59,7 +79,9 @@ public class TrelloImportService
                 Index = columnIndex,
                 MaxCards = list.SoftLimit ?? 0,
                 Finished =
-                    importDto.Cards.Where(x => x.IdList.Equals(list.Id)).Any(x => x.DueComplete)
+                    importDto
+                        .Cards.Where(x => x.IdList.Equals(list.Id))
+                        .Any(x => x.DueComplete || x.DateCompleted.HasValue)
                     || list.Name.Contains("Done")
                     || list.Name.Contains("🎉")
             };
@@ -73,7 +95,12 @@ public class TrelloImportService
                     Description = card.Description,
                     Index = columnCardIndex,
                     Deadline = card.Due,
-                    CreatedById = currentUserId,
+                    CreatedById = card.IdMemberCreator is not null
+                        ? (
+                            trelloIdToUser.GetValueOrDefault(card.IdMemberCreator)?.Id
+                            ?? currentUserId
+                        )
+                        : currentUserId,
                     Number = cardNumber,
                     ColumnId = column.Id,
                 };
@@ -114,6 +141,12 @@ public class TrelloImportService
                         );
                         subtaskIndex++;
                     }
+                }
+
+                foreach (var cardMember in card.IdMembers)
+                {
+                    if (trelloIdToUser.TryGetValue(cardMember, out var user))
+                        newCard.Assignees.Add(user);
                 }
 
                 column.Cards.Add(newCard);

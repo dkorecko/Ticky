@@ -1,4 +1,4 @@
-@using System.Text.Json
+﻿@using System.Text.Json
 @inherits AbstractModal
 @inject ILogger<ImportModal> _logger
 @inject TrelloImportService _trelloImportService
@@ -44,10 +44,27 @@
             </label>
             @if(_model.ImportDto is not null) 
             {
-                <div>Loaded board named @_model.ImportDto.Name with @_model.ImportDto.Lists.Count columns and @_model.ImportDto.Cards.Count cards.</div>
+                <div>Loaded board named @_model.ImportDto.Name with @_model.ImportDto.Lists.Count columns, @_model.ImportDto.Cards.Count cards and @_model.ImportDto.Members.Count members.</div>
             }
             <ValidationMessage For="() => _model.ImportDto" />
         </div>
+
+        @if(_model.ImportDto is not null && _model.MemberIdentifiers is not null)
+        {
+            <div>
+                We have detected the following members (by their username) in your import file. <br/>
+                Please provide e-mail addresses/full names they are using in Ticky so we can assign them to the imported cards (this will not grant them access to the board). <br/>
+                If the e-mail/full name is not found, it will be ignored instead of showing an error due to privacy concerns.
+            </div>
+            @foreach (var i in Enumerable.Range(0, _model.MemberIdentifiers.Count()))
+            {
+                var member = _model.ImportDto.Members[i];
+                <div class="form-group">
+                    <label>@member.FullName (@member.Username)</label>
+                    <InputText class="form-control" @bind-Value="_model.MemberIdentifiers[i]" />
+                </div>
+            }
+        }
     </EditForm>
 </Modal>
 
@@ -133,6 +150,8 @@
                 ShowUploadError("Invalid import format. Confirm you uploaded the correct file, if so, open a GitHub issue, the format may have changed.");
                 return;
             }
+            
+            _model.MemberIdentifiers = new string[_model.ImportDto.Members.Count];
 
             _mainLayout.RunNotification(new Notification("File was uploaded, you can verify the data and confirm the import."));
             _isLoading = false;

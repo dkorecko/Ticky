@@ -35,9 +35,9 @@ public class TrelloCardDTO
     [JsonPropertyName("dueReminder")]
     public required int? DueReminder { get; set; }
 
-    [JsonPropertyName("idChecklists")]
-    public required List<string> IdChecklists { get; set; }
+    [JsonPropertyName("idMembers")]
+    public required List<string> IdMembers { get; set; }
 
-    [JsonPropertyName("checkItemStates")]
-    public required List<TrelloCheckItemStateDTO> CheckItemStates { get; set; }
+    [JsonPropertyName("idMemberCreator")]
+    public required string IdMemberCreator { get; set; }
 }

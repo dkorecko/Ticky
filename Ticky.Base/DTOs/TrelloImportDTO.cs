@@ -16,9 +16,6 @@ public class TrelloImportDTO
     [JsonPropertyName("prefs")]
     public required TrelloPreferencesDTO Preferences { get; set; }
 
-    [JsonPropertyName("labelNames")]
-    public required TrelloLabelNamesDTO LabelNames { get; set; }
-
     [JsonPropertyName("lists")]
     public required List<TrelloListDTO> Lists { get; set; }
 
@@ -30,4 +27,7 @@ public class TrelloImportDTO
 
     [JsonPropertyName("labels")]
     public required List<TrelloLabelDTO> Labels { get; set; }
+
+    [JsonPropertyName("members")]
+    public required List<TrelloMemberDTO> Members { get; set; }
 }
