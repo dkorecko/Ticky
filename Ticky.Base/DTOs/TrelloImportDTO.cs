@@ -27,4 +27,7 @@ public class TrelloImportDTO
 
     [JsonPropertyName("checklists")]
     public required List<TrelloChecklistDTO> Checklists { get; set; }
+
+    [JsonPropertyName("labels")]
+    public required List<TrelloLabelDTO> Labels { get; set; }
 }
