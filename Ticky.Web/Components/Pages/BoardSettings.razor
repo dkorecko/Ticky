@@ -128,11 +128,10 @@
         if (!firstRender)
             return;
 
-        await CheckUserAccess();
         await HandleUpdate();
     }
 
-    private async Task CheckUserAccess()
+    private async Task LoadBoard()
     {
         using var db = _dbContextFactory.CreateDbContext();
 
@@ -142,6 +141,7 @@
                     .ThenInclude(x => x.User)
             .Include(x => x.Memberships)
                 .ThenInclude(x => x.User)
+            .Include(x => x.Columns)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id.Equals(Id));
 
@@ -178,36 +178,18 @@
     {
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (_tab == 1)
-            _board = await db.Boards
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id.Equals(Id));
-        else if (_tab == 2)
+        await LoadBoard();
+
+        if (_tab == 2)
             _labels = await db.Labels
                 .Where(x => x.BoardId.Equals(Id))
                 .Include(x => x.OnCards)
                 .AsNoTracking()
                 .ToListAsync();
         else if (_tab == 3)
-            _cards = await db.Boards
-                .Include(x => x.Columns)
-                .SelectMany(x => x.Columns)
-                .Include(x => x.Cards)
-                .SelectMany(x => x.Cards)
-                .Where(x => x.SnoozedUntil.HasValue)
-                .IncludeCardViewRequiredProperties()
-                .AsNoTracking()
-                .ToListAsync();
+            _cards = await GetCardsBasedOnCondition(db, x => x.SnoozedUntil.HasValue);
         else if (_tab == 4)
-            _cards = await db.Boards
-                .Include(x => x.Columns)
-                .SelectMany(x => x.Columns)
-                .Include(x => x.Cards)
-                .SelectMany(x => x.Cards)
-                .Where(x => x.RepeatInfo != null)
-                .IncludeCardViewRequiredProperties()
-                .AsNoTracking()
-                .ToListAsync();
+            _cards = await GetCardsBasedOnCondition(db, x => x.RepeatInfo != null);
 
         await base.HandleUpdate();
     }
@@ -217,6 +199,23 @@
         _tab = tabNumber;
         await HandleUpdate();
     }
+
+    private async Task<List<Card>> GetCardsBasedOnCondition(DataContext db, Expression<Func<Card, bool>> condition)
+        => await db.Boards
+            .Where(x => x.Id.Equals(Id))
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+            .SelectMany(x => x.Columns)
+            .SelectMany(x => x.Cards)
+            .Where(condition)
+            .Include(x => x.Labels)
+            .Include(x => x.CreatedBy)
+            .Include(x => x.Assignees)
+            .Include(x => x.Attachments)
+            .Include(x => x.Subtasks)
+            .Include(x => x.TimeRecords)
+            .AsNoTracking()
+            .ToListAsync();
 
     private async void OnSettingChanged(ChangeEventArgs e, Expression<Func<Board, bool>> setter)
     {

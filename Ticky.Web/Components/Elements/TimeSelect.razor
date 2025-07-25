@@ -44,7 +44,7 @@
         var end = new TimeSpan(23, 45, 0);
         for (var time = start; time <= end; time = time.Add(TimeSpan.FromMinutes(15)))
         {
-            options.Add(time.ToString(@"HH\:mm"));
+            options.Add(time.ToString(@"hh\:mm"));
         }
         _timeOptions = options;
         return options;
