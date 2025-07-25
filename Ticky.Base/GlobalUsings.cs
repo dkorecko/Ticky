@@ -1,6 +1,7 @@
 global using System.ComponentModel.DataAnnotations;
 global using System.ComponentModel.DataAnnotations.Schema;
 global using System.Drawing;
+global using System.Text.Json.Serialization;
 global using Microsoft.AspNetCore.Identity;
 global using Microsoft.EntityFrameworkCore;
 global using Ticky.Base.Converters;

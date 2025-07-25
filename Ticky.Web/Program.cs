@@ -100,6 +100,7 @@ builder.Services.AddScoped<MailService>();
 builder.Services.AddScoped<AvatarService>();
 builder.Services.AddScoped<CardNumberingService>();
 builder.Services.AddScoped<SearchService>();
+builder.Services.AddScoped<TrelloImportService>();
 builder.Services.AddHostedService<CleanupHostedService>();
 builder.Services.AddHostedService<SnoozeHostedService>();
 builder.Services.AddHostedService<RepeatHostedService>();

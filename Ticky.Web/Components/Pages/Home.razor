@@ -3,7 +3,8 @@
 @inherits NotifiableBase
 
 <CreateProjectModal @ref="_createProjectModal" OnSubmit="async () => await RunNotification(typeof(Project), OperationType.Added)" />
-<CreateBoardModal @ref="_createBoardModal" OnSubmit="async () => await RunNotification(typeof(Board), OperationType.Added)" />
+<ImportModal @ref="_importModal" OnSubmit="HandleUpdate" />
+<CreateBoardModal @ref="_createBoardModal" OnSubmit="async () => await RunNotification(typeof(Board), OperationType.Added)" ImportModal="_importModal" />
 <EditProjectModal @ref="_editProjectModal" OnSubmit="async () => await RunNotification(typeof(Project), OperationType.Edited)" />
 <EditProjectMembershipsModal @ref="_editProjectMembershipsModal" OnSubmit="async () => await RunNotification(typeof(ProjectMembership), OperationType.Edited)" />
 <DeleteConfirmationDialog T="Project" @ref="_deleteProjectModal" OnConfirmed="HandleUpdate" />
@@ -118,6 +119,8 @@
     private DeleteConfirmationDialog<Project>? _deleteProjectModal;
 
     private DeleteConfirmationDialog<Board>? _deleteBoardModal;
+
+    private ImportModal? _importModal;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

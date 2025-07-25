@@ -1680,6 +1680,7 @@ button, .label-as-button > i {
   gap: calc(var(--spacing) * 6);
 }
 .auth-link {
+  cursor: pointer;
   font-size: var(--text-xs);
   line-height: var(--tw-leading, var(--text-xs--line-height));
   --tw-font-weight: var(--font-weight-semibold);
