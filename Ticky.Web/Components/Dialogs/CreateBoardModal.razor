@@ -22,6 +22,10 @@
             <InputText class="form-control" @bind-Value="_board.Code" />
             <ValidationMessage For="() => _board.Code" />
         </div>
+
+        <div class="form-group text-xs font-normal">
+            Got an existing board? <a class="auth-link" @onclick="GoToImport">Import</a>
+        </div>
     </EditForm>
 </Modal>
 
@@ -31,6 +35,9 @@
 
     [Parameter]
     public EventCallback OnSubmit { get; set; }
+
+    [Parameter]
+    public required ImportModal ImportModal { get; set; }
 
     public int _projectId { get; set; }
 
@@ -89,5 +96,14 @@
 
         await Modal.Close();
         await OnSubmit.InvokeAsync();
+    }
+
+    private async Task GoToImport()
+    {
+        if (Modal is null)
+            return;
+
+        await Modal.Close();
+        ImportModal.Open(_projectId);
     }
 }

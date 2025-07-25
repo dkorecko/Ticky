@@ -1,0 +1,148 @@
+@using System.Text.Json
+@inherits AbstractModal
+@inject ILogger<ImportModal> _logger
+@inject TrelloImportService _trelloImportService
+
+<Modal @ref="Modal" Title="Import board" OnSubmitAttempted="OnSubmitAttempted">
+    <EditForm class="form" EditContext="_editContext">
+        <DataAnnotationsValidator />
+
+        <div class="form-group">
+            <Name For="() => _model.Source" />
+            <InputSelect class="form-control" @bind-Value="_model.Source">
+                @foreach (Enum enumValue in Enum.GetValues(typeof(ImportSource)))
+                {
+                    if (_model.Source.Equals(enumValue))
+                    {
+                        <option selected value="@enumValue">@enumValue.GetDisplayName()</option>
+                    }
+                    else
+                    {
+                        <option value="@enumValue">@enumValue.GetDisplayName()</option>
+                    }
+                }
+            </InputSelect>
+            <ValidationMessage For="() => _model.Source" />
+        </div>
+
+        <div class="form-group">
+            <Name For="() => _model.Code" />
+            <InputText class="form-control" @bind-Value="_model.Code" />
+            <ValidationMessage For="() => _model.Code" />
+        </div>
+
+        <div class="form-group flex flex-col items-center">
+            <InputFile class="hidden" id="file-upload" OnChange="OnFileChanged" />
+            <label for="file-upload" class="board-card-create">
+                @if (_isLoading)
+                {
+                    <Spinner/>
+                } else {
+                    <i class="fa fa-upload text-3xl"></i>
+                    <div>Upload JSON</div>
+                }
+            </label>
+            @if(_model.ImportDto is not null) 
+            {
+                <div>Loaded board named @_model.ImportDto.Name with @_model.ImportDto.Lists.Count columns and @_model.ImportDto.Cards.Count cards.</div>
+            }
+            <ValidationMessage For="() => _model.ImportDto" />
+        </div>
+    </EditForm>
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+    private MainLayout _mainLayout { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    private ImportModel _model = new();
+    private EditContext? _editContext;
+    private int _projectId;
+
+    private bool _isLoading;
+
+    public void Open(int projectId)
+    {
+        _projectId = projectId;
+
+        _model = new();
+        _editContext = new EditContext(_model);
+
+        base.Open();
+    }
+
+    private async Task OnSubmitAttempted()
+    {
+        if (Modal is null || _editContext is null)
+            return;
+
+        if (!_editContext.Validate())
+            return;
+
+        try
+        {
+            await _trelloImportService.ImportTrelloBoardAsync(_model, _projectId, _user.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Import failed, error: {ex}");
+            ShowUploadError("An error occurred while importing the board. Please check the logs and open a GitHub issue if necessary.");
+            return;
+        }
+
+        await Modal.Close();
+        await OnSubmit.InvokeAsync();
+    }
+
+    private void ShowUploadError(string message)
+    {
+        _isLoading = false;
+        _mainLayout.RunNotification(new Notification($"File upload failed: {message}", NotificationType.Fail));
+        StateHasChanged();
+    }
+
+    public async Task OnFileChanged(InputFileChangeEventArgs e)
+    {
+        ArgumentNullException.ThrowIfNull(_user);
+        _isLoading = true;
+
+        if (!e.File.ContentType.Contains("json"))
+        {
+            ShowUploadError("The file must be a JSON file.");
+            return;
+        }
+
+        if (e.File.Size > Constants.Limits.MAX_JSON_SIZE)
+        {
+            ShowUploadError("The file is too large.");
+            return;
+        }
+
+        try
+        {
+            _model.ImportDto = await JsonSerializer.DeserializeAsync<TrelloImportDTO>(e.File.OpenReadStream(Constants.Limits.MAX_JSON_SIZE));
+
+            if(_model.ImportDto is null)
+            {
+                ShowUploadError("Invalid import format. Confirm you uploaded the correct file, if so, open a GitHub issue, the format may have changed.");
+                return;
+            }
+
+            _mainLayout.RunNotification(new Notification("File was uploaded, you can verify the data and confirm the import."));
+            _isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"File upload failed, file name {e.File.Name}, error: {ex}");
+            ShowUploadError("An error occured. Please take a look at the application logs and open a GitHub issue.");
+        }
+
+        StateHasChanged();
+    }
+}

@@ -308,7 +308,7 @@ button, .label-as-button > i {
   }
 
 .auth-bg {
-    @apply bg-gradient-to-tr from-auth-gradient-start via-auth-gradient-via to-auth-gradient-to flex h-full w-full items-center justify-center;
+    @apply from-auth-gradient-start via-auth-gradient-via to-auth-gradient-to flex h-full w-full items-center justify-center bg-gradient-to-tr;
 }
 
 .auth-inp-label {
@@ -337,7 +337,7 @@ button, .label-as-button > i {
 }
 
 .auth-link {
-    @apply text-xs font-semibold text-primary transition-all hover:text-primary-hover;
+    @apply cursor-pointer text-xs font-semibold text-primary transition-all hover:text-primary-hover;
 }
 
 input[type="checkbox"].switch{

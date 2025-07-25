@@ -37,6 +37,7 @@ namespace Ticky.Base
             public const int DEFAULT_NOTIFICATION_TIME_IN_MS = 5000;
             public const int FILE_NAME_LENGTH = 10;
             public const long MAX_IMAGE_SIZE = 15360 * 1024;
+            public const long MAX_JSON_SIZE = 15360 * 1024;
             public const long MAX_FILE_SIZE = 15360 * 1024;
             public const int MAX_FILES = 20;
         }
