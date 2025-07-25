@@ -1,4 +1,4 @@
-using System.Drawing;
+﻿using System.Drawing;
 using Ticky.Base.Models;
 
 namespace Ticky.Internal.Services;
@@ -224,6 +224,10 @@ public class TrelloImportService
                 BoardId = board.Id,
                 Index = columnIndex,
                 MaxCards = list.SoftLimit ?? 0,
+                Finished =
+                    importDto.Cards.Where(x => x.IdList.Equals(list.Id)).Any(x => x.DueComplete)
+                    || list.Name.Contains("Done")
+                    || list.Name.Contains("🎉")
             };
 
             int columnCardIndex = 0;
