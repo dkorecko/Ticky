@@ -73,7 +73,10 @@ public class TrelloImportService
 
             foreach (var list in importDto.Lists)
             {
-                if (list.Closed)
+                if (
+                    importModel.ArchivedCardsHandling.Equals(TrelloArchivedHandlingType.DontAdd)
+                    && list.Closed
+                )
                     continue;
 
                 var column = new Column
@@ -93,6 +96,12 @@ public class TrelloImportService
                 int columnCardIndex = 0;
                 foreach (var card in importDto.Cards.Where(x => x.IdList.Equals(list.Id)))
                 {
+                    if (
+                        importModel.ArchivedCardsHandling.Equals(TrelloArchivedHandlingType.DontAdd)
+                        && card.Closed
+                    )
+                        continue;
+
                     var newCard = new Card
                     {
                         Name = card.Name,
@@ -110,13 +119,29 @@ public class TrelloImportService
                     };
 
                     if (card.DueReminder.HasValue && card.Due.HasValue)
-                        newCard.Reminders.Add(
-                            new Reminder
-                            {
-                                At = card.Due.Value.AddMinutes(-card.DueReminder.Value),
-                                CardId = newCard.Id
-                            }
-                        );
+                    {
+                        var calculatedAt = card.Due.Value.AddMinutes(-card.DueReminder.Value);
+
+                        if (calculatedAt > DateTime.Now)
+                        {
+                            newCard.Reminders.Add(
+                                new Reminder
+                                {
+                                    At = card.Due.Value.AddMinutes(-card.DueReminder.Value),
+                                    CardId = newCard.Id
+                                }
+                            );
+                        }
+                        else
+                        {
+                            newCard.DeadlineProcessed = false;
+                        }
+                    }
+
+                    if (card.Due.HasValue && card.Due.Value < DateTime.Now)
+                    {
+                        newCard.DeadlineProcessed = true;
+                    }
 
                     var appliedLabels = card
                         .IdLabels.Select(x => importDto.Labels.First(l => l.Id.Equals(x)))
