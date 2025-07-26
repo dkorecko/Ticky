@@ -32,6 +32,11 @@ public class RepeatCardModel
     [Range(1, 999)]
     public int? Number { get; set; }
 
+    [Display(Name = "Start from date")]
+    [Required(AllowEmptyStrings = false)]
+    [DataType(DataType.Date)]
+    public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+
     [Display(Name = "Time of day for the repeat to occur")]
     [Required(AllowEmptyStrings = false)]
     [RegularExpression(

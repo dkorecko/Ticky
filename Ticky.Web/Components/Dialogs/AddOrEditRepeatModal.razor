@@ -52,6 +52,12 @@
             }
 
             <div class="form-group">
+                <Name For="() => _repeatModel.StartDate" />
+                <InputDate @bind-Value="_repeatModel.StartDate" />
+                <ValidationMessage For="() => _repeatModel.StartDate" />
+            </div>
+
+            <div class="form-group">
                 <Name For="() => _repeatModel.Time" />
                 <TimeSelect @bind-Value="_repeatModel.Time" />
                 <ValidationMessage For="() => _repeatModel.Time" />
@@ -127,6 +133,7 @@
             _repeatModel = new()
                 {
                     Type = card.RepeatInfo.Type,
+                    StartDate = DateOnly.FromDateTime(card.RepeatInfo.LastRepeat),
                     Time = card.RepeatInfo.Time.ToString("HH:mm"),
                     Number = card.RepeatInfo.Number,
                     CardPlacement = card.RepeatInfo.CardPlacement,
@@ -157,11 +164,13 @@
             return;
 
         var time = DateTime.ParseExact(_repeatModel.Time, "HH:mm", null);
+        var timeOnly = TimeOnly.FromDateTime(time);
 
         card.RepeatInfo = new()
         {
             Type = _repeatModel.Type,
-            Time = TimeOnly.FromDateTime(time),
+            LastRepeat = _repeatModel.StartDate.ToDateTime(timeOnly),
+            Time = timeOnly,
             Number = _repeatModel.Number,
             Selected = _repeatModel.GetRelevantSelectedValue(),
             CardPlacement = _repeatModel.CardPlacement,
