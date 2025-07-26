@@ -306,6 +306,9 @@
   .\!ml-\[-0\.8rem\] {
     margin-left: -0.8rem !important;
   }
+  .ml-1 {
+    margin-left: calc(var(--spacing) * 1);
+  }
   .ml-2 {
     margin-left: calc(var(--spacing) * 2);
   }

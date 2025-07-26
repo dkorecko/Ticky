@@ -1,4 +1,4 @@
-@page "/boards/{Id:int}/{CardId:int?}"
+﻿@page "/boards/{Id:int}/{CardId:int?}"
 @using System.Security.Cryptography
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
@@ -60,23 +60,25 @@
                             var cardsCount = column.Cards.Where(x => !x.SnoozedUntil.HasValue).Count();
                         }
                         <div class="board-column gap-1">
-                            <div class="flex w-full flex-row items-center justify-between">
+                            <div class="flex w-full flex-row items-start justify-between">
                                 <div class="flex flex-row items-center gap-2">
-                                    <label>
+                                    <label class="align-middle">
                                         @column.Name
-                                    </label>
-                                    <span class='text-2xs rounded-full p-0.5 shadow-sm @(column.MaxCards != 0 && cardsCount >= column.MaxCards ? "bg-column-limit-reached" : "bg-card-bg")'>
-                                        @if(column.MaxCards == 0)
+                                        <span class='text-2xs ml-1 rounded-full p-0.5 align-middle shadow-sm @(column.MaxCards != 0 && cardsCount >= column.MaxCards ? "bg-column-limit-reached" : "bg-card-bg")'>
+                                            @if (column.MaxCards == 0)
+                                            {
+                                                <span>@cardsCount</span>
+                                            }
+                                            else
+                                            {
+                                                <span>@cardsCount/@column.MaxCards</span>
+                                            }
+                                        </span>
+                                        @if (column.Collapsed)
                                         {
-                                            <span>@cardsCount</span>
-                                        } else {
-                                            <span>@cardsCount/@column.MaxCards</span>
+                                            <label class="ml-2 text-xs font-normal">(Collapsed)</label>
                                         }
-                                    </span>
-                                    @if (column.Collapsed)
-                                    {
-                                        <label class="text-xs font-normal">(Collapsed)</label>
-                                    }
+                                    </label>
                                 </div>
 
                                 @if (IsAdmin())
