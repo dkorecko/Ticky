@@ -5,3 +5,11 @@ function triggerFileDownload(fileName, url) {
     anchorElement.click();
     anchorElement.remove();
 }
+
+function downloadJsonText(fileName, jsonText) {
+    var anchorElement = document.createElement('a')
+    anchorElement.href = "data:text/plain;charset=utf-8," + encodeURIComponent(jsonText.toString())
+    anchorElement.download = fileName ?? 'file'
+    anchorElement.click()
+    anchorElement.remove()
+}

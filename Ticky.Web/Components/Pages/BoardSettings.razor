@@ -1,8 +1,10 @@
 @page "/boards/settings/{Id:int}"
 @using System.Reflection
+@using System.Text.Json
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ILogger<BoardSettings> _logger
 @inject NavigationManager _navigationManager
+@inject IJSRuntime _js
 @inherits NotifiableBase
 
 <AddLabelModal @ref="_addLabelModal" OnSubmit="() => RunNotification(typeof(Label), OperationType.Added)" />
@@ -23,6 +25,7 @@
             <div data-active='@(_tab == 2 ? "true" : "false")' class="settings-menu-item" @onclick="async () => await GoToTab(2)">Labels</div>
             <div data-active='@(_tab == 3 ? "true" : "false")' class="settings-menu-item" @onclick="async () => await GoToTab(3)">Snoozed cards</div>
             <div data-active='@(_tab == 4 ? "true" : "false")' class="settings-menu-item" @onclick="async () => await GoToTab(4)">Repeating cards [BETA]</div>
+            <div data-active='@(_tab == 5 ? "true" : "false")' class="settings-menu-item" @onclick="async () => await GoToTab(5)">Export</div>
         </section>
 
         @if(_board is null)
@@ -69,7 +72,26 @@
 
                         <button @onclick="() => _addLabelModal?.Open(_board)">Create a label</button>
                     }
-                } else if(_cards is null)
+                } else if(_tab == 5)
+                {
+                    <div class="flex flex-col py-5">
+                        <label class="font-bold">Export</label>
+                        <label class="text-sm opacity-70">Export the board to a JSON file, currently only for debugging purposes.</label>
+                    </div>
+                    <div class="flex flex-col gap-2 py-5">
+                        <button disabled=@_isLoading class="btn btn-primary" @onclick="ExportBoard">
+                            @if(_isLoading) 
+                            {
+                                <Spinner Small=true/>
+                            } else 
+                            {
+                                <span>Export board</span>
+                            }
+                        </button>
+                    </div>
+
+                }
+                else if (_cards is null)
                 {
                     <Spinner/>
                 } else if(_tab == 3)
@@ -122,6 +144,7 @@
     private EditCardModal? _editCardModal;
     private DeleteConfirmationDialog<Label>? _deleteLabelModal;
     private DeleteConfirmationDialog<Card>? _deleteCardModal;
+    private bool _isLoading;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -238,5 +261,61 @@
         await db.SaveChangesAsync();
 
         await RunNotification(typeof(BoardSettings), OperationType.Edited);
+    }
+
+    private async Task ExportBoard()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var board = await db.Boards
+            .AsNoTracking()
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Labels)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.TimeRecords)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Reminders)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Comments)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Activities)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Assignees)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Attachments)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.LinkedIssuesOne)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.LinkedIssuesTwo)
+            .Include(x => x.Columns)
+                .ThenInclude(x => x.Cards)
+                    .ThenInclude(x => x.Subtasks)
+            .Include(x => x.Memberships)
+                .ThenInclude(x => x.User)
+            .Include(x => x.Labels)
+            .Include(x => x.Project)
+                .ThenInclude(x => x.Memberships)
+            .FirstAsync(x => x.Id.Equals(Id));
+
+        await _js.InvokeVoidAsync("downloadJsonText", $"{board.Name}_{board.CreatedAt.Ticks}.json", JsonSerializer.Serialize(board, new JsonSerializerOptions
+        {
+            ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
+        }));
+
+        _isLoading = false;
+        StateHasChanged();
+        MainLayout.RunNotification(new("Board exported successfully."));
     }
 }
