@@ -2115,13 +2115,19 @@ input[type="checkbox"].switch:checked:after {
 }
 .element-spinner {
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
   animation: spin 1s ease-in-out infinite;
+  height: calc(var(--spacing) * 10);
+  width: calc(var(--spacing) * 10);
   border-style: var(--tw-border-style);
   border-width: 4px;
   border-color: var(--color-card-bg);
   border-top-color: var(--color-primary);
+  &[data-small="True"] {
+    height: calc(var(--spacing) * 5);
+  }
+  &[data-small="True"] {
+    width: calc(var(--spacing) * 5);
+  }
 }
 @keyframes spin {
   to {

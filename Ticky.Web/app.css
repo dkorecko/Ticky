@@ -519,10 +519,8 @@ input[type="checkbox"].switch{
 
 .element-spinner {
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
     animation: spin 1s ease-in-out infinite;
-    @apply border-4 border-card-bg border-t-primary;
+    @apply h-10 w-10 border-4 border-card-bg border-t-primary data-[small=True]:h-5 data-[small=True]:w-5;
 }
 
 @keyframes spin {

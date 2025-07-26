@@ -1,4 +1,4 @@
-<div class="element-spinner-wrapper @Class">
+<div data-small='@Small.ToString()' class="element-spinner-wrapper @Class">
     <div class="element-spinner">
     </div>
 </div>
@@ -6,4 +6,7 @@
 @code {
     [Parameter]
     public string? Class { get; set; }
+
+    [Parameter]
+    public bool Small { get; set; }
 }
