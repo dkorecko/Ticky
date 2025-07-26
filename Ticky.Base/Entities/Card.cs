@@ -59,7 +59,7 @@ public class Card : AbstractDbEntity, IOrderable, IDeletable
                 while (!allowedDaysOfMonth.Contains(finalDate.Day.ToString()))
                     finalDate = finalDate.AddDays(1);
 
-                break;
+                return finalDate;
             }
             case RepeatType.EveryXthDay:
                 return finalDate.AddDays(RepeatInfo.Number!.Value);
