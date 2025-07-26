@@ -1,4 +1,4 @@
-﻿@page "/boards/{Id:int}/{CardId:int?}"
+@page "/boards/{Id:int}/{CardId:int?}"
 @using System.Security.Cryptography
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
@@ -7,6 +7,13 @@
 @inject IJSRuntime _js
 @inherits NotifiableBase
 @implements IDisposable
+
+@if (_board is not null)
+{
+    <PageTitle>
+        @_board.Name - Ticky
+    </PageTitle>
+}
 
 <CreateColumnModal @ref="_createColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Added)" />
 <EditColumnModal @ref="_editColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Edited)" />
