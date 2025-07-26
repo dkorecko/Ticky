@@ -13,6 +13,18 @@
 <DeleteConfirmationDialog T="Label" @ref="_deleteLabelModal" OnConfirmed="HandleUpdate"/>
 <DeleteConfirmationDialog T="Card" @ref="_deleteCardModal" OnConfirmed="HandleUpdate" />
 
+@if (_board is not null)
+{
+    <PageTitle>
+        Board settings - @_board.Name - Ticky
+    </PageTitle>
+} else
+{
+    <PageTitle>
+        Board settings - Ticky
+    </PageTitle>
+}
+
 <div class="w-full">
     <section class="flex w-full max-w-4xl flex-grow flex-col gap-5 overflow-y-auto px-12 py-14">
         <header class="flex flex-row justify-between text-2xl font-bold">
