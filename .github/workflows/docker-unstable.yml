@@ -11,6 +11,10 @@ on:
         required: true
         default: "main"
 
+concurrency:
+  group: docker-unstable-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
