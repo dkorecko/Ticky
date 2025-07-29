@@ -619,7 +619,3 @@ input[type="checkbox"].switch{
 [data-theme='dark'] .task-card.sortable-chosen {
     @apply border-2;
 }
-
-[data-theme=''] .task-card.sortable-chosen {
-    @apply shadow-2xl;
-}
