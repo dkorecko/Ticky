@@ -9,6 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ticky.Base", "Ticky.Base\Ti
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build.yml = .github\workflows\build.yml
 		CONTRIBUTING.md = CONTRIBUTING.md
 		.github\workflows\docker-release.yml = .github\workflows\docker-release.yml
 		Dockerfile = Dockerfile
@@ -16,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ticky.Web", "Ticky.Web\Ticky.Web.csproj", "{B1E89F57-87FE-441E-AC21-DF0A38428C1E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ticky.Units", "Ticky.Units\Ticky.Units.csproj", "{77FB83D5-5E37-4271-A561-0696212D9624}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +38,10 @@ Global
 		{B1E89F57-87FE-441E-AC21-DF0A38428C1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1E89F57-87FE-441E-AC21-DF0A38428C1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1E89F57-87FE-441E-AC21-DF0A38428C1E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77FB83D5-5E37-4271-A561-0696212D9624}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77FB83D5-5E37-4271-A561-0696212D9624}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77FB83D5-5E37-4271-A561-0696212D9624}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77FB83D5-5E37-4271-A561-0696212D9624}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
