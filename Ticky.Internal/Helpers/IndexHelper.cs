@@ -16,10 +16,10 @@ public static class IndexHelper
     public static void FixIndices<T>(this List<T> current)
         where T : IOrderable, IDbEntry
     {
-        var orderedElements = current.OrderBy(x => x.Index).ThenBy(x => x.Id);
+        var orderedElements = current.OrderBy(x => x.Index).ThenBy(x => x.Id).ToList();
 
-        for (int i = 0; i < current.Count; i++)
-            orderedElements.ElementAt(i).Index = i;
+        for (int i = 0; i < orderedElements.Count; i++)
+            orderedElements[i].Index = i;
     }
 
     public static void ChangeOrderOfItem<T>(this List<T> current, int currentIndex, int newIndex)
