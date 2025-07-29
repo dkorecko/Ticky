@@ -201,19 +201,21 @@
                         </div>
                         @foreach(var group in _card.LinkedIssuesOne.GroupBy(x => x.Category)) 
                         {
-                            var linkedCard = group.ElementAt(0).CardTwo;
                             <label class="text-sm">@group.Key</label>
-                            <div class="flex cursor-pointer flex-col justify-between rounded-sm px-3 py-2 text-xs shadow outline-1 outline-add-outline transition-all ease-in-out hover:bg-dropdown-option">
-                                <div class="flex flex-row justify-between gap-3">
-                                    <label class="cursor-pointer whitespace-nowrap">@linkedCard.Column.Board.Code-@linkedCard.Number</label>
-                                    <label class="cursor-pointer truncate whitespace-nowrap">@linkedCard.Name</label>
+                            @foreach(var linkedCardLink in group) 
+                            {
+                                var linkedCard = linkedCardLink.CardTwo;
+                                <div class="flex cursor-pointer flex-col justify-between rounded-sm px-3 py-2 text-xs shadow outline-1 outline-add-outline transition-all ease-in-out hover:bg-dropdown-option">
+                                    <div class="flex flex-row justify-between gap-3">
+                                        <label class="cursor-pointer whitespace-nowrap">@linkedCard.Column.Board.Code-@linkedCard.Number</label>
+                                        <label class="cursor-pointer truncate whitespace-nowrap">@linkedCard.Name</label>
+                                    </div>
+                                    <div class="flex flex-row items-center justify-between">
+                                        <label class="text-2xs cursor-pointer font-light">Project @linkedCard.Column.Board.Project.Name — @linkedCard.Column.Name</label>
+                                        <i class="fa fa-trash-can edit-icon !p-0 !text-red-button hover:!text-red-button-hover" @onclick="() => DeleteLink(group.ElementAt(0))" @onclick:stopPropagation=true></i>
+                                    </div>
                                 </div>
-                                <div class="flex flex-row items-center justify-between">
-                                    <label class="text-2xs cursor-pointer font-light">Project @linkedCard.Column.Board.Project.Name — @linkedCard.Column.Name</label>
-                                    <i class="fa fa-trash-can edit-icon !p-0 !text-red-button hover:!text-red-button-hover" @onclick="() => DeleteLink(group.ElementAt(0))" @onclick:stopPropagation=true></i>
-                                </div>
-                            </div>
-                            
+                            }
                         }
                     </section>
                     <hr />
