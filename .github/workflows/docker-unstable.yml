@@ -12,7 +12,7 @@ on:
         default: "main"
 
 concurrency:
-  group: "docker-unstable"
+  group: docker-unstable-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
