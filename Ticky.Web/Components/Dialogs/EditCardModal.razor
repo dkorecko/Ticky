@@ -212,7 +212,7 @@
                                     </div>
                                     <div class="flex flex-row items-center justify-between">
                                         <label class="text-2xs cursor-pointer font-light">Project @linkedCard.Column.Board.Project.Name — @linkedCard.Column.Name</label>
-                                        <i class="fa fa-trash-can edit-icon !p-0 !text-red-button hover:!text-red-button-hover" @onclick="() => DeleteLink(group.ElementAt(0))" @onclick:stopPropagation=true></i>
+                                        <i class="fa fa-trash-can edit-icon !p-0 !text-red-button hover:!text-red-button-hover" @onclick="() => DeleteLink(linkedCardLink)" @onclick:stopPropagation=true></i>
                                     </div>
                                 </div>
                             }
