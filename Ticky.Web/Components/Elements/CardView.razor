@@ -57,7 +57,7 @@
             }
             @if(Card.RepeatInfo is not null)
             {
-                <label class="card-data-point"><i class="fa fa-repeat"></i> @(LongFormRepeat ? $"{Card.RepeatInfo.GetRepeatString()}, next repeat {Card.CalculateNextRepeat().ToReadableStringWithTime()}" : string.Empty)</label>
+                <label class="card-data-point"><i class="fa fa-repeat"></i> @(LongFormRepeat ? $"{Card.RepeatInfo.GetRepeatString()}, next repeat {Card.CalculateNextRepeat(DateTime.Now).ToReadableStringWithTime()}" : string.Empty)</label>
             }
         </div>
         <div class="flex">

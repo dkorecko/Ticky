@@ -31,7 +31,7 @@ public class Card : AbstractDbEntity, IOrderable, IDeletable
 
     public DateTime? SnoozedUntil { get; set; }
 
-    public DateTime CalculateNextRepeat()
+    public DateTime CalculateNextRepeat(DateTime from)
     {
         if (RepeatInfo is null)
             throw new Exception("Cannot calculate next repeat on card with no repeat.");
@@ -39,10 +39,18 @@ public class Card : AbstractDbEntity, IOrderable, IDeletable
         var startDate = RepeatInfo.LastRepeat;
         var finalDate = new DateTime(DateOnly.FromDateTime(startDate.Date), RepeatInfo.Time);
 
+        if (
+            (int)RepeatInfo.Type < 100
+            && RepeatInfo.Time < TimeOnly.FromDateTime(RepeatInfo.LastRepeat)
+        )
+        {
+            finalDate = finalDate.AddDays(1);
+        }
+
         switch (RepeatInfo.Type)
         {
             case RepeatType.Daily:
-                return finalDate > DateTime.Now ? finalDate : finalDate.AddDays(1);
+                return finalDate;
             case RepeatType.WeekDays:
             {
                 var allowedDaysOfWeek = RepeatInfo.Selected!.Split(',').Select(x => x).ToList();

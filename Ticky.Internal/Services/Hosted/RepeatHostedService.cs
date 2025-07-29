@@ -32,7 +32,7 @@ public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
             .ToListAsync();
 
         var pendingNextRepeatCards = allRepeatCards
-            .Where(x => x.CalculateNextRepeat() < DateTime.Now)
+            .Where(x => x.CalculateNextRepeat(DateTime.Now) < DateTime.Now)
             .ToList();
 
         foreach (var card in pendingNextRepeatCards)
