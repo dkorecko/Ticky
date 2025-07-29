@@ -14,19 +14,12 @@ public static class IndexHelper
     }
 
     public static void FixIndices<T>(this List<T> current)
-        where T : IOrderable
+        where T : IOrderable, IDbEntry
     {
-        var orderedElements = current.OrderBy(x => x.Index);
-        int elements = current.Count;
+        var orderedElements = current.OrderBy(x => x.Index).ThenBy(x => x.Id);
 
-        for (int i = 0; i < elements; i++)
-        {
-            if (orderedElements.FirstOrDefault(x => x.Index.Equals(i)) is not null)
-                continue;
-
-            var nextElement = orderedElements.First(x => x.Index > i);
-            nextElement.Index = i;
-        }
+        for (int i = 0; i < current.Count; i++)
+            orderedElements.ElementAt(i).Index = i;
     }
 
     public static void ChangeOrderOfItem<T>(this List<T> current, int currentIndex, int newIndex)
