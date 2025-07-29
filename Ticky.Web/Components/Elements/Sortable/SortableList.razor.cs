@@ -68,7 +68,7 @@ namespace Ticky.Web.Components.Elements.Sortable
         public void Dispose() => selfReference?.Dispose();
 
         [JSInvokable]
-        public void OnRemoveJS(
+        public async Task OnRemoveJS(
             int oldIndex,
             int newIndex,
             string fromId,
@@ -77,15 +77,14 @@ namespace Ticky.Web.Components.Elements.Sortable
             double y
         )
         {
-            // remove the item from the list
-            OnRemove.InvokeAsync((oldIndex, newIndex, fromId, toId, x, y));
+            await OnRemove.InvokeAsync((oldIndex, newIndex, fromId, toId, x, y));
         }
 
         [JSInvokable]
-        public void OnUpdateJS(int oldIndex, int newIndex, string fromId)
+        public async Task OnUpdateJS(int oldIndex, int newIndex, string fromId)
         {
             // invoke the OnUpdate event passing in the oldIndex and the newIndex
-            OnUpdate.InvokeAsync((oldIndex, newIndex, fromId));
+            await OnUpdate.InvokeAsync((oldIndex, newIndex, fromId));
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
