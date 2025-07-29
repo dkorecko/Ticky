@@ -2216,10 +2216,6 @@ input[type="checkbox"].switch:checked:after {
   border-style: var(--tw-border-style);
   border-width: 2px;
 }
-[data-theme=''] .task-card.sortable-chosen {
-  --tw-shadow: 0 25px 50px -12px var(--tw-shadow-color, rgb(0 0 0 / 0.25));
-  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-}
 @property --tw-outline-style {
   syntax: "*";
   inherits: false;
