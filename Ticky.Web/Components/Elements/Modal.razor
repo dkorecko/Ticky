@@ -1,4 +1,4 @@
-﻿@if(_triggeredShow) 
+@if(_triggeredShow) 
 {
 	<div data-active="@_shown.ToString()" class="fixed top-0 left-0 z-10 flex h-screen w-screen items-center justify-center bg-backdrop/0 transition-all ease-in-out data-[active=True]:bg-backdrop/40" @onmousedown="Cancel" @onkeydown="this.OnKey">
 		<div data-active="@_shown.ToString()" class="m-5 flex max-w-[1300px] flex-col divide-y overflow-hidden rounded-lg bg-modal/0 transition-all ease-in-out data-[active=False]:translate-y-[500%] data-[active=True]:bg-modal/100" @onmousedown:stopPropagation=true>
@@ -13,7 +13,7 @@
 				{
 					<section class="flex flex-row justify-end gap-5 px-7 py-5">
 						<button class="bg-cancel-button px-5 py-2 hover:bg-cancel-button-hover" @onclick="Cancel">Cancel</button>
-						<button class='px-5 py-2 @(RedSubmit ? "bg-red-button hover:bg-red-button-hover" : "")' @onclick="Submit">Done</button>
+						<button class='px-5 py-2 @(RedSubmit ? "bg-red-button hover:bg-red-button-hover" : "")' @onclick="Submit">Submit</button>
 					</section>
 				}
 			} else {
