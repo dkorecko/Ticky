@@ -57,7 +57,7 @@
             }
             @if(Card.RepeatInfo is not null)
             {
-                <label class="card-data-point"><i class="fa fa-repeat"></i> @(LongFormRepeat ? $"{Card.RepeatInfo.GetRepeatString()}, next repeat {Card.CalculateNextRepeat(DateTime.Now).ToReadableStringWithTime()}" : string.Empty)</label>
+                <label class="card-data-point"><i class="fa fa-repeat"></i> @(LongFormRepeat ? $"{Card.RepeatInfo.GetRepeatString()}, next repeat {_nextRepeat}" : string.Empty)</label>
             }
         </div>
         <div class="flex">
@@ -93,6 +93,16 @@
 
     [Parameter]
     public EventCallback OnCardUpdated { get; set; }
+
+    private string? _nextRepeat;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if(Card.RepeatInfo is not null)
+            _nextRepeat = Card.CalculateNextRepeat(DateTime.Now).ToReadableStringWithTime();
+    }
 
     private async Task ChangeBlockedStatus()
     {

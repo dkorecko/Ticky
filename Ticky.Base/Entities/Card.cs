@@ -40,7 +40,7 @@ public class Card : AbstractDbEntity, IOrderable, IDeletable
         var finalDate = new DateTime(DateOnly.FromDateTime(startDate.Date), RepeatInfo.Time);
 
         if (
-            (int)RepeatInfo.Type < 100
+            (int)RepeatInfo.Type < (int)RepeatType.EveryXthDay
             && RepeatInfo.Time < TimeOnly.FromDateTime(RepeatInfo.LastRepeat)
         )
         {

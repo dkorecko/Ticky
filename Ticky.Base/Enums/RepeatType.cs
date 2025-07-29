@@ -11,6 +11,7 @@ public enum RepeatType
     [Display(Name = "On specific days of the month (eg. 1st, 15th, ...)")]
     MonthDayNumber = 20,
 
+    // Make sure order is correct, all above this line handle days differently from the ones below
     [Display(Name = "Every x days")]
     EveryXthDay = 100,
 
