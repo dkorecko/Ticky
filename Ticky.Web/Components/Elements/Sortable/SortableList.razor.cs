@@ -33,8 +33,8 @@ namespace Ticky.Web.Components.Elements.Sortable
 
         [Parameter]
         public EventCallback<(
-            int oldIndex,
-            int newIndex,
+            string movedItemId,
+            string? targetItemId,
             string oldColumnId,
             string newColumnId,
             double x,
@@ -42,7 +42,11 @@ namespace Ticky.Web.Components.Elements.Sortable
         )> OnRemove { get; set; }
 
         [Parameter]
-        public EventCallback<(int oldIndex, int newIndex, string columnId)> OnUpdate { get; set; }
+        public EventCallback<(
+            string movedItemId,
+            string? targetItemId,
+            string columnId
+        )> OnUpdate { get; set; }
 
         [Parameter]
         public string? Pull { get; set; }
@@ -69,22 +73,21 @@ namespace Ticky.Web.Components.Elements.Sortable
 
         [JSInvokable]
         public async Task OnRemoveJS(
-            int oldIndex,
-            int newIndex,
+            string movedItemId,
+            string? targetItemId,
             string fromId,
             string toId,
             double x,
             double y
         )
         {
-            await OnRemove.InvokeAsync((oldIndex, newIndex, fromId, toId, x, y));
+            await OnRemove.InvokeAsync((movedItemId, targetItemId, fromId, toId, x, y));
         }
 
         [JSInvokable]
-        public async Task OnUpdateJS(int oldIndex, int newIndex, string fromId)
+        public async Task OnUpdateJS(string movedItemId, string? targetItemId, string fromId)
         {
-            // invoke the OnUpdate event passing in the oldIndex and the newIndex
-            await OnUpdate.InvokeAsync((oldIndex, newIndex, fromId));
+            await OnUpdate.InvokeAsync((movedItemId, targetItemId, fromId));
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
