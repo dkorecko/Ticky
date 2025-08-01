@@ -1,6 +1,6 @@
 export function init(id, group, pull, put, sort, handle, filter, component, forceFallback, direction, animation) {
-
     const DEBUG_MODE = false;
+
     if (DEBUG_MODE) {
         console.log("Init for Id:", id);
     }
@@ -23,6 +23,22 @@ export function init(id, group, pull, put, sort, handle, filter, component, forc
         direction: direction,
         onUpdate: (event) => {
             let customChildNodes = Array.from(event.to.childNodes).filter(node => node.tagName === 'DIV');
+
+            if (customChildNodes.length === 1) {
+                if (DEBUG_MODE)
+                    console.log('ignoring move because moved into the same place')
+                return
+            }
+
+            let movedCard = event.item
+            let movedCardId = movedCard.id
+
+            let cardBelow = customChildNodes[event.newIndex + 1]
+            let cardBelowId = null
+
+            if (cardBelow)
+                cardBelowId = cardBelow.id
+
             if (DEBUG_MODE) {
                 console.log(event)
                 console.log("onUpdate item:");
@@ -32,34 +48,33 @@ export function init(id, group, pull, put, sort, handle, filter, component, forc
                 console.log('event oldIndex: ', event.oldIndex)
                 console.log('event newIndex: ', event.newIndex)
                 console.log('event to childNodes: ', customChildNodes)
-                console.log('insert before: ', customChildNodes[event.oldIndex])
+                console.log('movedCard: ', movedCard)
+                console.log('insert before: ', cardBelow)
+                console.log('movedCardId: ', movedCardId)
+                console.log('insert before Id: ', cardBelowId)
             }
 
-
-            if (customChildNodes.length === 1) {
-                if (DEBUG_MODE)
-                    console.log('ignoring move because moved into the same place')
-                return
-            }
-
-            event.item.remove();
+            event.item.remove()
 
             if (event.oldIndex < event.newIndex)
                 event.to.insertBefore(event.item, customChildNodes[event.oldIndex])
             else
-                event.to.insertBefore(event.item, customChildNodes[event.oldIndex+1])
-
-            // method inserts a child node before an existing child. insertBefore(newNode, referenceNode)
-            // referenceNode - The node before which newNode is inserted
-            //event.to.insertBefore(event.item, event.to.childNodes[event.oldIndex]);
-            let oldIndex = event.oldDraggableIndex;
-            let newIndex = event.newDraggableIndex
-
-            // Notify .NET to update its model and re-render
-             component.invokeMethodAsync('OnUpdateJS', oldIndex, newIndex, event.from.id);
+                event.to.insertBefore(event.item, customChildNodes[event.oldIndex + 1])
+                
+            component.invokeMethodAsync('OnUpdateJS', movedCardId, cardBelowId, event.from.id);
         },
         onRemove: (event) => {
-            let customChildNodes = Array.from(event.from.childNodes).filter(node => node.tagName === 'DIV');
+            let customFromChildNodes = Array.from(event.from.childNodes).filter(node => node.tagName === 'DIV');
+            let customToChildNodes = Array.from(event.to.childNodes).filter(node => node.tagName === 'DIV');
+
+            let movedCard = customToChildNodes[event.newIndex]
+            let cardBelow = customToChildNodes[event.newIndex + 1]
+            let cardBelowId = null
+            let movedCardId = movedCard.id
+
+            if (cardBelow)
+                cardBelowId = cardBelow.id
+
             if (DEBUG_MODE) {
                 console.log(event)
                 console.log("onRemove item:");
@@ -68,20 +83,19 @@ export function init(id, group, pull, put, sort, handle, filter, component, forc
                 console.log('event to: ', event.to)
                 console.log('event oldIndex: ', event.oldIndex)
                 console.log('event newIndex: ', event.newIndex)
-                console.log('event from childNodes: ', customChildNodes)
-                console.log('insert before: ', customChildNodes[event.oldIndex])
+                console.log('event to childNodes: ', customToChildNodes)
+                console.log('moved card: ', movedCard)
+                console.log('card below inserted: ', cardBelow)
+                console.log('moved card ID: ', movedCardId)
+                console.log('card below inserted ID: ', cardBelowId)
             }
-
-            let oldIndex = event.oldDraggableIndex;
-            let newIndex = event.newDraggableIndex;
 
             // Revert the DOM to match the .NET state
             event.item.remove();
 
-            event.from.insertBefore(event.item, customChildNodes[event.oldIndex]);
+            event.from.insertBefore(event.item, customFromChildNodes[event.oldIndex]);
 
-            // Notify .NET to update its model and re-render
-            component.invokeMethodAsync('OnRemoveJS', oldIndex, newIndex, event.from.id, event.to.id, event.originalEvent.clientX / event.originalEvent.view.outerWidth, event.originalEvent.clientY/event.originalEvent.view.outerHeight);
+            component.invokeMethodAsync('OnRemoveJS', movedCardId, cardBelowId, event.from.id, event.to.id, event.originalEvent.clientX / event.originalEvent.view.outerWidth, event.originalEvent.clientY / event.originalEvent.view.outerHeight);
         },
         onMove: (event) => {
             // This event fires continually as you drag.
