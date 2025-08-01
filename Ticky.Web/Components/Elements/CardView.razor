@@ -1,4 +1,4 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+﻿@inject IDbContextFactory<DataContext> _dbContextFactory
 
 <div data-blocked="@Card.Blocked.ToString()" class="task-card" @onclick="() => EditCardModal.Open(Card.Id, Members, Columns)">
     <div class="flex flex-row items-center justify-between gap-2">
@@ -17,7 +17,7 @@
             <i class="fa fa-ellipsis card-button pr-1"></i>
         </Dropdown>
     </div>
-    <label class="cursor-pointer text-xs">
+    <label class="cursor-pointer text-xs break-all">
         @Card.Name
     </label>
     <div class="flex flex-row items-center justify-between gap-3">
