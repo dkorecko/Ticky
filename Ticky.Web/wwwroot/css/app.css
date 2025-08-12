@@ -673,9 +673,6 @@
   .overflow-auto {
     overflow: auto;
   }
-  .overflow-clip {
-    overflow: clip;
-  }
   .overflow-hidden {
     overflow: hidden;
   }
@@ -978,9 +975,6 @@
   }
   .break-all {
     word-break: break-all;
-  }
-  .overflow-ellipsis {
-    text-overflow: ellipsis;
   }
   .text-ellipsis {
     text-overflow: ellipsis;
