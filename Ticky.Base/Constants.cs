@@ -5,6 +5,7 @@ namespace Ticky.Base
         public static bool SMTP_ENABLED = true;
         public static bool FULLY_OFFLINE;
         public static bool DISABLE_USER_SIGNUPS = false;
+        public static string BASE_URL = string.Empty;
 
         public static class CascadingParameters
         {
@@ -28,6 +29,11 @@ namespace Ticky.Base
                 public const string CARD_CODE = "{CARD_CODE}";
                 public const string CARD_TEXT = "{CARD_TEXT}";
                 public const string CARD_SCHEDULED_FOR = "{CARD_SCHEDULED_FOR}";
+                public const string CARD_DESCRIPTION = "{CARD_DESCRIPTION}";
+                public const string CARD_SUBTASKS = "{CARD_SUBTASKS}";
+                public const string CARD_URL = "{CARD_URL}";
+                public const string BASE_URL = "{BASE_URL}";
+                public const string CARD_DEADLINE = "{CARD_DEADLINE}";
             }
         }
 

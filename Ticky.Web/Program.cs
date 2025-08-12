@@ -69,6 +69,9 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 Constants.FULLY_OFFLINE = builder.Configuration.GetValue("FULLY_OFFLINE", true);
 Constants.DISABLE_USER_SIGNUPS = builder.Configuration.GetValue("DISABLE_USER_SIGNUPS", false);
 Constants.SMTP_ENABLED = builder.Configuration.GetValue("SMTP_ENABLED", false);
+Constants.BASE_URL = builder
+    .Configuration.GetValue("BASE_URL", "http://localhost:4088")
+    .TrimEnd('/');
 
 var mailKitOptions = builder.Configuration.GetSection("Email").Get<MailKitOptions>();
 
