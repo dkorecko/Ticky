@@ -14,7 +14,7 @@
                                 { "Delete task", () => DeleteCardModal?.OpenDialog(Card) },
                                 { $"{(Card.Blocked ? "Unmark" : "Mark")} as blocked", async () => await ChangeBlockedStatus() }
                             }'>
-            <i class="fa fa-ellipsis card-button pr-1"></i>
+            <i class="fa fa-ellipsis card-button pr-1" title="Card options"></i>
         </Dropdown>
     </div>
     <label class="cursor-pointer text-xs break-all">
@@ -25,39 +25,39 @@
             @if (Card.Deadline is not null)
             {
                 DeadlineColor color = Card.Column.Finished ? DeadlineColor.Green : (DateTime.Compare(Card.Deadline.Value, DateTime.Now) < 0 ? DeadlineColor.Red : (Card.Deadline.Value.Date == DateTime.Today.Date ? DeadlineColor.Yellow : DeadlineColor.Default));
-                <label data-coloring="@color" class="card-data-point rounded-lg px-1 py-1 text-white capitalize data-[coloring=Default]:text-card-data-points data-[coloring=Default]:mx-[-0.25rem] data-[coloring=Green]:bg-green-500 data-[coloring=Yellow]:bg-yellow-500 data-[coloring=Red]:bg-red-500"><i class="fa fa-clock"></i> @Card.Deadline.Value.ToShortString()</label>
+                <label data-coloring="@color" class="card-data-point rounded-lg px-1 py-1 text-white capitalize data-[coloring=Default]:text-card-data-points data-[coloring=Default]:mx-[-0.25rem] data-[coloring=Green]:bg-green-500 data-[coloring=Yellow]:bg-yellow-500 data-[coloring=Red]:bg-red-500"><i class="fa fa-clock" title="Deadline"></i> @Card.Deadline.Value.ToShortString()</label>
             }
-            <label class="card-data-point"><i class="fa fa-hashtag"></i> @(BoardCode)-@Card.Number</label>
+            <label class="card-data-point"><i class="fa fa-hashtag" title="Card ID"></i> @(BoardCode)-@Card.Number</label>
             @if (Card.Attachments.Any())
             {
-                <label class="card-data-point"><i class="fa fa-paperclip"></i> @Card.Attachments.Count</label>
+                <label class="card-data-point"><i class="fa fa-paperclip" title="Attachments"></i> @Card.Attachments.Count</label>
             }
             @if (Card.Subtasks.Any())
             {
-                <label class="card-data-point"><i class="fa fa-check"></i> @Card.Subtasks.Where(x => x.Completed).Count()/@Card.Subtasks.Count</label>
+                <label class="card-data-point"><i class="fa fa-check" title="Subtasks"></i> @Card.Subtasks.Where(x => x.Completed).Count()/@Card.Subtasks.Count</label>
             }
             @{
                 var trackedTime = new TimeSpan(Card.TimeRecords.Select(x => ((x.EndedAt ?? DateTime.Now) - x.StartedAt).Ticks).Sum()).ToElapsedString(true);
             }
             @if (!string.IsNullOrWhiteSpace(trackedTime))
             {
-                <label class="card-data-point"><i class="fa fa-stopwatch"></i> @trackedTime</label>
+                <label class="card-data-point"><i class="fa fa-stopwatch" title="Time tracked"></i> @trackedTime</label>
             }
             @if(Card.Blocked)
             {
-                <label class="card-data-point text-card-blocked-text"><i class="fa fa-flag"></i> Blocked</label>
+                <label class="card-data-point text-card-blocked-text"><i class="fa fa-flag" title="Blocked"></i> Blocked</label>
             }
             @if (Card.SnoozedUntil is not null)
             {
-                <label class="card-data-point"><i class="fa fa-moon"></i> @(Card.SnoozedUntil.Value.ToShortString())</label>
+                <label class="card-data-point"><i class="fa fa-moon" title="Snoozed until"></i> @(Card.SnoozedUntil.Value.ToShortString())</label>
             }
             @if (!string.IsNullOrWhiteSpace(Card.Description))
             {
-                <label class="card-data-point"><i class="fa fa-align-left"></i></label>
+                <label class="card-data-point"><i class="fa fa-align-left" title="Has description"></i></label>
             }
             @if(Card.RepeatInfo is not null)
             {
-                <label class="card-data-point"><i class="fa fa-repeat"></i> @(LongFormRepeat ? $"{Card.RepeatInfo.GetRepeatString()}, next repeat {_nextRepeat}" : string.Empty)</label>
+                <label class="card-data-point"><i class="fa fa-repeat" title="Repeating task"></i> @(LongFormRepeat ? $"{Card.RepeatInfo.GetRepeatString()}, next repeat {_nextRepeat}" : string.Empty)</label>
             }
         </div>
         <div class="flex">

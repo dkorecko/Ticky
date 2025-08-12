@@ -61,7 +61,7 @@
             </div>
         </div>
         <div class="ml-auto flex flex-row items-center gap-5">
-            <span class="fa fa-circle-half-stroke cursor-pointer text-2xl text-nav-link transition-all hover:text-nav-link-hover" onclick="switchTheme()"></span>
+            <span class="fa fa-circle-half-stroke cursor-pointer text-2xl text-nav-link transition-all hover:text-nav-link-hover" onclick="switchTheme()" title="Switch theme"></span>
             <NavLink href="/settings">
                 <div class="avatar avatar-border" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
             </NavLink>
@@ -78,15 +78,15 @@
         @if (_user?.LastVisitedBoardId is not null)
         {
             <NavLink class="nav-link" Match="NavLinkMatch.All" href=@($"/boards/{_user?.LastVisitedBoardId}")>
-                <span class="fa fa-briefcase"></span>
+                <span class="fa fa-briefcase" title="Recent board"></span>
             </NavLink>
         }
         <div class="nav-link" @onclick="() => _searchModal?.Open()">
-            <span class="fa fa-magnifying-glass"></span>
+            <span class="fa fa-magnifying-glass" title="Search"></span>
         </div>
         <AuthorizeView Policy="@Constants.Policies.RequireAdmin">
             <NavLink class="nav-link" href="/admin">
-                <span class="fa fa-users"></span>
+                <span class="fa fa-users" title="Admin panel"></span>
             </NavLink>
         </AuthorizeView>
 

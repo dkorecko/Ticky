@@ -76,8 +76,8 @@
                                 <div class="flex flex-row items-center">
                                     <LabelView Label="label" />
                                     <label class="ml-2 text-xs">Used on @label.OnCards.Count cards</label>
-                                    <i class="fa fa-pencil edit-icon ml-2" @onclick="() => _editLabelModal?.Open(_board, label)"></i>
-                                    <i class="fa fa-trash-can edit-icon hover:text-red-button-hover" @onclick="() => _deleteLabelModal!.OpenDialog(label)"></i>
+                                    <i class="fa fa-pencil edit-icon ml-2" @onclick="() => _editLabelModal?.Open(_board, label)" title="Edit label"></i>
+                                    <i class="fa fa-trash-can edit-icon hover:text-red-button-hover" @onclick="() => _deleteLabelModal!.OpenDialog(label)" title="Delete label"></i>
                                 </div>
                             }
                         </div>
