@@ -150,20 +150,20 @@
                     {
                         <div class="form-group">
                             <Name For="() => _credentialsModel.OldPassword" />
-                            <InputText type="password" autocomplete="current-password" autocapitalize="off" class="form-control" @bind-Value="_credentialsModel.OldPassword"/>
+                            <InputText type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" class="form-control" @bind-Value="_credentialsModel.OldPassword"/>
                             <ValidationMessage For="() => _credentialsModel.OldPassword" />
                         </div>
                     }
 
                     <div class="form-group">
                         <Name For="() => _credentialsModel.NewPassword" />
-                        <InputText type="password" autocomplete="new-password" autocapitalize="off" class="form-control" @bind-Value="_credentialsModel.NewPassword"/>
+                        <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="form-control" @bind-Value="_credentialsModel.NewPassword"/>
                         <ValidationMessage For="() => _credentialsModel.NewPassword" />
                     </div>
 
                     <div class="form-group">
                         <Name For="() => _credentialsModel.RepeatPassword" />
-                        <InputText type="password" autocomplete="new-password" autocapitalize="off" class="form-control" @bind-Value="_credentialsModel.RepeatPassword"/>
+                        <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="form-control" @bind-Value="_credentialsModel.RepeatPassword"/>
                         <ValidationMessage For="() => _credentialsModel.RepeatPassword" />
                     </div>
 
