@@ -67,10 +67,7 @@ namespace Ticky.Internal.Services
                         Constants.Emails.Mappings.CARD_SUBTASKS,
                         GenerateSubtasksHtml(reminder.Card.Subtasks)
                     },
-                    {
-                        Constants.Emails.Mappings.CARD_URL,
-                        $"{Constants.BASE_URL.TrimEnd('/')}{cardPath}"
-                    },
+                    { Constants.Emails.Mappings.CARD_URL, $"{Constants.BASE_URL}{cardPath}" },
                     {
                         Constants.Emails.Mappings.CARD_DEADLINE,
                         reminder.Card.Deadline.HasValue
