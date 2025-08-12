@@ -33,6 +33,7 @@ namespace Ticky.Base
                 public const string CARD_SUBTASKS = "{CARD_SUBTASKS}";
                 public const string CARD_URL = "{CARD_URL}";
                 public const string BASE_URL = "{BASE_URL}";
+                public const string CARD_DEADLINE = "{CARD_DEADLINE}";
             }
         }
 

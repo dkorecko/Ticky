@@ -60,7 +60,7 @@ namespace Ticky.Internal.Services
                     {
                         Constants.Emails.Mappings.CARD_DESCRIPTION,
                         string.IsNullOrWhiteSpace(reminder.Card.Description)
-                            ? "No description provided."
+                            ? "No description set."
                             : reminder.Card.Description
                     },
                     {
@@ -70,6 +70,12 @@ namespace Ticky.Internal.Services
                     {
                         Constants.Emails.Mappings.CARD_URL,
                         $"{Constants.BASE_URL.TrimEnd('/')}{cardPath}"
+                    },
+                    {
+                        Constants.Emails.Mappings.CARD_DEADLINE,
+                        reminder.Card.Deadline.HasValue
+                            ? reminder.Card.Deadline.Value.ToReadableStringWithTime()
+                            : "No deadline set."
                     }
                 }
             );
