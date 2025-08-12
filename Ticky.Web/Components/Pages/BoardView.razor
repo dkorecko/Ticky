@@ -43,7 +43,7 @@
                     }
                     @if (IsAdmin())
                     {
-                        <div class="avatar add" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)">
+                        <div class="avatar add" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
                             <i class="fa fa-plus text-sm"></i>
                         </div>
                     }
@@ -51,8 +51,8 @@
 
                 @if (IsAdmin())
                 {
-                    <a href="/boards/settings/@_board.Id"><i class="fa fa-gear icon-button"></i></a>
-                    <i class="fa fa-chart-simple icon-button" @onclick="SwitchStatsDisplay"></i>
+                    <a href="/boards/settings/@_board.Id"><i class="fa fa-gear icon-button" title="Board settings"></i></a>
+                    <i class="fa fa-chart-simple icon-button" @onclick="SwitchStatsDisplay" title="Toggle statistics"></i>
                 }
         }
     </header>
@@ -91,14 +91,14 @@
                                 @if (IsAdmin())
                                 {
                                     <div class="flex flex-row items-center gap-2">
-                                        <i class="fa fa-up-down-left-right drag-toggle icon-button cursor-move text-icon"></i>
+                                        <i class="fa fa-up-down-left-right drag-toggle icon-button cursor-move text-icon" title="Drag to reorder column"></i>
 
                                         <Dropdown Actions='new() {
                                             { "Edit column", () => _editColumnModal?.Open(column.Id) },
                                             { "Delete column", async () => await OpenDeleteColumnDialog(column) },
                                             { $"{(column.Collapsed ? "Expand" : "Collapse")} column", async () => await ExpandOrCollapseColumn(column.Id) },
                                         }'>
-                                            <i class="fa fa-ellipsis icon-button pr-1"></i>
+                                            <i class="fa fa-ellipsis icon-button pr-1" title="Column options"></i>
                                         </Dropdown>
                                     </div>
                                 }
@@ -121,12 +121,12 @@
                                     <div data-active=@((_adding == column.Id).ToString()) @onclick="() => StartAddingToColumn(column.Id)" 
                                         class="add rounded-lg select-none p-5 h-min w-full to-task-card">
                                         @if(_adding != column.Id) {
-                                            <i class="fa fa-plus text-3xl"></i>
+                                            <i class="fa fa-plus text-3xl" title="Add new card"></i>
                                             <label>New card</label>
                                         } else {
                                             <div class="flex w-full flex-row items-center justify-between text-sm font-semibold">
                                                 <label>Create new card</label>
-                                                <i class="fa fa-xmark text-icon" @onclick="() => _adding = -1" @onclick:stopPropagation=true></i>
+                                                <i class="fa fa-xmark text-icon" @onclick="() => _adding = -1" @onclick:stopPropagation=true title="Cancel"></i>
                                             </div>
 
                                             <textarea class="h-16 w-full rounded-lg bg-card-bg p-2 text-start text-xs outline-1 outline-typing-outline" 
@@ -154,7 +154,7 @@
                 @if (IsAdmin())
                 {
                     <div class="add mt-1 mr-12 h-[75vh] min-w-64 rounded-lg px-8" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id)+1 : 0);">
-                        <i class="fa fa-plus text-3xl"></i>
+                        <i class="fa fa-plus text-3xl" title="Add new column"></i>
                         <label>New column</label>
                     </div>
                 }
@@ -165,7 +165,7 @@
                 <section class="flex w-screen flex-col items-center gap-6 px-2 py-6 md:w-80">
                     <div class="flex w-full flex-row items-center justify-between">
                         <h1>Progress</h1>
-                        <i class="fa fa-xmark icon-button" @onclick=SwitchStatsDisplay></i>
+                        <i class="fa fa-xmark icon-button" @onclick=SwitchStatsDisplay title="Close statistics"></i>
                     </div>
                     <div class="flex w-full flex-col gap-8">
                         <!-- Side section -->

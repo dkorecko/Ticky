@@ -37,13 +37,13 @@
                             }'>
                         <div class='flex flex-row items-center justify-between pr-2 pl-5 transition-all ease-in-out @(!membership.UserId.Equals(_user.Id) ? "bg-full-dropdown hover:bg-full-dropdown-hover cursor-pointer" : "bg-full-dropdown-disabled cursor-not-allowed")'>
                                     @(membership.IsAdmin ? "Admin" : "Member")
-                            <i class='fa fa-chevron-down edit-icon @(membership.UserId.Equals(_user.Id) ? "!text-disabled-icon !hover:text-disabled-icon !cursor-not-allowed" : string.Empty)'></i>
+                            <i class='fa fa-chevron-down edit-icon @(membership.UserId.Equals(_user.Id) ? "!text-disabled-icon !hover:text-disabled-icon !cursor-not-allowed" : string.Empty)' title="Change role"></i>
                                 </div>
                             </Dropdown>
                         </td>
                         <td>
                             <i @onclick="() => RemoveUser(membership.UserId)"
-                       class='fa fa-trash edit-icon @(membership.UserId.Equals(_user.Id) ? "!text-disabled-icon !hover:text-disabled-icon !cursor-not-allowed" : string.Empty)'>
+                       class='fa fa-trash edit-icon @(membership.UserId.Equals(_user.Id) ? "!text-disabled-icon !hover:text-disabled-icon !cursor-not-allowed" : string.Empty)' title="Remove member">
                             </i>
                         </td>
                     </tr>

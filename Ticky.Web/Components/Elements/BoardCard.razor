@@ -5,14 +5,14 @@
 
 <div class="board-card" @onclick='GoToBoard'>
     <div class="flex w-full flex-row justify-end gap-2 align-middle">
-        <i class='@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "fa-solid" : "fa-regular") fa-star card-button' @onclick='MakeFavorite' @onclick:stopPropagation="true"></i>
+        <i class='@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "fa-solid" : "fa-regular") fa-star card-button' @onclick='MakeFavorite' @onclick:stopPropagation="true" title="@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "Remove from favorites" : "Add to favorites")"></i>
         @if (IsAdmin)
         {
             <Dropdown Actions='new() {
                         { "Edit board", () => _editBoardModal?.Open(Board.Id) },
                         { "Delete board", async () => await DeleteConfirmationDialog.OpenDialog(Board) }
                     }'>
-                <i class="fa fa-ellipsis card-button"></i>
+                <i class="fa fa-ellipsis card-button" title="Board options"></i>
             </Dropdown>
         }
     </div>
@@ -28,10 +28,10 @@
                 var lastVisit = Board.LastVisits.FirstOrDefault(x => x.UserId.Equals(_user.Id));
                 var trackedTime = new TimeSpan(Board.Columns.SelectMany(x => x.Cards).SelectMany(x => x.TimeRecords).Select(x => ((x.EndedAt ?? DateTime.Now) - x.StartedAt).Ticks).Sum()).ToElapsedString(true);
             }
-            <label class="board-card-data-point"><i class="fa-regular fa-calendar"></i> @(lastVisit is null ? "never" : lastVisit.VisitTime.ToElapsedString())</label>
+            <label class="board-card-data-point"><i class="fa-regular fa-calendar" title="Last visited"></i> @(lastVisit is null ? "never" : lastVisit.VisitTime.ToElapsedString())</label>
             @if (!string.IsNullOrWhiteSpace(trackedTime))
             {
-                <label class="board-card-data-point"><i class="fa-regular fa-hourglass"></i> @trackedTime</label>
+                <label class="board-card-data-point"><i class="fa-regular fa-hourglass" title="Total time tracked"></i> @trackedTime</label>
             }
         </div>
             <div class="flex flex-row gap-1">

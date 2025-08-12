@@ -11,11 +11,11 @@
             <div class="flex flex-col items-center gap-1">
                 @foreach(var commonProjectMembership in _targetUser.ProjectMemberships.Where(x => _user.ProjectMemberships.Any(userMembership => userMembership.ProjectId.Equals(x.ProjectId))))
                 {
-                    <label class="text-sm"><i class="fa fa-building icon"></i>@(commonProjectMembership.IsAdmin ? "Admin" : "Member") of project @commonProjectMembership.Project.Name</label>
+                    <label class="text-sm"><i class="fa fa-building icon" title="Project membership"></i>@(commonProjectMembership.IsAdmin ? "Admin" : "Member") of project @commonProjectMembership.Project.Name</label>
                 }
                 @foreach (var commonBoardMembership in _targetUser.BoardMemberships.Where(x => _user.BoardMemberships.Any(userMembership => userMembership.BoardId.Equals(x.BoardId)) || _user.ProjectMemberships.Any(userMembership => userMembership.ProjectId.Equals(x.Board.ProjectId))))
                 {
-                    <label class="text-sm"><i class="fa fa-building icon"></i>@(commonBoardMembership.IsAdmin ? "Admin" : "Member") of board @commonBoardMembership.Board.Name</label>
+                    <label class="text-sm"><i class="fa fa-building icon" title="Board membership"></i>@(commonBoardMembership.IsAdmin ? "Admin" : "Member") of board @commonBoardMembership.Board.Name</label>
                 }
             </div>
         </div>

@@ -20,7 +20,7 @@
             </header>
             <label class="opacity-60">On this home page you can create a new board/project or open an existing one.</label>
         </div>
-        <button class="flex flex-row items-center justify-between gap-2 px-10 py-2 shadow-lg" @onclick="() => _createProjectModal?.Open()"><i class="fa fa-plus"></i>New project</button>
+        <button class="flex flex-row items-center justify-between gap-2 px-10 py-2 shadow-lg" @onclick="() => _createProjectModal?.Open()"><i class="fa fa-plus" title="Create new project"></i>New project</button>
     </div>
 
     @if (_projects is not null && _remainingBoards is not null)
@@ -37,7 +37,7 @@
                                 { "Edit project", () => _editProjectModal?.Open(project.Id)},
                                 { "Delete project", () => _deleteProjectModal?.OpenDialog(project) }
                             }'>
-                                <i class="fa fa-ellipsis icon-button"></i>
+                                <i class="fa fa-ellipsis icon-button" title="Project options"></i>
                             </Dropdown>
                         }
                     </div>
@@ -54,7 +54,7 @@
                         }
                         @if (project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin)
                         {
-                            <div class="avatar add" @onclick="() => _editProjectMembershipsModal?.Open(project.Id)">
+                            <div class="avatar add" @onclick="() => _editProjectMembershipsModal?.Open(project.Id)" title="Add member">
                                 <i class="fa fa-plus text-sm"></i>
                             </div>
                         }
@@ -67,7 +67,7 @@
                     }
                     @if(project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin) 
                     {
-                        <div class="board-card-create" @onclick="() => _createBoardModal?.Open(project.Id)">
+                        <div class="board-card-create" @onclick="() => _createBoardModal?.Open(project.Id)" title="Create new board">
                             <i class="fa fa-plus text-3xl"></i>
                             New board
                         </div>
