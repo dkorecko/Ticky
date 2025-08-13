@@ -12,8 +12,8 @@ public class SnoozeHostedService : AbstractHostedService<SnoozeHostedService>
     protected override async void OnRun()
     {
         using var scope = ServiceScopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetService<DataContext>()!;
-        var logger = scope.ServiceProvider.GetService<ILogger<SnoozeHostedService>>()!;
+        var db = scope.ServiceProvider.GetRequiredService<DataContext>()!;
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<SnoozeHostedService>>()!;
 
         var expiredSnoozes = await db
             .Cards.Where(x => x.SnoozedUntil != null && x.SnoozedUntil <= DateTime.Now)
