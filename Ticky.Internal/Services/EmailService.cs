@@ -97,23 +97,55 @@ namespace Ticky.Internal.Services
             );
         }
 
-        public async Task SendDeadlineReminderEmailAsync(string emailAddress, Card card) =>
+        public async Task SendDeadlineReminderEmailAsync(string emailAddress, Card card)
+        {
+            var cardCode = $"{card.Column.Board.Code}-{card.Number}";
+            var cardPath = $"/boards/{card.Column.BoardId}/{card.Id}";
+
             await SendDevityEmailAsync(
                 new DevityEmail(
                     emailAddress,
-                    $"Deadline today for task {card.Column.Board.Code}-{card.Number}",
+                    $"Deadline today: {card.Name} {cardCode}",
                     new DevityTemplate(DEADLINE_REMINDER)
                         .AddKey(Constants.Emails.Mappings.CARD_TEXT, card.Name)
                         .AddKey(
                             Constants.Emails.Mappings.CARD_SCHEDULED_FOR,
                             card!.Deadline!.Value.ToReadableStringWithTime()
                         )
+                        .AddKey(Constants.Emails.Mappings.CARD_CODE, cardCode)
+                        .AddKey(Constants.Emails.Mappings.CARD_DESCRIPTION, card.Description)
                         .AddKey(
-                            Constants.Emails.Mappings.CARD_CODE,
-                            $"{card.Column.Board.Code}-{card.Number}"
+                            Constants.Emails.Mappings.CARD_URL,
+                            $"{Constants.BASE_URL}{cardPath}"
+                        )
+                        .AddCondition(
+                            Constants.Emails.Mappings.CARD_DESCRIPTION_SECTION,
+                            !string.IsNullOrWhiteSpace(card.Description)
+                        )
+                        .AddCondition(
+                            Constants.Emails.Mappings.CARD_SUBTASKS_SECTION,
+                            card.Subtasks.Any()
+                        )
+                        .AddLoop(
+                            Constants.Emails.Mappings.CARD_SUBTASKS,
+                            new DevityTemplateLoop<Subtask>(card.Subtasks)
+                                .AddKey(Constants.Emails.Mappings.SUBTASK_TEXT, s => s.Text)
+                                .AddKey(
+                                    Constants.Emails.Mappings.SUBTASK_ICON,
+                                    s => s.Completed ? "✓" : "○"
+                                )
+                                .AddKey(
+                                    Constants.Emails.Mappings.SUBTASK_ICON_COLOR,
+                                    s => s.Completed ? "#4CAF50" : "#F44336"
+                                )
+                                .AddKey(
+                                    Constants.Emails.Mappings.SUBTASK_COMPLETED_CLASS,
+                                    s => s.Completed ? " subtask-completed" : string.Empty
+                                )
                         )
                 )
             );
+        }
 
         public async Task SendForgottenPasswordCodeEmailAsync(string emailAddress, Code code) =>
             await SendDevityEmailAsync(

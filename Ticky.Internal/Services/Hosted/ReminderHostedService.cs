@@ -67,7 +67,6 @@ public class ReminderHostedService : AbstractHostedService<ReminderHostedService
                 x.Deadline != null
                 && !x.DeadlineProcessed
                 && x.Deadline.Value.Date.Equals(DateTime.Today.Date)
-                && DateTime.Now > x.Deadline.Value
             )
             .ToListAsync();
 
