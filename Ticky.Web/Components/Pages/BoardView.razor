@@ -130,9 +130,9 @@
                                             </div>
 
                                             <textarea class="h-16 w-full rounded-lg bg-card-bg p-2 text-start text-xs outline-1 outline-typing-outline" 
-                                                           value="@_createTaskModel.Text"
+                                                           @bind="CreateTaskText"
+                                                           @bind:event="oninput"
                                                            @ref=_textElement
-                                                           @oninput='OnTaskTextChanged'
                                                            @onkeydown='async (e) => {
                                                                if(!e.Key.Contains("Enter"))
                                                                     return;
@@ -228,7 +228,6 @@
     private ElementReference? _textElement;
 
     private CreateCardModel _createTaskModel = new();
-    private bool _justAdded;
     private int _adding;
     private BoardPreferencesModel _preferences = new();
     private int? _initialCardId;
@@ -625,7 +624,6 @@
             await db.SaveChangesAsync();
         }
 
-        _justAdded = true;
         _createTaskModel = new();
 
         await OnTaskCreated();
@@ -651,20 +649,10 @@
         return boardMembership.IsAdmin;
     }
 
-    private void OnTaskTextChanged(ChangeEventArgs e)
+    private string CreateTaskText
     {
-        if(_justAdded)
-        {
-            _justAdded = false;
-            return;
-        }
-
-        if (e.Value?.ToString() is not string str)
-            return;
-
-        _createTaskModel.Text = str.ReplaceLineEndings(" ");
-
-        StateHasChanged();
+        get => _createTaskModel.Text ?? string.Empty;
+        set => _createTaskModel.Text = value?.ReplaceLineEndings(" ") ?? string.Empty;
     }
 
     private async Task OpenDeleteColumnDialog(Column column)
