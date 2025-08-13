@@ -110,7 +110,7 @@ namespace Ticky.Internal.Services
                         .AddKey(Constants.Emails.Mappings.CARD_TEXT, card.Name)
                         .AddKey(
                             Constants.Emails.Mappings.CARD_SCHEDULED_FOR,
-                            card!.Deadline!.Value.ToReadableStringWithTime()
+                            card.Deadline!.Value.ToReadableStringWithTime()
                         )
                         .AddKey(Constants.Emails.Mappings.CARD_CODE, cardCode)
                         .AddKey(Constants.Emails.Mappings.CARD_DESCRIPTION, card.Description)
@@ -163,7 +163,7 @@ namespace Ticky.Internal.Services
         {
             if (!Constants.SMTP_ENABLED)
             {
-                logger.LogWarning("SMTP disabled, could not send e-mail.");
+                logger.LogInformation("SMTP disabled, could not send e-mail.");
                 return;
             }
 

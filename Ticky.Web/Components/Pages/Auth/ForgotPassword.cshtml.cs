@@ -4,7 +4,7 @@ public class ForgotPasswordModel : PageModel
 {
     private readonly DataContext _dataContext;
     private readonly CodeService _codeService;
-    private readonly EmailService _mailService;
+    private readonly EmailService _emailService;
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -12,12 +12,12 @@ public class ForgotPasswordModel : PageModel
     public ForgotPasswordModel(
         DataContext dataContext,
         CodeService codeService,
-        EmailService mailService
+        EmailService emailService
     )
     {
         _dataContext = dataContext;
         _codeService = codeService;
-        _mailService = mailService;
+        _emailService = emailService;
     }
 
     public IActionResult OnGet()
@@ -35,7 +35,7 @@ public class ForgotPasswordModel : PageModel
 
             if (targetUser is not null)
             {
-                await _mailService.SendForgottenPasswordCodeEmailAsync(
+                await _emailService.SendForgottenPasswordCodeEmailAsync(
                     Input.EmailAddress,
                     await _codeService.CreateCodeAsync(targetUser, CodePurpose.ForgottenPassword)
                 );

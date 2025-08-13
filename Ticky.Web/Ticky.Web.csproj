@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Devity.Blazor" Version="2025.5.7.2024" />
-    <PackageReference Include="Devity.Extensions" Version="2025.8.13.1257" />
+    <PackageReference Include="Devity.Extensions" Version="2025.8.13.2012" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
       <PrivateAssets>all</PrivateAssets>

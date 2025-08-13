@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Devity.Extensions" Version="2025.8.13.1257" />
-    <PackageReference Include="Devity.Mailing" Version="2025.8.13.1257" />
+    <PackageReference Include="Devity.Extensions" Version="2025.8.13.2012" />
+    <PackageReference Include="Devity.Mailing" Version="2025.8.13.2012" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="9.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
