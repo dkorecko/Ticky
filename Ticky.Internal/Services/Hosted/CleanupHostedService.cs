@@ -15,7 +15,7 @@ public class CleanupHostedService : AbstractHostedService<CleanupHostedService>
     private async Task CleanCodes()
     {
         using var scope = ServiceScopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetService<DataContext>()!;
+        var db = scope.ServiceProvider.GetRequiredService<DataContext>()!;
 
         var codesForDeletion = await db
             .Codes.Include(x => x.User)
@@ -48,7 +48,7 @@ public class CleanupHostedService : AbstractHostedService<CleanupHostedService>
     private async Task DeleteUnusedProfilePictures()
     {
         using var scope = ServiceScopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetService<DataContext>()!;
+        var db = scope.ServiceProvider.GetRequiredService<DataContext>()!;
         var allProfilePictureNames = await db
             .Users.Select(x => x.ProfilePictureFileName)
             .Where(x => x != null)
@@ -82,7 +82,7 @@ public class CleanupHostedService : AbstractHostedService<CleanupHostedService>
     private async Task DeleteUnlinkedAttachments()
     {
         using var scope = ServiceScopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetService<DataContext>()!;
+        var db = scope.ServiceProvider.GetRequiredService<DataContext>()!;
         var allFileNames = await db.Attachments.Select(x => x.FileName).ToListAsync();
 
         var folderPath = Constants.SAVE_UPLOADED_FILES_PATH;

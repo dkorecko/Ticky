@@ -12,9 +12,10 @@ public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
     protected override async void OnRun()
     {
         using var scope = ServiceScopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetService<DataContext>()!;
-        var logger = scope.ServiceProvider.GetService<ILogger<RepeatHostedService>>()!;
-        var cardNumberingService = scope.ServiceProvider.GetService<CardNumberingService>()!;
+        var db = scope.ServiceProvider.GetRequiredService<DataContext>()!;
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<RepeatHostedService>>()!;
+        var cardNumberingService =
+            scope.ServiceProvider.GetRequiredService<CardNumberingService>()!;
 
         var allRepeatCards = await db
             .Cards.Include(x => x.Column)

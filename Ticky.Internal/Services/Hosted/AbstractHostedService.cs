@@ -25,7 +25,9 @@ public abstract class AbstractHostedService<T> : IHostedService
         _untilStart = untilStart;
         _frequency = frequency;
         _timer = new(DoWork, null, untilStart, frequency);
-        Logger = ServiceScopeFactory.CreateScope().ServiceProvider.GetService<ILogger<T>>()!;
+        Logger = ServiceScopeFactory
+            .CreateScope()
+            .ServiceProvider.GetRequiredService<ILogger<T>>()!;
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
