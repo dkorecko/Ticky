@@ -1,239 +1,262 @@
-﻿<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Reminder: {CARD_CODE}</title>
-        <style>
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-                line-height: 1.5;
-                color: #374151;
-                margin: 0;
-                padding: 20px;
-                background-color: #f1f5f9;
-            }
-            .container {
-                background-color: white;
-                border-radius: 12px;
-                padding: 32px;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-                border: 1px solid #e2e8f0;
-                max-width: 420px;
-                margin: 0 auto;
-            }
-            .header {
-                text-align: center;
-                margin-bottom: 32px;
-                padding-bottom: 24px;
-                border-bottom: 1px solid #e2e8f0;
-            }
-            .ticky-logo {
-                font-size: 28px;
-                font-weight: 700;
-                color: #3b82f6;
-                margin-bottom: 8px;
-            }
-            .card-code {
-                display: inline-block;
-                background-color: #dbeafe;
-                color: #1e40af;
-                padding: 6px 12px;
-                border-radius: 6px;
-                font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-                font-weight: 600;
-                font-size: 14px;
-                margin-bottom: 12px;
-            }
-            .card-title {
-                font-size: 22px;
-                font-weight: 600;
-                margin: 0;
-                color: #1f2937;
-            }
-            .reminder-section {
-                background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-                border: 1px solid #f59e0b;
-                border-radius: 8px;
-                padding: 20px;
-                margin: 24px 0;
-                text-align: center;
-            }
-            .reminder-icon {
-                font-size: 24px;
-                margin-bottom: 8px;
-            }
-            .reminder-text {
-                font-weight: 600;
-                color: #92400e;
-                margin: 0;
-            }
-            .content-section {
-                background-color: #f8fafc;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                padding: 20px;
-                margin: 20px 0;
-            }
-            .section-title {
-                font-size: 16px;
-                font-weight: 600;
-                color: #374151;
-                margin: 0 0 12px 0;
-                display: flex;
-                align-items: center;
-            }
-            .section-title span {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 20px;
-                height: 20px;
-                font-size: 16px;
-                line-height: 1;
-                margin-right: 4px;
-            }
-            .description-text {
-                color: #6b7280;
-                margin: 0;
-                line-height: 1.6;
-            }
-            .subtasks-list {
-                margin: 0;
-                padding-left: 0;
-                list-style: none;
-            }
-            .subtasks-list .subtask-item {
-                margin-bottom: 4px;
-            }
-            .subtasks-list .subtask-item:last-child {
-                margin-bottom: 0;
-            }
-            .subtask-item {
-                display: flex;
-                align-items: center;
-                padding: 10px 0;
-                border-bottom: 1px solid #e5e7eb;
-            }
-            .subtask-item span:first-child {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 20px;
-                height: 20px;
-                font-size: 14px;
-                line-height: 1;
-                flex-shrink: 0;
-                margin-right: 4px;
-            }
-            .subtask-item:last-child {
-                border-bottom: none;
-            }
-            .subtask-completed {
-                text-decoration: line-through;
-                color: #9ca3af;
-            }
-            .cta-section {
-                text-align: center;
-                margin: 32px 0;
-            }
-            .cta-button {
-                display: inline-block;
-                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                color: #ffffff !important;
-                padding: 14px 28px;
-                text-decoration: none;
-                border-radius: 8px;
-                font-weight: 600;
-                font-size: 16px;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                transition: all 0.2s;
-                border: 2px solid #1e40af;
-            }
-            .cta-button:hover {
-                background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-                transform: translateY(-1px);
-                box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15);
-                color: #ffffff !important;
-            }
-            .footer {
-                margin-top: 32px;
-                padding-top: 24px;
-                border-top: 1px solid #e2e8f0;
-                font-size: 14px;
-                color: #6b7280;
-                text-align: center;
-            }
-            .footer p {
-                margin: 8px 0;
-            }
-            .tip-box {
-                background-color: #eff6ff;
-                border: 1px solid #bfdbfe;
-                border-radius: 6px;
-                padding: 12px;
-                margin: 16px 0;
-            }
-            
-            @media screen and (max-width: 400px) {
-                body {
-                    padding: 16px;
-                }
-                .container {
-                    padding: 24px;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <div class="ticky-logo">Ticky</div>
-                <div class="card-code">{CARD_CODE}</div>
-                <h1 class="card-title">{CARD_TEXT}</h1>
-            </div>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reminder: {CARD_CODE}</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        line-height: 1.5;
+        color: #374151;
+        margin: 0;
+        padding: 20px;
+        background-color: #f1f5f9;
+      }
+      .container {
+        background-color: white;
+        border-radius: 12px;
+        padding: 32px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e2e8f0;
+        max-width: 420px;
+        margin: 0 auto;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 32px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .card-code {
+        display: inline-block;
+        background-color: #dbeafe;
+        color: #1e40af;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+          "Courier New", monospace;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 12px;
+      }
+      .card-title {
+        font-size: 22px;
+        font-weight: 600;
+        margin: 0;
+        color: #1f2937;
+      }
+      .reminder-section {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 1px solid #f59e0b;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 24px 0;
+        text-align: center;
+      }
+      .reminder-icon {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+      .reminder-text {
+        font-weight: 600;
+        color: #92400e;
+        margin: 0;
+      }
+      .content-section {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+      .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #374151;
+        margin: 0 0 12px 0;
+        display: flex;
+        align-items: center;
+      }
+      .section-title span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        font-size: 16px;
+        line-height: 1;
+        margin-right: 4px;
+      }
+      .description-text {
+        color: #6b7280;
+        margin: 0;
+        line-height: 1.6;
+      }
+      .subtasks-list {
+        margin: 0;
+        padding-left: 0;
+        list-style: none;
+      }
+      .subtasks-list .subtask-item {
+        margin-bottom: 4px;
+      }
+      .subtasks-list .subtask-item:last-child {
+        margin-bottom: 0;
+      }
+      .subtask-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .subtask-item span:first-child {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        font-size: 14px;
+        line-height: 1;
+        flex-shrink: 0;
+        margin-right: 4px;
+      }
+      .subtask-item:last-child {
+        border-bottom: none;
+      }
+      .subtask-completed {
+        text-decoration: line-through;
+        color: #9ca3af;
+      }
+      .cta-section {
+        text-align: center;
+        margin: 32px 0;
+      }
+      .cta-button {
+        display: inline-block;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: #ffffff !important;
+        padding: 14px 28px;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s;
+        border: 2px solid #1e40af;
+      }
+      .cta-button:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15);
+        color: #ffffff !important;
+      }
+      .footer {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #e2e8f0;
+        font-size: 14px;
+        color: #6b7280;
+        text-align: center;
+      }
+      .footer p {
+        margin: 8px 0;
+      }
+      .tip-box {
+        background-color: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        padding: 12px;
+        margin: 16px 0;
+      }
 
-            <div class="reminder-section">
-                <div class="reminder-icon">⏰</div>
-                <p class="reminder-text">Reminder scheduled for {CARD_SCHEDULED_FOR}</p>
-            </div>
+      @media screen and (max-width: 400px) {
+        body {
+          padding: 16px;
+        }
+        .container {
+          padding: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <img
+          src="https://raw.githubusercontent.com/dkorecko/Ticky/refs/heads/main/Ticky.Web/wwwroot/images/ticky.png"
+          alt="Ticky"
+          style="
+            height: 40px;
+            margin-bottom: 8px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+          "
+        />
+        <div class="card-code">{CARD_CODE}</div>
+        <h1 class="card-title">{CARD_TEXT}</h1>
+      </div>
 
-            <div class="content-section">
-                <h3 class="section-title">
-                    <span>📝</span>
-                    Description
-                </h3>
-                <p class="description-text">{CARD_DESCRIPTION}</p>
-            </div>
+      <div class="reminder-section">
+        <div class="reminder-icon">⏰</div>
+        <p class="reminder-text">Reminder scheduled for {CARD_SCHEDULED_FOR}</p>
+      </div>
 
-            <div class="content-section">
-                <h3 class="section-title">
-                    <span>📅</span>
-                    Deadline
-                </h3>
-                <p class="description-text">{CARD_DEADLINE}</p>
-            </div>
-
-            <div class="content-section">
-                <h3 class="section-title">
-                    <span>📋</span>
-                    Subtasks
-                </h3>
-                {CARD_SUBTASKS}
-            </div>
-
-            <div class="cta-section">
-                <a href="{CARD_URL}" class="cta-button">
-                    View Card in Ticky →
-                </a>
-            </div>
-
-            <div class="footer">
-                <div class="tip-box">
-                    <p><strong>💡 Tip:</strong> You can check who set this reminder in the activity tab of the card.</p>
-                </div>
-                <p>This reminder was sent by Ticky. Manage your reminder preferences in the card details.</p>
-            </div>
+      {CARD_DESCRIPTION_SECTION}
+      <div class="content-section">
+        <h3 class="section-title">
+          <span>📝</span>
+          Description
+        </h3>
+        <p class="description-text">{CARD_DESCRIPTION}</p>
+      </div>
+      {CARD_DESCRIPTION_SECTION} {CARD_DEADLINE_SECTION}
+      <div class="content-section">
+        <h3 class="section-title">
+          <span>📅</span>
+          Deadline
+        </h3>
+        <p class="description-text">{CARD_DEADLINE}</p>
+      </div>
+      {CARD_DEADLINE_SECTION} {CARD_SUBTASKS_SECTION}
+      <div class="content-section">
+        <h3 class="section-title">
+          <span>📋</span>
+          Subtasks
+        </h3>
+        <div class="subtasks-list">
+          {CARD_SUBTASKS}
+          <div class="subtask-item{SUBTASK_COMPLETED_CLASS}">
+            <span
+              style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; font-size: 14px; line-height: 1; flex-shrink: 0; margin-right: 4px; color: {SUBTASK_ICON_COLOR}; font-weight: bold;"
+              >{SUBTASK_ICON}</span
+            >
+            <span>{SUBTASK_TEXT}</span>
+          </div>
+          {CARD_SUBTASKS}
         </div>
-    </body>
+      </div>
+      {CARD_SUBTASKS_SECTION}
+
+      <div class="cta-section">
+        <a href="{CARD_URL}" class="cta-button"> View Card in Ticky → </a>
+      </div>
+
+      <div class="footer">
+        <div class="tip-box">
+          <p>
+            <strong>💡 Tip:</strong> You can check who set this reminder in the
+            activity tab of the card.
+          </p>
+        </div>
+        <p>
+          This reminder was sent by Ticky. Manage your reminder preferences in
+          the card details.
+        </p>
+      </div>
+    </div>
+  </body>
 </html>

@@ -3,7 +3,7 @@ namespace Ticky.Web.Pages.Auth;
 public class RegisterModel : PageModel
 {
     private readonly UserManager<User> _userManager;
-    private readonly MailService _mailService;
+    private readonly EmailService _emailService;
     private readonly ILogger<RegisterModel> _logger;
     private readonly CodeService _codeService;
     private readonly AvatarService _avatarService;
@@ -13,14 +13,14 @@ public class RegisterModel : PageModel
 
     public RegisterModel(
         UserManager<User> userManager,
-        MailService mailService,
+        EmailService emailService,
         ILogger<RegisterModel> logger,
         CodeService codeService,
         AvatarService avatarService
     )
     {
         _userManager = userManager;
-        _mailService = mailService;
+        _emailService = emailService;
         _logger = logger;
         _codeService = codeService;
         _avatarService = avatarService;
@@ -51,7 +51,7 @@ public class RegisterModel : PageModel
 
                 try
                 {
-                    await _mailService.SendVerificationEmailAsync(Input.Email, code);
+                    await _emailService.SendVerificationEmailAsync(Input.Email, code);
                     return LocalRedirect($"/auth/confirmmail?email={Input.Email}");
                 }
                 catch (Exception ex)

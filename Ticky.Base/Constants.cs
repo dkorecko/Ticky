@@ -34,6 +34,13 @@ namespace Ticky.Base
                 public const string CARD_URL = "{CARD_URL}";
                 public const string BASE_URL = "{BASE_URL}";
                 public const string CARD_DEADLINE = "{CARD_DEADLINE}";
+                public const string CARD_DEADLINE_SECTION = "{CARD_DEADLINE_SECTION}";
+                public const string CARD_DESCRIPTION_SECTION = "{CARD_DESCRIPTION_SECTION}";
+                public const string CARD_SUBTASKS_SECTION = "{CARD_SUBTASKS_SECTION}";
+                public const string SUBTASK_TEXT = "{SUBTASK_TEXT}";
+                public const string SUBTASK_ICON = "{SUBTASK_ICON}";
+                public const string SUBTASK_ICON_COLOR = "{SUBTASK_ICON_COLOR}";
+                public const string SUBTASK_COMPLETED_CLASS = "{SUBTASK_COMPLETED_CLASS}";
             }
         }
 
