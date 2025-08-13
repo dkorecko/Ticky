@@ -1,8 +1,8 @@
+using Devity.Mailing;
+using Devity.NETCore.MailKit.Infrastructure.Internal;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
-using NETCore.MailKit.Extensions;
-using NETCore.MailKit.Infrastructure.Internal;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -108,8 +108,7 @@ if (Constants.SMTP_ENABLED)
 }
 
 builder.Services.AddScoped<CodeService>();
-builder.Services.AddMailKit(config => config.UseMailKit(mailKitOptions));
-builder.Services.AddScoped<MailService>();
+builder.Services.AddDevityMailing<EmailService>(mailKitOptions!);
 builder.Services.AddScoped<AvatarService>();
 builder.Services.AddScoped<CardNumberingService>();
 builder.Services.AddScoped<SearchService>();

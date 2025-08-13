@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
@@ -198,6 +198,7 @@
                 <p class="reminder-text">Reminder scheduled for {CARD_SCHEDULED_FOR}</p>
             </div>
 
+            {CARD_DESCRIPTION_SECTION}
             <div class="content-section">
                 <h3 class="section-title">
                     <span>📝</span>
@@ -205,7 +206,9 @@
                 </h3>
                 <p class="description-text">{CARD_DESCRIPTION}</p>
             </div>
+            {CARD_DESCRIPTION_SECTION}
 
+            {CARD_DEADLINE_SECTION}
             <div class="content-section">
                 <h3 class="section-title">
                     <span>📅</span>
@@ -213,14 +216,24 @@
                 </h3>
                 <p class="description-text">{CARD_DEADLINE}</p>
             </div>
+            {CARD_DEADLINE_SECTION}
 
+            {CARD_SUBTASKS_SECTION}
             <div class="content-section">
                 <h3 class="section-title">
                     <span>📋</span>
                     Subtasks
                 </h3>
-                {CARD_SUBTASKS}
+                <div class="subtasks-list">
+                    {CARD_SUBTASKS}
+                    <div class="subtask-item{SUBTASK_COMPLETED_CLASS}">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; font-size: 14px; line-height: 1; flex-shrink: 0; margin-right: 4px; color: {SUBTASK_ICON_COLOR}; font-weight: bold;">{SUBTASK_ICON}</span>
+                        <span>{SUBTASK_TEXT}</span>
+                    </div>
+                    {CARD_SUBTASKS}
+                </div>
             </div>
+            {CARD_SUBTASKS_SECTION}
 
             <div class="cta-section">
                 <a href="{CARD_URL}" class="cta-button">

@@ -3,7 +3,7 @@ namespace Ticky.Web.Pages.Auth;
 public class RegisterModel : PageModel
 {
     private readonly UserManager<User> _userManager;
-    private readonly MailService _mailService;
+    private readonly EmailService _mailService;
     private readonly ILogger<RegisterModel> _logger;
     private readonly CodeService _codeService;
     private readonly AvatarService _avatarService;
@@ -13,7 +13,7 @@ public class RegisterModel : PageModel
 
     public RegisterModel(
         UserManager<User> userManager,
-        MailService mailService,
+        EmailService mailService,
         ILogger<RegisterModel> logger,
         CodeService codeService,
         AvatarService avatarService

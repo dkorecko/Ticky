@@ -13,7 +13,7 @@ public class ReminderHostedService : AbstractHostedService<ReminderHostedService
     {
         using var scope = ServiceScopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetService<DataContext>()!;
-        var mailService = scope.ServiceProvider.GetService<MailService>()!;
+        var mailService = scope.ServiceProvider.GetService<EmailService>()!;
 
         var onTimeReminders = await db
             .Reminders.Include(x => x.Card)

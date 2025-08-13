@@ -4,7 +4,7 @@ public class ForgotPasswordModel : PageModel
 {
     private readonly DataContext _dataContext;
     private readonly CodeService _codeService;
-    private readonly MailService _mailService;
+    private readonly EmailService _mailService;
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -12,7 +12,7 @@ public class ForgotPasswordModel : PageModel
     public ForgotPasswordModel(
         DataContext dataContext,
         CodeService codeService,
-        MailService mailService
+        EmailService mailService
     )
     {
         _dataContext = dataContext;
