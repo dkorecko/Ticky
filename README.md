@@ -55,14 +55,38 @@ I'm constantly working to make Ticky even better! Here's a glimpse of what's in 
 
 ## 📋 Prerequisites
 
-- Docker Compose
-- SMTP Server for email notifications
+- **Docker** installed on your system
+  - Windows: Download and install Docker Desktop from [docker.com](https://www.docker.com/products/docker-desktop/)
+  - macOS: Download and install Docker Desktop from [docker.com](https://www.docker.com/products/docker-desktop/)
+  - Linux: Install Docker Engine and Docker Compose via your package manager
+- **Basic text editor** (Notepad, VS Code, etc.) to create/edit the configuration file
+- **SMTP Server** (optional) - for email notifications and password resets
+  - Gmail, Outlook, or any email provider that supports SMTP
+  - If you don't have SMTP, Ticky will work without email features
 
 ## 🚀 Getting Started
 
 ### Using Docker (Recommended)
 
-1. Create a `docker-compose.yaml` file, if you'd like to skip SMTP, either use `SMTP_ENABLED=false` or comment out the SMTP section of the environment variables:
+**Step 1: Verify Docker Installation**
+Open a terminal/command prompt and run:
+
+```bash
+docker --version
+```
+
+If these commands work, you're ready to proceed!
+
+**Step 2: Create Project Directory**
+Create a new folder for Ticky on your computer:
+
+```bash
+mkdir ticky-app
+cd ticky-app
+```
+
+**Step 3: Create Configuration File**
+Create a new file called `docker-compose.yaml` in your project folder and copy the following content. **Important**: Replace `your-secure-password` with a strong password of your choice (use the same password in all places where it appears):
 
 ```yaml
 services:
@@ -110,15 +134,43 @@ services:
       - ./data/mysql:/var/lib/mysql
 ```
 
-2. Fill out environment variables within the `docker-compose.yaml` file, `your-secure-password` must be the same between `MYSQL_PASSWORD` and `DB_PASSWORD`. Also make sure that `MYSQL_DATABASE` matches `DB_NAME` and `MYSQL_USER` matches `DB_USERNAME`.
+**Step 4: Configure Email (Optional)**
+If you want email notifications and password reset functionality:
 
-3. Run with Docker Compose:
+- Replace `your-smtp-host`, `your-smtp-port`, `your-email@example.com`, etc. with your actual email provider settings
+- For Gmail: Use `smtp.gmail.com`, port `587`, and create an [App Password](https://support.google.com/accounts/answer/185833)
+- If you don't want email features, change `SMTP_ENABLED=true` to `SMTP_ENABLED=false`
 
-   ```
-   docker-compose up -d
-   ```
+**Step 5: Start Ticky**
+In your terminal/command prompt, navigate to your project folder and run:
 
-4. Access the application at: `http://localhost:4088`. Then, you can log in to the default admin account with `admin@ticky.com` and password `abc123`. You will be prompted to change these right away (after changing, the app will log you out, so just use your new credentials to log in). Depending on whether you enabled SMTP or not, other users will either be able to create an account themselves (if SMTP is enabled) or you will need to create accounts for them.
+```bash
+docker compose up -d
+```
+
+This will:
+
+- Download the necessary Docker images (this may take a few minutes the first time)
+- Create and start the Ticky application and database
+- Set up data storage folders automatically
+
+**Step 6: Access Your Ticky Instance**
+
+1. Open your web browser and go to: `http://localhost:4088`
+2. Log in with the default admin account:
+   - **Email**: `admin@ticky.com`
+   - **Password**: `abc123`
+3. You'll be prompted to change these credentials immediately for improved security
+4. After changing your password, you'll be logged out - just log back in with your new credentials
+
+**Step 7: Add Users (If SMTP Disabled)**
+If you disabled SMTP, you'll need to create user accounts manually through the Admin Panel. If SMTP is enabled, users can register themselves.
+
+### Troubleshooting
+
+- **Port already in use**: Change `4088:8080` to `4089:8080` (or any other available port) in the docker-compose.yaml file
+- **Permission errors**: Make sure Docker Desktop is running and you have proper permissions. In Linux, sudo can be used in front of the commands.
+- **Can't access the app**: Wait a minute after starting - the database needs time to initialize on first run
 
 ### Manual Setup
 
