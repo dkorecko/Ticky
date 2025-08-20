@@ -1,6 +1,7 @@
 @inherits AbstractModal
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
+@inject NavigationManager _navigationManager
 
 <PriorityModal @ref=_priorityModal UpdateCard="UpdateCard" />
 <LabelModal @ref=_labelModal UpdateCard="UpdateCard" />
@@ -31,8 +32,9 @@
                     <tbody>
                         <tr>
                             <td class="edit-task-label">ID</td>
-                            <td class="edit-task-item">
+                            <td class="edit-task-item flex-wrap">
                                 @(_card.Column.Board.Code)-@_card.Number
+                                <i class="fa fa-link edit-icon" title="Copy to clipboard the deep link to this specific card" @onclick="CopyDeepLink"></i>
                             </td>
                         </tr>
                         <tr>
@@ -468,6 +470,16 @@
         _identifier = $"{_card.Column.Board.Code}-{_card.Number}";
         UpdateTimer();
         base.Open();
+    }
+
+    private async Task CopyDeepLink()
+    {
+        if (_card is null)
+            return;
+
+        var deepLink = $"{_navigationManager.BaseUri.TrimEnd('/')}/boards/{_card.Column.Board.Id}/{_card.Id}";
+        await _js.InvokeVoidAsync("navigator.clipboard.writeText", deepLink);
+        _mainLayout.RunNotification(new Notification("Card link copied to clipboard."));
     }
 
     private async Task OnTextChanged(ChangeEventArgs e)
