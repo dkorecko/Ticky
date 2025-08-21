@@ -52,8 +52,8 @@
                 @if (IsAdmin())
                 {
                     <a href="/boards/settings/@_board.Id"><i class="fa fa-gear icon-button" title="Board settings"></i></a>
-                    <i class="fa fa-chart-simple icon-button" @onclick="SwitchStatsDisplay" title="Toggle statistics"></i>
                 }
+                <i class="fa fa-chart-simple icon-button" @onclick="SwitchStatsDisplay" title="Toggle statistics"></i>
         }
     </header>
     <section class='flex w-screen flex-row divide-x divide-tab-outline'>
