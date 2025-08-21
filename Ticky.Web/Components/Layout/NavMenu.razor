@@ -43,7 +43,7 @@
                 </NavLink>
                 @if (_user?.LastVisitedBoardId is not null)
                 {
-                    <NavLink class="nav-link" href=@($"/boards/{_user?.LastVisitedBoardId}")>
+                    <NavLink class="nav-link" href=@($"{Constants.Mappings.BOARD_PATH}/{_user?.LastVisitedBoardId}")>
                         Recent board
                     </NavLink>
                 }
@@ -52,7 +52,7 @@
                         Admin Panel
                     </NavLink>
                 </AuthorizeView>
-                <NavLink class="nav-link" href="/auth/logout">
+                <NavLink class="nav-link" href="@Constants.Mappings.LOGOUT_PATH">
                     Log out
                 </NavLink>
             </div>
@@ -77,7 +77,7 @@
         </NavLink>
         @if (_user?.LastVisitedBoardId is not null)
         {
-            <NavLink class="nav-link" Match="NavLinkMatch.All" href=@($"/boards/{_user?.LastVisitedBoardId}")>
+            <NavLink class="nav-link" Match="NavLinkMatch.All" href=@($"{Constants.Mappings.BOARD_PATH}/{_user?.LastVisitedBoardId}")>
                 <span class="fa fa-briefcase" title="Recent board"></span>
             </NavLink>
         }
@@ -93,7 +93,7 @@
         <Dropdown Actions='new() {
             { "User settings", () => _navigationManager.NavigateTo("/settings") },
             { "Switch theme", () => _js.InvokeVoidAsync("switchTheme") },
-            { "Log out", () => _navigationManager.NavigateTo("/auth/logout", true) },
+            { "Log out", () => _navigationManager.NavigateTo(Constants.Mappings.LOGOUT_PATH, true) },
         }'>
             <div class="avatar avatar-border" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
         </Dropdown>
@@ -140,7 +140,7 @@
 
     private async Task GoToCard(int boardId, int cardId)
     {
-        _navigationManager.NavigateTo($"/boards/{boardId}/{cardId}");
+        _navigationManager.NavigateTo($"{Constants.Mappings.BOARD_PATH}/{boardId}/{cardId}");
         await _js.InvokeVoidAsync("closeDropdowns");
     }
 

@@ -59,6 +59,7 @@ namespace Ticky.Base
         {
             public const string LOGIN_PATH = "/auth/login";
             public const string LOGOUT_PATH = "/auth/logout";
+            public const string BOARD_PATH = "/boards";
         }
 
         public static class Policies
