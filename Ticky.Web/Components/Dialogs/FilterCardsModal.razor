@@ -15,12 +15,12 @@
                 {
                     if (Model.ExpandAssignedUsersSection)
                     {
-                        <i class="fa fa-chevron-down edit-icon" @onclick="() => Model.ExpandAssignedUsersSection = false" title="Collapse"></i>
+                        <i class="fa fa-chevron-down edit-icon" @onclick="SwitchUserAssignedCollapse" title="Collapse"></i>
                     }
 
                     else
                     {
-                        <i class="fa fa-chevron-up edit-icon" @onclick="() => Model.ExpandAssignedUsersSection = true" title="Expand"></i>
+                        <i class="fa fa-chevron-up edit-icon" @onclick="SwitchUserAssignedCollapse" title="Expand"></i>
                     }
                 }
             </div>
@@ -49,12 +49,12 @@
                 {
                     if (Model.ExpandLabelsSection)
                     {
-                        <i class="fa fa-chevron-down edit-icon" @onclick="() => Model.ExpandLabelsSection = false" title="Collapse"></i>
+                        <i class="fa fa-chevron-down edit-icon" @onclick="SwitchLabelsCollapse" title="Collapse"></i>
                     }
 
                     else
                     {
-                        <i class="fa fa-chevron-up edit-icon" @onclick="() => Model.ExpandLabelsSection = true" title="Expand"></i>
+                        <i class="fa fa-chevron-up edit-icon" @onclick="SwitchLabelsCollapse" title="Expand"></i>
                     }
                 }
             </div>
@@ -121,6 +121,22 @@
             await InvokeAsync(async () => await SearchUpdated.InvokeAsync());
         };
         _debounceTimer.AutoReset = false;
+    }
+
+    private async Task SwitchUserAssignedCollapse()
+    {
+        Model.ExpandAssignedUsersSection = !Model.ExpandAssignedUsersSection;
+        StateHasChanged();
+        await Task.Delay(1);
+        await _modalRef!.OnResized();
+    }
+
+    private async Task SwitchLabelsCollapse()
+    {
+        Model.ExpandLabelsSection = !Model.ExpandLabelsSection;
+        StateHasChanged();
+        await Task.Delay(1);
+        await _modalRef!.OnResized();
     }
 
     private void OnSearchChanged(ChangeEventArgs e)

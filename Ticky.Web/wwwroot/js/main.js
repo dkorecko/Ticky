@@ -14,13 +14,27 @@ function positionDropdown(dropdownElement, left, top, width = null) {
     const mostRightPoint = left + rect.width;
     const mostBottomPoint = top + rect.height;
 
-    if (mostRightPoint > window.innerWidth) {
-        dropdownElement.style.left = window.innerWidth - rect.width + 'px';
+    const availableWidth = document.documentElement.clientWidth - (OPEN_OFFSET * 2)
+    const availableHeight = document.documentElement.clientHeight - (OPEN_OFFSET * 2)
+
+    if (mostRightPoint > availableWidth) {
+        if(availableWidth > rect.width) {
+            dropdownElement.style.left = availableWidth - rect.width + 'px';
+        } else {
+            dropdownElement.style.left = OPEN_OFFSET + 'px';
+            dropdownElement.style.maxWidth = availableWidth + 'px';
+        }
     }
-    if (mostBottomPoint > window.innerHeight) {
-        dropdownElement.style.top = window.innerHeight - rect.height + 'px';
+    if (mostBottomPoint > availableHeight) {
+        if(availableHeight > rect.height) {
+            dropdownElement.style.top = availableHeight - rect.height + 'px';
+        } else {
+            dropdownElement.style.top = OPEN_OFFSET + 'px';
+            dropdownElement.style.maxHeight = availableHeight + 'px';
+        }
     }
 }
+
 let openDropdown = null
 let lastClosedX = null
 let lastClosedY = null
