@@ -1,4 +1,4 @@
-﻿@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject IDbContextFactory<DataContext> _dbContextFactory
 
 <div id="@Card.Id" data-blocked="@Card.Blocked.ToString()" class="task-card" @onclick="() => EditCardModal.Open(Card.Id, Members, Columns)">
     <div class="flex flex-row items-center justify-between gap-2">
@@ -24,7 +24,7 @@
         <div class="text-card-data-points flex w-full flex-row flex-wrap items-center justify-start gap-x-3 gap-y-1 text-xs">
             @if (Card.Deadline is not null)
             {
-                DeadlineColor color = Card.Column.Finished ? DeadlineColor.Green : (DateTime.Compare(Card.Deadline.Value, DateTime.Now) < 0 ? DeadlineColor.Red : (Card.Deadline.Value.Date == DateTime.Today.Date ? DeadlineColor.Yellow : DeadlineColor.Default));
+                DeadlineColor color = Column.Finished ? DeadlineColor.Green : (DateTime.Compare(Card.Deadline.Value, DateTime.Now) < 0 ? DeadlineColor.Red : (Card.Deadline.Value.Date == DateTime.Today.Date ? DeadlineColor.Yellow : DeadlineColor.Default));
                 <label data-coloring="@color" class="card-data-point rounded-lg px-1 py-1 text-white capitalize data-[coloring=Default]:text-card-data-points data-[coloring=Default]:mx-[-0.25rem] data-[coloring=Green]:bg-green-500 data-[coloring=Yellow]:bg-yellow-500 data-[coloring=Red]:bg-red-500"><i class="fa fa-clock" title="Deadline"></i> @Card.Deadline.Value.ToShortString()</label>
             }
             <label class="card-data-point"><i class="fa fa-hashtag" title="Card ID"></i> @(BoardCode)-@Card.Number</label>
@@ -78,6 +78,9 @@
 
     [Parameter]
     public required Card Card { get; set; }
+
+    [Parameter]
+    public required Column Column { get; set; }
 
     [Parameter]
     public required string BoardCode { get; set; }

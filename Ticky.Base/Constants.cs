@@ -53,6 +53,7 @@ namespace Ticky.Base
             public const long MAX_IMAGE_SIZE = MAX_FILE_SIZE;
             public const long MAX_JSON_SIZE = MAX_FILE_SIZE;
             public const int MAX_FILES = 20;
+            public const int DEBOUNCE_TIME_IN_MS = 1000;
         }
 
         public static class Mappings
@@ -75,6 +76,7 @@ namespace Ticky.Base
         public static class StorageKeys
         {
             public const string BoardPreferences = "Ticky_BoardPreferences";
+            public const string FilterPreferencesPrefix = "Ticky_FilterPreferences";
         }
 
         public static readonly string WWW_ROOT = $"{AppDomain.CurrentDomain.BaseDirectory}/wwwroot";

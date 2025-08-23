@@ -116,7 +116,7 @@
                     <div class="flex flex-col gap-2 py-5">
                         @foreach(var snoozedCard in _cards)
                         {
-                            <CardView Card="snoozedCard" DeleteCardModal="_deleteCardModal" EditCardModal="_editCardModal" BoardCode=@_board.Code Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns"/>
+                            <CardView Card="snoozedCard" Column="snoozedCard.Column" DeleteCardModal="_deleteCardModal" EditCardModal="_editCardModal" BoardCode=@_board.Code Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns"/>
                         }
                     </div>
                 } else if(_tab == 4)
@@ -129,7 +129,7 @@
                     <div class="flex flex-col gap-2 py-5">
                         @foreach(var repeatCard in _cards)
                         {
-                            <CardView Card="repeatCard" DeleteCardModal="_deleteCardModal" EditCardModal="_editCardModal" BoardCode=@_board.Code Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns" LongFormRepeat=true/>
+                            <CardView Card="repeatCard" Column="repeatCard.Column" DeleteCardModal="_deleteCardModal" EditCardModal="_editCardModal" BoardCode=@_board.Code Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns" LongFormRepeat=true />
                         }
                     </div>
                 }

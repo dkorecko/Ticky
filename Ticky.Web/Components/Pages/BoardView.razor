@@ -5,6 +5,7 @@
 @inject CardNumberingService _cardNumberingService
 @inject ProtectedLocalStorage _protectedLocalStorage
 @inject IJSRuntime _js
+@inject ILogger<BoardView> _logger
 @inherits NotifiableBase
 @implements IDisposable
 
@@ -21,6 +22,7 @@
 <DeleteConfirmationDialog T="Card" @ref="_deleteTaskModal" OnConfirmed="HandleUpdate" />
 <EditCardModal @ref="_editCardModal" OnSubmit="OnTaskEdited" />
 <EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
+<FilterCardsModal @ref="_filterCardsModal" Model="_filterModel" SearchUpdated="LoadCardsAsync" BoardMembers="_members" BoardLabels="_labels" />
 
 <div class="flex w-screen flex-col divide-y divide-tab-outline">
     <header id="board-header" class="flex flex-row items-center justify-end gap-1 px-2 py-2 text-2xl font-bold sm:gap-5 sm:px-12">
@@ -30,30 +32,38 @@
         } else {
             <label class="mr-auto text-sm text-ellipsis md:text-xl">@_board.Name <label class="text-2xs font-normal text-ellipsis">(Project @_board.Project.Name)</label></label>
 
-                <div class="hidden flex-row gap-1 2xs:flex">
-                    @{
-                        var i = 0;
-                    }
-                    @foreach(var member in _members)
-                    {
-                        string id = $"avatar_{i}";
-                        <div id="@id" class="avatar stack-avatars" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"
-                            @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
-                        i++;
-                    }
-                    @if (IsAdmin())
-                    {
-                        <div class="avatar add" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
-                            <i class="fa fa-plus text-sm"></i>
-                        </div>
-                    }
-                </div>
-
+            <div class="hidden flex-row gap-1 2xs:flex">
+                @{
+                    var i = 0;
+                }
+                @foreach(var member in _members)
+                {
+                    string id = $"avatar_{i}";
+                    <div id="@id" class="avatar stack-avatars" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
+                    i++;
+                }
                 @if (IsAdmin())
                 {
-                    <a href="/boards/settings/@_board.Id"><i class="fa fa-gear icon-button" title="Board settings"></i></a>
+                    <div class="avatar add" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
+                        <i class="fa fa-plus text-sm"></i>
+                    </div>
                 }
-                <i class="fa fa-chart-simple icon-button" @onclick="SwitchStatsDisplay" title="Toggle statistics"></i>
+            </div>
+
+            @if (IsAdmin())
+            {
+                <a href="/boards/settings/@_board.Id"><i class="fa fa-gear icon-button" title="Board settings"></i></a>
+            }
+
+            var filterIcon = "filter-icon";
+            <span class="relative inline-block">
+                <i id=@filterIcon class="fa fa-filter icon-button @( _filterModel.IsAnyFilterApplied() ? "text-primary hover:text-primary-hover" : string.Empty)" title="Filter cards" @onclick="() => _filterCardsModal?.Open(filterIcon)"></i>
+                @if (_filterModel.IsAnyFilterApplied())
+                {
+                    <span class="absolute top-0 right-0 h-2 w-2 rounded-full border-2 border-white bg-primary hover:bg-primary-hover"></span>
+                }
+            </span>
+            <i class="fa fa-chart-simple icon-button" @onclick="SwitchStatsDisplay" title="Toggle statistics"></i>
         }
     </header>
     <section class='flex w-screen flex-row divide-x divide-tab-outline'>
@@ -64,7 +74,8 @@
                 <SortableList Class="ml-12 flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
                         @{
-                            var cardsCount = column.Cards.Where(x => !x.SnoozedUntil.HasValue).Count();
+                            var columnCards = _cards.Where(x => x.ColumnId.Equals(column.Id)).ToList();
+                            var cardsCount = columnCards.Count;
                         }
                         <div id="@column.Id" class="board-column gap-1">
                             <div class="flex w-full flex-row items-start justify-between">
@@ -106,13 +117,13 @@
 
                             @if(!column.Collapsed) 
                             {
-                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Animation=@(_board.DisableSortingAnimations ? 0 : 200) Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="column.Cards.Where(x => !x.SnoozedUntil.HasValue).OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
+                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Animation=@(_board.DisableSortingAnimations ? 0 : 200) Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="columnCards.OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
                                     <SortableItemTemplate>
                                         @if(column.MaxCards == 1)
                                         {
                                             <div class="mt-1"></div>
                                         }
-                                        <CardView Card="@context" BoardCode="@_board.Code" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns"/>
+                                        <CardView Card="@context" Column="column" BoardCode="@_board.Code" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns"/>
                                     </SortableItemTemplate>
                                 </SortableList>
 
@@ -213,9 +224,12 @@
     public int? CardId { get; set; }
 
     private const string COLUMN_PREFIX = "column_";
+    private string FILTERS_SCOPED_KEY { get => $"{Constants.StorageKeys.FilterPreferencesPrefix}_{Id}"; }
 
     private Board? _board;
     private List<User> _members = [];
+    private List<Card> _cards = [];
+    private List<Label> _labels = [];
 
     private CreateColumnModal? _createColumnModal;
     private EditColumnModal? _editColumnModal;
@@ -223,6 +237,7 @@
     private DeleteConfirmationDialog<Column>? _deleteColumnModal;
     private DeleteConfirmationDialog<Card>? _deleteTaskModal;
     private EditBoardMembershipsModal? _editBoardMembershipsModal;
+    private FilterCardsModal? _filterCardsModal;
     private List<ElementReference> _avatars = [];
     private ElementReference Avatars { set => _avatars.Add(value); }
     private ElementReference? _textElement;
@@ -230,6 +245,7 @@
     private CreateCardModel _createTaskModel = new();
     private int _adding;
     private BoardPreferencesModel _preferences = new();
+    private FilterCardsModel _filterModel = new();
     private int? _initialCardId;
     private DotNetObjectReference<BoardView>? objRef;
 
@@ -255,9 +271,19 @@
             var boardPreferences = await _protectedLocalStorage.GetAsync<BoardPreferencesModel>(Constants.StorageKeys.BoardPreferences);
             _preferences = (boardPreferences.Success ? boardPreferences.Value : new()) ?? new();
         }
-        catch(CryptographicException)
+        catch (CryptographicException)
         {
             _preferences = new();
+        }
+
+        try
+        {
+            var filterPreferences = await _protectedLocalStorage.GetAsync<FilterCardsModel>(FILTERS_SCOPED_KEY);
+            _filterModel = (filterPreferences.Success ? filterPreferences.Value : new()) ?? new();
+        }
+        catch(CryptographicException)
+        {
+            _filterModel = new();
         }
 
         await HandleUpdate();
@@ -300,7 +326,14 @@
     {
         _preferences.ShowStats = !_preferences.ShowStats;
 
-        await _protectedLocalStorage.SetAsync(Constants.StorageKeys.BoardPreferences, _preferences);
+        try
+        {
+            await _protectedLocalStorage.SetAsync(Constants.StorageKeys.BoardPreferences, _preferences);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save board preferences.");
+        }
 
         StateHasChanged();
     }
@@ -368,7 +401,6 @@
 
         if(movedColumn is null)
             return;
-
 
         int targetIndex = targetBoard.Columns.Any() ? targetBoard.Columns.Max(x => x.Index) + 1 : 0;
         int? targetItemId = args.targetItemId is not null ? Convert.ToInt32(args.targetItemId) : null;
@@ -466,10 +498,16 @@
             await _js.InvokeVoidAsync("triggerConfetti", args.x, args.y);
     }
 
+    protected void OnDataChanged()
+    {
+        StateHasChanged();
+    }
+
     protected override async Task HandleUpdate()
     {
-        _board = await LoadBoardAsync();
-        StateHasChanged();
+        await LoadBoardAsync();
+
+        OnDataChanged();
 
         await _js.InvokeVoidAsync("scaleInitialize");
     }
@@ -526,47 +564,29 @@
 
     private async Task ExpandOrCollapseColumn(int columnId)
     {
+        ArgumentNullException.ThrowIfNull(_board);
+
         using var db = _dbContextFactory.CreateDbContext();
 
-        var targetColumn = await db.Columns.FirstOrDefaultAsync(x => x.Id.Equals(columnId));
-
-        if(targetColumn is null)
-            return;
-
+        var targetColumn = _board.Columns.First(x => x.Id.Equals(columnId));
         targetColumn.Collapsed = !targetColumn.Collapsed;
+        await db.Columns.Where(x => x.Id.Equals(columnId)).ExecuteUpdateAsync(x => x.SetProperty(y => y.Collapsed, targetColumn.Collapsed));
 
-        await db.SaveChangesAsync();
-        await HandleUpdate();
+        OnDataChanged();
     }
 
-    private async Task<Board?> LoadBoardAsync()
+    private async Task LoadBoardAsync()
     {
         using var db = _dbContextFactory.CreateDbContext();
 
         var board = await db.Boards
             .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.CreatedBy)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.Assignees)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.Attachments)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.Subtasks)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.Labels)
+            .Include(x => x.Labels)
             .Include(x => x.Project)
                 .ThenInclude(x => x.Memberships)
                     .ThenInclude(x => x.User)
             .Include(x => x.Memberships)
                 .ThenInclude(x => x.User)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.TimeRecords)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id.Equals(Id));
 
@@ -574,7 +594,7 @@
         {
             MainLayout.RunNotification(new("This board either does not exist or you do not have access.", NotificationType.Fail));
             _navigationManager.NavigateTo("/");
-            return null;
+            return;
         }
 
         _members = [];
@@ -586,10 +606,60 @@
             _members.AddRange(board.Project.Memberships.Select(x => x.User));
 
         _members = _members.DistinctBy(x => x.Id).ToList();
+        _labels = board.Labels;
+        _board = board;
+
+        await LoadCardsAsync();
+
+        StateHasChanged();
+    }
+
+    private async Task LoadCardsAsync()
+    {
+        ArgumentNullException.ThrowIfNull(_board);
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var columnIds = _board.Columns.Select(x => x.Id).ToList();
+
+        var queryableCards = db.Cards
+            .AsNoTracking()
+            .Include(x => x.CreatedBy)
+            .Include(x => x.Assignees)
+            .Include(x => x.Attachments)
+            .Include(x => x.Subtasks)
+            .Include(x => x.Labels)
+            .Include(x => x.TimeRecords)
+            .Where(x => columnIds.Contains(x.ColumnId))
+            .Where(x => !x.SnoozedUntil.HasValue);
+
+
+        if(!string.IsNullOrWhiteSpace(_filterModel.Text))
+        {
+            var query = _filterModel.Text.Trim();
+            queryableCards = queryableCards.Where(x => x.Name.Contains(query) || (x.Column.Board.Code + "-" + x.Number).Contains(query) || (x.Description != null && x.Description.Contains(query)));
+        }
+
+        if (_filterModel.AssignedUserIds.Count > 0 || _filterModel.IncludeUnassigned)
+            queryableCards = queryableCards.Where(card =>
+                (_filterModel.AssignedUserIds.Count > 0 && card.Assignees.Any(a => _filterModel.AssignedUserIds.Contains(a.Id)))
+                || (_filterModel.IncludeUnassigned && !card.Assignees.Any())
+            );
+
+        if (_filterModel.LabelIds.Count > 0)
+            queryableCards = queryableCards.Where(card => card.Labels.Any(x => _filterModel.LabelIds.Contains(x.Id)));
+
+        _cards = await queryableCards.ToListAsync();
 
         StateHasChanged();
 
-        return board;
+        try
+        {
+            await _protectedLocalStorage.SetAsync(FILTERS_SCOPED_KEY, _filterModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save filter preferences.");
+        }
     }
 
     private async Task AttemptCreateTaskSubmit(int columnId)

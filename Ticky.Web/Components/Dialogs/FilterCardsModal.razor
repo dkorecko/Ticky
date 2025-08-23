@@ -1,0 +1,160 @@
+@implements IDisposable
+
+<ActionModal @ref=_modalRef Title="Filter cards">
+    <div class="form p-2">
+        <div class="form-group">
+            <label for="text">Text, description or card code</label>
+            <input value="@Model.Text" id="text" class="form-control" @oninput="OnSearchChanged"/>
+        </div>
+
+        <div class="form-group">
+            <div class="flex flex-row items-center gap-1 text-xs">
+                <label>Assigned users</label>
+
+                @if (BoardMembers.Count > 2)
+                {
+                    if (Model.ExpandAssignedUsersSection)
+                    {
+                        <i class="fa fa-chevron-down edit-icon" @onclick="() => Model.ExpandAssignedUsersSection = false" title="Collapse"></i>
+                    }
+
+                    else
+                    {
+                        <i class="fa fa-chevron-up edit-icon" @onclick="() => Model.ExpandAssignedUsersSection = true" title="Expand"></i>
+                    }
+                }
+            </div>
+            <div class="flex flex-col gap-1">
+                <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="ToggleUnassignedFilter">
+                    <div class="avatar mr-auto"></div>
+                    <label class="cursor-pointer">No assignee</label>
+                    <i class='fa fa-check icon ml-auto @(Model.IncludeUnassigned ? string.Empty : "opacity-0")'></i>
+                </div>
+                @foreach (var member in Model.ExpandAssignedUsersSection ? BoardMembers : BoardMembers.Take(2))
+                {
+                    <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="() => ToggleUserFilter(member.Id)">
+                        <div class="avatar mr-auto" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"></div>
+                        <label class="cursor-pointer">@member.DisplayName</label>
+                        <i class='fa fa-check icon ml-auto @(Model.AssignedUserIds.Contains(member.Id) ? string.Empty : "opacity-0")'></i>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="flex flex-row items-center gap-1 text-xs">
+                <label>Labels</label>
+
+                @if (BoardLabels.Count > 3)
+                {
+                    if (Model.ExpandLabelsSection)
+                    {
+                        <i class="fa fa-chevron-down edit-icon" @onclick="() => Model.ExpandLabelsSection = false" title="Collapse"></i>
+                    }
+
+                    else
+                    {
+                        <i class="fa fa-chevron-up edit-icon" @onclick="() => Model.ExpandLabelsSection = true" title="Expand"></i>
+                    }
+                }
+            </div>
+            <div class="flex flex-col gap-1">
+                @if (BoardLabels != null && BoardLabels.Any())
+                {
+                    @foreach (var label in Model.ExpandLabelsSection ? BoardLabels : BoardLabels.Take(3))
+                    {
+                        <div class="priority-selector-item cursor-pointer" @onclick="() => ToggleLabelFilter(label.Id)">
+                            <LabelView Label="label" />
+                            @if (Model.LabelIds.Contains(label.Id))
+                            {
+                                <i class="fa fa-check text-add-outline" title="Selected"></i>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-xs text-gray-500">No labels available.</div>
+                }
+            </div>
+        </div>
+
+        <button type="button" @onclick="ResetFilters">Reset filters</button>
+    </div>
+</ActionModal>
+
+@code {
+    [Parameter]
+    public EventCallback SearchUpdated { get; set; }
+
+    [Parameter]
+    public required FilterCardsModel Model { get; set; }
+
+    [Parameter]
+    public required List<User> BoardMembers { get; set; } = [];
+
+    [Parameter]
+    public required List<Label> BoardLabels { get; set; } = [];
+
+    private async Task ToggleLabelFilter(int labelId)
+    {
+        if (Model.LabelIds.Contains(labelId))
+            Model.LabelIds.Remove(labelId);
+        else
+            Model.LabelIds.Add(labelId);
+        await SearchUpdated.InvokeAsync();
+    }
+
+    private ActionModal? _modalRef;
+    private System.Timers.Timer _debounceTimer = new System.Timers.Timer(Constants.Limits.DEBOUNCE_TIME_IN_MS);
+
+    public void Open(string triggerElementId) 
+    {
+        _modalRef?.Open(triggerElementId);
+        StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+        _debounceTimer.Elapsed += async (_, __) =>
+        {
+            await InvokeAsync(async () => await SearchUpdated.InvokeAsync());
+        };
+        _debounceTimer.AutoReset = false;
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        Model.Text = e.Value?.ToString() ?? string.Empty;
+
+        _debounceTimer.Stop();
+        _debounceTimer.Start();
+    }
+
+    private async Task ResetFilters()
+    {
+        Model.ClearFilters();
+        await SearchUpdated.InvokeAsync();
+    }
+
+    private async Task ToggleUserFilter(int userId)
+    {
+        if (Model.AssignedUserIds.Contains(userId))
+            Model.AssignedUserIds.Remove(userId);
+        else
+            Model.AssignedUserIds.Add(userId);
+        await SearchUpdated.InvokeAsync();
+    }
+
+    private async Task ToggleUnassignedFilter()
+    {
+        Model.IncludeUnassigned = !Model.IncludeUnassigned;
+        await SearchUpdated.InvokeAsync();
+    }
+
+    public void Dispose()
+    {
+        _debounceTimer.Stop();
+        _debounceTimer.Dispose();
+    }
+}
