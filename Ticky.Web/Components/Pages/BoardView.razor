@@ -21,7 +21,7 @@
 <DeleteConfirmationDialog T="Card" @ref="_deleteTaskModal" OnConfirmed="HandleUpdate" />
 <EditCardModal @ref="_editCardModal" OnSubmit="OnTaskEdited" />
 <EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
-<FilterCardsModal @ref="_filterCardsModal" Model="_filterModel" SearchUpdated="LoadCardsAsync" BoardMembers="_members" />
+<FilterCardsModal @ref="_filterCardsModal" Model="_filterModel" SearchUpdated="LoadCardsAsync" BoardMembers="_members" BoardLabels="_labels" />
 
 <div class="flex w-screen flex-col divide-y divide-tab-outline">
     <header id="board-header" class="flex flex-row items-center justify-end gap-1 px-2 py-2 text-2xl font-bold sm:gap-5 sm:px-12">
@@ -227,6 +227,7 @@
     private Board? _board;
     private List<User> _members = [];
     private List<Card> _cards = [];
+    private List<Label> _labels = [];
 
     private CreateColumnModal? _createColumnModal;
     private EditColumnModal? _editColumnModal;
@@ -280,7 +281,7 @@
         }
         catch(CryptographicException)
         {
-                _filterModel = new();
+            _filterModel = new();
         }
 
         await HandleUpdate();
@@ -571,6 +572,7 @@
 
         var board = await db.Boards
             .Include(x => x.Columns)
+            .Include(x => x.Labels)
             .Include(x => x.Project)
                 .ThenInclude(x => x.Memberships)
                     .ThenInclude(x => x.User)
@@ -595,6 +597,7 @@
             _members.AddRange(board.Project.Memberships.Select(x => x.User));
 
         _members = _members.DistinctBy(x => x.Id).ToList();
+        _labels = board.Labels;
         _board = board;
 
         await LoadCardsAsync();
@@ -627,14 +630,14 @@
             queryableCards = queryableCards.Where(x => x.Name.Contains(query) || (x.Column.Board.Code + "-" + x.Number).Contains(query) || (x.Description != null && x.Description.Contains(query)));
         }
 
-        // Filter by assigned users and unassigned
         if (_filterModel.AssignedUserIds.Count > 0 || _filterModel.IncludeUnassigned)
-        {
             queryableCards = queryableCards.Where(card =>
                 (_filterModel.AssignedUserIds.Count > 0 && card.Assignees.Any(a => _filterModel.AssignedUserIds.Contains(a.Id)))
                 || (_filterModel.IncludeUnassigned && !card.Assignees.Any())
             );
-        }
+
+        if (_filterModel.LabelIds.Count > 0)
+            queryableCards = queryableCards.Where(card => card.Labels.Any(x => _filterModel.LabelIds.Contains(x.Id)));
 
         _cards = await queryableCards.ToListAsync();
 

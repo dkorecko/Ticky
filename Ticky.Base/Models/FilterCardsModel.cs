@@ -6,17 +6,23 @@ public class FilterCardsModel
 
     public List<int> AssignedUserIds { get; set; } = [];
 
+    public List<int> LabelIds { get; set; } = [];
+
     public bool IncludeUnassigned { get; set; } = false;
 
     public bool IsAnyFilterApplied()
     {
-        return !string.IsNullOrWhiteSpace(Text) || AssignedUserIds.Count > 0 || IncludeUnassigned;
+        return !string.IsNullOrWhiteSpace(Text)
+            || AssignedUserIds.Count > 0
+            || LabelIds.Count > 0
+            || IncludeUnassigned;
     }
 
     public void ClearFilters()
     {
         Text = string.Empty;
         AssignedUserIds.Clear();
+        LabelIds.Clear();
         IncludeUnassigned = false;
     }
 }

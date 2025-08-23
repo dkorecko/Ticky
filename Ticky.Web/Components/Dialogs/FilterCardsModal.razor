@@ -1,4 +1,4 @@
-﻿@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject IDbContextFactory<DataContext> _dbContextFactory
 
 <ActionModal @ref=_modalRef Title="Filter cards">
     <div class="form p-2">
@@ -15,13 +15,36 @@
                     <label class="cursor-pointer">No assignee</label>
                     <i class='fa fa-check icon ml-auto @(Model.IncludeUnassigned ? string.Empty : "opacity-0")'></i>
                 </div>
-                @foreach (var member in _boardMembers)
+                @foreach (var member in BoardMembers)
                 {
                     <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="() => ToggleUserFilter(member.Id)">
                         <div class="avatar mr-auto" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"></div>
                         <label class="cursor-pointer">@member.DisplayName</label>
                         <i class='fa fa-check icon ml-auto @(Model.AssignedUserIds.Contains(member.Id) ? string.Empty : "opacity-0")'></i>
                     </div>
+                }
+            </div>
+        </div>
+
+        <div class="form-group mt-4">
+            <label>Labels</label>
+            <div class="flex flex-col gap-1">
+                @if (BoardLabels != null && BoardLabels.Any())
+                {
+                    @foreach (var label in BoardLabels)
+                    {
+                        <div class="priority-selector-item cursor-pointer" @onclick="() => ToggleLabelFilter(label.Id)">
+                            <LabelView Label="label" />
+                            @if (Model.LabelIds.Contains(label.Id))
+                            {
+                                <i class="fa fa-check text-add-outline" title="Selected"></i>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-xs text-gray-500">No labels available.</div>
                 }
             </div>
         </div>
@@ -42,9 +65,19 @@
     public required FilterCardsModel Model { get; set; }
 
     [Parameter]
-    public List<User> BoardMembers { get; set; } = new();
+    public required List<User> BoardMembers { get; set; } = [];
 
-    private List<User> _boardMembers => BoardMembers ?? new();
+    [Parameter]
+    public required List<Label> BoardLabels { get; set; } = [];
+
+    private async Task ToggleLabelFilter(int labelId)
+    {
+        if (Model.LabelIds.Contains(labelId))
+            Model.LabelIds.Remove(labelId);
+        else
+            Model.LabelIds.Add(labelId);
+        await SearchUpdated.InvokeAsync();
+    }
 
     private ActionModal? _modalRef;
 
