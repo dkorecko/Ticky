@@ -8,7 +8,7 @@
 <EditUserModal @ref="_editUserModal" OnSubmit="() => RunNotification(typeof(User), OperationType.Edited)" />
 <DeleteConfirmationDialog T="User" @ref="_deleteUserModal" OnConfirmed="HandleUpdate" />
 
-<PageTitle>Admin Panel - Ticky</PageTitle>
+<PageTitle>Admin Panel - @Constants.APP_NAME</PageTitle>
 
 <div class="w-full">
     <section class="flex w-full max-w-4xl flex-grow flex-col gap-5 overflow-y-auto px-12 py-14">
