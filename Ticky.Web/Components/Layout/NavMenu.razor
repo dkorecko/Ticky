@@ -121,7 +121,7 @@
 
         StateHasChanged();
 
-        _timer = new Timer(2000);
+        _timer = new Timer(Constants.Limits.DEBOUNCE_TIME_IN_MS);
         _timer.Stop();
         _timer.Elapsed += Filter;
         _timer.AutoReset = false;
