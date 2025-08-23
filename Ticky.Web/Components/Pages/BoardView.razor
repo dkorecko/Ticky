@@ -630,11 +630,11 @@
             queryableCards = queryableCards.Where(x => x.Name.Contains(query) || (x.Column.Board.Code + "-" + x.Number).Contains(query) || (x.Description != null && x.Description.Contains(query)));
         }
 
-        if(_filterModel.AssignedUserIds.Count > 0)
-            queryableCards = queryableCards.Where(card => card.Assignees.Any(a => _filterModel.AssignedUserIds.Contains(a.Id)));
-
-        if(_filterModel.IncludeUnassigned)
-            queryableCards = queryableCards.Where(card => !card.Assignees.Any());
+        if (_filterModel.AssignedUserIds.Count > 0 || _filterModel.IncludeUnassigned)
+            queryableCards = queryableCards.Where(card =>
+                (_filterModel.AssignedUserIds.Count > 0 && card.Assignees.Any(a => _filterModel.AssignedUserIds.Contains(a.Id)))
+                || (_filterModel.IncludeUnassigned && !card.Assignees.Any())
+            );
 
         if (_filterModel.LabelIds.Count > 0)
             queryableCards = queryableCards.Where(card => card.Labels.Any(x => _filterModel.LabelIds.Contains(x.Id)));
