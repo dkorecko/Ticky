@@ -1,8 +1,12 @@
+const OPEN_OFFSET = 5;
+
 function positionDropdown(dropdownElement, left, top, width = null) {
     dropdownElement.classList.remove('hidden');
+
     if (width !== null) {
         dropdownElement.style.width = width + 'px';
     }
+
     dropdownElement.style.left = left + 'px';
     dropdownElement.style.top = top + 'px';
 
@@ -45,7 +49,7 @@ document.addEventListener('mouseup', (event) => {
         lastClosedX = event.clientX
         lastClosedY = event.clientY
 
-        if (lastOpenedFromTrigger == event.target)
+        if (lastOpenedFromTrigger === event.target)
             lastClickTarget = event.target
 
         closeDropdowns()
@@ -69,14 +73,14 @@ function closeDropdowns() {
 }
 
 function openDropDownOnElementId(dropdownElement, triggerElementId) {
-    return openDropDownOnElementPosition(dropdownElement, document.querySelector("#" + triggerElementId));
+    return openDropDownOnElementPosition(dropdownElement, document.getElementById(triggerElementId));
 }
 
 function openDropDownOnElementPosition(dropdownElement, triggerElement) {
     if (!dropdownElement || !triggerElement)
         return;
 
-    if (triggerElement == lastClickTarget) {
+    if (triggerElement === lastClickTarget) {
         closeDropdowns();
         resetLastClosed();
         return;
@@ -84,10 +88,8 @@ function openDropDownOnElementPosition(dropdownElement, triggerElement) {
 
     lastOpenedFromTrigger = triggerElement;
 
-    var clientRect = triggerElement.getBoundingClientRect();
-    var left = clientRect.left;
-    var top = clientRect.top + clientRect.height;
-    positionDropdown(dropdownElement, left, top);
+    const clientRect = triggerElement.getBoundingClientRect();
+    positionDropdown(dropdownElement, clientRect.left, clientRect.top + clientRect.height);
     openDropdown = dropdownElement;
 }
 
@@ -101,6 +103,6 @@ function onDropdownTriggerClicked(clientX, clientY, dropdownElement) {
         return
     }
 
-    positionDropdown(dropdownElement, clientX + 5, clientY + 5);
+    positionDropdown(dropdownElement, clientX + OPEN_OFFSET, clientY + OPEN_OFFSET);
     openDropdown = dropdownElement;
 }
