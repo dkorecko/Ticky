@@ -5,6 +5,7 @@
 @inject CardNumberingService _cardNumberingService
 @inject ProtectedLocalStorage _protectedLocalStorage
 @inject IJSRuntime _js
+@inject ILogger<BoardView> _logger
 @inherits NotifiableBase
 @implements IDisposable
 
@@ -325,7 +326,14 @@
     {
         _preferences.ShowStats = !_preferences.ShowStats;
 
-        await _protectedLocalStorage.SetAsync(Constants.StorageKeys.BoardPreferences, _preferences);
+        try
+        {
+            await _protectedLocalStorage.SetAsync(Constants.StorageKeys.BoardPreferences, _preferences);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save board preferences.");
+        }
 
         StateHasChanged();
     }
@@ -644,7 +652,14 @@
 
         StateHasChanged();
 
-        await _protectedLocalStorage.SetAsync(FILTERS_SCOPED_KEY, _filterModel);
+        try
+        {
+            await _protectedLocalStorage.SetAsync(FILTERS_SCOPED_KEY, _filterModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save filter preferences.");
+        }
     }
 
     private async Task AttemptCreateTaskSubmit(int columnId)
