@@ -1,3 +1,22 @@
+function positionDropdown(dropdownElement, left, top, width = null) {
+    dropdownElement.classList.remove('hidden');
+    if (width !== null) {
+        dropdownElement.style.width = width + 'px';
+    }
+    dropdownElement.style.left = left + 'px';
+    dropdownElement.style.top = top + 'px';
+
+    const rect = dropdownElement.getBoundingClientRect();
+    const mostRightPoint = left + rect.width;
+    const mostBottomPoint = top + rect.height;
+
+    if (mostRightPoint > window.innerWidth) {
+        dropdownElement.style.left = window.innerWidth - rect.width + 'px';
+    }
+    if (mostBottomPoint > window.innerHeight) {
+        dropdownElement.style.top = window.innerHeight - rect.height + 'px';
+    }
+}
 let openDropdown = null
 let lastClosedX = null
 let lastClosedY = null
@@ -49,30 +68,27 @@ function closeDropdowns() {
     lastOpenedFromTrigger = null
 }
 
-function openDropDownOnElementId(dropdownElement, triggerElementId, adjustSize) {
-    return openDropDownOnElementPosition(dropdownElement, document.querySelector("#" + triggerElementId), adjustSize)
+function openDropDownOnElementId(dropdownElement, triggerElementId) {
+    return openDropDownOnElementPosition(dropdownElement, document.querySelector("#" + triggerElementId));
 }
 
-function openDropDownOnElementPosition(dropdownElement, triggerElement, adjustSize) {
+function openDropDownOnElementPosition(dropdownElement, triggerElement) {
     if (!dropdownElement || !triggerElement)
-        return
+        return;
 
     if (triggerElement == lastClickTarget) {
-        closeDropdowns()
-        resetLastClosed()
-        return
+        closeDropdowns();
+        resetLastClosed();
+        return;
     }
 
-    lastOpenedFromTrigger = triggerElement
+    lastOpenedFromTrigger = triggerElement;
 
-    dropdownElement.classList.remove('hidden')
     var clientRect = triggerElement.getBoundingClientRect();
-    dropdownElement.style.top = clientRect.top + clientRect.height + 'px'
-    dropdownElement.style.left = clientRect.left + 'px'
-    if(adjustSize) {
-        dropdownElement.style.width = clientRect.width + 'px'
-    }
-    openDropdown = dropdownElement
+    var left = clientRect.left;
+    var top = clientRect.top + clientRect.height;
+    positionDropdown(dropdownElement, left, top);
+    openDropdown = dropdownElement;
 }
 
 function onDropdownTriggerClicked(clientX, clientY, dropdownElement) {
@@ -85,21 +101,6 @@ function onDropdownTriggerClicked(clientX, clientY, dropdownElement) {
         return
     }
 
-    dropdownElement.classList.remove('hidden')
-    dropdownElement.style.top = clientY + 5 + 'px'
-    dropdownElement.style.left = clientX + 5 + 'px'
-
-    const rect = dropdownElement.getBoundingClientRect()
-    const mostRightPoint = rect.width + clientX + 5
-    const mostBottomPoint = rect.height + clientY + 5
-
-    if (mostRightPoint > window.innerWidth) {
-        dropdownElement.style.left = window.innerWidth - rect.width + 'px'
-    }
-
-    if (mostBottomPoint > window.innerHeight) {
-        dropdownElement.style.top = window.innerHeight - rect.height + 'px'
-    }
-
-    openDropdown = dropdownElement
+    positionDropdown(dropdownElement, clientX + 5, clientY + 5);
+    openDropdown = dropdownElement;
 }
