@@ -55,7 +55,13 @@
             }
 
             var filterIcon = "filter-icon";
-            <i id=@filterIcon class="fa fa-filter icon-button" title="Filter" @onclick="() => _filterCardsModal?.Open(filterIcon)"></i>
+            <span class="relative inline-block">
+                <i id=@filterIcon class="fa fa-filter icon-button @( _filterModel.IsAnyFilterApplied() ? "text-primary hover:text-primary-hover" : string.Empty)" title="Filter cards" @onclick="() => _filterCardsModal?.Open(filterIcon)"></i>
+                @if (_filterModel.IsAnyFilterApplied())
+                {
+                    <span class="absolute top-0 right-0 h-2 w-2 rounded-full border-2 border-white bg-primary hover:bg-primary-hover"></span>
+                }
+            </span>
             <i class="fa fa-chart-simple icon-button" @onclick="SwitchStatsDisplay" title="Toggle statistics"></i>
         }
     </header>
