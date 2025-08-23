@@ -75,7 +75,7 @@ namespace Ticky.Base
         public static class StorageKeys
         {
             public const string BoardPreferences = "Ticky_BoardPreferences";
-            public const string FilterPreferences = "Ticky_FilterPreferences";
+            public const string FilterPreferencesPrefix = "Ticky_FilterPreferences";
         }
 
         public static readonly string WWW_ROOT = $"{AppDomain.CurrentDomain.BaseDirectory}/wwwroot";

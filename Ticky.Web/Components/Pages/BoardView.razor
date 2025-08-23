@@ -73,8 +73,8 @@
                 <SortableList Class="ml-12 flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
                         @{
-                            var columnCards = _cards.Where(x => x.ColumnId.Equals(column.Id));
-                            var cardsCount = columnCards.Where(x => !x.SnoozedUntil.HasValue).Count();
+                            var columnCards = _cards.Where(x => x.ColumnId.Equals(column.Id)).ToList();
+                            var cardsCount = columnCards.Count;
                         }
                         <div id="@column.Id" class="board-column gap-1">
                             <div class="flex w-full flex-row items-start justify-between">
@@ -223,6 +223,7 @@
     public int? CardId { get; set; }
 
     private const string COLUMN_PREFIX = "column_";
+    private string FILTERS_SCOPED_KEY { get => $"{Constants.StorageKeys.FilterPreferencesPrefix}_{Id}"; }
 
     private Board? _board;
     private List<User> _members = [];
@@ -276,7 +277,7 @@
 
         try
         {
-            var filterPreferences = await _protectedLocalStorage.GetAsync<FilterCardsModel>(Constants.StorageKeys.FilterPreferences);
+            var filterPreferences = await _protectedLocalStorage.GetAsync<FilterCardsModel>(FILTERS_SCOPED_KEY);
             _filterModel = (filterPreferences.Success ? filterPreferences.Value : new()) ?? new();
         }
         catch(CryptographicException)
@@ -643,7 +644,7 @@
 
         StateHasChanged();
 
-        await _protectedLocalStorage.SetAsync(Constants.StorageKeys.FilterPreferences, _filterModel);
+        await _protectedLocalStorage.SetAsync(FILTERS_SCOPED_KEY, _filterModel);
     }
 
     private async Task AttemptCreateTaskSubmit(int columnId)

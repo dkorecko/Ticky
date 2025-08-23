@@ -4,9 +4,9 @@ public class FilterCardsModel
 {
     public string Text { get; set; } = string.Empty;
 
-    public List<int> AssignedUserIds { get; set; } = [];
+    public HashSet<int> AssignedUserIds { get; set; } = [];
 
-    public List<int> LabelIds { get; set; } = [];
+    public HashSet<int> LabelIds { get; set; } = [];
 
     public bool IncludeUnassigned { get; set; }
 
