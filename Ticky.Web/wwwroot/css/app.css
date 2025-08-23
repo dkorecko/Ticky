@@ -321,6 +321,9 @@
   .mr-auto {
     margin-right: auto;
   }
+  .mb-2 {
+    margin-bottom: calc(var(--spacing) * 2);
+  }
   .\!ml-\[-0\.8rem\] {
     margin-left: -0.8rem !important;
   }

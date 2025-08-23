@@ -12,4 +12,11 @@ public class FilterCardsModel
     {
         return !string.IsNullOrWhiteSpace(Text) || AssignedUserIds.Count > 0 || IncludeUnassigned;
     }
+
+    public void ClearFilters()
+    {
+        Text = string.Empty;
+        AssignedUserIds.Clear();
+        IncludeUnassigned = false;
+    }
 }

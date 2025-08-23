@@ -25,6 +25,8 @@
                 }
             </div>
         </div>
+
+        <button type="reset" @onclick="ResetFilters">Reset filters</button>
     </div>
 </ActionModal>
 
@@ -56,6 +58,12 @@
     private async Task OnSearchChanged(ChangeEventArgs eventArgs)
     {
         Model.Text = eventArgs.Value?.ToString() ?? string.Empty;
+        await SearchUpdated.InvokeAsync();
+    }
+
+    private async Task ResetFilters()
+    {
+        Model.ClearFilters();
         await SearchUpdated.InvokeAsync();
     }
 
