@@ -40,6 +40,7 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Repeat Cards**: Automatically repeat cards at specified intervals, perfect for recurring tasks.
 - **Responsive Design**: Take your tasks with you, no matter whether you are at your computer or running errands with just your phone.
 - **Completion Confetti**: Feel the satisfaction of completing each task with a bunch of confetti, there to celebrate your success.
+- **Filtering and Sorting**: Easily find and organize tasks based on various criteria.
 - ... and more!
 
 ### 📝 Planned features
