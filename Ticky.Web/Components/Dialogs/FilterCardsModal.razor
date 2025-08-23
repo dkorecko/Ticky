@@ -1,10 +1,29 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+﻿@inject IDbContextFactory<DataContext> _dbContextFactory
 
 <ActionModal @ref=_modalRef Title="Filter cards">
     <div class="form p-2">
         <div class="form-group">
             <label for="text">Text, description or card code</label>
             <input value="@Model.Text" id="text" class="form-control" @onchange="OnSearchChanged"/>
+        </div>
+
+        <div class="form-group">
+            <label>Assigned users</label>
+            <div class="flex flex-col gap-1">
+                <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="ToggleUnassignedFilter">
+                    <div class="avatar mr-auto"></div>
+                    <label class="cursor-pointer">No assignee</label>
+                    <i class='fa fa-check icon ml-auto @(Model.IncludeUnassigned ? string.Empty : "opacity-0")'></i>
+                </div>
+                @foreach (var member in _boardMembers)
+                {
+                    <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="() => ToggleUserFilter(member.Id)">
+                        <div class="avatar mr-auto" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"></div>
+                        <label class="cursor-pointer">@member.DisplayName</label>
+                        <i class='fa fa-check icon ml-auto @(Model.AssignedUserIds.Contains(member.Id) ? string.Empty : "opacity-0")'></i>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </ActionModal>
@@ -16,8 +35,14 @@
     [Parameter]
     public EventCallback SearchUpdated { get; set; }
 
+
     [Parameter]
     public required FilterCardsModel Model { get; set; }
+
+    [Parameter]
+    public List<User> BoardMembers { get; set; } = new();
+
+    private List<User> _boardMembers => BoardMembers ?? new();
 
     private ActionModal? _modalRef;
 
@@ -27,9 +52,25 @@
         StateHasChanged();
     }
 
+
     private async Task OnSearchChanged(ChangeEventArgs eventArgs)
     {
         Model.Text = eventArgs.Value?.ToString() ?? string.Empty;
+        await SearchUpdated.InvokeAsync();
+    }
+
+    private async Task ToggleUserFilter(int userId)
+    {
+        if (Model.AssignedUserIds.Contains(userId))
+            Model.AssignedUserIds.Remove(userId);
+        else
+            Model.AssignedUserIds.Add(userId);
+        await SearchUpdated.InvokeAsync();
+    }
+
+    private async Task ToggleUnassignedFilter()
+    {
+        Model.IncludeUnassigned = !Model.IncludeUnassigned;
         await SearchUpdated.InvokeAsync();
     }
 }

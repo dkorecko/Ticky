@@ -306,6 +306,9 @@
   .m-5 {
     margin: calc(var(--spacing) * 5);
   }
+  .mx-auto {
+    margin-inline: auto;
+  }
   .mt-1 {
     margin-top: calc(var(--spacing) * 1);
   }
@@ -529,6 +532,9 @@
   }
   .min-w-80 {
     min-width: calc(var(--spacing) * 80);
+  }
+  .flex-1 {
+    flex: 1;
   }
   .flex-grow {
     flex-grow: 1;
@@ -796,6 +802,9 @@
   }
   .bg-column-limit-reached {
     background-color: var(--color-column-limit-reached);
+  }
+  .bg-dropdown-option {
+    background-color: var(--color-dropdown-option);
   }
   .bg-full-dropdown {
     background-color: var(--color-full-dropdown);

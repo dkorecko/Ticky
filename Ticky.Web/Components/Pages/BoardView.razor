@@ -21,7 +21,7 @@
 <DeleteConfirmationDialog T="Card" @ref="_deleteTaskModal" OnConfirmed="HandleUpdate" />
 <EditCardModal @ref="_editCardModal" OnSubmit="OnTaskEdited" />
 <EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
-<FilterCardsModal @ref="_filterCardsModal" Model="_filterModel" SearchUpdated="LoadCardsAsync" />
+<FilterCardsModal @ref="_filterCardsModal" Model="_filterModel" SearchUpdated="LoadCardsAsync" BoardMembers="_members" />
 
 <div class="flex w-screen flex-col divide-y divide-tab-outline">
     <header id="board-header" class="flex flex-row items-center justify-end gap-1 px-2 py-2 text-2xl font-bold sm:gap-5 sm:px-12">
@@ -620,10 +620,20 @@
             .Where(x => columnIds.Contains(x.ColumnId))
             .Where(x => !x.SnoozedUntil.HasValue);
 
+
         if(!string.IsNullOrWhiteSpace(_filterModel.Text))
         {
             var query = _filterModel.Text.Trim();
             queryableCards = queryableCards.Where(x => x.Name.Contains(query) || (x.Column.Board.Code + "-" + x.Number).Contains(query) || (x.Description != null && x.Description.Contains(query)));
+        }
+
+        // Filter by assigned users and unassigned
+        if (_filterModel.AssignedUserIds.Count > 0 || _filterModel.IncludeUnassigned)
+        {
+            queryableCards = queryableCards.Where(card =>
+                (_filterModel.AssignedUserIds.Count > 0 && card.Assignees.Any(a => _filterModel.AssignedUserIds.Contains(a.Id)))
+                || (_filterModel.IncludeUnassigned && !card.Assignees.Any())
+            );
         }
 
         _cards = await queryableCards.ToListAsync();
