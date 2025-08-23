@@ -64,7 +64,8 @@
                 <SortableList Class="ml-12 flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
                         @{
-                            var cardsCount = column.Cards.Where(x => !x.SnoozedUntil.HasValue).Count();
+                            var columnCards = _cards.Where(x => x.ColumnId.Equals(column.Id));
+                            var cardsCount = columnCards.Where(x => !x.SnoozedUntil.HasValue).Count();
                         }
                         <div id="@column.Id" class="board-column gap-1">
                             <div class="flex w-full flex-row items-start justify-between">
@@ -106,13 +107,13 @@
 
                             @if(!column.Collapsed) 
                             {
-                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Animation=@(_board.DisableSortingAnimations ? 0 : 200) Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="column.Cards.Where(x => !x.SnoozedUntil.HasValue).OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
+                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Animation=@(_board.DisableSortingAnimations ? 0 : 200) Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="columnCards.OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
                                     <SortableItemTemplate>
                                         @if(column.MaxCards == 1)
                                         {
                                             <div class="mt-1"></div>
                                         }
-                                        <CardView Card="@context" BoardCode="@_board.Code" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns"/>
+                                        <CardView Card="@context" Column="column" BoardCode="@_board.Code" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns"/>
                                     </SortableItemTemplate>
                                 </SortableList>
 
@@ -216,6 +217,7 @@
 
     private Board? _board;
     private List<User> _members = [];
+    private List<Card> _cards = [];
 
     private CreateColumnModal? _createColumnModal;
     private EditColumnModal? _editColumnModal;
@@ -369,7 +371,6 @@
         if(movedColumn is null)
             return;
 
-
         int targetIndex = targetBoard.Columns.Any() ? targetBoard.Columns.Max(x => x.Index) + 1 : 0;
         int? targetItemId = args.targetItemId is not null ? Convert.ToInt32(args.targetItemId) : null;
 
@@ -466,10 +467,16 @@
             await _js.InvokeVoidAsync("triggerConfetti", args.x, args.y);
     }
 
+    protected void OnDataChanged()
+    {
+        StateHasChanged();
+    }
+
     protected override async Task HandleUpdate()
     {
         _board = await LoadBoardAsync();
-        StateHasChanged();
+
+        OnDataChanged();
 
         await _js.InvokeVoidAsync("scaleInitialize");
     }
@@ -526,17 +533,15 @@
 
     private async Task ExpandOrCollapseColumn(int columnId)
     {
+        ArgumentNullException.ThrowIfNull(_board);
+
         using var db = _dbContextFactory.CreateDbContext();
 
-        var targetColumn = await db.Columns.FirstOrDefaultAsync(x => x.Id.Equals(columnId));
-
-        if(targetColumn is null)
-            return;
-
+        var targetColumn = _board.Columns.First(x => x.Id.Equals(columnId));
         targetColumn.Collapsed = !targetColumn.Collapsed;
+        await db.Columns.Where(x => x.Id.Equals(columnId)).ExecuteUpdateAsync(x => x.SetProperty(y => y.Collapsed, targetColumn.Collapsed));
 
-        await db.SaveChangesAsync();
-        await HandleUpdate();
+        OnDataChanged();
     }
 
     private async Task<Board?> LoadBoardAsync()
@@ -545,28 +550,11 @@
 
         var board = await db.Boards
             .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.CreatedBy)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.Assignees)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.Attachments)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.Subtasks)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.Labels)
             .Include(x => x.Project)
                 .ThenInclude(x => x.Memberships)
                     .ThenInclude(x => x.User)
             .Include(x => x.Memberships)
                 .ThenInclude(x => x.User)
-            .Include(x => x.Columns)
-                .ThenInclude(x => x.Cards)
-                    .ThenInclude(x => x.TimeRecords)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id.Equals(Id));
 
@@ -586,6 +574,20 @@
             _members.AddRange(board.Project.Memberships.Select(x => x.User));
 
         _members = _members.DistinctBy(x => x.Id).ToList();
+
+        var columnIds = board.Columns.Select(x => x.Id).ToList();
+
+        _cards = await db.Cards
+            .AsNoTracking()
+            .Include(x => x.CreatedBy)
+            .Include(x => x.Assignees)
+            .Include(x => x.Attachments)
+            .Include(x => x.Subtasks)
+            .Include(x => x.Labels)
+            .Include(x => x.TimeRecords)
+            .Where(x => columnIds.Contains(x.ColumnId))
+            .Where(x => !x.SnoozedUntil.HasValue)
+            .ToListAsync();
 
         StateHasChanged();
 
