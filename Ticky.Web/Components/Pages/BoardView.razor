@@ -21,6 +21,7 @@
 <DeleteConfirmationDialog T="Card" @ref="_deleteTaskModal" OnConfirmed="HandleUpdate" />
 <EditCardModal @ref="_editCardModal" OnSubmit="OnTaskEdited" />
 <EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
+<FilterCardsModal @ref="_filterCardsModal" Model="_filterModel" SearchUpdated="LoadCardsAsync" />
 
 <div class="flex w-screen flex-col divide-y divide-tab-outline">
     <header id="board-header" class="flex flex-row items-center justify-end gap-1 px-2 py-2 text-2xl font-bold sm:gap-5 sm:px-12">
@@ -30,30 +31,31 @@
         } else {
             <label class="mr-auto text-sm text-ellipsis md:text-xl">@_board.Name <label class="text-2xs font-normal text-ellipsis">(Project @_board.Project.Name)</label></label>
 
-                <div class="hidden flex-row gap-1 2xs:flex">
-                    @{
-                        var i = 0;
-                    }
-                    @foreach(var member in _members)
-                    {
-                        string id = $"avatar_{i}";
-                        <div id="@id" class="avatar stack-avatars" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"
-                            @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
-                        i++;
-                    }
-                    @if (IsAdmin())
-                    {
-                        <div class="avatar add" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
-                            <i class="fa fa-plus text-sm"></i>
-                        </div>
-                    }
-                </div>
-
+            <div class="hidden flex-row gap-1 2xs:flex">
+                @{
+                    var i = 0;
+                }
+                @foreach(var member in _members)
+                {
+                    string id = $"avatar_{i}";
+                    <div id="@id" class="avatar stack-avatars" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
+                    i++;
+                }
                 @if (IsAdmin())
                 {
-                    <a href="/boards/settings/@_board.Id"><i class="fa fa-gear icon-button" title="Board settings"></i></a>
+                    <div class="avatar add" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
+                        <i class="fa fa-plus text-sm"></i>
+                    </div>
+                }
+            </div>
+
+            @if (IsAdmin())
+            {
+                <a href="/boards/settings/@_board.Id"><i class="fa fa-gear icon-button" title="Board settings"></i></a>
             }
-            <i class="fa fa-filter icon-button" title="Filter"></i>
+
+            var filterIcon = "filter-icon";
+            <i id=@filterIcon class="fa fa-filter icon-button" title="Filter" @onclick="() => _filterCardsModal?.Open(filterIcon)"></i>
             <i class="fa fa-chart-simple icon-button" @onclick="SwitchStatsDisplay" title="Toggle statistics"></i>
         }
     </header>
@@ -226,6 +228,7 @@
     private DeleteConfirmationDialog<Column>? _deleteColumnModal;
     private DeleteConfirmationDialog<Card>? _deleteTaskModal;
     private EditBoardMembershipsModal? _editBoardMembershipsModal;
+    private FilterCardsModal? _filterCardsModal;
     private List<ElementReference> _avatars = [];
     private ElementReference Avatars { set => _avatars.Add(value); }
     private ElementReference? _textElement;
@@ -233,6 +236,7 @@
     private CreateCardModel _createTaskModel = new();
     private int _adding;
     private BoardPreferencesModel _preferences = new();
+    private FilterCardsModel _filterModel = new();
     private int? _initialCardId;
     private DotNetObjectReference<BoardView>? objRef;
 
@@ -475,7 +479,7 @@
 
     protected override async Task HandleUpdate()
     {
-        _board = await LoadBoardAsync();
+        await LoadBoardAsync();
 
         OnDataChanged();
 
@@ -545,7 +549,7 @@
         OnDataChanged();
     }
 
-    private async Task<Board?> LoadBoardAsync()
+    private async Task LoadBoardAsync()
     {
         using var db = _dbContextFactory.CreateDbContext();
 
@@ -563,7 +567,7 @@
         {
             MainLayout.RunNotification(new("This board either does not exist or you do not have access.", NotificationType.Fail));
             _navigationManager.NavigateTo("/");
-            return null;
+            return;
         }
 
         _members = [];
@@ -575,10 +579,21 @@
             _members.AddRange(board.Project.Memberships.Select(x => x.User));
 
         _members = _members.DistinctBy(x => x.Id).ToList();
+        _board = board;
 
-        var columnIds = board.Columns.Select(x => x.Id).ToList();
+        await LoadCardsAsync();
 
-        _cards = await db.Cards
+        StateHasChanged();
+    }
+
+    private async Task LoadCardsAsync()
+    {
+        ArgumentNullException.ThrowIfNull(_board);
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var columnIds = _board.Columns.Select(x => x.Id).ToList();
+
+        var queryableCards = db.Cards
             .AsNoTracking()
             .Include(x => x.CreatedBy)
             .Include(x => x.Assignees)
@@ -587,12 +602,17 @@
             .Include(x => x.Labels)
             .Include(x => x.TimeRecords)
             .Where(x => columnIds.Contains(x.ColumnId))
-            .Where(x => !x.SnoozedUntil.HasValue)
-            .ToListAsync();
+            .Where(x => !x.SnoozedUntil.HasValue);
+
+        if(!string.IsNullOrWhiteSpace(_filterModel.Text))
+        {
+            var query = _filterModel.Text.Trim();
+            queryableCards = queryableCards.Where(x => x.Name.Contains(query) || (x.Column.Board.Code + "-" + x.Number).Contains(query) || (x.Description != null && x.Description.Contains(query)));
+        }
+
+        _cards = await queryableCards.ToListAsync();
 
         StateHasChanged();
-
-        return board;
     }
 
     private async Task AttemptCreateTaskSubmit(int columnId)

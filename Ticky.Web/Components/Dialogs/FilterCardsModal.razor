@@ -1,0 +1,35 @@
+@inject IDbContextFactory<DataContext> _dbContextFactory
+
+<ActionModal @ref=_modalRef Title="Filter cards">
+    <div class="form p-2">
+        <div class="form-group">
+            <label for="text">Text, description or card code</label>
+            <input id="text" class="form-control" @onchange="OnSearchChanged"/>
+        </div>
+    </div>
+</ActionModal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback SearchUpdated { get; set; }
+
+    [Parameter]
+    public required FilterCardsModel Model { get; set; }
+
+    private ActionModal? _modalRef;
+
+    public void Open(string triggerElementId) 
+    {
+        _modalRef?.Open(triggerElementId);
+        StateHasChanged();
+    }
+
+    private async Task OnSearchChanged(ChangeEventArgs eventArgs)
+    {
+        Model.Text = eventArgs.Value?.ToString() ?? string.Empty;
+        await SearchUpdated.InvokeAsync();
+    }
+}
