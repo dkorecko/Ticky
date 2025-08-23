@@ -2,7 +2,7 @@
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject NavigationManager _navigationManager
 
-<PageTitle>Ticky</PageTitle>
+<PageTitle>@Constants.APP_NAME</PageTitle>
 
 <CascadingValue Name="@Constants.CascadingParameters.CurrentAccount" Value="@_user">
     <Notifications @ref="_notifications" />

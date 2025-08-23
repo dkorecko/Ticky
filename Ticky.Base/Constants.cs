@@ -6,6 +6,11 @@ namespace Ticky.Base
         public static bool FULLY_OFFLINE;
         public static bool DISABLE_USER_SIGNUPS = false;
         public static string BASE_URL = string.Empty;
+#if DEBUG
+        public const string APP_NAME = "Ticky [DEV]";
+#else
+        public const string APP_NAME = "Ticky";
+#endif
 
         public static class CascadingParameters
         {
