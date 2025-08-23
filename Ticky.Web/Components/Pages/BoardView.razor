@@ -262,9 +262,19 @@
             var boardPreferences = await _protectedLocalStorage.GetAsync<BoardPreferencesModel>(Constants.StorageKeys.BoardPreferences);
             _preferences = (boardPreferences.Success ? boardPreferences.Value : new()) ?? new();
         }
-        catch(CryptographicException)
+        catch (CryptographicException)
         {
             _preferences = new();
+        }
+
+        try
+        {
+            var filterPreferences = await _protectedLocalStorage.GetAsync<FilterCardsModel>(Constants.StorageKeys.FilterPreferences);
+            _filterModel = (filterPreferences.Success ? filterPreferences.Value : new()) ?? new();
+        }
+        catch(CryptographicException)
+        {
+                _filterModel = new();
         }
 
         await HandleUpdate();
@@ -613,6 +623,8 @@
         _cards = await queryableCards.ToListAsync();
 
         StateHasChanged();
+
+        await _protectedLocalStorage.SetAsync(Constants.StorageKeys.FilterPreferences, _filterModel);
     }
 
     private async Task AttemptCreateTaskSubmit(int columnId)

@@ -4,7 +4,7 @@
     <div class="form p-2">
         <div class="form-group">
             <label for="text">Text, description or card code</label>
-            <input id="text" class="form-control" @onchange="OnSearchChanged"/>
+            <input value="@Model.Text" id="text" class="form-control" @onchange="OnSearchChanged"/>
         </div>
     </div>
 </ActionModal>
