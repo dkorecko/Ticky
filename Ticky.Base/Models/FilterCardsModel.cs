@@ -8,7 +8,11 @@ public class FilterCardsModel
 
     public List<int> LabelIds { get; set; } = [];
 
-    public bool IncludeUnassigned { get; set; } = false;
+    public bool IncludeUnassigned { get; set; }
+
+    public bool ExpandAssignedUsersSection { get; set; }
+
+    public bool ExpandLabelsSection { get; set; }
 
     public bool IsAnyFilterApplied()
     {
