@@ -629,9 +629,12 @@
             .Include(x => x.Subtasks)
             .Include(x => x.Labels)
             .Include(x => x.TimeRecords)
+            .Include(x => x.Column)
             .Where(x => columnIds.Contains(x.ColumnId))
             .Where(x => !x.SnoozedUntil.HasValue);
 
+        if (_filterModel.ExcludeCompleted)
+            queryableCards = queryableCards.Where(x => !x.Column.Finished);
 
         if(!string.IsNullOrWhiteSpace(_filterModel.Text))
         {
