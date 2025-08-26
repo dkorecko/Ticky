@@ -24,11 +24,11 @@
         </div>
 
         <div class="form-group">
-            <Name For="() => _column.OrderRule" />
-            <InputSelect class="form-control" @bind-Value="_column.OrderRule">
-                @foreach (Enum enumValue in Enum.GetValues(typeof(OrderRule)))
+            <Name For="() => _column.NewCardPlacement" />
+            <InputSelect class="form-control" @bind-Value="_column.NewCardPlacement">
+                @foreach (Enum enumValue in Enum.GetValues(typeof(CardPlacement)))
                 {
-                    if (_column.OrderRule.Equals(enumValue))
+                    if (_column.NewCardPlacement.Equals(enumValue))
                     {
                         <option selected value="@enumValue">@enumValue.GetDisplayName()</option>
                     }
@@ -38,7 +38,7 @@
                     }
                 }
             </InputSelect>
-            <ValidationMessage For="() => _column.OrderRule" />
+            <ValidationMessage For="() => _column.NewCardPlacement" />
         </div>
     </EditForm>
 </Modal>

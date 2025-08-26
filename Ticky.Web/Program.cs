@@ -154,6 +154,7 @@ using (var scope = app.Services.CreateScope())
         dbContext.Database.Migrate();
 
     DataSeeder.Seed(scope.ServiceProvider).GetAwaiter().GetResult();
+    DataMigrator.Seed(scope.ServiceProvider).GetAwaiter().GetResult();
 }
 
 // Configure the HTTP request pipeline.
