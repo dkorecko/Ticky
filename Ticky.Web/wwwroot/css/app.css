@@ -276,14 +276,8 @@
   .static {
     position: static;
   }
-  .-top-1 {
-    top: calc(var(--spacing) * -1);
-  }
   .top-0 {
     top: calc(var(--spacing) * 0);
-  }
-  .-right-1 {
-    right: calc(var(--spacing) * -1);
   }
   .right-0 {
     right: calc(var(--spacing) * 0);
@@ -306,14 +300,8 @@
   .m-5 {
     margin: calc(var(--spacing) * 5);
   }
-  .mx-auto {
-    margin-inline: auto;
-  }
   .mt-1 {
     margin-top: calc(var(--spacing) * 1);
-  }
-  .mt-4 {
-    margin-top: calc(var(--spacing) * 4);
   }
   .mt-5 {
     margin-top: calc(var(--spacing) * 5);
@@ -323,9 +311,6 @@
   }
   .mr-auto {
     margin-right: auto;
-  }
-  .mb-2 {
-    margin-bottom: calc(var(--spacing) * 2);
   }
   .\!ml-\[-0\.8rem\] {
     margin-left: -0.8rem !important;
@@ -407,9 +392,6 @@
   .\!h-32 {
     height: calc(var(--spacing) * 32) !important;
   }
-  .h-0 {
-    height: calc(var(--spacing) * 0);
-  }
   .h-0\.5 {
     height: calc(var(--spacing) * 0.5);
   }
@@ -476,9 +458,6 @@
   .w-2 {
     width: calc(var(--spacing) * 2);
   }
-  .w-4 {
-    width: calc(var(--spacing) * 4);
-  }
   .w-4\/5 {
     width: calc(4/5 * 100%);
   }
@@ -539,17 +518,11 @@
   .min-w-80 {
     min-width: calc(var(--spacing) * 80);
   }
-  .flex-1 {
-    flex: 1;
-  }
   .flex-grow {
     flex-grow: 1;
   }
   .grow {
     flex-grow: 1;
-  }
-  .border-collapse {
-    border-collapse: collapse;
   }
   .border-separate {
     border-collapse: separate;
@@ -785,9 +758,6 @@
   .bg-app-bg {
     background-color: var(--color-app-bg);
   }
-  .bg-backdrop {
-    background-color: var(--color-backdrop);
-  }
   .bg-backdrop\/0 {
     background-color: color-mix(in srgb, oklch(0.446 0.03 256.802) 0%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
@@ -808,9 +778,6 @@
   }
   .bg-column-limit-reached {
     background-color: var(--color-column-limit-reached);
-  }
-  .bg-dropdown-option {
-    background-color: var(--color-dropdown-option);
   }
   .bg-full-dropdown {
     background-color: var(--color-full-dropdown);
@@ -878,9 +845,6 @@
   .\!p-0 {
     padding: calc(var(--spacing) * 0) !important;
   }
-  .p-0 {
-    padding: calc(var(--spacing) * 0);
-  }
   .p-0\.5 {
     padding: calc(var(--spacing) * 0.5);
   }
@@ -919,9 +883,6 @@
   }
   .px-12 {
     padding-inline: calc(var(--spacing) * 12);
-  }
-  .py-0 {
-    padding-block: calc(var(--spacing) * 0);
   }
   .py-0\.5 {
     padding-block: calc(var(--spacing) * 0.5);
@@ -1085,9 +1046,6 @@
   .text-orange-500 {
     color: var(--color-orange-500);
   }
-  .text-pink-500 {
-    color: var(--color-pink-500);
-  }
   .text-primary {
     color: var(--color-primary);
   }
@@ -1105,9 +1063,6 @@
   }
   .capitalize {
     text-transform: capitalize;
-  }
-  .underline {
-    text-decoration-line: underline;
   }
   .opacity-0 {
     opacity: 0%;
@@ -1139,10 +1094,6 @@
   .shadow-sm {
     --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-  }
-  .outline {
-    outline-style: var(--tw-outline-style);
-    outline-width: 1px;
   }
   .outline-0 {
     outline-style: var(--tw-outline-style);
@@ -2300,6 +2251,15 @@ input[type="checkbox"].switch:checked:after {
 [data-theme='dark'] .task-card.sortable-chosen {
   border-style: var(--tw-border-style);
   border-width: 2px;
+}
+.dropdown-animate {
+  transition: opacity 0.1s cubic-bezier(0.4,0,0.2,1), transform 0.1s cubic-bezier(0.4,0,0.2,1);
+  transform: translateY(-10px);
+  opacity: 0;
+}
+.dropdown-animate-in {
+  transform: translateY(0);
+  opacity: 1;
 }
 @property --tw-outline-style {
   syntax: "*";
