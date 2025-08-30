@@ -517,7 +517,7 @@
         await RunNotification(typeof(Card), OperationType.Added);
 
         if(_board is not null && _user.AutomaticCardEdit)
-            _editCardModal?.Open(_board.Columns.SelectMany(x => x.Cards).ToList().OrderByDescending(x => x.CreatedAt).First().Id, _members, _board.Columns);
+            _editCardModal?.Open(_cards.OrderByDescending(x => x.CreatedAt).First().Id, _members, _board.Columns);
     }
 
     private async Task OnTaskEdited()
