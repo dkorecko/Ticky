@@ -6,7 +6,7 @@ public class DataMigrator
     {
         var dataContext = serviceProvider.GetRequiredService<DataContext>();
 
-        var topRules = new[]
+        var topRules = new HashSet<OrderRule>
         {
             OrderRule.ClosestDueDate,
             OrderRule.HighestPriority,

@@ -28,7 +28,7 @@
             <div class="form-group">
                 <Name For="() => _column.NewCardPlacement" />
                 <InputSelect class="form-control" @bind-Value="_column.NewCardPlacement">
-                    @foreach (Enum enumValue in Enum.GetValues(typeof(CardPlacement)))
+                    @foreach (Enum enumValue in Enum.GetValues<CardPlacement>())
                     {
                         <option value="@enumValue">@enumValue.GetDisplayName()</option>
                     }
