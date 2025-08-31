@@ -26,21 +26,14 @@
             </div>
 
             <div class="form-group">
-                <Name For="() => _column.OrderRule" />
-                <InputSelect class="form-control" @bind-Value="_column.OrderRule">
-                    @foreach (Enum enumValue in Enum.GetValues(typeof(OrderRule)))
+                <Name For="() => _column.NewCardPlacement" />
+                <InputSelect class="form-control" @bind-Value="_column.NewCardPlacement">
+                    @foreach (Enum enumValue in Enum.GetValues<CardPlacement>())
                     {
-                        if (_column.OrderRule.Equals(enumValue))
-                        {
-                            <option selected value="@enumValue">@enumValue.GetDisplayName()</option>
-                        }
-                        else
-                        {
-                            <option value="@enumValue">@enumValue.GetDisplayName()</option>
-                        }
+                        <option value="@enumValue">@enumValue.GetDisplayName()</option>
                     }
                 </InputSelect>
-                <ValidationMessage For="() => _column.OrderRule" />
+                <ValidationMessage For="() => _column.NewCardPlacement" />
             </div>
         </EditForm>
     }
@@ -82,7 +75,6 @@
 
         using var db = _dbContextFactory.CreateDbContext();
         var targetColumn = await db.Columns
-            .Include(x => x.Cards)
             .FirstOrDefaultAsync(x => x.Id.Equals(_column.Id));
 
         if (targetColumn is not null)
@@ -90,9 +82,7 @@
             targetColumn.Name = _column.Name;
             targetColumn.Finished = _column.Finished;
             targetColumn.MaxCards = _column.MaxCards;
-            targetColumn.OrderRule = _column.OrderRule;
-
-            targetColumn.ReorderCards();
+            targetColumn.NewCardPlacement = _column.NewCardPlacement;
 
             await db.SaveChangesAsync();
         }

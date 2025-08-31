@@ -522,22 +522,7 @@
 
     private async Task OnTaskEdited()
     {
-        if(_board is null)
-            return;
-
-        using var db = _dbContextFactory.CreateDbContext();
-
-        var columns = await db.Columns
-            .Include(x => x.Cards)
-            .Where(x => x.BoardId.Equals(_board.Id))
-            .ToListAsync();
-
-        foreach(var column in columns)
-        {
-            column.ReorderCards();
-        }
-
-        await db.SaveChangesAsync();
+        ArgumentNullException.ThrowIfNull(_board);
 
         await HandleUpdate();
     }
@@ -677,11 +662,26 @@
 
         if (column is not null)
         {
+            int newIndex = 0;
+            switch(column.NewCardPlacement)
+            {
+                case CardPlacement.Top: 
+                {
+                    foreach(var card in column.Cards)
+                        card.Index++;
+
+                    break;
+                }
+                default:
+                    newIndex = IndexHelper.GetNextIndex(column.Cards);
+                    break;
+            }
+
             var newCard = new Card
             {
                 Name = _createTaskModel.Text,
                 ColumnId = columnId,
-                Index = IndexHelper.GetNextIndex(column.Cards),
+                Index = newIndex,
                 CreatedAt = DateTime.Now,
                 Number = await _cardNumberingService.GetNextNumberAsync(Id),
                 CreatedById = _user.Id

@@ -1,4 +1,4 @@
-﻿namespace Ticky.Base.Enums;
+namespace Ticky.Base.Enums;
 
 public enum OrderRule
 {
@@ -21,5 +21,8 @@ public enum OrderRule
     NewestFirst = 5,
 
     [Display(Name = "By oldest first")]
-    OldestFirst = 6
+    OldestFirst = 6,
+
+    [Display(Name = "Migrated")]
+    Migrated = -1
 }
