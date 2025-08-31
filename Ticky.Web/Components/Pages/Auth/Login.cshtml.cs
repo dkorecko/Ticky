@@ -27,7 +27,7 @@ public class LoginModel : PageModel
             var result = await _signInManager.PasswordSignInAsync(
                 Input.Email,
                 Input.Password,
-                false,
+                true,
                 lockoutOnFailure: false
             );
 
