@@ -182,8 +182,8 @@
                         <!-- Side section -->
                         @if (_board is not null)
                         {
-                            var completedCards = _board.Columns.Where(x => x.Finished).SelectMany(x => x.Cards).Where(x => !x.SnoozedUntil.HasValue).Count();
-                            var totalCards = _board.Columns.SelectMany(x => x.Cards).Where(x => !x.SnoozedUntil.HasValue).Count();
+                            var completedCards = _cards.Where(x => x.Column.Finished).Count();
+                            var totalCards = _cards.Count();
 
                             <div class="flex flex-col gap-4">
                                 <div class="flex flex-col gap-1">
@@ -517,7 +517,7 @@
         await RunNotification(typeof(Card), OperationType.Added);
 
         if(_board is not null && _user.AutomaticCardEdit)
-            _editCardModal?.Open(_board.Columns.SelectMany(x => x.Cards).ToList().OrderByDescending(x => x.CreatedAt).First().Id, _members, _board.Columns);
+            _editCardModal?.Open(_cards.OrderByDescending(x => x.CreatedAt).First().Id, _members, _board.Columns);
     }
 
     private async Task OnTaskEdited()
@@ -629,9 +629,12 @@
             .Include(x => x.Subtasks)
             .Include(x => x.Labels)
             .Include(x => x.TimeRecords)
+            .Include(x => x.Column)
             .Where(x => columnIds.Contains(x.ColumnId))
             .Where(x => !x.SnoozedUntil.HasValue);
 
+        if (_filterModel.ExcludeCompleted)
+            queryableCards = queryableCards.Where(x => !x.Column.Finished);
 
         if(!string.IsNullOrWhiteSpace(_filterModel.Text))
         {
