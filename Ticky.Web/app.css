@@ -619,3 +619,13 @@ input[type="checkbox"].switch{
 [data-theme='dark'] .task-card.sortable-chosen {
     @apply border-2;
 }
+
+.dropdown-animate {
+  transition: opacity 0.1s cubic-bezier(0.4,0,0.2,1), transform 0.1s cubic-bezier(0.4,0,0.2,1);
+  transform: translateY(-10px);
+  opacity: 0;
+}
+.dropdown-animate-in {
+  transform: translateY(0);
+  opacity: 1;
+}

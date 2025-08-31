@@ -2,11 +2,9 @@ const OPEN_OFFSET = 5;
 
 function positionDropdown(dropdownElement, left, top, width = null) {
     dropdownElement.classList.remove('hidden');
-
     if (width !== null) {
         dropdownElement.style.width = width + 'px';
     }
-
     dropdownElement.style.left = left + 'px';
     dropdownElement.style.top = top + 'px';
 
@@ -33,6 +31,9 @@ function positionDropdown(dropdownElement, left, top, width = null) {
             dropdownElement.style.maxHeight = availableHeight + 'px';
         }
     }
+
+    void dropdownElement.offsetWidth;
+    dropdownElement.classList.add('dropdown-animate-in');
 }
 
 let openDropdown = null
@@ -80,8 +81,11 @@ function resetLastClosed() {
 
 function closeDropdowns() {
     document.querySelectorAll('.dropdown').forEach(element => {
-        element.classList.add('hidden')
-    })
+        element.classList.remove('dropdown-animate-in');
+        setTimeout(() => {
+            element.classList.add('hidden');
+        }, 100);
+    });
     openDropdown = null
     lastOpenedFromTrigger = null
 }
