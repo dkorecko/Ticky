@@ -28,14 +28,7 @@
             <InputSelect class="form-control" @bind-Value="_column.NewCardPlacement">
                 @foreach (Enum enumValue in Enum.GetValues(typeof(CardPlacement)))
                 {
-                    if (_column.NewCardPlacement.Equals(enumValue))
-                    {
-                        <option selected value="@enumValue">@enumValue.GetDisplayName()</option>
-                    }
-                    else
-                    {
-                        <option value="@enumValue">@enumValue.GetDisplayName()</option>
-                    }
+                    <option value="@enumValue">@enumValue.GetDisplayName()</option>
                 }
             </InputSelect>
             <ValidationMessage For="() => _column.NewCardPlacement" />
@@ -64,12 +57,11 @@
     public void Open(int boardId)
     {
         _boardId = boardId;
-        _column.BoardId = boardId;
 
         _column = new()
             {
                 Name = string.Empty,
-                BoardId = 0,
+                BoardId = boardId,
                 Index = 0
             };
         _editContext = new EditContext(_column);

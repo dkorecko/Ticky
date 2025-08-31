@@ -6,30 +6,27 @@ public class DataMigrator
     {
         var dataContext = serviceProvider.GetRequiredService<DataContext>();
 
-        var unmigratedColumns = await dataContext
-            .Columns.Where(c => c.OrderRule != OrderRule.Migrated)
-            .ToListAsync();
-
-        if (!unmigratedColumns.Any())
-            return;
-
-        foreach (var column in unmigratedColumns)
+        var topRules = new[]
         {
-            switch (column.OrderRule)
-            {
-                case OrderRule.ClosestDueDate:
-                case OrderRule.HighestPriority:
-                case OrderRule.NewestFirst:
-                    column.NewCardPlacement = CardPlacement.Top;
-                    break;
-                default:
-                    column.NewCardPlacement = CardPlacement.Bottom;
-                    break;
-            }
+            OrderRule.ClosestDueDate,
+            OrderRule.HighestPriority,
+            OrderRule.NewestFirst
+        };
 
-            column.OrderRule = OrderRule.Migrated;
-        }
+        await dataContext
+            .Columns.Where(c => c.OrderRule != OrderRule.Migrated && topRules.Contains(c.OrderRule))
+            .ExecuteUpdateAsync(s =>
+                s.SetProperty(c => c.NewCardPlacement, CardPlacement.Top)
+                    .SetProperty(c => c.OrderRule, OrderRule.Migrated)
+            );
 
-        await dataContext.SaveChangesAsync();
+        await dataContext
+            .Columns.Where(c =>
+                c.OrderRule != OrderRule.Migrated && !topRules.Contains(c.OrderRule)
+            )
+            .ExecuteUpdateAsync(s =>
+                s.SetProperty(c => c.NewCardPlacement, CardPlacement.Bottom)
+                    .SetProperty(c => c.OrderRule, OrderRule.Migrated)
+            );
     }
 }

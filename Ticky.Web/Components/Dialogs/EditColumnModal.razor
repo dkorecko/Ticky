@@ -30,14 +30,7 @@
                 <InputSelect class="form-control" @bind-Value="_column.NewCardPlacement">
                     @foreach (Enum enumValue in Enum.GetValues(typeof(CardPlacement)))
                     {
-                        if (_column.NewCardPlacement.Equals(enumValue))
-                        {
-                            <option selected value="@enumValue">@enumValue.GetDisplayName()</option>
-                        }
-                        else
-                        {
-                            <option value="@enumValue">@enumValue.GetDisplayName()</option>
-                        }
+                        <option value="@enumValue">@enumValue.GetDisplayName()</option>
                     }
                 </InputSelect>
                 <ValidationMessage For="() => _column.NewCardPlacement" />
@@ -82,7 +75,6 @@
 
         using var db = _dbContextFactory.CreateDbContext();
         var targetColumn = await db.Columns
-            .Include(x => x.Cards)
             .FirstOrDefaultAsync(x => x.Id.Equals(_column.Id));
 
         if (targetColumn is not null)
