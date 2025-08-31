@@ -9,6 +9,18 @@
 
         <div class="form-group">
             <div class="flex flex-row items-center gap-1 text-xs">
+                <label>Completion</label>
+            </div>
+            <div class="flex flex-col gap-1">
+                <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="ToggleExcludeCompleted">
+                    <span class="font-bold">Exclude completed cards</span>
+                    <i class='fa fa-check icon ml-auto @(Model.ExcludeCompleted ? string.Empty : "opacity-0")'></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="flex flex-row items-center gap-1 text-xs">
                 <label>Assigned users</label>
 
                 @if (BoardMembers.Count > 2)
@@ -165,6 +177,12 @@
     private async Task ToggleUnassignedFilter()
     {
         Model.IncludeUnassigned = !Model.IncludeUnassigned;
+        await SearchUpdated.InvokeAsync();
+    }
+
+    private async Task ToggleExcludeCompleted()
+    {
+        Model.ExcludeCompleted = !Model.ExcludeCompleted;
         await SearchUpdated.InvokeAsync();
     }
 

@@ -10,6 +10,8 @@ public class FilterCardsModel
 
     public bool IncludeUnassigned { get; set; }
 
+    public bool ExcludeCompleted { get; set; }
+
     public bool ExpandAssignedUsersSection { get; set; }
 
     public bool ExpandLabelsSection { get; set; }
@@ -19,7 +21,8 @@ public class FilterCardsModel
         return !string.IsNullOrWhiteSpace(Text)
             || AssignedUserIds.Count > 0
             || LabelIds.Count > 0
-            || IncludeUnassigned;
+            || IncludeUnassigned
+            || ExcludeCompleted;
     }
 
     public void ClearFilters()
@@ -28,5 +31,6 @@ public class FilterCardsModel
         AssignedUserIds.Clear();
         LabelIds.Clear();
         IncludeUnassigned = false;
+        ExcludeCompleted = false;
     }
 }
