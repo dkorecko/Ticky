@@ -6,7 +6,7 @@
 <PriorityModal @ref=_priorityModal UpdateCard="UpdateCard" />
 <LabelModal @ref=_labelModal UpdateCard="UpdateCard" />
 <AssigneesModal @ref=_assigneesModal UpdateCard="UpdateCard" />
-<AddSubtaskModal @ref=_addSubtaskModal UpdateCard="OnSubtaskAdded" />
+<AddSubtaskModal @ref=_addSubtaskModal UpdateCard="UpdateCard" />
 <AddReminderModal @ref=_addReminderModal UpdateCard="UpdateCard" />
 <AddTimeRecordModal @ref=_addTimeRecordModal UpdateCard="UpdateCard" />
 <EditTimeRecordModal @ref=_editTimeRecordModal UpdateCard="UpdateCard" />
@@ -827,19 +827,6 @@
         StateHasChanged();
 
         await OnSubmit.InvokeAsync();
-    }
-
-    private async Task OnSubtaskAdded()
-    {
-        await UpdateCard();
-
-        _ = ReopenSubtaskCreation();
-    }
-
-    private async Task ReopenSubtaskCreation()
-    {
-        await Task.Delay(50);
-        _addSubtaskModal?.Open(_addSubtaskTrigger, _card!);
     }
 
     private async Task DownloadAttachment(Attachment attachment)
