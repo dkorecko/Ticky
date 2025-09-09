@@ -43,17 +43,6 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Filtering and Sorting**: Easily find and organize tasks based on various criteria.
 - ... and more!
 
-### 📝 Planned features
-
-I'm constantly working to make Ticky even better! Here's a glimpse of what's in my plans:
-
-- Real-time updates
-- Swimlanes
-- Ability to move sub-tasks
-- Hosted version
-- Configurable fields
-- Lessening spam in Done column
-
 ## 📋 Prerequisites
 
 - **Docker** installed on your system
