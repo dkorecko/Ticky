@@ -1,4 +1,4 @@
-﻿@page "/boards/{Id:int}/{CardId:int?}"
+@page "/boards/{Id:int}/{CardId:int?}"
 @using System.Security.Cryptography
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
@@ -529,8 +529,6 @@
     {
         _adding = columnId;
 
-        StateHasChanged();
-
         _ = FocusCardCreation();
     }
 
@@ -542,7 +540,6 @@
             return;
 
         await _textElement.Value.FocusAsync();
-        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ExpandOrCollapseColumn(int columnId)
