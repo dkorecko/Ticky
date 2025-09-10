@@ -1,4 +1,4 @@
-﻿@inject IJSRuntime _js
+@inject IJSRuntime _js
 
 <div @ref="_element" class="dropdown dropdown-animate absolute top-0 left-0 z-20 hidden overflow-y-auto rounded-xs bg-modal shadow-2xl">
 	<section class="flex w-full flex-row items-center justify-center gap-10 px-2 py-3">
@@ -26,30 +26,22 @@
 	{
 		_elementId = elementId;
 		await OnResized();
-
-		if (_element.HasValue)
-		{
-			await _js.InvokeVoidAsync("trapFocusInElement", _element);
-		}
+		await TrapFocus();
 	}
 
 	public async void Open(ElementReference? triggerElement)
 	{
 		_triggerElement = triggerElement;
 		await OnResized();
-
-		if (_element.HasValue)
-		{
-			await _js.InvokeVoidAsync("trapFocusInElement", _element);
-		}
+		await TrapFocus();
 	}
 
-	public async Task Refocus()
+	public async Task TrapFocus()
 	{
-		if (_element.HasValue)
-		{
-			await _js.InvokeVoidAsync("trapFocusInElement", _element);
-		}
+		if(!_element.HasValue)
+			return;
+
+		await _js.InvokeVoidAsync("trapFocusInElement", _element.Value);
 	}
 
 	public async Task OnResized()
