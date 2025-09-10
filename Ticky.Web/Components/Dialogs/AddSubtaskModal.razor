@@ -40,7 +40,7 @@
 
     public async Task AddSubtask() 
     {
-        if(_card is null)
+        if(_card is null || _modalRef is null)
             return;
 
         using var db = _dbContextFactory.CreateDbContext();
@@ -68,9 +68,8 @@
         await db.SaveChangesAsync();
 
         _card = card;
-        StateHasChanged();
+        _subtaskModel = new();
         await UpdateCard.InvokeAsync();
-        _modalRef?.Close();
-        _card = null;
+        await _modalRef.TrapFocus();
     }
 }
