@@ -1,4 +1,4 @@
-@page "/boards/{Id:int}/{CardId:int?}"
+﻿@page "/boards/{Id:int}/{CardId:int?}"
 @using System.Security.Cryptography
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
@@ -508,8 +508,6 @@
         await LoadBoardAsync();
 
         OnDataChanged();
-
-        await _js.InvokeVoidAsync("scaleInitialize");
     }
 
     private async Task OnTaskCreated()

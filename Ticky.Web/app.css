@@ -156,7 +156,7 @@
     
 /* Regular checkbox styling */
 input[type="checkbox"]:not(.switch) {
-    @apply border-add-outline bg-card-bg h-4 w-4 min-w-4 cursor-pointer appearance-none rounded-sm border-1 transition-all;
+    @apply h-4 w-4 min-w-4 cursor-pointer appearance-none rounded-sm border-1 border-add-outline bg-card-bg transition-all;
 }
 
 input[type="checkbox"]:not(.switch):checked {
@@ -244,7 +244,7 @@ input {
 
 .stack-avatars {
     margin-left: -1rem;
-    @apply outline-avatar-ring outline-1;
+    @apply outline-1 outline-avatar-ring;
 }
 
 .avatar-border {
@@ -252,15 +252,15 @@ input {
 }
 
 .board-column {
-    @apply flex w-64 flex-col items-center;
+    @apply flex max-h-[calc(100vh-(var(--spacing)*6)-(var(--spacing)*2)*6-(var(--spacing)*8)*2-17px)] w-64 flex-col items-center;
 }
 
 .task-card {
-    @apply bg-card-bg mb-2 flex w-full cursor-pointer flex-col gap-3 rounded-lg p-3 shadow-sm select-none data-[blocked=True]:bg-card-blocked-bg;
+    @apply mb-2 flex w-full cursor-pointer flex-col gap-3 rounded-lg bg-card-bg p-3 shadow-sm select-none data-[blocked=True]:bg-card-blocked-bg;
 }
 
 .to-task-card {
-    @apply select-none data-[active=True]:bg-card-bg data-[active=True]:flex data-[active=True]:flex-col data-[active=True]:gap-3 data-[active=True]:p-3 data-[active=True]:shadow-sm
+    @apply select-none data-[active=True]:flex data-[active=True]:flex-col data-[active=True]:gap-3 data-[active=True]:bg-card-bg data-[active=True]:p-3 data-[active=True]:shadow-sm
         data-[active=True]:outline-0;
 }
 
@@ -277,7 +277,7 @@ input {
 }
 
 button, button[type='submit'], .label-as-button {
-    @apply bg-primary text-button-text rounded-lg py-2 text-xs transition-all ease-in-out hover:bg-primary-hover;
+    @apply rounded-lg bg-primary py-2 text-xs text-button-text transition-all ease-in-out hover:bg-primary-hover;
 }
 
 button, .label-as-button > label {
@@ -321,7 +321,7 @@ button, .label-as-button > i {
 }
 
 .auth-input {
-    @apply bg-auth-bg h-8 w-full border-b-2 border-gray-600 px-2 text-sm font-normal
+    @apply h-8 w-full border-b-2 border-gray-600 bg-auth-bg px-2 text-sm font-normal
         transition-all ease-in-out focus:border-primary;
 }
 
@@ -330,7 +330,7 @@ button, .label-as-button > i {
 }
 
 .auth-card {
-    @apply bg-auth-bg mx-2 flex w-[30rem] flex-col gap-12 rounded-lg px-12 py-24 shadow-2xl;
+    @apply mx-2 flex w-[30rem] flex-col gap-12 rounded-lg bg-auth-bg px-12 py-24 shadow-2xl;
 }
 
 .auth-form {
@@ -338,7 +338,7 @@ button, .label-as-button > i {
 }
 
 .auth-link {
-    @apply text-primary cursor-pointer text-xs font-semibold transition-all hover:text-primary-hover;
+    @apply cursor-pointer text-xs font-semibold text-primary transition-all hover:text-primary-hover;
 }
 
 input[type="checkbox"].switch{
@@ -354,7 +354,7 @@ input[type="checkbox"].switch{
 	cursor: pointer;
 	-webkit-transition: all .2s ease-in-out;
 	transition: all .2s ease-in-out;
-    @apply bg-checkbox-bg scale-50 shadow-sm;
+    @apply scale-50 bg-checkbox-bg shadow-sm;
   }
 
 [data-theme='dark'] input[type="checkbox"].switch {
@@ -392,7 +392,7 @@ input[type="checkbox"].switch{
 }
 
 @utility add {
-    @apply text-add-outline outline-add-outline flex cursor-pointer flex-col items-center justify-center gap-5 outline-1 transition-all ease-in-out outline-dashed hover:text-add-outline-hover hover:outline-add-outline-hover;
+    @apply flex cursor-pointer flex-col items-center justify-center gap-5 text-add-outline outline-1 outline-add-outline transition-all ease-in-out outline-dashed hover:text-add-outline-hover hover:outline-add-outline-hover;
 }
 
 .board-card-create {
@@ -404,7 +404,7 @@ input[type="checkbox"].switch{
     }
 
 @utility icon-button {
-    @apply text-add-outline cursor-pointer rounded-lg bg-transparent p-1 transition-all ease-in-out hover:text-add-outline-hover hover:bg-icon-bg-hover;
+    @apply cursor-pointer rounded-lg bg-transparent p-1 text-add-outline transition-all ease-in-out hover:text-add-outline-hover hover:bg-icon-bg-hover;
 }
 
 .card-button {
@@ -412,7 +412,7 @@ input[type="checkbox"].switch{
 }
 
 .board-card {
-    @apply bg-card-bg flex h-min w-full cursor-pointer flex-col rounded-lg px-5 py-5 shadow-sm transition-all ease-in-out select-none hover:shadow-xl sm:w-72 /*hover:scale-105*/;
+    @apply flex h-min w-full cursor-pointer flex-col rounded-lg bg-card-bg px-5 py-5 shadow-sm transition-all ease-in-out select-none hover:shadow-xl sm:w-72 /*hover:scale-105*/;
 }
 
 [data-theme=''] .board-card {
@@ -433,7 +433,7 @@ input[type="checkbox"].switch{
     }
 
 .field-validation-error, .validation-message {
-    @apply text-red-button text-xs;
+    @apply text-xs text-red-button;
 }
 
 .form {
@@ -488,13 +488,13 @@ input[type="checkbox"].switch{
 }
 
 .edit-icon {
-    @apply text-add-outline
-    outline-add-outline cursor-pointer p-2 text-xs transition-all ease-in-out
+    @apply cursor-pointer
+    p-2 text-xs text-add-outline outline-add-outline transition-all ease-in-out
     hover:text-add-outline-hover hover:outline-add-outline-hover;
 }
 
 .icon {
-    @apply text-add-outline outline-add-outline p-2 text-xs transition-all ease-in-out;
+    @apply p-2 text-xs text-add-outline outline-add-outline transition-all ease-in-out;
 }
 
 .priority-selector-item {
@@ -520,7 +520,7 @@ input[type="checkbox"].switch{
 .element-spinner {
     border-radius: 50%;
     animation: spin 1s ease-in-out infinite;
-    @apply border-card-bg border-t-primary h-10 w-10 border-4 data-[small=True]:h-5 data-[small=True]:w-5;
+    @apply h-10 w-10 border-4 border-card-bg border-t-primary data-[small=True]:h-5 data-[small=True]:w-5;
 }
 
 @keyframes spin {
