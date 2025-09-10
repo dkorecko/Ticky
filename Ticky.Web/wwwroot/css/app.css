@@ -1525,7 +1525,7 @@ input {
 }
 .board-column {
   display: flex;
-  max-height: calc(100vh - (var(--spacing) * 6) - (var(--spacing) * 2) * 6 - (var(--spacing) * 8) * 2 - 17px);
+  max-height: calc(100dvh - (var(--spacing) * 6) - (var(--spacing) * 2) * 6 - (var(--spacing) * 8) * 2 - 17px);
   width: calc(var(--spacing) * 64);
   flex-direction: column;
   align-items: center;
