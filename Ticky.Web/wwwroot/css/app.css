@@ -1523,9 +1523,11 @@ input {
     --tw-shadow-color: color-mix(in oklab, var(--color-primary) var(--tw-shadow-alpha), transparent);
   }
 }
+.max-h-visible-screen {
+  max-height: calc(var(--vvh) * 100 - (var(--spacing) * 6) - (var(--spacing) * 2) * 6 - (var(--spacing) * 8) * 2 - 17px);
+}
 .board-column {
   display: flex;
-  max-height: calc(var(--vvh) * 100 - (var(--spacing) * 6) - (var(--spacing) * 2) * 6 - (var(--spacing) * 8) * 2 - 17px);
   width: calc(var(--spacing) * 64);
   flex-direction: column;
   align-items: center;
