@@ -64,8 +64,9 @@ document.addEventListener('mouseup', (event) => {
         lastClosedX = event.clientX
         lastClosedY = event.clientY
 
-        if (lastOpenedFromTrigger === event.target)
+        if (lastOpenedFromTrigger === event.target) {
             lastClickTarget = event.target
+        }
 
         closeDropdowns()
 
@@ -80,12 +81,16 @@ function resetLastClosed() {
 }
 
 function closeDropdowns() {
-    document.querySelectorAll('.dropdown').forEach(element => {
-        element.classList.remove('dropdown-animate-in');
-        setTimeout(() => {
-            element.classList.add('hidden');
-        }, 100);
-    });
+    if (!openDropdown)
+        return
+
+    let targetDropdown = openDropdown
+    targetDropdown.classList.remove('dropdown-animate-in')
+
+    setTimeout(() => {
+        targetDropdown.classList.add('hidden');
+    }, 100);
+
     openDropdown = null
     lastOpenedFromTrigger = null
 }
