@@ -2,38 +2,44 @@ const OPEN_OFFSET = 5;
 
 function positionDropdown(dropdownElement, left, top, width = null) {
     dropdownElement.classList.remove('hidden');
+    dropdownElement.style.visibility = 'hidden';
     if (width !== null) {
         dropdownElement.style.width = width + 'px';
     }
     dropdownElement.style.left = left + 'px';
     dropdownElement.style.top = top + 'px';
 
-    const rect = dropdownElement.getBoundingClientRect();
-    const mostRightPoint = left + rect.width;
-    const mostBottomPoint = top + rect.height;
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            const rect = dropdownElement.getBoundingClientRect();
+            const mostRightPoint = left + rect.width;
+            const mostBottomPoint = top + rect.height;
 
-    const availableWidth = document.documentElement.clientWidth - (OPEN_OFFSET * 2)
-    const availableHeight = document.documentElement.clientHeight - (OPEN_OFFSET * 2)
+            const availableWidth = document.documentElement.clientWidth - (OPEN_OFFSET * 2)
+            const availableHeight = document.documentElement.clientHeight - (OPEN_OFFSET * 2)
 
-    if (mostRightPoint > availableWidth) {
-        if(availableWidth > rect.width) {
-            dropdownElement.style.left = availableWidth - rect.width + 'px';
-        } else {
-            dropdownElement.style.left = OPEN_OFFSET + 'px';
-            dropdownElement.style.maxWidth = availableWidth + 'px';
-        }
-    }
-    if (mostBottomPoint > availableHeight) {
-        if(availableHeight > rect.height) {
-            dropdownElement.style.top = availableHeight - rect.height + 'px';
-        } else {
-            dropdownElement.style.top = OPEN_OFFSET + 'px';
-            dropdownElement.style.maxHeight = availableHeight + 'px';
-        }
-    }
+            if (mostRightPoint > availableWidth) {
+                if(availableWidth > rect.width) {
+                    dropdownElement.style.left = availableWidth - rect.width + 'px';
+                } else {
+                    dropdownElement.style.left = OPEN_OFFSET + 'px';
+                    dropdownElement.style.maxWidth = availableWidth + 'px';
+                }
+            }
+            if (mostBottomPoint > availableHeight) {
+                if(availableHeight > rect.height) {
+                    dropdownElement.style.top = availableHeight - rect.height + 'px';
+                } else {
+                    dropdownElement.style.top = OPEN_OFFSET + 'px';
+                    dropdownElement.style.maxHeight = availableHeight + 'px';
+                }
+            }
 
-    void dropdownElement.offsetWidth;
-    dropdownElement.classList.add('dropdown-animate-in');
+            dropdownElement.style.visibility = 'visible';
+            void dropdownElement.offsetWidth;
+            dropdownElement.classList.add('dropdown-animate-in');
+        });
+    });
 }
 
 let openDropdown = null
