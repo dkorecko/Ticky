@@ -6,7 +6,7 @@
 <PriorityModal @ref=_priorityModal UpdateCard="UpdateCard" />
 <LabelModal @ref=_labelModal UpdateCard="UpdateCard" />
 <AssigneesModal @ref=_assigneesModal UpdateCard="UpdateCard" />
-<AddSubtaskModal @ref=_addSubtaskModal UpdateCard="OnSubtaskAdded" />
+<AddSubtaskModal @ref=_addSubtaskModal UpdateCard="UpdateCard" />
 <AddReminderModal @ref=_addReminderModal UpdateCard="UpdateCard" />
 <AddTimeRecordModal @ref=_addTimeRecordModal UpdateCard="UpdateCard" />
 <EditTimeRecordModal @ref=_editTimeRecordModal UpdateCard="UpdateCard" />
@@ -245,10 +245,11 @@
                                 @foreach (var subtask in _card.Subtasks.OrderBy(x => x.Index))
                                 {
                                     var subtaskId = $"subtask_id_{i}";
+                                    var subtaskIdEdit = subtaskId + "_edit";
                                     <div class="flex flex-row items-center gap-2 text-sm font-normal">
                                         <input id="@subtaskId" type="checkbox" checked="@subtask.Completed" @onchange="(e) => OnSubtaskStatusChanged(e, subtask)" />
                                         <label for="@subtaskId">@subtask.Text</label>
-                                        <i id="@subtaskId" class="fa fa-pencil edit-icon" @onclick="() => _editSubtaskModal?.Open(subtaskId, subtask)" title="Edit subtask"></i>
+                                        <i id="@subtaskIdEdit" class="fa fa-pencil edit-icon" @onclick='() => _editSubtaskModal?.Open(subtaskIdEdit, subtask)' title="Edit subtask"></i>
                                         <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="() => DeleteSubtask(subtask)" title="Delete subtask"></i>
                                     </div>
                                     i++;
@@ -827,19 +828,6 @@
         StateHasChanged();
 
         await OnSubmit.InvokeAsync();
-    }
-
-    private async Task OnSubtaskAdded()
-    {
-        await UpdateCard();
-
-        _ = ReopenSubtaskCreation();
-    }
-
-    private async Task ReopenSubtaskCreation()
-    {
-        await Task.Delay(50);
-        _addSubtaskModal?.Open(_addSubtaskTrigger, _card!);
     }
 
     private async Task DownloadAttachment(Attachment attachment)
