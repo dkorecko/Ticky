@@ -164,7 +164,7 @@
 
                 @if (IsAdmin())
                 {
-                    <div class="add max-h-visible-screen mt-1 mr-12 h-[75vh] min-w-64 rounded-lg px-8" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id)+1 : 0);">
+                    <div class="add max-h-visible-screen mt-1 mr-12 min-w-64 rounded-lg px-8" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id)+1 : 0);">
                         <i class="fa fa-plus text-3xl" title="Add new column"></i>
                         <label>New column</label>
                     </div>
