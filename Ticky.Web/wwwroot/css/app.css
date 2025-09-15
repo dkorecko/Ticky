@@ -431,9 +431,6 @@
   .h-min {
     height: min-content;
   }
-  .h-screen {
-    height: 100vh;
-  }
   .max-h-\[80vh\] {
     max-height: 80vh;
   }
@@ -1522,6 +1519,12 @@ input {
   @supports (color: color-mix(in lab, red, red)) {
     --tw-shadow-color: color-mix(in oklab, var(--color-primary) var(--tw-shadow-alpha), transparent);
   }
+}
+.max-h-visible-screen {
+  max-height: calc(var(--vvh) * 100 - (var(--spacing) * 6) - (var(--spacing) * 2) * 6 - (var(--spacing) * 8) * 2 - 17px);
+}
+.h-visible-screen {
+  height: calc(var(--vvh) * 100);
 }
 .board-column {
   display: flex;

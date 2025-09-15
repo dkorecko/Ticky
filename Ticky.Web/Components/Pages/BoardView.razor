@@ -77,7 +77,7 @@
                             var columnCards = _cards.Where(x => x.ColumnId.Equals(column.Id)).ToList();
                             var cardsCount = columnCards.Count;
                         }
-                        <div id="@column.Id" class="board-column gap-1">
+                        <div id="@column.Id" class="board-column max-h-visible-screen gap-1">
                             <div class="flex w-full flex-row items-start justify-between">
                                 <div class="flex flex-row items-center gap-2">
                                     <label class="align-middle">
@@ -164,7 +164,7 @@
 
                 @if (IsAdmin())
                 {
-                    <div class="add mt-1 mr-12 h-[75vh] min-w-64 rounded-lg px-8" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id)+1 : 0);">
+                    <div class="add max-h-visible-screen mt-1 mr-12 min-w-64 rounded-lg px-8" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id)+1 : 0);">
                         <i class="fa fa-plus text-3xl" title="Add new column"></i>
                         <label>New column</label>
                     </div>
@@ -508,8 +508,6 @@
         await LoadBoardAsync();
 
         OnDataChanged();
-
-        await _js.InvokeVoidAsync("scaleInitialize");
     }
 
     private async Task OnTaskCreated()
@@ -531,8 +529,6 @@
     {
         _adding = columnId;
 
-        StateHasChanged();
-
         _ = FocusCardCreation();
     }
 
@@ -544,7 +540,6 @@
             return;
 
         await _textElement.Value.FocusAsync();
-        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ExpandOrCollapseColumn(int columnId)
