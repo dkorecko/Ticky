@@ -41,6 +41,7 @@
 		if(!_element.HasValue)
 			return;
 
+		await Task.Delay(100);
 		await _js.InvokeVoidAsync("trapFocusInElement", _element.Value);
 	}
 
