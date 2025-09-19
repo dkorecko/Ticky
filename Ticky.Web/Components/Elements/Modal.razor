@@ -6,7 +6,7 @@
 			{
 				<section class="flex flex-row items-center justify-between gap-10 px-7 py-3">
 					<h5>@Title</h5>
-					<i class="fa fa-xmark cursor-pointer text-icon hover:text-icon-hover" @onclick="Cancel" title="Close"></i>
+					<i class="fa fa-xmark card-button" @onclick="Cancel" title="Close"></i>
 				</section>
 				<section @ref=_childContent class="max-h-[80vh] overflow-y-auto px-7 py-5">@ChildContent</section>
 				@if (!DisableButtons)
