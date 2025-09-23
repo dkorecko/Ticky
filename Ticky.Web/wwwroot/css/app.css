@@ -80,7 +80,6 @@
     --color-modal: #fff;
     --color-dropdown-option: oklch(0.872 0.01 258.338);
     --color-icon: oklch(0.551 0.027 264.364);
-    --color-icon-hover: oklch(0.21 0.034 264.665);
     --color-icon-bg-hover: oklch(0.704 0.04 256.788);
     --color-card-icon-bg-hover: oklch(0.872 0.01 258.338);
     --color-disabled-icon: oklch(0.872 0.01 258.338);
@@ -1193,13 +1192,6 @@
     &:hover {
       @media (hover: hover) {
         color: var(--color-red-button-hover) !important;
-      }
-    }
-  }
-  .hover\:text-icon-hover {
-    &:hover {
-      @media (hover: hover) {
-        color: var(--color-icon-hover);
       }
     }
   }
