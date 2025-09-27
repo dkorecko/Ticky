@@ -1,4 +1,4 @@
-@inherits AbstractModal
+﻿@inherits AbstractModal
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
@@ -172,19 +172,19 @@
                 </table>
                 <div class="flex flex-row text-sm">
                     <label data-active=@((_tab == 0).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 0">
-                        <label class="hidden sm:block">Description</label>
+                        <label class="hidden cursor-pointer sm:block">Description</label>
                         <i class="fa fa-circle-info sm:!hidden" title="Description"></i>
                     </label>
                     <label data-active=@((_tab == 1).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 1">
-                        <label class="hidden sm:block">Comments</label>
+                        <label class="hidden cursor-pointer sm:block">Comments</label>
                         <i class="fa fa-comments sm:!hidden" title="Comments"></i>
                     </label>
                     <label data-active=@((_tab == 2).ToString()) class="cursor-pointer border-b-2 px-4 py-2 transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 2">
-                        <label class="hidden sm:block">Activity</label>
+                        <label class="hidden cursor-pointer sm:block">Activity</label>
                         <i class="fa fa-rotate-right sm:!hidden" title="Activity"></i>
                     </label>
                     <label data-active=@((_tab == 3).ToString()) class="cursor-pointer border-b-2 px-4 py-2 whitespace-nowrap transition-all select-none hover:border-add-outline data-[active=True]:border-card-header-highlight" @onclick="() => _tab = 3">
-                        <label class="hidden sm:block">Time Tracking</label>
+                        <label class="hidden cursor-pointer sm:block">Time Tracking</label>
                         <i class="fa fa-clock sm:!hidden" title="Time tracking"></i>
                     </label>
                     <label class="w-full border-b-2 px-2 py-2"></label>
