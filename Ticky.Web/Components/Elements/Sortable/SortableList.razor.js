@@ -54,17 +54,9 @@ export function init(id, group, pull, put, sort, handle, filter, component, forc
                 console.log('insert before Id: ', cardBelowId)
             }
 
-            event.item.remove()
-
-            if (event.oldIndex < event.newIndex)
-                event.to.insertBefore(event.item, customChildNodes[event.oldIndex])
-            else
-                event.to.insertBefore(event.item, customChildNodes[event.oldIndex + 1])
-                
             component.invokeMethodAsync('OnUpdateJS', movedCardId, cardBelowId, event.from.id);
         },
         onRemove: (event) => {
-            let customFromChildNodes = Array.from(event.from.childNodes).filter(node => node.tagName === 'DIV');
             let customToChildNodes = Array.from(event.to.childNodes).filter(node => node.tagName === 'DIV');
 
             let movedCard = customToChildNodes[event.newIndex]
@@ -89,11 +81,6 @@ export function init(id, group, pull, put, sort, handle, filter, component, forc
                 console.log('moved card ID: ', movedCardId)
                 console.log('card below inserted ID: ', cardBelowId)
             }
-
-            // Revert the DOM to match the .NET state
-            event.item.remove();
-
-            event.from.insertBefore(event.item, customFromChildNodes[event.oldIndex]);
 
             component.invokeMethodAsync('OnRemoveJS', movedCardId, cardBelowId, event.from.id, event.to.id, event.originalEvent.clientX / event.originalEvent.view.outerWidth, event.originalEvent.clientY / event.originalEvent.view.outerHeight);
         },

@@ -2,12 +2,10 @@
 @using System.Security.Cryptography
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
-@inject CardNumberingService _cardNumberingService
 @inject ProtectedLocalStorage _protectedLocalStorage
 @inject IJSRuntime _js
 @inject ILogger<BoardView> _logger
 @inherits NotifiableBase
-@implements IDisposable
 
 @if (_board is not null)
 {
@@ -73,92 +71,7 @@
             <section id="board-section" class="w-full flex-row gap-5 overflow-x-auto @(_preferences.ShowStats ? "hidden md:flex" : "flex") py-6">
                 <SortableList Class="ml-12 flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
-                        @{
-                            var columnCards = _cards.Where(x => x.ColumnId.Equals(column.Id)).ToList();
-                            var cardsCount = columnCards.Count;
-                        }
-                        <div id="@column.Id" class="board-column max-h-visible-screen gap-1">
-                            <div class="flex w-full flex-row items-start justify-between">
-                                <div class="flex flex-row items-center gap-2">
-                                    <label class="align-middle">
-                                        @column.Name
-                                        <span class='text-2xs ml-1 rounded-full p-0.5 align-middle shadow-sm @(column.MaxCards != 0 && cardsCount >= column.MaxCards ? "bg-column-limit-reached" : "bg-card-bg")'>
-                                            @if (column.MaxCards == 0)
-                                            {
-                                                <span>@cardsCount</span>
-                                            }
-                                            else
-                                            {
-                                                <span>@cardsCount/@column.MaxCards</span>
-                                            }
-                                        </span>
-                                        @if (column.Collapsed)
-                                        {
-                                            <label class="ml-2 text-xs font-normal">(Collapsed)</label>
-                                        }
-                                    </label>
-                                </div>
-
-                                @if (IsAdmin())
-                                {
-                                    <div class="flex flex-row items-center gap-2">
-                                        <i class="fa fa-up-down-left-right drag-toggle icon-button cursor-move text-icon" title="Drag to reorder column"></i>
-
-                                        <Dropdown Actions='new() {
-                                            { "Edit column", () => _editColumnModal?.Open(column.Id) },
-                                            { "Delete column", async () => await OpenDeleteColumnDialog(column) },
-                                            { $"{(column.Collapsed ? "Expand" : "Collapse")} column", async () => await ExpandOrCollapseColumn(column.Id) },
-                                        }'>
-                                            <i class="fa fa-ellipsis icon-button pr-1" title="Column options"></i>
-                                        </Dropdown>
-                                    </div>
-                                }
-                            </div>
-
-                            @if(!column.Collapsed) 
-                            {
-                                <SortableList Id=@($"{COLUMN_PREFIX}{column.Id}") Animation=@(_board.DisableSortingAnimations ? 0 : 200) Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="columnCards.OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
-                                    <SortableItemTemplate>
-                                        @if(column.MaxCards == 1)
-                                        {
-                                            <div class="mt-1"></div>
-                                        }
-                                        <CardView Card="@context" Column="column" BoardCode="@_board.Code" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" Members="_members" OnCardUpdated="HandleUpdate" Columns="_board.Columns"/>
-                                    </SortableItemTemplate>
-                                </SortableList>
-
-                                @if(column.MaxCards == 0 || cardsCount < column.MaxCards) 
-                                {
-                                    <div data-active=@((_adding == column.Id).ToString()) @onclick="() => StartAddingToColumn(column.Id)" 
-                                        class="add rounded-lg select-none p-5 h-min w-full to-task-card">
-                                        @if(_adding != column.Id) {
-                                            <i class="fa fa-plus text-3xl" title="Add new card"></i>
-                                            <label>New card</label>
-                                        } else {
-                                            <div class="flex w-full flex-row items-center justify-between text-sm font-semibold">
-                                                <label>Create new card</label>
-                                                <i class="fa fa-xmark card-button" @onclick="() => _adding = -1" @onclick:stopPropagation=true title="Cancel"></i>
-                                            </div>
-
-                                            <textarea class="h-16 w-full rounded-lg bg-card-bg p-2 text-start text-xs outline-1 outline-typing-outline" 
-                                                           @bind="CreateTaskText"
-                                                           @bind:event="oninput"
-                                                           @ref=_textElement
-                                                           @onkeydown='async (e) => {
-                                                               if(!e.Key.Contains("Enter"))
-                                                                    return;
-
-                                                               await AttemptCreateTaskSubmit(column.Id);
-                                                           }'
-                                                           autofocus placeholder="Describe the task ..." wrap="soft"/>
-
-                                            <hr class="border-t-tab-outline">
-                                            <button class="w-full" @onclick="() => AttemptCreateTaskSubmit(column.Id)">Create</button>
-                                        }
-                                    </div>
-                                }
-                            }
-                        </div>
+                        <ColumnView @key="column.Id" Column="column" Cards="_cards" Members="_members" Board="@_board" EditColumnModal="_editColumnModal" DeleteColumnModal="_deleteColumnModal" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" OnCardMoved=StateHasChanged AddingSetter=SetAdding IsAdmin="IsAdmin" AddingCardHere="(_adding == column.Id)" OnUpdate="HandleUpdate" />
                     </SortableItemTemplate>
                 </SortableList>
 
@@ -223,7 +136,6 @@
     [Parameter]
     public int? CardId { get; set; }
 
-    private const string COLUMN_PREFIX = "column_";
     private string FILTERS_SCOPED_KEY { get => $"{Constants.StorageKeys.FilterPreferencesPrefix}_{Id}"; }
 
     private Board? _board;
@@ -240,14 +152,11 @@
     private FilterCardsModal? _filterCardsModal;
     private List<ElementReference> _avatars = [];
     private ElementReference Avatars { set => _avatars.Add(value); }
-    private ElementReference? _textElement;
 
-    private CreateCardModel _createTaskModel = new();
     private int _adding;
     private BoardPreferencesModel _preferences = new();
     private FilterCardsModel _filterModel = new();
     private int? _initialCardId;
-    private DotNetObjectReference<BoardView>? objRef;
 
     protected override void OnParametersSet()
     {
@@ -263,7 +172,6 @@
         if (!firstRender)
             return;
 
-        objRef = DotNetObjectReference.Create(this);
         _initialCardId = CardId;
 
         try
@@ -338,164 +246,89 @@
         StateHasChanged();
     }
 
-    private int GetColumnIdFromString(string str)
-        => Convert.ToInt32(str.Replace(COLUMN_PREFIX, string.Empty));
-
-    private async Task OnMovedWithinList((string movedCardId, string? targetCardId, string columnId) args)
-    {
-        using var db = _dbContextFactory.CreateDbContext();
-
-        var targetColumn = db.Columns
-            .Include(x => x.Cards)
-            .FirstOrDefault(x => x.Id.Equals(GetColumnIdFromString(args.columnId)));
-
-        if(targetColumn is null)
-            return;
-
-        var movedCard = targetColumn.Cards.OrderBy(x => x.Index).FirstOrDefault(x => x.Id.Equals(Convert.ToInt32(args.movedCardId)));
-
-        if (movedCard is null)
-            return;
-
-        int targetIndex = targetColumn.Cards.Any() ? targetColumn.Cards.Max(x => x.Index) + 1 : 0;
-        int? targetCardId = args.targetCardId is not null ? Convert.ToInt32(args.targetCardId) : null;
-
-        if (targetCardId is not null)
-        {
-            var targetCard = targetColumn.Cards.FirstOrDefault(x => x.Id.Equals(targetCardId));
-
-            if (targetCard is not null)
-            {
-                targetIndex = targetCard.Index;
-
-                foreach (var card in targetColumn.Cards.OrderByDescending(x => x.Index))
-                {
-                    if (card.Index >= targetCard.Index)
-                    {
-                        card.Index++;
-                    }
-                }
-            }
-        }
-
-        movedCard.Index = targetIndex;
-
-        IndexHelper.FixIndices(targetColumn.Cards);
-
-        await db.SaveChangesAsync();
-        await HandleUpdate();
-    }
-
     private async Task OnColumnMoved((string movedItemId, string? targetItemId, string _) args)
     {
-        using var db = _dbContextFactory.CreateDbContext();
-
-        var targetBoard = db.Boards
-            .Include(x => x.Columns)
-            .FirstOrDefault(x => x.Id.Equals(Id));
-
-        if(targetBoard is null)
+        if(_board is null)
             return;
 
-        var movedColumn = targetBoard.Columns.FirstOrDefault(x => x.Id.Equals(Convert.ToInt32(args.movedItemId)));
+        var movedColumnId = Convert.ToInt32(args.movedItemId);
+        var snapshot = _board.Columns.Select(c => new { c.Id, c.Index }).ToList();
 
-        if(movedColumn is null)
+        var movedColumn = _board.Columns.FirstOrDefault(x => x.Id.Equals(movedColumnId));
+
+        if (movedColumn is null)
             return;
 
-        int targetIndex = targetBoard.Columns.Any() ? targetBoard.Columns.Max(x => x.Index) + 1 : 0;
+        int targetIndex = _board.Columns.Any() ? _board.Columns.Max(x => x.Index) + 1 : 0;
         int? targetItemId = args.targetItemId is not null ? Convert.ToInt32(args.targetItemId) : null;
 
         if (targetItemId.HasValue)
         {
-            var targetColumn = targetBoard.Columns.FirstOrDefault(x => x.Id.Equals(targetItemId));
-
+            var targetColumn = _board.Columns.FirstOrDefault(x => x.Id.Equals(targetItemId));
             if (targetColumn is not null)
             {
                 targetIndex = targetColumn.Index;
-
-                foreach (var column in targetBoard.Columns.OrderByDescending(x => x.Index))
+                foreach (var column in _board.Columns.OrderByDescending(x => x.Index))
                 {
                     if (column.Index >= targetColumn.Index)
-                    {
                         column.Index++;
-                    }
                 }
             }
         }
 
         movedColumn.Index = targetIndex;
+        IndexHelper.FixIndices(_board.Columns);
+        StateHasChanged();
 
-        IndexHelper.FixIndices(targetBoard.Columns);
-
-        await db.SaveChangesAsync();
-        await HandleUpdate();
-    }
-
-    private async Task OnMovedFromColumn((string movedCardId, string? targetCardId, string oldColumnId, string newColumnId, double x, double y) args)
-    {
-        var oldColumnId = GetColumnIdFromString(args.oldColumnId);
-        var newColumnId = GetColumnIdFromString(args.newColumnId);
-
-        using var db = _dbContextFactory.CreateDbContext();
-
-        var targetColumns = await db.Columns
-            .Where(x => x.Id.Equals(oldColumnId) || x.Id.Equals(newColumnId))
-            .Include(x => x.Cards)
-            .ToListAsync();
-
-        var oldColumn = targetColumns.FirstOrDefault(x => x.Id.Equals(oldColumnId));
-        var newColumn = targetColumns.FirstOrDefault(x => x.Id.Equals(newColumnId));
-
-        if (oldColumn is null || newColumn is null)
-            return;
-
-        if(newColumn.MaxCards != 0 && newColumn.Cards.Count+1 > newColumn.MaxCards)
+        try
         {
-            MainLayout.RunNotification(new("The card could not be moved to this column due to it being already full.", NotificationType.Fail));
-            return;
-        }
+            using var db = _dbContextFactory.CreateDbContext();
 
-        var movedCard = oldColumn.Cards.OrderBy(x => x.Index).FirstOrDefault(x => x.Id.Equals(Convert.ToInt32(args.movedCardId)));
+            var targetBoard = db.Boards
+                .Include(x => x.Columns)
+                .FirstOrDefault(x => x.Id.Equals(Id));
 
-        if (movedCard is null)
-            return;
+            if (targetBoard is null)
+                throw new InvalidOperationException("Board not found in DB.");
 
-        oldColumn.Cards.Remove(movedCard);
+            var dbMovedColumn = targetBoard.Columns.FirstOrDefault(x => x.Id.Equals(movedColumnId));
+            if (dbMovedColumn is null)
+                throw new InvalidOperationException("Moved column not found in DB.");
 
-        IndexHelper.FixIndices(oldColumn.Cards);
-
-        int targetIndex = newColumn.Cards.Any() ? newColumn.Cards.Max(x => x.Index) + 1 : 0;
-        int? targetCardId = args.targetCardId is not null ? Convert.ToInt32(args.targetCardId) : null;
-
-        if (targetCardId is not null)
-        {
-            var targetCard = newColumn.Cards.FirstOrDefault(x => x.Id.Equals(targetCardId));
-
-            if (targetCard is not null)
+            int dbTargetIndex = targetBoard.Columns.Any() ? targetBoard.Columns.Max(x => x.Index) + 1 : 0;
+            if (targetItemId.HasValue)
             {
-                targetIndex = targetCard.Index;
-
-                foreach (var card in newColumn.Cards.OrderByDescending(x => x.Index))
+                var dbTargetColumn = targetBoard.Columns.FirstOrDefault(x => x.Id.Equals(targetItemId));
+                if (dbTargetColumn is not null)
                 {
-                    if (card.Index >= targetCard.Index)
+                    dbTargetIndex = dbTargetColumn.Index;
+                    foreach (var column in targetBoard.Columns.OrderByDescending(x => x.Index))
                     {
-                        card.Index++;
+                        if (column.Index >= dbTargetColumn.Index)
+                            column.Index++;
                     }
                 }
             }
+
+            dbMovedColumn.Index = dbTargetIndex;
+            IndexHelper.FixIndices(targetBoard.Columns);
+
+            await db.SaveChangesAsync();
         }
+        catch
+        {
+            foreach (var oldColumnPosition in snapshot)
+            {
+                var column = _board.Columns.FirstOrDefault(x => x.Id == oldColumnPosition.Id);
+                if (column is not null)
+                    column.Index = oldColumnPosition.Index;
+            }
 
-        newColumn.Cards.Add(movedCard);
-        movedCard.Index = targetIndex;
-        movedCard.ColumnId = newColumnId;
+            IndexHelper.FixIndices(_board.Columns);
+            StateHasChanged();
 
-        IndexHelper.FixIndices(newColumn.Cards);
-
-        await db.SaveChangesAsync();
-        await HandleUpdate();
-
-        if(newColumn.Finished)
-            await _js.InvokeVoidAsync("triggerConfetti", args.x, args.y);
+            MainLayout.RunNotification(new("Failed to move column. Changes were reverted.", NotificationType.Fail));
+        }
     }
 
     protected void OnDataChanged()
@@ -506,51 +339,6 @@
     protected override async Task HandleUpdate()
     {
         await LoadBoardAsync();
-
-        OnDataChanged();
-    }
-
-    private async Task OnTaskCreated()
-    {
-        await RunNotification(typeof(Card), OperationType.Added);
-
-        if(_board is not null && _user.AutomaticCardEdit)
-            _editCardModal?.Open(_cards.OrderByDescending(x => x.CreatedAt).First().Id, _members, _board.Columns);
-    }
-
-    private async Task OnTaskEdited()
-    {
-        ArgumentNullException.ThrowIfNull(_board);
-
-        await HandleUpdate();
-    }
-
-    private void StartAddingToColumn(int columnId)
-    {
-        _adding = columnId;
-
-        _ = FocusCardCreation();
-    }
-
-    private async Task FocusCardCreation()
-    {
-        await Task.Delay(10);
-
-        if (_textElement is null)
-            return;
-
-        await _textElement.Value.FocusAsync();
-    }
-
-    private async Task ExpandOrCollapseColumn(int columnId)
-    {
-        ArgumentNullException.ThrowIfNull(_board);
-
-        using var db = _dbContextFactory.CreateDbContext();
-
-        var targetColumn = _board.Columns.First(x => x.Id.Equals(columnId));
-        targetColumn.Collapsed = !targetColumn.Collapsed;
-        await db.Columns.Where(x => x.Id.Equals(columnId)).ExecuteUpdateAsync(x => x.SetProperty(y => y.Collapsed, targetColumn.Collapsed));
 
         OnDataChanged();
     }
@@ -645,58 +433,6 @@
         }
     }
 
-    private async Task AttemptCreateTaskSubmit(int columnId)
-    {
-        if (_createTaskModel is null || string.IsNullOrWhiteSpace(_createTaskModel.Text))
-            return;
-
-        using var db = _dbContextFactory.CreateDbContext();
-        var column = await db.Columns
-            .Include(x => x.Cards)
-            .FirstOrDefaultAsync(x => x.Id.Equals(columnId));
-
-        if (column is not null)
-        {
-            int newIndex = 0;
-            switch(column.NewCardPlacement)
-            {
-                case CardPlacement.Top: 
-                {
-                    foreach(var card in column.Cards)
-                        card.Index++;
-
-                    break;
-                }
-                default:
-                    newIndex = IndexHelper.GetNextIndex(column.Cards);
-                    break;
-            }
-
-            var newCard = new Card
-            {
-                Name = _createTaskModel.Text,
-                ColumnId = columnId,
-                Index = newIndex,
-                CreatedAt = DateTime.Now,
-                Number = await _cardNumberingService.GetNextNumberAsync(Id),
-                CreatedById = _user.Id
-            };
-
-            if(_user.AutomaticAssign)
-            {
-                var targetUser = await db.Users.FirstAsync(x => x.Id.Equals(_user.Id));
-                newCard.Assignees.Add(targetUser);
-            }
-
-            column.Cards.Add(newCard);
-            await db.SaveChangesAsync();
-        }
-
-        _createTaskModel = new();
-
-        await OnTaskCreated();
-    }
-
     private bool IsAdmin()
     {
         if(_board is null)
@@ -717,36 +453,16 @@
         return boardMembership.IsAdmin;
     }
 
-    private string CreateTaskText
+    private async Task OnTaskEdited()
     {
-        get => _createTaskModel.Text ?? string.Empty;
-        set => _createTaskModel.Text = value?.ReplaceLineEndings(" ") ?? string.Empty;
+        ArgumentNullException.ThrowIfNull(_board);
+
+        await HandleUpdate();
     }
 
-    private async Task OpenDeleteColumnDialog(Column column)
+    private void SetAdding(int columnId)
     {
-        ArgumentNullException.ThrowIfNull(_deleteColumnModal);
-
-        await _deleteColumnModal.OpenDialog(column, async () =>
-        {
-            using var db = _dbContextFactory.CreateDbContext();
-
-            var targetBoard = await db.Boards
-                .Include(x => x.Columns)
-            .FirstOrDefaultAsync(x => x.Id.Equals(column.BoardId));
-
-            if (targetBoard is null)
-                return;
-
-            targetBoard.Columns.FixIndices();
-
-            await db.SaveChangesAsync();
-        });
-    }
-
-    public void Dispose()
-    {
-        objRef?.Dispose();
+        _adding = columnId;
     }
 }
 
