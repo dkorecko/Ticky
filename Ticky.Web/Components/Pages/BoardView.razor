@@ -315,8 +315,10 @@
 
             await db.SaveChangesAsync();
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to persist moved column.");
+
             foreach (var oldColumnPosition in snapshot)
             {
                 var column = _board.Columns.FirstOrDefault(x => x.Id == oldColumnPosition.Id);

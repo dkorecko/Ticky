@@ -1,6 +1,7 @@
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject CardNumberingService _cardNumberingService
+@inject ILogger<ColumnView> _logger
 @inherits NotifiableBase
 
 @{
@@ -209,8 +210,9 @@
 
             await db.SaveChangesAsync();
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to persist moved card within column.");
             foreach (var oldCardPosition in snapshot)
             {
                 var card = Cards.FirstOrDefault(x => x.Id == oldCardPosition.Id);
@@ -280,6 +282,7 @@
 
         var masterMoved = Cards.First(x => x.Id == movedCardId);
         masterMoved.ColumnId = newColumnId;
+        masterMoved.Column = newColumn;
         masterMoved.Index = targetIndex;
 
         IndexHelper.FixIndices(Cards.Where(c => c.ColumnId == oldColumnId).ToList());
@@ -336,8 +339,9 @@
 
             await db.SaveChangesAsync();
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to persist moved card from column.");
             foreach (var oldCardPosition in snapshot)
             {
                 var card = Cards.FirstOrDefault(x => x.Id == oldCardPosition.Id);
@@ -418,49 +422,50 @@
             .Include(x => x.Cards)
             .FirstOrDefaultAsync(x => x.Id.Equals(columnId));
 
-        if (column is not null)
+        if (column is null)
+            return;
+
+        int newIndex = 0;
+
+        switch (Column.NewCardPlacement)
         {
-            int newIndex = 0;
-            switch (Column.NewCardPlacement)
-            {
-                case CardPlacement.Top:
-                    {
-                        foreach (var card in column.Cards)
-                            card.Index++;
-                        break;
-                    }
-                default:
-                    newIndex = IndexHelper.GetNextIndex(column.Cards);
+            case CardPlacement.Top:
+                {
+                    foreach (var card in column.Cards)
+                        card.Index++;
                     break;
-            }
-
-            var newCard = new Card
-            {
-                Name = _createTaskModel.Text,
-                ColumnId = columnId,
-                Index = newIndex,
-                CreatedAt = DateTime.Now,
-                Number = await _cardNumberingService.GetNextNumberAsync(Board.Id),
-                CreatedById = User.Id
-            };
-
-            if (User.AutomaticAssign)
-            {
-                var targetUser = await db.Users.FirstAsync(x => x.Id.Equals(User.Id));
-                newCard.Assignees.Add(targetUser);
-            }
-
-            column.Cards.Add(newCard);
-            await db.SaveChangesAsync();
-            await OnUpdate.InvokeAsync();
+                }
+            default:
+                newIndex = IndexHelper.GetNextIndex(column.Cards);
+                break;
         }
+
+        var newCard = new Card
+        {
+            Name = _createTaskModel.Text,
+            ColumnId = columnId,
+            Index = newIndex,
+            CreatedAt = DateTime.Now,
+            Number = await _cardNumberingService.GetNextNumberAsync(Board.Id),
+            CreatedById = User.Id
+        };
+
+        if (User.AutomaticAssign)
+        {
+            var targetUser = await db.Users.FirstAsync(x => x.Id.Equals(User.Id));
+            newCard.Assignees.Add(targetUser);
+        }
+
+        column.Cards.Add(newCard);
+        await db.SaveChangesAsync();
+        await OnUpdate.InvokeAsync();
 
         _createTaskModel = new();
 
         await RunNotification(typeof(Card), OperationType.Added);
 
         if (Board is not null && User.AutomaticCardEdit)
-            EditCardModal?.Open(Cards.OrderByDescending(x => x.CreatedAt).First().Id, Members, Board.Columns);
+            EditCardModal?.Open(newCard.Id, Members, Board.Columns);
     }
 
     private string CreateTaskText
