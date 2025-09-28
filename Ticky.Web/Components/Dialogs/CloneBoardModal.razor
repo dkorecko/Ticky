@@ -8,17 +8,10 @@
 		<div class="form-group">
 			<Name For="() => _model.TargetProjectId" />
 			<InputSelect class="form-control" @bind-Value="_model.TargetProjectId">
-				<option value="0"></option>
+				<option value="">Select project...</option>
 				@foreach (var project in _projects)
 				{
-					if (_model.TargetProjectId.Equals(project.Id))
-					{
-						<option selected value="@project.Id">@project.Name</option>
-					}
-					else
-					{
-						<option value="@project.Id">@project.Name</option>
-					}
+					<option value="@project.Id">@project.Name</option>
 				}
 			</InputSelect>
 			<ValidationMessage For="() => _model.TargetProjectId" />
@@ -153,6 +146,8 @@
 				labelMap[label.Id] = newLabel;
 			}
 
+			Dictionary<Card, Card> cardMap = [];
+
 			foreach (var column in board.Columns.OrderBy(x => x.Index))
 			{
 				var newColumn = new Column
@@ -182,16 +177,6 @@
 						CreatedById = card.CreatedById,
 						CreatedAt = DateTime.Now,
 						ColumnId = newColumn.Id,
-						RepeatInfo = card.RepeatInfo is null ? null : new Base.Entities.Owned.RepeatInfo
-						{
-							CardPlacement = card.RepeatInfo.CardPlacement,
-							Number = card.RepeatInfo.Number,
-							Selected = card.RepeatInfo.Selected,
-							Time = card.RepeatInfo.Time,
-							Type = card.RepeatInfo.Type,
-							TargetColumnId = card.RepeatInfo.TargetColumnId,
-							LastRepeat = card.RepeatInfo.LastRepeat
-						},
 						SnoozedUntil = card.SnoozedUntil
 					};
 
@@ -230,12 +215,35 @@
 					}
 
 					newColumn.Cards.Add(newCard);
+
+					cardMap.Add(card, newCard);
 				}
 
 				newBoard.Columns.Add(newColumn);
 			}
 
 			db.Boards.Add(newBoard);
+
+			await db.SaveChangesAsync();
+
+			foreach(var createdCardPair in cardMap)
+			{
+				var sourceCardRepeatInfo = createdCardPair.Key.RepeatInfo;
+
+				if(sourceCardRepeatInfo is null)
+					continue;
+
+				createdCardPair.Value.RepeatInfo = new RepeatInfo
+				{
+					CardPlacement = sourceCardRepeatInfo.CardPlacement,
+					LastRepeat = sourceCardRepeatInfo.LastRepeat,
+					Number = sourceCardRepeatInfo.Number,
+                    Time = sourceCardRepeatInfo.Time,
+                    Type = sourceCardRepeatInfo.Type,
+                    Selected = sourceCardRepeatInfo.Selected,
+					TargetColumnId = newBoard.Columns.First(newColumn => newColumn.Index.Equals(board.Columns.First(x => x.Id.Equals(sourceCardRepeatInfo.TargetColumnId)).Index)).Id
+                };
+			}
 
 			await db.SaveChangesAsync();
 
