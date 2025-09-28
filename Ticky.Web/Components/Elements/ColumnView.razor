@@ -209,6 +209,7 @@
             IndexHelper.FixIndices(dbTargetColumn.Cards);
 
             await db.SaveChangesAsync();
+            await OnUpdate.InvokeAsync();
         }
         catch (Exception ex)
         {
@@ -338,6 +339,7 @@
             IndexHelper.FixIndices(dbNewColumn.Cards);
 
             await db.SaveChangesAsync();
+            await OnUpdate.InvokeAsync();
         }
         catch (Exception ex)
         {

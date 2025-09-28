@@ -314,6 +314,7 @@
             IndexHelper.FixIndices(targetBoard.Columns);
 
             await db.SaveChangesAsync();
+            await HandleUpdate();
         }
         catch (Exception ex)
         {
