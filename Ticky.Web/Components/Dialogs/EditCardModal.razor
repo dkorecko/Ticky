@@ -1,4 +1,4 @@
-﻿@inherits AbstractModal
+@inherits AbstractModal
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
@@ -479,7 +479,7 @@
             return;
 
         var deepLink = $"{_navigationManager.BaseUri.TrimEnd('/')}/boards/{_card.Column.Board.Id}/{_card.Id}";
-        await _js.InvokeVoidAsync("navigator.clipboard.writeText", deepLink);
+        await _js.InvokeVoidAsync("copyText", deepLink);
         _mainLayout.RunNotification(new Notification("Card link copied to clipboard."));
     }
 

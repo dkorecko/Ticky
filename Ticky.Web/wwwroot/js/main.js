@@ -135,3 +135,38 @@ function onDropdownTriggerClicked(clientX, clientY, dropdownElement) {
     positionDropdown(dropdownElement, clientX + OPEN_OFFSET, clientY + OPEN_OFFSET);
     openDropdown = dropdownElement;
 }
+
+async function copyText(text) {
+    // 1. Try the modern Clipboard API (Requires HTTPS or localhost)
+    if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+    }
+
+    // 2. Fallback to the deprecated document.execCommand('copy')
+    try {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+
+        textArea.style.position = "absolute";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+
+        document.body.appendChild(textArea);
+
+        textArea.focus();
+        textArea.select();
+
+        const success = document.execCommand('copy');
+
+        document.body.removeChild(textArea);
+
+        if (!success) {
+            console.error('Copy command failed for both methods.');
+            return false;
+        }
+    } catch (err) {
+        console.error('Fallback copy operation failed:', err);
+        return false;
+    }
+}
