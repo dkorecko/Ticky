@@ -28,6 +28,9 @@ namespace Ticky.Web.Components.Elements.Sortable
         public string Id { get; set; } = Guid.NewGuid().ToString();
 
         [Parameter]
+        public int MaxItems { get; set; }
+
+        [Parameter]
         [AllowNull]
         public IList<T> Items { get; set; }
 
@@ -47,6 +50,9 @@ namespace Ticky.Web.Components.Elements.Sortable
             string? targetItemId,
             string columnId
         )> OnUpdate { get; set; }
+
+        [Parameter]
+        public EventCallback OnExceededLimit { get; set; }
 
         [Parameter]
         public string? Pull { get; set; }
@@ -89,6 +95,9 @@ namespace Ticky.Web.Components.Elements.Sortable
         {
             await OnUpdate.InvokeAsync((movedItemId, targetItemId, fromId));
         }
+
+        [JSInvokable]
+        public async Task OnExceededLimitJS() => await OnExceededLimit.InvokeAsync();
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
