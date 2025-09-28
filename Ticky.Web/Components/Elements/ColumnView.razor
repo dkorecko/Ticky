@@ -48,7 +48,7 @@
 
     @if (!Column.Collapsed)
     {
-        <SortableList Id=@($"{COLUMN_PREFIX}{Column.Id}") Animation=@(Board.DisableSortingAnimations ? 0 : 200) Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="columnCards.OrderBy(x => x.Index).ToList()" Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList">
+        <SortableList Id=@($"{COLUMN_PREFIX}{Column.Id}") Animation=@(Board.DisableSortingAnimations ? 0 : 200) Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="columnCards.OrderBy(x => x.Index).ToList()" MaxItems=Column.MaxCards Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList" OnExceededLimit="OnExceededCardLimit">
             <SortableItemTemplate>
                 @if (Column.MaxCards == 1)
                 {
@@ -232,6 +232,9 @@
         }
     }
 
+    private void OnExceededCardLimit()
+        => MainLayout.RunNotification(new("The card could not be moved to this column due to it being already full.", NotificationType.Fail));
+
     private async Task OnMovedFromColumn((string movedCardId, string? targetCardId, string oldColumnId, string newColumnId, double x, double y) args)
     {
         if (Board is null)
@@ -255,7 +258,7 @@
 
         if (newColumn.MaxCards != 0 && newColumnCards.Count + 1 > newColumn.MaxCards)
         {
-            MainLayout.RunNotification(new("The card could not be moved to this column due to it being already full.", NotificationType.Fail));
+            OnExceededCardLimit();
             return;
         }
 
