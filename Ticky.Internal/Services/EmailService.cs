@@ -5,7 +5,7 @@ using Devity.NETCore.MailKit.Core;
 namespace Ticky.Internal.Services
 {
     public class EmailService(IEmailService emailService, ILogger<EmailService> logger)
-        : CommonMailService(emailService, $"{TITLE_KEY} | Ticky")
+        : CommonMailService(emailService, $"{TITLE_KEY} | {Constants.APP_NAME}")
     {
         private static readonly string VERIFY_EMAIL = Path.Combine(
             Constants.Emails.BASE_PATH,
