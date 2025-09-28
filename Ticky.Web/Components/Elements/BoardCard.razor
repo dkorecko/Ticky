@@ -2,6 +2,7 @@
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
 <EditBoardModal @ref="_editBoardModal" OnSubmit="OnEdit" />
+<CloneBoardModal @ref="_cloneBoardModal" OnCloned="OnEdit" />
 
 <div class="board-card" @onclick='GoToBoard'>
     <div class="flex w-full flex-row justify-end gap-2 align-middle">
@@ -10,6 +11,7 @@
         {
             <Dropdown Actions='new() {
                         { "Edit board", () => _editBoardModal?.Open(Board.Id) },
+                        { "Clone board", () => _cloneBoardModal?.Open(Board) },
                         { "Delete board", async () => await DeleteConfirmationDialog.OpenDialog(Board) }
                     }'>
                 <i class="fa fa-ellipsis card-button" title="Board options"></i>
@@ -68,6 +70,7 @@
     public bool IsAdmin { get; set; }
 
     private EditBoardModal? _editBoardModal;
+    private CloneBoardModal? _cloneBoardModal;
 
     private void GoToBoard() {
         _navigationManager.NavigateTo(_navigationManager.BaseUri + "boards/" + Board.Id);

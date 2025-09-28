@@ -1,0 +1,259 @@
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inherits AbstractModal
+
+<Modal @ref="Modal" Title="Clone board" OnSubmitAttempted="OnSubmitAttempted">
+	<EditForm class="form" EditContext="_editContext">
+		<DataAnnotationsValidator />
+
+		<div class="form-group">
+			<Name For="() => _model.TargetProjectId" />
+			<InputSelect class="form-control" @bind-Value="_model.TargetProjectId">
+				<option value="">Select project...</option>
+				@foreach (var project in _projects)
+				{
+					<option value="@project.Id">@project.Name</option>
+				}
+			</InputSelect>
+			<ValidationMessage For="() => _model.TargetProjectId" />
+		</div>
+
+		<div class="form-group">
+			<Name For="() => _model.Code" />
+			<InputText class="form-control" @bind-Value="_model.Code" />
+			<ValidationMessage For="() => _model.Code" />
+		</div>
+	</EditForm>
+</Modal>
+
+@code {
+	[CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+	private User _user { get; set; } = default!;
+
+	[CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+	private MainLayout _mainLayout { get; set; } = default!;
+
+	[Parameter]
+	public EventCallback OnCloned { get; set; }
+
+	private Board? _sourceBoard;
+	private List<Project> _projects = [];
+
+	private CloneBoardModel _model = new();
+	private EditContext? _editContext;
+
+	public async Task Open(Board sourceBoard)
+	{
+		_sourceBoard = sourceBoard;
+
+		using var db = _dbContextFactory.CreateDbContext();
+
+		_projects = await db.Projects
+			.Include(x => x.Memberships)
+			.AsNoTracking()
+			.Where(x => x.Memberships.Any(m => m.UserId.Equals(_user.Id)))
+			.ToListAsync();
+
+		_model = new CloneBoardModel
+		{
+			TargetProjectId = sourceBoard.ProjectId,
+			Code = sourceBoard.Code,
+		};
+		_editContext = new(_model);
+
+		base.Open();
+	}
+
+	private async Task OnSubmitAttempted()
+	{
+		if (Modal is null || _editContext is null)
+			return;
+
+		if (!_editContext.Validate())
+			return;
+
+		await OnValidSubmit();
+	}
+
+	private async Task OnValidSubmit()
+	{
+		if (_sourceBoard is null || Modal is null)
+			return;
+
+		try
+		{
+			using var db = _dbContextFactory.CreateDbContext();
+
+			var board = await db.Boards
+				.Include(x => x.Columns)
+					.ThenInclude(c => c.Cards)
+						.ThenInclude(c => c.Labels)
+				.Include(x => x.Columns)
+					.ThenInclude(c => c.Cards)
+						.ThenInclude(c => c.Assignees)
+				.Include(x => x.Columns)
+					.ThenInclude(c => c.Cards)
+						.ThenInclude(c => c.Subtasks)
+				.Include(x => x.Columns)
+					.ThenInclude(c => c.Cards)
+						.ThenInclude(c => c.Reminders)
+				.Include(x => x.Labels)
+				.Include(x => x.Memberships)
+				.FirstOrDefaultAsync(x => x.Id.Equals(_sourceBoard.Id));
+
+			if (board is null)
+			{
+				_mainLayout.RunNotification(new("Source board not found.", NotificationType.Fail));
+				return;
+			}
+
+			var newBoard = new Board
+			{
+				Name = $"Copy of {board.Name}",
+				Description = board.Description,
+				Code = _model.Code,
+				ProjectId = _model.TargetProjectId!.Value,
+				DisableSortingAnimations = board.DisableSortingAnimations
+			};
+
+			foreach (var membership in board.Memberships)
+			{
+				var user = await db.Users.FindAsync(membership.UserId);
+
+				if (user is not null)
+				{
+					newBoard.Memberships.Add(new BoardMembership
+					{
+						BoardId = newBoard.Id,
+						UserId = user.Id,
+						AddedAt = membership.AddedAt,
+						IsAdmin = membership.IsAdmin,
+					});
+				}
+			}
+
+			var labelMap = new Dictionary<int, Label>();
+
+			foreach (var label in board.Labels.OrderBy(x => x.Id))
+			{
+				var newLabel = new Label
+				{
+					Name = label.Name,
+					TextColor = label.TextColor,
+					BackgroundColor = label.BackgroundColor,
+					BoardId = newBoard.Id
+				};
+				newBoard.Labels.Add(newLabel);
+				labelMap[label.Id] = newLabel;
+			}
+
+			Dictionary<Card, Card> cardMap = [];
+
+			foreach (var column in board.Columns.OrderBy(x => x.Index))
+			{
+				var newColumn = new Column
+				{
+					Name = column.Name,
+					Index = column.Index,
+					MaxCards = column.MaxCards,
+					Finished = column.Finished,
+					Collapsed = column.Collapsed,
+					NewCardPlacement = column.NewCardPlacement,
+					OrderRule = column.OrderRule,
+					BoardId = newBoard.Id
+				};
+
+				foreach (var card in column.Cards.OrderBy(x => x.Index))
+				{
+					var newCard = new Card
+					{
+						Name = card.Name,
+						Description = card.Description,
+						Number = card.Number,
+						Index = card.Index,
+						Blocked = card.Blocked,
+						Deadline = card.Deadline,
+						DeadlineProcessed = card.DeadlineProcessed,
+						Priority = card.Priority,
+						CreatedById = card.CreatedById,
+						CreatedAt = DateTime.Now,
+						ColumnId = newColumn.Id,
+						SnoozedUntil = card.SnoozedUntil
+					};
+
+					foreach (var cardLabel in card.Labels)
+					{
+						if (labelMap.TryGetValue(cardLabel.Id, out var mapped))
+							newCard.Labels.Add(mapped);
+					}
+
+					foreach (var assignee in card.Assignees)
+					{
+						var user = await db.Users.FindAsync(assignee.Id);
+
+						if (user is not null)
+							newCard.Assignees.Add(user);
+					}
+
+					foreach (var subtask in card.Subtasks.OrderBy(x => x.Index))
+					{
+						newCard.Subtasks.Add(new Subtask
+						{
+							Text = subtask.Text,
+							Completed = subtask.Completed,
+							Index = subtask.Index,
+							CardId = newCard.Id
+						});
+					}
+
+					foreach (var reminder in card.Reminders)
+					{
+						newCard.Reminders.Add(new Reminder
+						{
+							At = reminder.At,
+							CardId = newCard.Id
+						});
+					}
+
+					newColumn.Cards.Add(newCard);
+
+					cardMap.Add(card, newCard);
+				}
+
+				newBoard.Columns.Add(newColumn);
+			}
+
+			db.Boards.Add(newBoard);
+
+			await db.SaveChangesAsync();
+
+			foreach(var createdCardPair in cardMap)
+			{
+				var sourceCardRepeatInfo = createdCardPair.Key.RepeatInfo;
+
+				if(sourceCardRepeatInfo is null)
+					continue;
+
+				createdCardPair.Value.RepeatInfo = new RepeatInfo
+				{
+					CardPlacement = sourceCardRepeatInfo.CardPlacement,
+					LastRepeat = sourceCardRepeatInfo.LastRepeat,
+					Number = sourceCardRepeatInfo.Number,
+                    Time = sourceCardRepeatInfo.Time,
+                    Type = sourceCardRepeatInfo.Type,
+                    Selected = sourceCardRepeatInfo.Selected,
+					TargetColumnId = newBoard.Columns.First(newColumn => newColumn.Index.Equals(board.Columns.First(x => x.Id.Equals(sourceCardRepeatInfo.TargetColumnId)).Index)).Id
+                };
+			}
+
+			await db.SaveChangesAsync();
+
+			_mainLayout.RunNotification(new("Board cloned successfully.", NotificationType.Success));
+			await OnCloned.InvokeAsync();
+			await Modal.Close();
+		}
+		catch (Exception ex)
+		{
+			_mainLayout.RunNotification(new($"Failed to clone board: {ex.Message}", NotificationType.Fail));
+		}
+	}
+}
