@@ -105,7 +105,7 @@
                                         <label class="text-gray-500">@completedCards/@totalCards</label>
                                     </div>
                                     <div class="grid h-1 w-full rounded-lg">
-                                        <div class="z-10 w-24 rounded-lg bg-pink-500 transition-all" style="grid-row: 1; grid-column: 1; width: @(Math.Round((double) completedCards/totalCards*100))%;"></div>
+                                        <div class="z-10 w-24 rounded-lg bg-pink-500 transition-all" style="grid-row: 1; grid-column: 1; width: @(totalCards == 0 ? 0 : Math.Round((double) completedCards/totalCards*100))%;"></div>
                                         <div class="rounded-lg bg-pink-300" style="grid-row: 1; grid-column: 1;"></div>
                                     </div>
                                 </div>
