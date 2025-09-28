@@ -117,6 +117,7 @@
             return;
 
         card.Blocked = !card.Blocked;
+        Card.Blocked = card.Blocked;
 
         await db.SaveChangesAsync();
         StateHasChanged();
