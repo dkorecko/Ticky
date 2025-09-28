@@ -83,7 +83,7 @@
                             autofocus placeholder="Describe the task ..." wrap="soft" />
 
                 <hr class="border-t-tab-outline">
-                <button class="w-full" @onclick="() => AttemptCreateTaskSubmit(Column.Id)" @onclick:stopPropagation="true">Create</button>
+                <button class="w-full" @onclick="async () => await AttemptCreateTaskSubmit(Column.Id)" @onclick:stopPropagation="true">Create</button>
             }
         </div>
     }
