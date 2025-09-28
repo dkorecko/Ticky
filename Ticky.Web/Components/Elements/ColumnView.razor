@@ -50,10 +50,6 @@
     {
         <SortableList Id=@($"{COLUMN_PREFIX}{Column.Id}") Animation=@(Board.DisableSortingAnimations ? 0 : 200) Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="columnCards.OrderBy(x => x.Index).ToList()" MaxItems=Column.MaxCards Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList" OnExceededLimit="OnExceededCardLimit">
             <SortableItemTemplate>
-                @if (Column.MaxCards == 1)
-                {
-                    <div class="mt-1"></div>
-                }
                 <CardView @key="context.Id" Card="@context" Column="Column" BoardCode="@Board.Code" EditCardModal="EditCardModal" DeleteCardModal="DeleteCardModal" Members="Members" OnCardUpdated="HandleUpdate" Columns="Board.Columns" />
             </SortableItemTemplate>
         </SortableList>
@@ -311,7 +307,7 @@
 
             if (dbNewColumn.MaxCards != 0 && dbNewColumn.Cards.Count + 1 > dbNewColumn.MaxCards)
             {
-                throw new InvalidOperationException("Target column is full.");
+                throw new IndexOutOfRangeException("Target column is full.");
             }
 
             var dbMovedCard = dbOldColumn.Cards.OrderBy(x => x.Index).First(x => x.Id.Equals(movedCardId));
@@ -346,7 +342,6 @@
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to persist moved card from column.");
             foreach (var oldCardPosition in snapshot)
             {
                 var card = Cards.FirstOrDefault(x => x.Id == oldCardPosition.Id);
@@ -354,6 +349,9 @@
                 {
                     card.ColumnId = oldCardPosition.ColumnId;
                     card.Index = oldCardPosition.Index;
+
+                    if (card.Id == movedCardId)
+                        card.Column = Board.Columns.First(c => c.Id.Equals(oldCardPosition.ColumnId));
                 }
             }
 
@@ -361,7 +359,13 @@
             IndexHelper.FixIndices(Cards.Where(c => c.ColumnId == newColumnId).ToList());
             await OnCardMoved.InvokeAsync();
 
-            MainLayout.RunNotification(new("Failed to move card. Changes were reverted.", NotificationType.Fail));
+            if (ex is IndexOutOfRangeException)
+                OnExceededCardLimit();
+            else
+            {
+                _logger.LogError(ex, "Failed to persist moved card from column.");
+                MainLayout.RunNotification(new("Failed to move card. Changes were reverted.", NotificationType.Fail));
+            }
         }
     }
 
