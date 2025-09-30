@@ -16,7 +16,7 @@
 <SnoozeCardModal @ref=_snoozeCardModal UpdateCard="UpdateCard" />
 <AddOrEditRepeatModal @ref=_repeatCardModal UpdateCard="UpdateCard" />
 
-<Modal @ref="Modal" Title="Edit an existing task" DisableButtons=true>
+<Modal @ref="Modal" Title="Edit an existing task" DisableButtons=true OnClose="OnModalClose">
     @if (_card is null || _columns is null)
     {
         <Spinner />
@@ -450,6 +450,8 @@
     private SnoozeCardModal? _snoozeCardModal;
     private AddOrEditRepeatModal? _repeatCardModal;
 
+    private DotNetObjectReference<EditCardModal>? _pasteObjRef;
+
     private int _tab = 0;
     private string _identifier = string.Empty;
     private string _commentText = string.Empty;
@@ -471,6 +473,33 @@
         _identifier = $"{_card.Column.Board.Code}-{_card.Number}";
         UpdateTimer();
         base.Open();
+    }
+
+    protected override void OnOpen()
+    {
+        _pasteObjRef = DotNetObjectReference.Create(this);
+        _ = _js.InvokeVoidAsync("attachCardPasteHandler", _pasteObjRef, _card!.Id);
+    }
+
+    private async Task OnModalClose()
+    {
+        await _js.InvokeVoidAsync("detachCardPasteHandler");
+
+        _pasteObjRef?.Dispose();
+        _pasteObjRef = null;
+    }
+
+    [JSInvokable]
+    public async Task OnPastedUploadFinished()
+    {
+        _mainLayout.RunNotification(new Notification("File uploaded successfully."));
+        await UpdateCard();
+    }
+
+    [JSInvokable]
+    public void OnPastedUploadFailed(string message)
+    {
+        _mainLayout.RunNotification(new Notification(message, NotificationType.Fail));
     }
 
     private async Task CopyDeepLink()

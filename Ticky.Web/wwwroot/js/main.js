@@ -137,13 +137,13 @@ function onDropdownTriggerClicked(clientX, clientY, dropdownElement) {
 }
 
 async function copyText(text) {
-    // 1. Try the modern Clipboard API (Requires HTTPS or localhost)
+    
     if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
         return true;
     }
 
-    // 2. Fallback to the deprecated document.execCommand('copy')
+    
     try {
         const textArea = document.createElement("textarea");
         textArea.value = text;
@@ -169,4 +169,55 @@ async function copyText(text) {
         console.error('Fallback copy operation failed:', err);
         return false;
     }
+}
+
+
+let pasteHandler = null;
+let pasteDotNetRef = null;
+
+function attachCardPasteHandler(dotNetReference, targetCardId) {
+    detachCardPasteHandler();
+    pasteDotNetRef = dotNetReference;
+
+    pasteHandler = function (e) {
+        const clipboardItems = e.clipboardData && e.clipboardData.items ? e.clipboardData.items : null;
+
+        if (!clipboardItems) 
+            return;
+
+        for (let i = 0; i < clipboardItems.length; i++) {
+            const item = clipboardItems[i];
+
+            const file = typeof item.getAsFile === 'function' ? item.getAsFile() : null;
+            if (!file) continue;
+
+                const formData = new FormData();
+                formData.append('file', file, file.name || 'pasted.png');
+                if (targetCardId !== undefined && targetCardId !== null) {
+                    formData.append('cardId', targetCardId);
+                }
+
+                fetch('/api/attachments/upload', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                }).then(response => {
+                    if (!response.ok) {
+                        const msg = 'File upload failed ' + response.status;
+                        if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFailed', msg);
+                        throw new Error(msg);
+                    }
+                    if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFinished');
+                });
+            
+        }
+    };
+
+    window.addEventListener('paste', pasteHandler);
+}
+
+function detachCardPasteHandler() {
+    if (pasteHandler) window.removeEventListener('paste', pasteHandler);
+    pasteHandler = null;
+    pasteDotNetRef = null;
 }
