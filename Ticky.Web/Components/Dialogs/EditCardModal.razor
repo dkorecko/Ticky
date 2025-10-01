@@ -1,5 +1,5 @@
 @inherits AbstractModal
-@implements IAsyncDisposable
+@implements IDisposable
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
@@ -17,7 +17,7 @@
 <SnoozeCardModal @ref=_snoozeCardModal UpdateCard="UpdateCard" />
 <AddOrEditRepeatModal @ref=_repeatCardModal UpdateCard="UpdateCard" />
 
-<Modal @ref="Modal" Large=true Title="Edit an existing task" DisableButtons=true OnClose="async () => await DisposeAsync()">
+<Modal @ref="Modal" Large=true Title="Edit an existing task" DisableButtons=true OnClose="OnClose">
     @if (_card is null || _columns is null)
     {
         <Spinner />
@@ -495,12 +495,17 @@
         _mainLayout.RunNotification(new Notification("File upload failed.", NotificationType.Fail));
     }
 
-    public async ValueTask DisposeAsync()
+    public async Task OnClose()
+    {
+        await _js.InvokeVoidAsync("detachCardPasteHandler");
+
+        Dispose();
+    }
+
+    public override void Dispose()
     {
         if (_pasteObjRef is null)
             return;
-
-        await _js.InvokeVoidAsync("detachCardPasteHandler");
 
         _pasteObjRef.Dispose();
         _pasteObjRef = null;
