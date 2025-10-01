@@ -204,7 +204,7 @@ function attachCardPasteHandler(dotNetReference, targetCardId) {
                 }).then(response => {
                     if (!response.ok) {
                         if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFailed');
-                        throw new Error(msg);
+                        throw new Error(response.status);
                     }
                     if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFinished');
                 }).catch(err => {

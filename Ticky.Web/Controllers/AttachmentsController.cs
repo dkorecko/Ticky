@@ -26,6 +26,9 @@ public class AttachmentsController : ControllerBase
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Upload([FromForm] IFormFile? file, [FromForm] int cardId)
     {
+        if (User is null)
+            return Unauthorized();
+
         if (!Request.HasFormContentType)
             return BadRequest("Request must be multipart/form-data");
 
@@ -67,10 +70,12 @@ public class AttachmentsController : ControllerBase
             }
 
             using var db = _dbContextFactory.CreateDbContext();
+
             var card = await db
                 .Cards.Include(x => x.Activities)
                 .Include(x => x.Attachments)
                 .FirstOrDefaultAsync(x => x.Id == cardId);
+
             if (card is null)
                 return NotFound();
 
@@ -82,15 +87,22 @@ public class AttachmentsController : ControllerBase
             };
 
             card.Attachments.Add(attachment);
-            var userIdClaim = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
             int userId = 0;
+
             if (!string.IsNullOrWhiteSpace(userIdClaim))
                 int.TryParse(userIdClaim, out userId);
+
+            if (userId == 0)
+                return Unauthorized();
+
+            var safeFileName = WebUtility.HtmlEncode(file.FileName);
 
             card.Activities.Add(
                 new Activity
                 {
-                    Text = $"<b>uploaded</b> file named <b>{file.FileName}</b>",
+                    Text = $"<b>uploaded</b> file named <b>{safeFileName}</b>",
                     UserId = userId,
                     CardId = cardId
                 }
@@ -108,14 +120,7 @@ public class AttachmentsController : ControllerBase
                 cardId
             );
 
-            var pd = new ProblemDetails
-            {
-                Status = StatusCodes.Status500InternalServerError,
-                Title = "An unexpected error occurred.",
-                Detail = "An unexpected error occurred while processing your request."
-            };
-
-            return StatusCode(StatusCodes.Status500InternalServerError, pd);
+            return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
 }

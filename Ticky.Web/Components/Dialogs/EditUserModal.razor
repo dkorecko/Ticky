@@ -68,11 +68,6 @@
         base.Open();
     }
 
-    public override void Dispose()
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task EditUser() 
     {
         if(_targetUser is null || _editContext is null || !_editContext.Validate())

@@ -1,5 +1,6 @@
 global using System.ComponentModel.DataAnnotations;
 global using System.Drawing;
+global using System.Net;
 global using System.Security.Claims;
 global using Microsoft.AspNetCore.Identity;
 global using Microsoft.AspNetCore.Mvc;
