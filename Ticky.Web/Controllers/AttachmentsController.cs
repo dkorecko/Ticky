@@ -29,9 +29,6 @@ public class AttachmentsController : ControllerBase
         if (User is null)
             return Unauthorized();
 
-        if (!Request.HasFormContentType)
-            return BadRequest("Request must be multipart/form-data");
-
         if (file is null || file.Length == 0)
             return BadRequest("No file");
 
