@@ -57,11 +57,6 @@
         base.Open();
     }
 
-    public void Dispose()
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task AddUser() 
     {
         if(_editContext is null || !_editContext.Validate())

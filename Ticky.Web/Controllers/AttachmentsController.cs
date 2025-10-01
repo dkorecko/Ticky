@@ -1,19 +1,25 @@
+using Microsoft.AspNetCore.Authorization;
+
 namespace Ticky.Web.Controllers;
 
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class AttachmentsController : ControllerBase
 {
     private readonly IDbContextFactory<DataContext> _dbContextFactory;
     private readonly IWebHostEnvironment _env;
+    private readonly ILogger<AttachmentsController> _logger;
 
     public AttachmentsController(
         IDbContextFactory<DataContext> dbContextFactory,
-        IWebHostEnvironment env
+        IWebHostEnvironment env,
+        ILogger<AttachmentsController> logger
     )
     {
         _dbContextFactory = dbContextFactory;
         _env = env;
+        _logger = logger;
     }
 
     [HttpPost("upload")]
@@ -96,8 +102,20 @@ public class AttachmentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            // log if a logging facility is available
-            return StatusCode(500, ex.Message);
+            _logger.LogError(
+                ex,
+                "An error occurred while uploading an attachment for card {CardId}",
+                cardId
+            );
+
+            var pd = new ProblemDetails
+            {
+                Status = StatusCodes.Status500InternalServerError,
+                Title = "An unexpected error occurred.",
+                Detail = "An unexpected error occurred while processing your request."
+            };
+
+            return StatusCode(StatusCodes.Status500InternalServerError, pd);
         }
     }
 }

@@ -1,4 +1,5 @@
 @inherits AbstractModal
+@implements IAsyncDisposable
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
@@ -497,9 +498,22 @@
     }
 
     [JSInvokable]
-    public void OnPastedUploadFailed(string message)
+    public void OnPastedUploadFailed()
     {
-        _mainLayout.RunNotification(new Notification(message, NotificationType.Fail));
+        _mainLayout.RunNotification(new Notification("File upload failed.", NotificationType.Fail));
+    }
+
+    public override void Dispose()
+    {
+        _ = DisposeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _js.InvokeVoidAsync("detachCardPasteHandler");
+
+        _pasteObjRef?.Dispose();
+        _pasteObjRef = null;
     }
 
     private async Task CopyDeepLink()

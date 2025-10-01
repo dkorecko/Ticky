@@ -203,11 +203,12 @@ function attachCardPasteHandler(dotNetReference, targetCardId) {
                     credentials: 'same-origin'
                 }).then(response => {
                     if (!response.ok) {
-                        const msg = 'File upload failed ' + response.status;
-                        if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFailed', msg);
+                        if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFailed');
                         throw new Error(msg);
                     }
                     if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFinished');
+                }).catch(err => {
+                    if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFailed');
                 });
             
         }
