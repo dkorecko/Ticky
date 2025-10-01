@@ -1,10 +1,12 @@
 global using System.ComponentModel.DataAnnotations;
 global using System.Drawing;
+global using System.Net;
 global using System.Security.Claims;
 global using Microsoft.AspNetCore.Identity;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.Mvc.RazorPages;
 global using Microsoft.EntityFrameworkCore;
+global using Microsoft.JSInterop;
 global using Ticky.Base;
 global using Ticky.Base.Converters;
 global using Ticky.Base.DTOs;

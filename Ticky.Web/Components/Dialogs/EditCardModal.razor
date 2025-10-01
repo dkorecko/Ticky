@@ -1,4 +1,5 @@
 @inherits AbstractModal
+@implements IAsyncDisposable
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
@@ -16,7 +17,7 @@
 <SnoozeCardModal @ref=_snoozeCardModal UpdateCard="UpdateCard" />
 <AddOrEditRepeatModal @ref=_repeatCardModal UpdateCard="UpdateCard" />
 
-<Modal @ref="Modal" Title="Edit an existing task" DisableButtons=true>
+<Modal @ref="Modal" Title="Edit an existing task" DisableButtons=true OnClose="async () => await DisposeAsync()">
     @if (_card is null || _columns is null)
     {
         <Spinner />
@@ -450,6 +451,8 @@
     private SnoozeCardModal? _snoozeCardModal;
     private AddOrEditRepeatModal? _repeatCardModal;
 
+    private DotNetObjectReference<EditCardModal>? _pasteObjRef;
+
     private int _tab = 0;
     private string _identifier = string.Empty;
     private string _commentText = string.Empty;
@@ -471,6 +474,36 @@
         _identifier = $"{_card.Column.Board.Code}-{_card.Number}";
         UpdateTimer();
         base.Open();
+    }
+
+    protected override void OnOpen()
+    {
+        _pasteObjRef = DotNetObjectReference.Create(this);
+        _ = _js.InvokeVoidAsync("attachCardPasteHandler", _pasteObjRef, _card!.Id);
+    }
+
+    [JSInvokable]
+    public async Task OnPastedUploadFinished()
+    {
+        _mainLayout.RunNotification(new Notification("File uploaded successfully."));
+        await UpdateCard();
+    }
+
+    [JSInvokable]
+    public void OnPastedUploadFailed()
+    {
+        _mainLayout.RunNotification(new Notification("File upload failed.", NotificationType.Fail));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_pasteObjRef is null)
+            return;
+
+        await _js.InvokeVoidAsync("detachCardPasteHandler");
+
+        _pasteObjRef.Dispose();
+        _pasteObjRef = null;
     }
 
     private async Task CopyDeepLink()
@@ -1013,6 +1046,8 @@
                 continue;
             }
 
+            var cleanFileName = WebUtility.HtmlEncode(file.Name);
+
             try
             {
                 var extension = file.Name[(file.Name.LastIndexOf('.') + 1)..];
@@ -1034,22 +1069,22 @@
                 {
                     CardId = _card.Id,
                     FileName = trustedFileName,
-                    OriginalName = file.Name
-                    });
+                    OriginalName = cleanFileName
+                });
                 card.Activities.Add(new Activity
                     {
-                        Text = $"<b>uploaded</b> file named <b>{file.Name}</b>",
+                    Text = $"<b>uploaded</b> file named <b>{cleanFileName}</b>",
                         UserId = _user.Id,
                         CardId = card.Id,
                 });
 
                 await db.SaveChangesAsync();
 
-                _mainLayout.RunNotification(new Notification($"File {file.Name} uploaded successfully."));
+                _mainLayout.RunNotification(new Notification($"File {cleanFileName} uploaded successfully."));
             }
             catch
             {
-                _mainLayout.RunNotification(new Notification($"File upload error while uploading {file.Name}.", NotificationType.Fail));
+                _mainLayout.RunNotification(new Notification($"File upload error while uploading {cleanFileName}.", NotificationType.Fail));
                 continue;
             }
         }
