@@ -17,7 +17,7 @@
 <SnoozeCardModal @ref=_snoozeCardModal UpdateCard="UpdateCard" />
 <AddOrEditRepeatModal @ref=_repeatCardModal UpdateCard="UpdateCard" />
 
-<Modal @ref="Modal" Title="Edit an existing task" DisableButtons=true OnClose="async () => await DisposeAsync()">
+<Modal @ref="Modal" Large=true Title="Edit an existing task" DisableButtons=true OnClose="async () => await DisposeAsync()">
     @if (_card is null || _columns is null)
     {
         <Spinner />
