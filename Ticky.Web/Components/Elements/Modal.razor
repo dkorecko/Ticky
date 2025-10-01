@@ -1,7 +1,7 @@
-﻿@if(_triggeredShow)
+@if(_triggeredShow)
 {
 	<div data-active="@_shown.ToString()" class="h-visible-screen fixed top-0 left-0 z-10 flex w-screen items-center justify-center bg-backdrop/0 transition-all ease-in-out data-[active=True]:bg-backdrop/40" @onmousedown="Cancel" @onkeydown="this.OnKey">
-		<div data-active="@_shown.ToString()" class="m-5 flex max-w-[1300px] flex-col divide-y overflow-hidden rounded-lg bg-modal/0 transition-all ease-in-out data-[active=False]:translate-y-[500%] data-[active=True]:bg-modal/100" @onmousedown:stopPropagation=true>
+		<div data-active="@_shown.ToString()" class='m-5 flex flex-col divide-y overflow-hidden rounded-lg bg-modal/0 transition-all ease-in-out data-[active=False]:translate-y-[500%] data-[active=True]:bg-modal/100 @(Large ? "w-full max-w-full md:max-w-3xl" : "max-w-[1300px]")' @onmousedown:stopPropagation=true>
 			@if(!DisableButtons || EnableTitle) 
 			{
 				<section class="flex flex-row items-center justify-between gap-10 px-7 py-3">
@@ -47,6 +47,9 @@
 
 	[Parameter]
 	public bool EnableTitle { get; set; }
+
+	[Parameter]
+	public bool Large { get; set; }
 
 	private bool _triggeredShow;
 	private bool _shown;
