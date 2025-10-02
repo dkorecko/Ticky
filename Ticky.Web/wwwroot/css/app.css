@@ -1,4 +1,4 @@
-/*! tailwindcss v4.1.13 | MIT License | https://tailwindcss.com */
+/*! tailwindcss v4.1.14 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
 @layer theme {
@@ -310,6 +310,9 @@
   .mt-5 {
     margin-top: calc(var(--spacing) * 5);
   }
+  .mr-2 {
+    margin-right: calc(var(--spacing) * 2);
+  }
   .mr-12 {
     margin-right: calc(var(--spacing) * 12);
   }
@@ -492,9 +495,6 @@
   .w-100 {
     width: calc(var(--spacing) * 100);
   }
-  .w-\[90vw\] {
-    width: 90vw;
-  }
   .w-full {
     width: 100%;
   }
@@ -512,9 +512,6 @@
   }
   .max-w-4xl {
     max-width: var(--container-4xl);
-  }
-  .max-w-\[90vw\] {
-    max-width: 90vw;
   }
   .max-w-\[1300px\] {
     max-width: 1300px;
@@ -726,7 +723,7 @@
     border-radius: var(--radius-2xl);
   }
   .rounded-full {
-    border-radius: calc(infinity * 1px);
+    border-radius: calc(infinity * 1px) !important;
   }
   .rounded-lg {
     border-radius: var(--radius-lg);
@@ -1020,6 +1017,13 @@
     --tw-font-weight: var(--font-weight-semibold);
     font-weight: var(--font-weight-semibold);
   }
+  .break-normal {
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+  .break-words {
+    overflow-wrap: break-word;
+  }
   .break-all {
     word-break: break-all;
   }
@@ -1244,6 +1248,13 @@
       }
     }
   }
+  .hover\:text-primary {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-primary);
+      }
+    }
+  }
   .hover\:text-primary-hover {
     &:hover {
       @media (hover: hover) {
@@ -1370,21 +1381,6 @@
   .md\:max-w-3xl {
     @media (width >= 48rem) {
       max-width: var(--container-3xl);
-    }
-  }
-  .md\:max-w-lg {
-    @media (width >= 48rem) {
-      max-width: var(--container-lg);
-    }
-  }
-  .md\:max-w-sm {
-    @media (width >= 48rem) {
-      max-width: var(--container-sm);
-    }
-  }
-  .md\:max-w-xl {
-    @media (width >= 48rem) {
-      max-width: var(--container-xl);
     }
   }
   .md\:flex-row {
@@ -2081,7 +2077,7 @@ input[type="checkbox"].switch:checked:after {
   justify-content: center;
   gap: calc(var(--spacing) * 1);
   overflow: hidden;
-  border-radius: calc(infinity * 1px);
+  border-radius: calc(infinity * 1px) !important;
   background-color: var(--color-person-label-bg);
   padding: calc(var(--spacing) * 1);
   font-size: var(--text-xs);
@@ -2107,7 +2103,7 @@ input[type="checkbox"].switch:checked:after {
   justify-content: center;
   gap: calc(var(--spacing) * 2);
   overflow: hidden;
-  border-radius: calc(infinity * 1px);
+  border-radius: calc(infinity * 1px) !important;
   background-color: var(--color-person-label-bg);
   padding-inline: calc(var(--spacing) * 2);
   padding-block: calc(var(--spacing) * 1.5);
