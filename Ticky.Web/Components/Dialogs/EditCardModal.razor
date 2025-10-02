@@ -870,7 +870,7 @@
 
     private async Task DownloadAttachment(Attachment attachment)
     {
-        await _js.InvokeVoidAsync("triggerFileDownload", attachment.OriginalName, $"{Constants.ACCESS_UPLOADED_FILES_PATH}/{attachment.FileName}");
+        await _js.InvokeVoidAsync("triggerFileDownload", attachment.OriginalName, $"{Constants.Mappings.ATTACHMENTS_DOWNLOAD_PATH}/{attachment.FileName}");
     }
 
     private async Task DeleteAttachment(Attachment attachment)
