@@ -8,18 +8,49 @@ namespace Ticky.Web.Controllers;
 public class AttachmentsController : ControllerBase
 {
     private readonly IDbContextFactory<DataContext> _dbContextFactory;
-    private readonly IWebHostEnvironment _env;
     private readonly ILogger<AttachmentsController> _logger;
 
     public AttachmentsController(
         IDbContextFactory<DataContext> dbContextFactory,
-        IWebHostEnvironment env,
         ILogger<AttachmentsController> logger
     )
     {
         _dbContextFactory = dbContextFactory;
-        _env = env;
         _logger = logger;
+    }
+
+    [HttpGet("download/{*fileName}")]
+    public async Task<IActionResult> Download(string fileName, [FromQuery] int debug = 0)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return BadRequest();
+
+        if (fileName.Contains("..") || fileName.Contains("/") || fileName.Contains("\\"))
+            return BadRequest();
+
+        try
+        {
+            using var db = _dbContextFactory.CreateDbContext();
+            var attachment = await db.Attachments.FirstOrDefaultAsync(x =>
+                x.FileName == WebUtility.UrlDecode(fileName)
+            );
+
+            if (attachment is null)
+                return NotFound();
+
+            var storedFileName = attachment.FileName;
+            var absolutePath = Path.GetFullPath(
+                Path.Combine(Constants.SAVE_UPLOADED_FILES_PATH, storedFileName)
+            );
+
+            var contentType = "application/octet-stream";
+            return PhysicalFile(absolutePath, contentType, attachment.OriginalName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while downloading attachment {FileName}", fileName);
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
     }
 
     [HttpPost("upload")]
@@ -29,13 +60,14 @@ public class AttachmentsController : ControllerBase
         if (User is null)
             return Unauthorized();
 
-        if (file is null || file.Length == 0)
+        if (file is null)
             return BadRequest("No file");
 
         if (file.Length > Constants.Limits.MAX_FILE_SIZE)
             return BadRequest("File too large");
 
         var folderPath = Constants.SAVE_UPLOADED_FILES_PATH;
+
         if (!Directory.Exists(folderPath))
             Directory.CreateDirectory(folderPath);
 

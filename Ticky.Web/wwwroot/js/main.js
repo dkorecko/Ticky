@@ -190,27 +190,22 @@ function attachCardPasteHandler(dotNetReference, targetCardId) {
 
             const file = typeof item.getAsFile === 'function' ? item.getAsFile() : null;
             if (!file) continue;
+            const formData = new FormData();
+            formData.append('file', file, file.name);
+            formData.append('cardId', targetCardId);
 
-                const formData = new FormData();
-                formData.append('file', file, file.name || 'pasted.png');
-                if (targetCardId !== undefined && targetCardId !== null) {
-                    formData.append('cardId', targetCardId);
+            fetch('/api/attachments/upload', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error(response.status);
                 }
-
-                fetch('/api/attachments/upload', {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'same-origin'
-                }).then(response => {
-                    if (!response.ok) {
-                        if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFailed');
-                        throw new Error(response.status);
-                    }
-                    if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFinished');
-                }).catch(err => {
-                    if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFailed');
-                });
-            
+                if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFinished');
+            }).catch(() => {
+                if (pasteDotNetRef) pasteDotNetRef.invokeMethodAsync('OnPastedUploadFailed');
+            });
         }
     };
 
