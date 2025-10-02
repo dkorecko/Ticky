@@ -16,8 +16,9 @@ Ticky is packed with powerful features designed to make your task management sea
 
 - **Projects**: Create and manage projects to group your boards.
 - **Boards**: Create and manage your own Kanban boards. You can even make them favorites to stay atop the list.
+- **Templates**: You can clone boards, therefore allowing you to use boards as templates.
 - **Columns**: Each board can have any amount of columns, all of which are collapsible. You can specify a max card limit, automatically mark the cards within the column as finished and automatically order them.
-- **Cards**: Create, edit, and move task cards between columns with drag-and-drop functionality. At a glance see all important information about a card.
+- **Cards**: Create, edit, and move task cards between columns with drag-and-drop functionality. At a glance see all important information about a card. Decide where new cards are placed.
 - **Subtasks**: Break down tasks into smaller, manageable subtasks with completion tracking.
 - **Deadline Management**: Set and track deadlines with color-coded indicators.
 - **Time Tracking**: Track time spent on tasks with built-in timer functionality.
@@ -33,14 +34,15 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Progress**: Track your progress within a board by seeing how many tasks have already been completed.
 - **App-wide Search**: Find cards from other boards based on their unique identificator (like TEST-1), jump directly to them.
 - **Recent board**: Immediately go back to your most recent board.
-- **Auto-generated avatars**: To make things more colorful.
-- **Able to do fully offline**: Ability to run fully offline, disabling the avatar service, having all the files bundled on the server and not using SMTP.
+- **Auto-generated avatars** (optional): To make things more colorful.
+- **Able to do run offline**: Ability to run fully offline, disabling the avatar service, having all the files bundled on the server and not using SMTP.
 - **Dark Mode**: A sleek dark mode for less strain on your eyes.
 - **Snooze Cards**: Reduce clutter by snoozing cards that cannot be worked on just yet.
 - **Repeat Cards**: Automatically repeat cards at specified intervals, perfect for recurring tasks.
 - **Responsive Design**: Take your tasks with you, no matter whether you are at your computer or running errands with just your phone.
 - **Completion Confetti**: Feel the satisfaction of completing each task with a bunch of confetti, there to celebrate your success.
-- **Filtering and Sorting**: Easily find and organize tasks based on various criteria.
+- **Filtering**: Easily find and organize tasks based on various criteria.
+- **Trello import**: You can import your Trello boards, including the ability to map all the assigned members from your Trello board to Ticky users.
 - ... and more!
 
 ## 📋 Prerequisites
