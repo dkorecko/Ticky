@@ -35,7 +35,7 @@ public class AttachmentsController : ControllerBase
         {
             using var db = _dbContextFactory.CreateDbContext();
             var attachment = await db.Attachments.FirstOrDefaultAsync(x =>
-                x.FileName == WebUtility.UrlDecode(decodedFileName)
+                x.FileName == decodedFileName
             );
 
             if (attachment is null)
@@ -44,6 +44,9 @@ public class AttachmentsController : ControllerBase
             var absolutePath = Path.GetFullPath(
                 Path.Combine(Constants.SAVE_UPLOADED_FILES_PATH, attachment.FileName)
             );
+
+            if (!System.IO.File.Exists(absolutePath))
+                return NotFound();
 
             var contentType = "application/octet-stream";
             return PhysicalFile(absolutePath, contentType, attachment.OriginalName);
