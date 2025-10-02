@@ -310,6 +310,9 @@
   .mt-5 {
     margin-top: calc(var(--spacing) * 5);
   }
+  .mr-2 {
+    margin-right: calc(var(--spacing) * 2);
+  }
   .mr-12 {
     margin-right: calc(var(--spacing) * 12);
   }
@@ -1239,6 +1242,13 @@
     &:hover {
       @media (hover: hover) {
         color: var(--color-nav-link-hover);
+      }
+    }
+  }
+  .hover\:text-primary {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-primary);
       }
     }
   }
