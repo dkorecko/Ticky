@@ -20,27 +20,29 @@ public class AttachmentsController : ControllerBase
     }
 
     [HttpGet("download/{*fileName}")]
-    public async Task<IActionResult> Download(string fileName, [FromQuery] int debug = 0)
+    public async Task<IActionResult> Download(string fileName)
     {
         if (string.IsNullOrWhiteSpace(fileName))
             return BadRequest();
 
-        if (fileName.Contains("..") || fileName.Contains("/") || fileName.Contains("\\"))
+        var decodedFileName = WebUtility.UrlDecode(fileName);
+        string[] forbiddenChars = ["..", "/", "\\", "\n", "\r"];
+
+        if (forbiddenChars.Any(decodedFileName.Contains))
             return BadRequest();
 
         try
         {
             using var db = _dbContextFactory.CreateDbContext();
             var attachment = await db.Attachments.FirstOrDefaultAsync(x =>
-                x.FileName == WebUtility.UrlDecode(fileName)
+                x.FileName == WebUtility.UrlDecode(decodedFileName)
             );
 
             if (attachment is null)
                 return NotFound();
 
-            var storedFileName = attachment.FileName;
             var absolutePath = Path.GetFullPath(
-                Path.Combine(Constants.SAVE_UPLOADED_FILES_PATH, storedFileName)
+                Path.Combine(Constants.SAVE_UPLOADED_FILES_PATH, attachment.FileName)
             );
 
             var contentType = "application/octet-stream";
@@ -48,7 +50,7 @@ public class AttachmentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while downloading attachment {FileName}", fileName);
+            _logger.LogError(ex, "Error while downloading attachment {FileName}", decodedFileName);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
