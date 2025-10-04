@@ -69,7 +69,7 @@
         @if (_board is not null)
         {
             <section id="board-section" class="w-full flex-row gap-5 overflow-x-auto @(_preferences.ShowStats ? "hidden md:flex" : "flex") py-6">
-                <SortableList Class="ml-12 flex flex-row gap-5" Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
+                <SortableList Class="ml-12 flex flex-row gap-5" Animation=@(_board.DisableSortingAnimations ? 0 : 200) Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
                         <ColumnView @key="column.Id" Column="column" Cards="_cards" Members="_members" Board="@_board" EditColumnModal="_editColumnModal" DeleteColumnModal="_deleteColumnModal" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" OnCardMoved=StateHasChanged AddingSetter=SetAdding IsAdmin="IsAdmin" AddingCardHere="(_adding == column.Id)" OnUpdate="HandleUpdate" />
                     </SortableItemTemplate>
