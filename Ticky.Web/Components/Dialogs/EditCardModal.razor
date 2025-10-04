@@ -911,30 +911,13 @@
     {
         if (_card is null)
             return;
-
         var movedSubtaskId = Convert.ToInt32(args.movedItemId);
         var movedSubtask = _card.Subtasks.FirstOrDefault(x => x.Id.Equals(movedSubtaskId));
-
         if (movedSubtask is null)
             return;
 
-        int targetIndex = _card.Subtasks.Any() ? _card.Subtasks.Max(x => x.Index) + 1 : 0;
         int? targetItemId = args.targetItemId is not null ? Convert.ToInt32(args.targetItemId) : null;
-
-        if (targetItemId.HasValue)
-        {
-            var targetSubtask = _card.Subtasks.FirstOrDefault(x => x.Id.Equals(targetItemId));
-            if (targetSubtask is not null)
-            {
-                targetIndex = targetSubtask.Index;
-                foreach (var st in _card.Subtasks.OrderByDescending(x => x.Index))
-                {
-                    if (st.Index >= targetSubtask.Index)
-                        st.Index++;
-                }
-            }
-        }
-
+        var targetIndex = ComputeReindexedListOrAdjustIndices(_card.Subtasks, movedSubtaskId, targetItemId);
         movedSubtask.Index = targetIndex;
         IndexHelper.FixIndices(_card.Subtasks);
         StateHasChanged();
@@ -951,21 +934,7 @@
             if (dbMoved is null)
                 throw new InvalidOperationException("Moved subtask not found in DB.");
 
-            int dbTargetIndex = card.Subtasks.Any() ? card.Subtasks.Max(x => x.Index) + 1 : 0;
-            if (targetItemId.HasValue)
-            {
-                var dbTarget = card.Subtasks.FirstOrDefault(x => x.Id.Equals(targetItemId));
-                if (dbTarget is not null)
-                {
-                    dbTargetIndex = dbTarget.Index;
-                    foreach (var st in card.Subtasks.OrderByDescending(x => x.Index))
-                    {
-                        if (st.Index >= dbTarget.Index)
-                            st.Index++;
-                    }
-                }
-            }
-
+            var dbTargetIndex = ComputeReindexedListOrAdjustIndices(card.Subtasks, movedSubtaskId, targetItemId);
             dbMoved.Index = dbTargetIndex;
             IndexHelper.FixIndices(card.Subtasks);
 
@@ -978,6 +947,28 @@
             _logger?.LogError(ex, "Failed to move subtask");
             await UpdateCard();
         }
+    }
+
+    private int ComputeReindexedListOrAdjustIndices(ICollection<Subtask> subtasks, int movedSubtaskId, int? targetItemId)
+    {
+        int defaultTarget = subtasks.Any() ? subtasks.Max(x => x.Index) + 1 : 0;
+
+        if (targetItemId.HasValue)
+        {
+            var target = subtasks.FirstOrDefault(x => x.Id == targetItemId.Value);
+            if (target is not null)
+            {
+                defaultTarget = target.Index;
+
+                foreach (var st in subtasks.OrderByDescending(x => x.Index))
+                {
+                    if (st.Index >= defaultTarget)
+                        st.Index++;
+                }
+            }
+        }
+
+        return defaultTarget;
     }
 
     private async Task DeleteLink(CardLink link)
