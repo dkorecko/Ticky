@@ -37,6 +37,7 @@
             Text = subtask.Text
         };
         _subtask = subtask;
+        StateHasChanged();
         _modalRef?.Open(triggerElementId);
     }
 

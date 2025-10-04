@@ -3,6 +3,7 @@
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
+@inject ILogger<EditCardModal> _logger
 
 <PriorityModal @ref=_priorityModal UpdateCard="UpdateCard" />
 <LabelModal @ref=_labelModal UpdateCard="UpdateCard" />
@@ -240,21 +241,11 @@
                                 </div>
                             </div>
                             <div class="flex flex-col gap-2 pl-3">
-                                @{
-                                    i = 0;
-                                }
-                                @foreach (var subtask in _card.Subtasks.OrderBy(x => x.Index))
-                                {
-                                    var subtaskId = $"subtask_id_{i}";
-                                    var subtaskIdEdit = subtaskId + "_edit";
-                                    <div class="flex flex-row items-center gap-2 text-sm font-normal">
-                                        <input id="@subtaskId" type="checkbox" checked="@subtask.Completed" @onchange="(e) => OnSubtaskStatusChanged(e, subtask)" />
-                                        <label for="@subtaskId">@subtask.Text</label>
-                                        <i id="@subtaskIdEdit" class="fa fa-pencil edit-icon" @onclick='() => _editSubtaskModal?.Open(subtaskIdEdit, subtask)' title="Edit subtask"></i>
-                                        <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="() => DeleteSubtask(subtask)" title="Delete subtask"></i>
-                                    </div>
-                                    i++;
-                                }
+                                <SortableList Class="flex flex-col gap-2" Items="_card.Subtasks.OrderBy(x => x.Index).ToList()" OnUpdate="OnSubtaskMoved" Handle=".drag-toggle">
+                                    <SortableItemTemplate>
+                                        <SubtaskView @key="context.Id" Subtask="context" EditSubtaskModal="_editSubtaskModal" UpdateCard="UpdateCard" />
+                                    </SortableItemTemplate>
+                                </SortableList>
                             </div>
                         }
                     </section>
@@ -574,34 +565,6 @@
         await UpdateCard();
     }
 
-    private async Task OnSubtaskStatusChanged(ChangeEventArgs e, Subtask subtask)
-    {
-        if (_card is null)
-            return;
-
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        var targetSubtask = card.Subtasks.FirstOrDefault(x => x.Id.Equals(subtask.Id));
-
-        if (targetSubtask is null)
-            return;
-
-        targetSubtask.Completed = e.Value is not null ? (bool)e.Value : false;
-
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>marked</b> the subtask <b>{targetSubtask.Text}</b> as <b>{(targetSubtask.Completed ? "completed" : "to be done")}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-
-        await db.SaveChangesAsync();
-        await UpdateCard();
-    }
 
 
     private void UpdateTimer()
@@ -944,29 +907,77 @@
         await UpdateCard();
     }
 
-    private async Task DeleteSubtask(Subtask subtask)
+    private async Task OnSubtaskMoved((string movedItemId, string? targetItemId, string _) args)
     {
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
+        var movedSubtaskId = Convert.ToInt32(args.movedItemId);
+        var movedSubtask = _card.Subtasks.FirstOrDefault(x => x.Id.Equals(movedSubtaskId));
 
-        if (card is null)
+        if (movedSubtask is null)
             return;
 
-        card.Subtasks.RemoveAll(x => x.Id.Equals(subtask.Id));
-        card.Activities.Add(new Activity
+        int targetIndex = _card.Subtasks.Any() ? _card.Subtasks.Max(x => x.Index) + 1 : 0;
+        int? targetItemId = args.targetItemId is not null ? Convert.ToInt32(args.targetItemId) : null;
+
+        if (targetItemId.HasValue)
+        {
+            var targetSubtask = _card.Subtasks.FirstOrDefault(x => x.Id.Equals(targetItemId));
+            if (targetSubtask is not null)
             {
-                Text = $"<b>deleted</b> subtask <b>{subtask.Text}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
+                targetIndex = targetSubtask.Index;
+                foreach (var st in _card.Subtasks.OrderByDescending(x => x.Index))
+                {
+                    if (st.Index >= targetSubtask.Index)
+                        st.Index++;
+                }
+            }
+        }
 
-        IndexHelper.FixIndices(card.Subtasks);
+        movedSubtask.Index = targetIndex;
+        IndexHelper.FixIndices(_card.Subtasks);
+        StateHasChanged();
 
-        await db.SaveChangesAsync();
-        await UpdateCard();
+        try
+        {
+            using var db = _dbContextFactory.CreateDbContext();
+            var card = await GetCard(db, _card.Id);
+
+            if (card is null)
+                throw new InvalidOperationException("Card not found in DB.");
+
+            var dbMoved = card.Subtasks.FirstOrDefault(x => x.Id.Equals(movedSubtaskId));
+            if (dbMoved is null)
+                throw new InvalidOperationException("Moved subtask not found in DB.");
+
+            int dbTargetIndex = card.Subtasks.Any() ? card.Subtasks.Max(x => x.Index) + 1 : 0;
+            if (targetItemId.HasValue)
+            {
+                var dbTarget = card.Subtasks.FirstOrDefault(x => x.Id.Equals(targetItemId));
+                if (dbTarget is not null)
+                {
+                    dbTargetIndex = dbTarget.Index;
+                    foreach (var st in card.Subtasks.OrderByDescending(x => x.Index))
+                    {
+                        if (st.Index >= dbTarget.Index)
+                            st.Index++;
+                    }
+                }
+            }
+
+            dbMoved.Index = dbTargetIndex;
+            IndexHelper.FixIndices(card.Subtasks);
+
+            await db.SaveChangesAsync();
+            await UpdateCard();
+        }
+        catch (Exception ex)
+        {
+            _mainLayout.RunNotification(new Notification("Failed to move subtask.", NotificationType.Fail));
+            _logger?.LogError(ex, "Failed to move subtask");
+            await UpdateCard();
+        }
     }
 
     private async Task DeleteLink(CardLink link)
