@@ -241,7 +241,7 @@
                                 </div>
                             </div>
                             <div class="flex flex-col gap-2 pl-3">
-                                <SortableList Class="flex flex-col gap-2" Items="_card.Subtasks.OrderBy(x => x.Index).ToList()" OnUpdate="OnSubtaskMoved" Handle=".drag-toggle">
+                                <SortableList Class="flex flex-col gap-2" Animation=@(_card.Column.Board.DisableSortingAnimations ? 0 : 200) Items="_card.Subtasks.OrderBy(x => x.Index).ToList()" OnUpdate="OnSubtaskMoved" Handle=".drag-toggle">
                                     <SortableItemTemplate>
                                         <SubtaskView @key="context.Id" Subtask="context" EditSubtaskModal="_editSubtaskModal" UpdateCard="UpdateCard" />
                                     </SortableItemTemplate>
