@@ -139,6 +139,11 @@
                 CardId = card.Id,
             });
 
+        if (_linkCardsModel.Text == Constants.BLOCKS_KEY && !targetCard.Column.Finished)
+            targetCard.Blocked = true;
+        else if (_linkCardsModel.Text == Constants.BLOCKED_BY_KEY && !card.Column.Finished)
+            card.Blocked = true;
+
         await db.SaveChangesAsync();
 
         _card = card;

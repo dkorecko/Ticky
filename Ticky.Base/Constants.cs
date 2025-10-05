@@ -96,11 +96,13 @@ namespace Ticky.Base
         public static readonly string ACCESS_UPLOADED_FILES_PATH = $"{ACCESS_UPLOADED_PATH}/files";
 
         public const string REPEATED_KEY = "is repeated by";
+        public const string BLOCKS_KEY = "blocks";
+        public const string BLOCKED_BY_KEY = "is blocked by";
 
         public static readonly Dictionary<string, string> LINK_TYPE_PAIRS =
             new()
             {
-                { "is blocked by", "blocks" },
+                { BLOCKED_BY_KEY, BLOCKS_KEY },
                 { "is tested by", "tests" },
                 { "relates to", "relates to" },
                 { REPEATED_KEY, "repeats" }

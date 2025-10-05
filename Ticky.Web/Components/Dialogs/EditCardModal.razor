@@ -1017,6 +1017,11 @@
                 CardId = targetLink.CardOneId,
             });
 
+        if(targetLink.Category == Constants.BLOCKED_BY_KEY && targetLink.CardOne.Blocked)
+            targetLink.CardOne.Blocked = false;
+        else if(targetLink.Category == Constants.BLOCKS_KEY && targetLink.CardTwo.Blocked)
+            targetLink.CardTwo.Blocked = false;
+
         await db.SaveChangesAsync();
         await UpdateCard();
     }

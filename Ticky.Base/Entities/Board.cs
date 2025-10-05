@@ -19,6 +19,7 @@ public class Board : AbstractDbEntity, IDeletable
     public virtual List<LastVisit> LastVisits { get; set; } = [];
     public virtual List<Favorite> Favorites { get; set; } = [];
     public bool DisableSortingAnimations { get; set; }
+    public bool AutoBlockUnblock { get; set; }
 
     public bool VerifyAccess(User user) =>
         Memberships.Any(x => x.UserId.Equals(user.Id))

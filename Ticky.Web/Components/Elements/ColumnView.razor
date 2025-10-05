@@ -338,6 +338,18 @@
             IndexHelper.FixIndices(dbNewColumn.Cards);
 
             await db.SaveChangesAsync();
+
+            if(Board.AutoBlockUnblock)
+            {
+                await db.Cards
+                    .Include(x => x.LinkedIssuesOne)
+                    .Include(x => x.Column)
+                    .Where(x => x.LinkedIssuesOne
+                        .Any(y => y.CardTwoId == dbMovedCard.Id && y.Category == Constants.BLOCKED_BY_KEY)
+                    )
+                    .ExecuteUpdateAsync(x => x.SetProperty(y => y.Blocked, !dbNewColumn.Finished));
+            }
+
             await OnUpdate.InvokeAsync();
         }
         catch (Exception ex)

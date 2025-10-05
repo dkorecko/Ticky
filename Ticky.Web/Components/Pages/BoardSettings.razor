@@ -29,7 +29,7 @@
     <section class="flex w-full max-w-4xl flex-grow flex-col gap-5 overflow-y-auto px-12 py-14">
         <header class="flex flex-row justify-between text-2xl font-bold">
             <div class="flex flex-col gap-3">
-                <a class="text-sm transition-colors link-muted hover:text-primary" href="/boards/@Id" title="Back to board">
+                <a class="link-muted text-sm transition-colors hover:text-primary" href="/boards/@Id" title="Back to board">
                     <i class="fa fa-chevron-left mr-2"></i>
                     Back to board
                 </a>
@@ -60,10 +60,18 @@
                     <div class="settings-item">
                         <div class="flex flex-col text-sm">
                             <label class="font-bold opacity-90">Disable sorting animations</label>
-                            <label class="w-4/5 max-w-2xl opacity-70">With many cards in a column, animating their movement can cause lag. If you're experiencing this or prefer a quicker snap to position, enable this option.'</label>
+                            <label class="w-4/5 max-w-2xl opacity-70">With many cards in a column, animating their movement can cause lag. If you're experiencing this or prefer a quicker snap to position, enable this option.</label>
                         </div>
 
                         <input type="checkbox" class="switch" checked=@_board.DisableSortingAnimations @onchange="(e) => OnSettingChanged(e, x => x.DisableSortingAnimations)">
+                    </div>
+                    <div class="settings-item">
+                        <div class="flex flex-col text-sm">
+                            <label class="font-bold opacity-90">Automatically mark cards as blocked/unblocked based on card links</label>
+                            <label class="w-4/5 max-w-2xl opacity-70">When a blocked card link is created, the blocked card will be marked as so in the UI automatically. Furthermore, when the blocking card is moved to a column marked as finished, the blocked card will be marked as unblocked (but the card link will remain).</label>
+                        </div>
+
+                        <input type="checkbox" class="switch" checked=@_board.AutoBlockUnblock @onchange="(e) => OnSettingChanged(e, x => x.AutoBlockUnblock)">
                     </div>
                 } else if (_tab == 2)
                 {
