@@ -12,7 +12,7 @@ public class Card : AbstractDbEntity, IOrderable, IDeletable
     public CardPriority Priority { get; set; } = CardPriority.Normal;
     public DateTime? Deadline { get; set; }
     public bool DeadlineProcessed { get; set; }
-    public bool Blocked { get; set; }
+    public bool Flagged { get; set; }
     public required int CreatedById { get; set; }
     public virtual User CreatedBy { get; set; } = null!;
     public virtual Column Column { get; set; } = null!;

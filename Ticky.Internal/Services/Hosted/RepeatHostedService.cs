@@ -72,7 +72,7 @@ public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
                 Priority = card.Priority,
                 CreatedById = card.CreatedById,
                 SnoozedUntil = card.SnoozedUntil,
-                Blocked = card.Blocked,
+                Flagged = card.Flagged,
                 ColumnId = targetColumn.Id,
                 Number = await cardNumberingService.GetNextNumberAsync(targetColumn.BoardId),
                 Index = 0,

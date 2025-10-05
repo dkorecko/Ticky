@@ -1,6 +1,6 @@
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
-<div id="@Card.Id" data-blocked="@Card.Blocked.ToString()" class="task-card" @onclick="() => EditCardModal.Open(Card.Id, Members, Columns)">
+<div id="@Card.Id" data-blocked="@Card.Flagged.ToString()" class="task-card" @onclick="() => EditCardModal.Open(Card.Id, Members, Columns)">
     <div class="flex flex-row items-center justify-between gap-2">
         <div class="flex flex-row flex-wrap items-center justify-start gap-1">
             <PriorityLabel Priority="Card.Priority"/>
@@ -12,7 +12,7 @@
         <Dropdown Actions='new() {
                                 { "Edit task", async () => await EditCardModal.Open(Card.Id, Members, Columns) },
                                 { "Delete task", () => DeleteCardModal?.OpenDialog(Card) },
-                                { $"{(Card.Blocked ? "Unmark" : "Mark")} as blocked", async () => await ChangeBlockedStatus() }
+                                { $"{(Card.Flagged ? "Unmark" : "Mark")} as flagged", async () => await ChangeFlaggedStatus() }
                             }'>
             <i class="fa fa-ellipsis card-button pr-1" title="Card options"></i>
         </Dropdown>
@@ -43,9 +43,9 @@
             {
                 <label class="card-data-point"><i class="fa fa-stopwatch" title="Time tracked"></i> @trackedTime</label>
             }
-            @if(Card.Blocked)
+            @if(Card.Flagged)
             {
-                <label class="card-data-point text-card-blocked-text"><i class="fa fa-flag" title="Blocked"></i> Blocked</label>
+                <label class="card-data-point text-card-blocked-text"><i class="fa fa-flag" title="Flagged"></i> Flagged</label>
             }
             @if (Card.SnoozedUntil is not null)
             {
@@ -107,7 +107,7 @@
             _nextRepeat = Card.CalculateNextRepeat(DateTime.Now).ToReadableStringWithTime();
     }
 
-    private async Task ChangeBlockedStatus()
+    private async Task ChangeFlaggedStatus()
     {
         using var db = _dbContextFactory.CreateDbContext();
 
@@ -116,8 +116,8 @@
         if (card is null)
             return;
 
-        card.Blocked = !card.Blocked;
-        Card.Blocked = card.Blocked;
+        card.Flagged = !card.Flagged;
+        Card.Flagged = card.Flagged;
 
         await db.SaveChangesAsync();
         StateHasChanged();
