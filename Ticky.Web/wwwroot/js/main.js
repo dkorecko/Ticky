@@ -50,7 +50,7 @@ let lastClosedX = null
 let lastClosedY = null
 let lastClickTarget = null
 let lastOpenedFromTrigger = null
-let closedPreviousDropdown = true
+let isPreviousDropdownClosingAnimComplete = true
 
 function triggerConfetti(x, y) {
     if (typeof confetti === 'undefined') {
@@ -100,12 +100,12 @@ function closeDropdowns() {
     //console.log('closing dropdown')
 
     let targetDropdown = openDropdown
-    closedPreviousDropdown = false
+    isPreviousDropdownClosingAnimComplete = false
     targetDropdown.classList.remove('dropdown-animate-in')
 
     setTimeout(() => {
         targetDropdown.classList.add('hidden');
-        closedPreviousDropdown = true
+        isPreviousDropdownClosingAnimComplete = true
         //console.log('hidden')
     }, 100);
 
@@ -142,8 +142,8 @@ function openDropDownOnElementPosition(dropdownElement, triggerElement) {
         const clientRect = triggerElement.getBoundingClientRect();
         positionDropdown(dropdownElement, clientRect.left, clientRect.top + clientRect.height);
         openDropdown = dropdownElement;
-        closedPreviousDropdown = true;
-    }, closedPreviousDropdown ? 0 : 100)
+        isPreviousDropdownClosingAnimComplete = true;
+    }, isPreviousDropdownClosingAnimComplete ? 0 : 100)
 }
 
 function onDropdownTriggerClicked(clientX, clientY, dropdownElement) {
