@@ -232,8 +232,8 @@ input {
 }
 
 .avatar {
-    @apply w-8;
-    @apply h-8;
+    @apply w-8 min-w-8;
+    @apply h-8 min-h-8;
 
     @apply bg-center;
     background-size: cover;
