@@ -1,4 +1,4 @@
-@inherits AbstractModal
+﻿@inherits AbstractModal
 @implements IDisposable
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
@@ -25,7 +25,7 @@
     }
     else
     {
-        <div class="h-[90vh] overflow-y-scroll">
+        <div class="h-[90vh] overflow-x-hidden overflow-y-scroll">
             <div class="flex flex-col gap-3 px-5 py-5">
                 <i class="edit-icon fa fa-x ml-auto" @onclick="async () => await Modal!.Close()" title="Close"></i>
                 <textarea class="min-h-12 resize-none px-2 py-2 text-2xl font-bold transition-all ease-in-out" @onchange="OnTextChanged">@_card.Name</textarea>
@@ -243,7 +243,7 @@
                             <div class="flex flex-col gap-2 pl-3">
                                 <SortableList Class="flex flex-col gap-2" Animation=@(_card.Column.Board.DisableSortingAnimations ? 0 : 200) Items="_card.Subtasks.OrderBy(x => x.Index).ToList()" OnUpdate="OnSubtaskMoved" Handle=".drag-toggle">
                                     <SortableItemTemplate>
-                                        <SubtaskView @key="context.Id" Subtask="context" EditSubtaskModal="_editSubtaskModal" UpdateCard="UpdateCard" />
+                                        <SubtaskView @key="context.Id" Subtask="context" AssigneesModal="_assigneesModal" EditSubtaskModal="_editSubtaskModal" Members="_members" UpdateCard="UpdateCard" />
                                     </SortableItemTemplate>
                                 </SortableList>
                             </div>
@@ -304,7 +304,7 @@
                                     <label id=@commentId class="cursor-pointer text-sm font-medium" @onclick="() => _mainLayout.UserInfoModal?.Open(commentId, comment.CreatedById)">@(comment.CreatedBy?.DisplayName ?? "Deleted User")</label>
                                     <label class="text-xs text-gray-400">@TimeHelper.ToElapsedString(comment.CreatedAt)</label>
                                 </div>
-                                <label class="text-sm font-normal">@comment.Text</label>
+                                <label class="text-sm font-normal break-normal break-words">@comment.Text</label>
                             </div>
 
                             j++;
@@ -1114,6 +1114,7 @@
             .Include(x => x.Activities)
                 .ThenInclude(x => x.User)
             .Include(x => x.Subtasks)
+                .ThenInclude(x => x.Assignees)
             .Include(x => x.Reminders)
             .Include(x => x.Labels)
             .Include(x => x.TimeRecords)
@@ -1144,6 +1145,7 @@
             .Include(x => x.Attachments)
             .Include(x => x.Activities)
             .Include(x => x.Subtasks)
+                .ThenInclude(x => x.Assignees)
             .Include(x => x.Reminders)
             .Include(x => x.Labels)
             .Include(x => x.TimeRecords)
