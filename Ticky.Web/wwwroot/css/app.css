@@ -1023,9 +1023,6 @@
   .text-auth-bottom-text {
     color: var(--color-auth-bottom-text);
   }
-  .text-black {
-    color: var(--color-black);
-  }
   .text-card-blocked-text {
     color: var(--color-card-blocked-text);
   }
@@ -1820,7 +1817,7 @@ input[type="checkbox"].switch:checked:after {
   }
   &:hover {
     @media (hover: hover) {
-      color: var(--color-black);
+      color: var(--color-app-text);
     }
   }
   &[data-active="true"] {

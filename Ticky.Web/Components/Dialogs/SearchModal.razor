@@ -5,7 +5,7 @@
 @inject IJSRuntime _js
 @inject SearchService _searchService
 
-<Modal Class="text-black" @ref="Modal" Title="Search" DisableButtons=true ForceOverlay=true OnShown="OnShown">
+<Modal Class="text-app-text" @ref="Modal" Title="Search" DisableButtons=true ForceOverlay=true OnShown="OnShown">
     <input @ref=_input class="w-80 rounded-2xl bg-search-bar p-2 text-center text-xs" autofocus type="search"
            placeholder="Search for tasks ..." @oninput="UpdateSearchTerm"/>
 
