@@ -142,6 +142,7 @@ function openDropDownOnElementPosition(dropdownElement, triggerElement) {
         const clientRect = triggerElement.getBoundingClientRect();
         positionDropdown(dropdownElement, clientRect.left, clientRect.top + clientRect.height);
         openDropdown = dropdownElement;
+        closedPreviousDropdown = true;
     }, closedPreviousDropdown ? 0 : 100)
 }
 
