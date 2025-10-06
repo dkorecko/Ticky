@@ -1,9 +1,11 @@
 const OPEN_OFFSET = 5;
 
 function positionDropdown(dropdownElement, left, top, width = null) {
+    //console.log('positioning')
     dropdownElement.classList.remove('hidden');
     dropdownElement.style.visibility = 'hidden';
     if (width !== null) {
+        //console.log('width')
         dropdownElement.style.width = width + 'px';
     }
     dropdownElement.style.left = left + 'px';
@@ -38,6 +40,7 @@ function positionDropdown(dropdownElement, left, top, width = null) {
             dropdownElement.style.visibility = 'visible';
             void dropdownElement.offsetWidth;
             dropdownElement.classList.add('dropdown-animate-in');
+            //console.log('positioning done')
         });
     });
 }
@@ -47,6 +50,7 @@ let lastClosedX = null
 let lastClosedY = null
 let lastClickTarget = null
 let lastOpenedFromTrigger = null
+let closedPreviousDropdown = true
 
 function triggerConfetti(x, y) {
     if (typeof confetti === 'undefined') {
@@ -67,11 +71,13 @@ document.addEventListener('mouseup', (event) => {
         if (openDropdown.contains(event.target))
             return
 
+        //console.log('event mouseUp elsewhere')
         lastClosedX = event.clientX
         lastClosedY = event.clientY
 
         if (lastOpenedFromTrigger === event.target) {
             lastClickTarget = event.target
+            //console.log('settign lastClickTarget')
         }
 
         closeDropdowns()
@@ -84,17 +90,23 @@ function resetLastClosed() {
     lastClosedX = null
     lastClosedY = null
     lastClickTarget = null
+    //console.log('reset lastClosed')
 }
 
 function closeDropdowns() {
     if (!openDropdown)
         return
 
+    //console.log('closing dropdown')
+
     let targetDropdown = openDropdown
+    closedPreviousDropdown = false
     targetDropdown.classList.remove('dropdown-animate-in')
 
     setTimeout(() => {
         targetDropdown.classList.add('hidden');
+        closedPreviousDropdown = true
+        //console.log('hidden')
     }, 100);
 
     openDropdown = null
@@ -109,17 +121,28 @@ function openDropDownOnElementPosition(dropdownElement, triggerElement) {
     if (!dropdownElement || !triggerElement)
         return;
 
+    //console.log('dropdownElement')
+    //console.log(dropdownElement)
+
+    //console.log('triggerElement')
+    //console.log(triggerElement)
+
     if (triggerElement === lastClickTarget) {
         closeDropdowns();
         resetLastClosed();
+        //console.log('matches lastClickTarget')
         return;
     }
 
     lastOpenedFromTrigger = triggerElement;
+    //console.log('lastOpened ')
+    //console.log(lastOpenedFromTrigger)
 
-    const clientRect = triggerElement.getBoundingClientRect();
-    positionDropdown(dropdownElement, clientRect.left, clientRect.top + clientRect.height);
-    openDropdown = dropdownElement;
+    setTimeout(() => {
+        const clientRect = triggerElement.getBoundingClientRect();
+        positionDropdown(dropdownElement, clientRect.left, clientRect.top + clientRect.height);
+        openDropdown = dropdownElement;
+    }, closedPreviousDropdown ? 0 : 100)
 }
 
 function onDropdownTriggerClicked(clientX, clientY, dropdownElement) {
@@ -129,6 +152,7 @@ function onDropdownTriggerClicked(clientX, clientY, dropdownElement) {
     if (lastClosedX == clientX && lastClosedY == clientY) {
         closeDropdowns()
         resetLastClosed()
+        //console.log('dropdwonTriggerclicked reset')
         return
     }
 
