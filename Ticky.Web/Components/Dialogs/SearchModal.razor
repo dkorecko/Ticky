@@ -5,8 +5,8 @@
 @inject IJSRuntime _js
 @inject SearchService _searchService
 
-<Modal @ref="Modal" Title="Search" DisableButtons=true>
-    <input class="w-80 rounded-2xl bg-search-bar p-2 text-center text-xs" type="search"
+<Modal Class="text-app-text" @ref="Modal" Title="Search" DisableButtons=true ForceOverlay=true OnShown="OnShown">
+    <input @ref=_input class="w-80 rounded-2xl bg-search-bar p-2 text-center text-xs" autofocus type="search"
            placeholder="Search for tasks ..." @oninput="UpdateSearchTerm"/>
 
     @if(_isLoading)
@@ -15,7 +15,7 @@
     } else {
         foreach(var card in _resultCards)
         {
-            <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-dropdown-option" @onclick='() => GoToCard(card.Column.BoardId, card.Id)'>
+            <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-dropdown-option" @onclick='async () => await OnSelectedCard(card)'>
                 <div class="flex flex-row justify-between gap-3">
                     <label class="cursor-pointer whitespace-nowrap">@card.Column.Board.Code-@card.Number</label>
                     <label class="cursor-pointer truncate whitespace-nowrap">@card.Name</label>
@@ -30,9 +30,16 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
+    [Parameter]
+    public LinkCardsModal? LinkCardsModal { get; set; }
+
+    [Parameter]
+    public Card? CardToLink { get; set; }
+
     private Timer? _timer;
     private string? _searchTerm;
     private bool _isLoading;
+    private ElementReference? _input;
 
     private List<Card> _resultCards = [];
 
@@ -49,6 +56,12 @@
         _timer.AutoReset = false;
     }
 
+    private async Task OnShown()
+    {
+        if (_input.HasValue)
+            await _input.Value.FocusAsync();
+    }
+
     private void UpdateSearchTerm(ChangeEventArgs e)
     {
         _searchTerm = e.Value as string;
@@ -58,6 +71,19 @@
 
         _isLoading = true;
         StateHasChanged();
+    }
+
+    private async Task OnSelectedCard(Card card)
+    {
+        if (LinkCardsModal is null || CardToLink is null) 
+        {
+            await GoToCard(card.Column.BoardId, card.Id);
+            return;
+        }
+
+        await Modal!.Close();
+        await _js.InvokeVoidAsync("closeDropdowns");
+        LinkCardsModal.Open("linked_cards", CardToLink, card);
     }
 
     private async Task GoToCard(int boardId, int cardId)

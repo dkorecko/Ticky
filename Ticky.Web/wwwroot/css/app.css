@@ -297,6 +297,9 @@
   .z-20 {
     z-index: 20;
   }
+  .z-50 {
+    z-index: 50;
+  }
   .m-5 {
     margin: calc(var(--spacing) * 5);
   }
@@ -1828,7 +1831,7 @@ input[type="checkbox"].switch:checked:after {
   }
   &:hover {
     @media (hover: hover) {
-      color: var(--color-black);
+      color: var(--color-app-text);
     }
   }
   &[data-active="true"] {

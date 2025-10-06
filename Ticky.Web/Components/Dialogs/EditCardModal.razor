@@ -17,6 +17,7 @@
 <LinkCardsModal @ref=_linkCardsModal UpdateCard="UpdateCard" />
 <SnoozeCardModal @ref=_snoozeCardModal UpdateCard="UpdateCard" />
 <AddOrEditRepeatModal @ref=_repeatCardModal UpdateCard="UpdateCard" />
+<SearchModal CardToLink=_card LinkCardsModal="_linkCardsModal" @ref=_searchModal/>
 
 <Modal @ref="Modal" Large=true Title="Edit an existing task" DisableButtons=true OnClose="OnClose">
     @if (_card is null || _columns is null)
@@ -201,7 +202,7 @@
                     <section class="flex flex-col gap-2">
                         <div class="flex flex-row items-center gap-2 text-xs">
                             <h5 class="font-normal text-card-heading select-none">LINKED CARDS</h5>
-                            <i id="linked_cards" class="fa fa-plus edit-icon !p-0" @onclick='() => _linkCardsModal?.Open("linked_cards", _card)' title="Link cards"></i>
+                            <i id="linked_cards" class="fa fa-plus edit-icon !p-0" @onclick='() => _searchModal?.Open()' title="Link cards"></i>
                         </div>
                         @foreach(var group in _card.LinkedIssuesOne.GroupBy(x => x.Category)) 
                         {
@@ -441,6 +442,7 @@
     private LinkCardsModal? _linkCardsModal;
     private SnoozeCardModal? _snoozeCardModal;
     private AddOrEditRepeatModal? _repeatCardModal;
+    private SearchModal? _searchModal;
 
     private DotNetObjectReference<EditCardModal>? _pasteObjRef;
 

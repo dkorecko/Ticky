@@ -1,7 +1,7 @@
 @if(_triggeredShow)
 {
-	<div data-active="@_shown.ToString()" class="h-visible-screen fixed top-0 left-0 z-10 flex w-screen items-center justify-center bg-backdrop/0 transition-all ease-in-out data-[active=True]:bg-backdrop/40" @onmousedown="Cancel" @onkeydown="this.OnKey">
-		<div data-active="@_shown.ToString()" class='m-5 flex flex-col divide-y overflow-hidden rounded-lg bg-modal/0 transition-all ease-in-out data-[active=False]:translate-y-[500%] data-[active=True]:bg-modal/100 @(Large ? "w-full max-w-full md:max-w-3xl" : "max-w-[1300px]")' @onmousedown:stopPropagation=true>
+	<div data-active="@_shown.ToString()" class='h-visible-screen fixed top-0 left-0 @(ForceOverlay ? "z-50" : "z-10") flex w-screen items-center justify-center bg-backdrop/0 transition-all ease-in-out data-[active=True]:bg-backdrop/40' @onmousedown="Cancel" @onkeydown="this.OnKey">
+		<div role="dialog" aria-modal="true" data-active="@_shown.ToString()" class='m-5 flex flex-col divide-y overflow-hidden rounded-lg bg-modal/0 transition-all ease-in-out data-[active=False]:translate-y-[500%] data-[active=True]:bg-modal/100 @(Large ? "w-full max-w-full md:max-w-3xl" : "max-w-[1300px]") @Class' @onmousedown:stopPropagation=true>
 			@if(!DisableButtons || EnableTitle) 
 			{
 				<section class="flex flex-row items-center justify-between gap-10 px-7 py-3">
@@ -28,6 +28,9 @@
 	public required string Title { get; set; }
 
 	[Parameter]
+    public string Class { get; set; } = string.Empty;
+
+	[Parameter]
 	public required RenderFragment ChildContent { get; set; }
 
 	[Parameter]
@@ -40,6 +43,9 @@
 	public EventCallback OnClose { get; set; }
 
 	[Parameter]
+	public EventCallback OnShown { get; set; }
+
+	[Parameter]
 	public bool RedSubmit { get; set; }
 
 	[Parameter]
@@ -50,6 +56,9 @@
 
 	[Parameter]
 	public bool Large { get; set; }
+
+	[Parameter]
+	public bool ForceOverlay { get; set; }
 
 	private bool _triggeredShow;
 	private bool _shown;
@@ -65,6 +74,7 @@
 		}
 		_shown = true;
 		StateHasChanged();
+		await OnShown.InvokeAsync();
 	}
 
 	public async Task Close()
