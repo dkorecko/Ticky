@@ -297,6 +297,9 @@
   .z-20 {
     z-index: 20;
   }
+  .z-50 {
+    z-index: 50;
+  }
   .m-5 {
     margin: calc(var(--spacing) * 5);
   }
@@ -1019,6 +1022,9 @@
   }
   .text-auth-bottom-text {
     color: var(--color-auth-bottom-text);
+  }
+  .text-black {
+    color: var(--color-black);
   }
   .text-card-blocked-text {
     color: var(--color-card-blocked-text);

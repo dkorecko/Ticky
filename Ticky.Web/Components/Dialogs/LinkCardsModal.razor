@@ -2,7 +2,8 @@
 @inject IJSRuntime _js
 
 <ActionModal @ref=_modalRef Title="Link card">
-    @if(_card is null) {
+    @if(_card is null) 
+    {
         <Spinner/>
     } else {
         <EditForm class="form p-2" EditContext="_editContext" OnSubmit="OnSubmitAttempted">
@@ -21,13 +22,7 @@
                     }
                 </InputSelect>
                 <ValidationMessage For="() => _linkCardsModel.Text" />
-            </div>
-
-            <div class="form-group">
-                <Name For="() => _linkCardsModel.TargetCardId" />
-                <InputText class="form-control" @bind-Value="_linkCardsModel.TargetCardId" />
-                <ValidationMessage For="() => _linkCardsModel.TargetCardId" />
-                @if(_cardError is not null)
+                @if (_cardError is not null)
                 {
                     <div class="validation-message">@_cardError</div>
                 }
@@ -48,6 +43,7 @@
     private ActionModal? _modalRef;
 
     private Card? _card;
+    private Card? _linkingCard;
 
     private LinkCardsModel _linkCardsModel = new();
 
@@ -55,17 +51,20 @@
 
     private EditContext _editContext = new(new LinkCardsModel());
 
-    public void Open(string elementId, Card card) {
+    public void Open(string elementId, Card card, Card linkingCard) 
+    {
         _card = card;
+        _linkingCard = linkingCard;
         _cardError = null;
         _linkCardsModel = new();
         _editContext = new EditContext(_linkCardsModel);
+        StateHasChanged();
         _modalRef?.Open(elementId);
     }
 
     public async Task OnSubmitAttempted() 
     {
-        if(_card is null)
+        if(_card is null || _linkingCard is null)
             return;
 
         _cardError = null;
@@ -74,6 +73,7 @@
             return;
 
         using var db = _dbContextFactory.CreateDbContext();
+
         var card = await db.Cards
             .Include(x => x.LinkedIssuesOne)
             .Include(x => x.LinkedIssuesTwo)
@@ -91,10 +91,11 @@
             .Include(x => x.Activities)
             .Include(x => x.Column)
                 .ThenInclude(x => x.Board)
-            .FirstOrDefaultAsync(x => _linkCardsModel.TargetCardId.Equals(x.Column.Board.Code + "-" + x.Number));
+            .FirstOrDefaultAsync(x => x.Id == _linkingCard.Id);
 
-        if (targetCard is null) {
-            _cardError = "Card not found.";
+        if (targetCard is null) 
+        {
+            _cardError = "Target card does not exist anymore.";
             return;
         }
 
