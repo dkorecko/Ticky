@@ -2,7 +2,7 @@ using Ticky.Base.Entities.Owned;
 
 namespace Ticky.Base.Entities;
 
-public class Card : AbstractDbEntity, IOrderable, IDeletable
+public class Card : AbstractDbEntity, IOrderable, IDeletable, IAssignable
 {
     public required string Name { get; set; }
     public string Description { get; set; } = string.Empty;

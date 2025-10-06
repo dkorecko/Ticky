@@ -113,6 +113,8 @@ namespace Ticky.Internal.Data
 
             modelBuilder.Entity<Card>().HasMany(x => x.Assignees).WithMany(x => x.AssignedTo);
 
+            modelBuilder.Entity<Subtask>().HasMany(x => x.Assignees).WithMany(x => x.Subtasks);
+
             modelBuilder
                 .Entity<Card>()
                 .HasMany(x => x.Attachments)
