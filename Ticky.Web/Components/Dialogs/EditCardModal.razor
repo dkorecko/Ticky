@@ -243,7 +243,7 @@
                             <div class="flex flex-col gap-2 pl-3">
                                 <SortableList Class="flex flex-col gap-2" Animation=@(_card.Column.Board.DisableSortingAnimations ? 0 : 200) Items="_card.Subtasks.OrderBy(x => x.Index).ToList()" OnUpdate="OnSubtaskMoved" Handle=".drag-toggle">
                                     <SortableItemTemplate>
-                                        <SubtaskView @key="context.Id" Subtask="context" EditSubtaskModal="_editSubtaskModal" UpdateCard="UpdateCard" />
+                                        <SubtaskView @key="context.Id" Subtask="context" AssigneesModal="_assigneesModal" EditSubtaskModal="_editSubtaskModal" Members="_members" UpdateCard="UpdateCard" />
                                     </SortableItemTemplate>
                                 </SortableList>
                             </div>
@@ -1114,6 +1114,7 @@
             .Include(x => x.Activities)
                 .ThenInclude(x => x.User)
             .Include(x => x.Subtasks)
+                .ThenInclude(x => x.Assignees)
             .Include(x => x.Reminders)
             .Include(x => x.Labels)
             .Include(x => x.TimeRecords)
@@ -1144,6 +1145,7 @@
             .Include(x => x.Attachments)
             .Include(x => x.Activities)
             .Include(x => x.Subtasks)
+                .ThenInclude(x => x.Assignees)
             .Include(x => x.Reminders)
             .Include(x => x.Labels)
             .Include(x => x.TimeRecords)

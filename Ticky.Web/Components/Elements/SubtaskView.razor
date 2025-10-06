@@ -6,11 +6,26 @@
 @inherits NotifiableBase
 
 <div id="@Subtask.Id" class="flex flex-row items-center gap-2 text-sm font-normal">
-	<i class="fa fa-grip-lines-vertical drag-toggle icon-button cursor-move text-icon" title="Drag to reorder subtask"></i>
-	<input id="subtask_checkbox_@Subtask.Id" type="checkbox" checked="@Subtask.Completed" @onchange="OnSubtaskStatusChanged" />
-	<label for="subtask_checkbox_@Subtask.Id">@Subtask.Text</label>
-	<i id="subtask_edit_@Subtask.Id" class="fa fa-pencil edit-icon" @onclick='() => EditSubtaskModal?.Open($"subtask_edit_{Subtask.Id}", Subtask)' title="Edit subtask"></i>
-	<i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="DeleteSubtask" title="Delete subtask"></i>
+    <i class="fa fa-grip-lines-vertical drag-toggle icon-button cursor-move text-icon" title="Drag to reorder subtask"></i>
+    <input id="subtask_checkbox_@Subtask.Id" type="checkbox" checked="@Subtask.Completed" @onchange="OnSubtaskStatusChanged" />
+    <label for="subtask_checkbox_@Subtask.Id">@Subtask.Text</label>
+
+    @if (Subtask.Assignees is not null && Subtask.Assignees.Any())
+    {
+        var i = 0;
+        foreach (var a in Subtask.Assignees.OrderBy(x => x.DisplayName))
+        {
+            var avatarId = $"subtask_assignee_{Subtask.Id}_{i}";
+            <div id=@avatarId class="person-label cursor-pointer" @onclick="() => _mainLayout.UserInfoModal?.Open(avatarId, a.Id)">
+                <div style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@a.ProfilePictureFileName');"></div>
+            </div>
+            i++;
+        }
+    }
+
+    <i @ref=_assigneesTrigger class="fa fa-user edit-icon" @onclick='() => AssigneesModal?.Open(_assigneesTrigger, Subtask, Members)' title="Add/remove assignees"></i>
+    <i id="subtask_edit_@Subtask.Id" class="fa fa-pencil edit-icon" @onclick='() => EditSubtaskModal?.Open($"subtask_edit_{Subtask.Id}", Subtask)' title="Edit subtask"></i>
+    <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="DeleteSubtask" title="Delete subtask"></i>
 </div>
 
 @code {
@@ -27,7 +42,15 @@
     public EditSubtaskModal? EditSubtaskModal { get; set; }
 
     [Parameter]
+    public List<User> Members { get; set; } = [];
+
+    [Parameter]
     public EventCallback UpdateCard { get; set; }
+
+    [Parameter]
+    public AssigneesModal? AssigneesModal { get; set; }
+
+    private ElementReference? _assigneesTrigger;
 
     private async Task OnSubtaskStatusChanged(ChangeEventArgs e)
     {
