@@ -396,7 +396,7 @@ input[type="checkbox"].switch{
   }
 
 .settings-menu-item {
-    @apply cursor-pointer rounded-lg px-2 py-1 transition-all ease-in-out select-none hover:bg-slate-400 hover:text-black data-[active=true]:bg-primary-hover/20 data-[active=true]:text-primary-hover;
+    @apply cursor-pointer rounded-lg px-2 py-1 transition-all ease-in-out select-none hover:bg-slate-400 hover:text-app-text data-[active=true]:bg-primary-hover/20 data-[active=true]:text-primary-hover;
 }
 
 .settings-item {
