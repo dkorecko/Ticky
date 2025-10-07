@@ -1,5 +1,6 @@
 namespace Ticky.Web.Hubs;
 
+[Authorize]
 public class UpdateHub : Hub
 {
     public async Task BoardChange(int boardId, Guid pageId)
