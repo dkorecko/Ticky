@@ -3,6 +3,7 @@ using Devity.NETCore.MailKit.Infrastructure.Internal;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,6 +65,14 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
     options.TokenLifespan = TimeSpan.FromDays(7);
+});
+
+builder.Services.AddSignalR();
+
+// For signalR
+builder.Services.AddResponseCompression(opts =>
+{
+    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/octet-stream"]);
 });
 
 Constants.FULLY_OFFLINE = builder.Configuration.GetValue("FULLY_OFFLINE", true);
@@ -148,6 +157,9 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+// For signalR
+app.UseResponseCompression();
+
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>()!;
@@ -175,5 +187,6 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.MapRazorPages();
+app.MapHub<UpdateHub>(Constants.Hubs.UPDATE_HUB);
 
 app.Run();

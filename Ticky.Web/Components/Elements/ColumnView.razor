@@ -50,7 +50,7 @@
     {
         <SortableList Id=@($"{COLUMN_PREFIX}{Column.Id}") Animation=@(Board.DisableSortingAnimations ? 0 : 200) Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="columnCards.OrderBy(x => x.Index).ToList()" MaxItems=Column.MaxCards Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList" OnExceededLimit="OnExceededCardLimit">
             <SortableItemTemplate>
-                <CardView @key="context.Id" Card="@context" Column="Column" BoardCode="@Board.Code" EditCardModal="EditCardModal" DeleteCardModal="DeleteCardModal" Members="Members" OnCardUpdated="HandleUpdate" Columns="Board.Columns" />
+                <CardView @key="context.Id" Card="@context" Column="Column" BoardCode="@Board.Code" EditCardModal="EditCardModal" DeleteCardModal="DeleteCardModal" Members="Members" OnCardUpdated="OnUpdate" Columns="Board.Columns" />
             </SortableItemTemplate>
         </SortableList>
 
@@ -380,6 +380,7 @@
         await db.Columns.Where(x => x.Id.Equals(columnId)).ExecuteUpdateAsync(x => x.SetProperty(y => y.Collapsed, targetColumn.Collapsed));
 
         StateHasChanged();
+        await OnUpdate.InvokeAsync();
     }
 
     private async Task OpenDeleteColumnDialog(Column column)

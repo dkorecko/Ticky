@@ -142,6 +142,7 @@
     private List<User> _members = [];
     private List<Card> _cards = [];
     private List<Label> _labels = [];
+    private Guid _pageId = Guid.NewGuid();
 
     private CreateColumnModal? _createColumnModal;
     private EditColumnModal? _editColumnModal;
@@ -158,6 +159,8 @@
     private FilterCardsModel _filterModel = new();
     private int? _initialCardId;
 
+    private HubConnection? _hubConnection;
+
     protected override void OnParametersSet()
     {
         if (_board is null || !CardId.HasValue || _initialCardId == CardId)
@@ -171,6 +174,21 @@
     {
         if (!firstRender)
             return;
+
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(_navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB))
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hubConnection.On<int, Guid>(nameof(UpdateHub.BoardChange), async (boardId, pageId) =>
+        {
+            if (boardId != Id || pageId == _pageId)
+                return;
+
+            await HandleRemoteUpdate();
+        });
+
+        _ = HandleConnectionAsync();
 
         _initialCardId = CardId;
 
@@ -228,6 +246,15 @@
             _editCardModal?.Open(CardId.Value, _members, _board.Columns);
 
         await MainLayout.UpdateRecentBoard();
+    }
+
+    private async Task HandleConnectionAsync()
+    {
+        if(_hubConnection is null)
+            return;
+
+        await _hubConnection.StartAsync();
+        await _hubConnection.SendAsync(nameof(UpdateHub.SubscribeBoard), Id);
     }
 
     private async Task SwitchStatsDisplay()
@@ -334,16 +361,23 @@
         }
     }
 
-    protected void OnDataChanged()
+    private async Task OnDataChanged()
     {
-        StateHasChanged();
+        if(_hubConnection is null)
+            return;
+
+        await _hubConnection.SendAsync(nameof(UpdateHub.BoardChange), Id, _pageId);
+    }
+
+    private async Task HandleRemoteUpdate()
+    {
+        await LoadBoardAsync();
     }
 
     protected override async Task HandleUpdate()
     {
         await LoadBoardAsync();
-
-        OnDataChanged();
+        await OnDataChanged();
     }
 
     private async Task LoadBoardAsync()
@@ -382,7 +416,7 @@
 
         await LoadCardsAsync();
 
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadCardsAsync()
@@ -424,7 +458,7 @@
 
         _cards = await queryableCards.ToListAsync();
 
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
 
         try
         {

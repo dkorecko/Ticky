@@ -49,6 +49,11 @@ namespace Ticky.Base
             }
         }
 
+        public static class Hubs
+        {
+            public const string UPDATE_HUB = "/updatehub";
+        }
+
         public static class Limits
         {
             public const int MINIMUM_SECOND_HOSTED_SERVICE_DELAY = 15;
