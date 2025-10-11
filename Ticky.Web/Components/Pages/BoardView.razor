@@ -5,6 +5,7 @@
 @inject ProtectedLocalStorage _protectedLocalStorage
 @inject IJSRuntime _js
 @inject ILogger<BoardView> _logger
+@inject IHttpContextAccessor _httpContextAccessor
 @inherits NotifiableBase
 
 @if (_board is not null)
@@ -175,8 +176,24 @@
         if (!firstRender)
             return;
 
+        var httpContext = _httpContextAccessor.HttpContext;
+
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(_navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB))
+            .WithUrl(_navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB), options =>
+        {
+            if(httpContext?.Request.Cookies is not null)
+            {
+                foreach (var cookie in httpContext.Request.Cookies)
+                {
+                    options.Cookies.Add(new System.Net.Cookie
+                    {
+                        Name = cookie.Key,
+                        Value = cookie.Value,
+                        Domain = new Uri(_navigationManager.BaseUri).Host
+                    });
+                }
+            }
+        })
             .WithAutomaticReconnect()
             .Build();
 
@@ -363,7 +380,7 @@
 
     private async Task OnDataChanged()
     {
-        if(_hubConnection is null)
+        if(_hubConnection is null || _hubConnection.State != HubConnectionState.Connected)
             return;
 
         await _hubConnection.SendAsync(nameof(UpdateHub.BoardChange), Id, _pageId);

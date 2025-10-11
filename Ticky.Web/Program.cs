@@ -142,6 +142,7 @@ builder
     );
 
 builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddAuthorization(options =>
 {
