@@ -26,14 +26,14 @@ public class UpdateHub : Hub
             return false;
 
         return await db
-            .Users.Include(x => x.BoardMemberships)
-            .Include(x => x.ProjectMemberships)
-            .ThenInclude(x => x.Project)
-            .ThenInclude(x => x.Boards)
-            .AnyAsync(u =>
-                u.Id == userId && (u.BoardMemberships.Any(m => m.BoardId == boardId))
-                || u.ProjectMemberships.Any(projectMembership =>
-                    projectMembership.Project.Boards.Any(b => b.Id == boardId)
+            .Boards.Include(x => x.Memberships)
+            .Include(x => x.Project)
+            .ThenInclude(x => x.Memberships)
+            .AnyAsync(b =>
+                b.Id == boardId
+                && (
+                    b.Memberships.Any(m => m.UserId == userId)
+                    || b.Project.Memberships.Any(pm => pm.UserId == userId)
                 )
             );
     }

@@ -270,8 +270,15 @@
         if(_hubConnection is null)
             return;
 
-        await _hubConnection.StartAsync();
-        await _hubConnection.SendAsync(nameof(UpdateHub.SubscribeBoard), Id);
+        try
+        {
+            await _hubConnection.StartAsync();
+            await _hubConnection.SendAsync(nameof(UpdateHub.SubscribeBoard), Id);
+        } catch(Exception ex)
+        {
+            _logger.LogError(ex, "Failed to start hub connection or subscribe to board {BoardId}", Id);
+            MainLayout.RunNotification(new("Real-time updates unavailable. Please refresh the page.", NotificationType.Fail));
+        }
     }
 
     private async Task SwitchStatsDisplay()
