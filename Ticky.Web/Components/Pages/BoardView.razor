@@ -5,6 +5,7 @@
 @inject ProtectedLocalStorage _protectedLocalStorage
 @inject IJSRuntime _js
 @inject ILogger<BoardView> _logger
+@inject IHttpContextAccessor _httpContextAccessor
 @inherits NotifiableBase
 
 @if (_board is not null)
@@ -142,6 +143,7 @@
     private List<User> _members = [];
     private List<Card> _cards = [];
     private List<Label> _labels = [];
+    private Guid _pageId = Guid.NewGuid();
 
     private CreateColumnModal? _createColumnModal;
     private EditColumnModal? _editColumnModal;
@@ -158,6 +160,8 @@
     private FilterCardsModel _filterModel = new();
     private int? _initialCardId;
 
+    private HubConnection? _hubConnection;
+
     protected override void OnParametersSet()
     {
         if (_board is null || !CardId.HasValue || _initialCardId == CardId)
@@ -171,6 +175,37 @@
     {
         if (!firstRender)
             return;
+
+        var httpContext = _httpContextAccessor.HttpContext;
+
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(_navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB), options =>
+        {
+            if(httpContext?.Request.Cookies is not null)
+            {
+                foreach (var cookie in httpContext.Request.Cookies)
+                {
+                    options.Cookies.Add(new System.Net.Cookie
+                    {
+                        Name = cookie.Key,
+                        Value = cookie.Value,
+                        Domain = new Uri(_navigationManager.BaseUri).Host
+                    });
+                }
+            }
+        })
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hubConnection.On<int, Guid>(nameof(UpdateHub.BoardChange), async (boardId, pageId) =>
+        {
+            if (boardId != Id || pageId == _pageId)
+                return;
+
+            await HandleRemoteUpdate();
+        });
+
+        _ = HandleConnectionAsync();
 
         _initialCardId = CardId;
 
@@ -228,6 +263,22 @@
             _editCardModal?.Open(CardId.Value, _members, _board.Columns);
 
         await MainLayout.UpdateRecentBoard();
+    }
+
+    private async Task HandleConnectionAsync()
+    {
+        if(_hubConnection is null)
+            return;
+
+        try
+        {
+            await _hubConnection.StartAsync();
+            await _hubConnection.SendAsync(nameof(UpdateHub.SubscribeBoard), Id);
+        } catch(Exception ex)
+        {
+            _logger.LogError(ex, "Failed to start hub connection or subscribe to board {BoardId}", Id);
+            MainLayout.RunNotification(new("Real-time updates unavailable. Please refresh the page.", NotificationType.Fail));
+        }
     }
 
     private async Task SwitchStatsDisplay()
@@ -334,16 +385,23 @@
         }
     }
 
-    protected void OnDataChanged()
+    private async Task OnDataChanged()
     {
-        StateHasChanged();
+        if(_hubConnection is null || _hubConnection.State != HubConnectionState.Connected)
+            return;
+
+        await _hubConnection.SendAsync(nameof(UpdateHub.BoardChange), Id, _pageId);
+    }
+
+    private async Task HandleRemoteUpdate()
+    {
+        await LoadBoardAsync();
     }
 
     protected override async Task HandleUpdate()
     {
         await LoadBoardAsync();
-
-        OnDataChanged();
+        await OnDataChanged();
     }
 
     private async Task LoadBoardAsync()
@@ -382,7 +440,7 @@
 
         await LoadCardsAsync();
 
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadCardsAsync()
@@ -424,7 +482,7 @@
 
         _cards = await queryableCards.ToListAsync();
 
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
 
         try
         {

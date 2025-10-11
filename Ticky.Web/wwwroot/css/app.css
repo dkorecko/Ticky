@@ -26,7 +26,6 @@
     --color-gray-500: oklch(55.1% 0.027 264.364);
     --color-gray-600: oklch(44.6% 0.03 256.802);
     --color-stone-500: oklch(55.3% 0.013 58.071);
-    --color-black: #000;
     --color-white: #fff;
     --spacing: 0.25rem;
     --container-2xl: 42rem;
@@ -693,9 +692,6 @@
   }
   .overflow-auto {
     overflow: auto;
-  }
-  .overflow-clip {
-    overflow: clip;
   }
   .overflow-hidden {
     overflow: hidden;
