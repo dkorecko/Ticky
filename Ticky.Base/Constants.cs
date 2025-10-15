@@ -92,6 +92,7 @@ namespace Ticky.Base
         }
 
         public static readonly string WWW_ROOT = $"{AppDomain.CurrentDomain.BaseDirectory}/wwwroot";
+        public static readonly string INFORMATION_PATH = Path.Combine(WWW_ROOT, "information.json");
         public static readonly string SAVE_UPLOADED_PATH = $"wwwroot/uploaded";
         public static readonly string SAVE_UPLOADED_IMAGES_PATH = $"{SAVE_UPLOADED_PATH}/images";
         public static readonly string SAVE_UPLOADED_FILES_PATH = $"{SAVE_UPLOADED_PATH}/files";

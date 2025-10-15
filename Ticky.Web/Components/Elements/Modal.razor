@@ -12,8 +12,8 @@
 				@if (!DisableButtons)
 				{
 					<section class="flex flex-row justify-end gap-5 px-7 py-5">
-						<button class="bg-cancel-button px-5 py-2 hover:bg-cancel-button-hover" @onclick="Cancel">Cancel</button>
-						<button class='px-5 py-2 @(RedSubmit ? "bg-red-button hover:bg-red-button-hover" : "")' @onclick="Submit">Submit</button>
+						<button class="!bg-cancel-button px-5 py-2 hover:!bg-cancel-button-hover" @onclick="Cancel">@CancelButtonText</button>
+						<button class='px-5 py-2 @(RedSubmit ? "!bg-red-button hover:!bg-red-button-hover" : "")' @onclick="Submit">@SubmitButtonText</button>
 					</section>
 				}
 			} else {
@@ -28,7 +28,7 @@
 	public required string Title { get; set; }
 
 	[Parameter]
-    public string Class { get; set; } = string.Empty;
+	public string Class { get; set; } = string.Empty;
 
 	[Parameter]
 	public required RenderFragment ChildContent { get; set; }
@@ -59,6 +59,12 @@
 
 	[Parameter]
 	public bool ForceOverlay { get; set; }
+
+	[Parameter]
+	public string CancelButtonText { get; set; } = "Cancel";
+
+	[Parameter]
+    public string SubmitButtonText { get; set; } = "Submit";
 
 	private bool _triggeredShow;
 	private bool _shown;

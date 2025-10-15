@@ -47,4 +47,8 @@ public class User : IdentityUser<int>, IDbEntry, IDeletable
     public bool NeedsNewCredentials { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+    public int? LastViewedInformation { get; set; }
+
+    public DateTime? InformationSnoozeUntil { get; set; }
 }
