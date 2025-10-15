@@ -1,0 +1,58 @@
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject InformationService _informationService
+
+<Modal @ref="Modal" Title=@_title SubmitButtonText="Acknowledge" CancelButtonText="Later" OnSubmitAttempted="OnAcknowledged" OnCancel="OnSnooze">
+    @((MarkupString)_message)
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    private string _title = string.Empty;
+    private string _message = string.Empty;
+    private int? _infoId;
+
+    public async Task OpenIfNeeded()
+    {
+        if (Modal is null)
+            return;
+
+        var unseenInformation = _informationService.Information;
+
+        if(_user.LastViewedInformation.HasValue)
+            unseenInformation = unseenInformation.Where(x => _user.LastViewedInformation.Value < x.Id).ToList();
+
+        if(!unseenInformation.Any() || (_user.InformationSnoozeUntil.HasValue && _user.InformationSnoozeUntil.Value > DateTime.Now))
+            return;
+
+        var targetInformation = unseenInformation.OrderBy(x => x.Id).First();
+
+        _title = targetInformation.Title;
+        _message = targetInformation.Message;
+        _infoId = targetInformation.Id;
+
+        await Modal.Show();
+    }
+
+    public async Task OnAcknowledged()
+    {
+        ArgumentNullException.ThrowIfNull(_infoId);
+        ArgumentNullException.ThrowIfNull(Modal);
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        await db.Users.Where(x => x.Id == _user.Id).ExecuteUpdateAsync(x => x.SetProperty(u => u.LastViewedInformation, _infoId));
+        await Modal.Close();
+    }
+
+    public async Task OnSnooze()
+    {
+        ArgumentNullException.ThrowIfNull(_infoId);
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        await db.Users.Where(x => x.Id == _user.Id).ExecuteUpdateAsync(x => x.SetProperty(u => u.InformationSnoozeUntil, DateTime.Now.AddDays(1)));
+    }
+}

@@ -26,6 +26,7 @@
             <span class="dismiss">🗙</span>
         </div>
         <UserInfoModal @ref="UserInfoModal"/>
+        <InformationModal @ref="_informationModal"/>
     </CascadingValue>
 </CascadingValue>
 
@@ -38,6 +39,8 @@
     private User? _user { get; set; }
 
     public UserInfoModal? UserInfoModal { get; set; }
+
+    private InformationModal? _informationModal;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -64,6 +67,10 @@
                     }
 
                     StateHasChanged();
+
+                    if(_informationModal is not null)
+                        await _informationModal.OpenIfNeeded();
+
                     return;
                 }
 

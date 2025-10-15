@@ -122,6 +122,7 @@ builder.Services.AddScoped<AvatarService>();
 builder.Services.AddScoped<CardNumberingService>();
 builder.Services.AddScoped<SearchService>();
 builder.Services.AddScoped<TrelloImportService>();
+builder.Services.AddSingleton<InformationService>();
 builder.Services.AddHostedService<CleanupHostedService>();
 builder.Services.AddHostedService<SnoozeHostedService>();
 builder.Services.AddHostedService<RepeatHostedService>();

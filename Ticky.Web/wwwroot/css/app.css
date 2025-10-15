@@ -16,6 +16,7 @@
     --color-blue-400: oklch(70.7% 0.165 254.624);
     --color-blue-600: oklch(54.6% 0.245 262.881);
     --color-blue-700: oklch(48.8% 0.243 264.376);
+    --color-blue-800: oklch(42.4% 0.199 265.638);
     --color-purple-300: oklch(82.7% 0.119 306.383);
     --color-pink-300: oklch(82.3% 0.12 346.018);
     --color-pink-500: oklch(65.6% 0.241 354.308);
@@ -757,6 +758,9 @@
   .border-t-tab-outline {
     border-top-color: var(--color-tab-outline);
   }
+  .\!bg-cancel-button {
+    background-color: var(--color-cancel-button) !important;
+  }
   .\!bg-green-button {
     background-color: var(--color-green-button) !important;
   }
@@ -834,9 +838,6 @@
   }
   .bg-red-500 {
     background-color: var(--color-red-500);
-  }
-  .bg-red-button {
-    background-color: var(--color-red-button);
   }
   .bg-search-bar {
     background-color: var(--color-search-bar);
@@ -1031,6 +1032,9 @@
   .text-auth-bottom-text {
     color: var(--color-auth-bottom-text);
   }
+  .text-blue-600 {
+    color: var(--color-blue-600);
+  }
   .text-card-blocked-text {
     color: var(--color-card-blocked-text);
   }
@@ -1078,6 +1082,9 @@
   }
   .capitalize {
     text-transform: capitalize;
+  }
+  .underline {
+    text-decoration-line: underline;
   }
   .opacity-0 {
     opacity: 0%;
@@ -1161,6 +1168,13 @@
       }
     }
   }
+  .hover\:\!bg-cancel-button-hover {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-cancel-button-hover) !important;
+      }
+    }
+  }
   .hover\:\!bg-green-button-hover {
     &:hover {
       @media (hover: hover) {
@@ -1203,17 +1217,17 @@
       }
     }
   }
-  .hover\:bg-red-button-hover {
-    &:hover {
-      @media (hover: hover) {
-        background-color: var(--color-red-button-hover);
-      }
-    }
-  }
   .hover\:\!text-red-button-hover {
     &:hover {
       @media (hover: hover) {
         color: var(--color-red-button-hover) !important;
+      }
+    }
+  }
+  .hover\:text-blue-800 {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-blue-800);
       }
     }
   }
@@ -1249,6 +1263,13 @@
     &:hover {
       @media (hover: hover) {
         color: var(--color-red-button-hover);
+      }
+    }
+  }
+  .hover\:no-underline {
+    &:hover {
+      @media (hover: hover) {
+        text-decoration-line: none;
       }
     }
   }

@@ -1,0 +1,7 @@
+[
+  {
+    "Id": 1,
+    "Title": "Planned Redesign",
+    "Message": "<b>Hello everyone &#x1f44b;</b><br/><br/>We are committed to make using Ticky as nice of an experience as possible and since it started as a school project initially, the design hasn't really received much love thus far. For some time now we have been working behind the scenes on giving it a fresh coat of paint. <a class='text-blue-600 hover:text-blue-800 underline hover:no-underline font-medium' href='https://www.figma.com/design/xWBSlplNjy2v1J9RoEQ82o/Ticky'>Here's the proposed new design.</a> If you would like to give your thoughts on the proposed changes (whether positive or negative), please visit this <a class='text-blue-600 hover:text-blue-800 underline hover:no-underline font-medium' href='https://github.com/dkorecko/Ticky/discussions/155'>GitHub discussion</a>, join our <a class='text-blue-600 hover:text-blue-800 underline hover:no-underline font-medium' href='https://discord.gg/DHCZqYwUUb'>Discord server</a> or submit an anonymous answer to <a class='text-blue-600 hover:text-blue-800 underline hover:no-underline font-medium' href='https://forms.gle/WZNdiynW8PY7Uh8x8'>this form</a>. If you are happy with this upcoming replacement, feel free to ignore this.<br/><br/>Thanks!"
+  }
+]
