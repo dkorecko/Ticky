@@ -91,7 +91,10 @@ namespace Ticky.Base
             public const string FilterPreferencesPrefix = "Ticky_FilterPreferences";
         }
 
-        public static readonly string WWW_ROOT = $"{AppDomain.CurrentDomain.BaseDirectory}/wwwroot";
+        public static readonly string WWW_ROOT = Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory,
+            "wwwroot"
+        );
         public static readonly string INFORMATION_PATH = Path.Combine(WWW_ROOT, "information.json");
         public static readonly string SAVE_UPLOADED_PATH = $"wwwroot/uploaded";
         public static readonly string SAVE_UPLOADED_IMAGES_PATH = $"{SAVE_UPLOADED_PATH}/images";

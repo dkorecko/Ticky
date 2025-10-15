@@ -4,7 +4,7 @@ namespace Ticky.Internal.Services;
 
 public class InformationService
 {
-    public List<InformationDTO> Information { get; init; }
+    public IReadOnlyList<InformationDTO> Information { get; init; }
 
     public InformationService()
     {
