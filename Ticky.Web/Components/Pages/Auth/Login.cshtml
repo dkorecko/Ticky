@@ -1,33 +1,31 @@
 ﻿@page
 @model LoginModel
 
-<main class="auth-bg">
-    <section class="auth-card">
-        <div class="flex flex-col gap-1">
-            <h1 class="text-3xl font-extrabold">Hey there!</h1>
-            <label class="opacity-40">Use your credentials to log in</label>
+<div class="auth-items-group">
+    <h1>Hey, there 👋</h1>
+    <p class="subtext">Use your credentials to log in</p>
+</div>
+@using (Html.BeginForm(FormMethod.Post, true, new { @class = "auth-form" }))
+{
+    <div class="auth-section">
+        <div class="auth-inp-label">
+            @Html.LabelFor(model => model.Input.Email, new { @class = "auth-label" })
+            @Html.EditorFor(model => model.Input.Email, new { htmlAttributes = new { @class = "auth-input" } })
+            @Html.ValidationMessageFor(model => model.Input.Email)
         </div>
-        @using(Html.BeginForm(FormMethod.Post, true, new { @class = "auth-form" })) 
-        {
-            <div class="auth-inp-label">
-                @Html.LabelFor(model => model.Input.Email, new { @class = "auth-label" })
-                @Html.EditorFor(model => model.Input.Email, new { htmlAttributes = new { @class = "auth-input" } })
-                @Html.ValidationMessageFor(model => model.Input.Email)
-            </div>
-            <div class="auth-inp-label">
-                @Html.LabelFor(model => model.Input.Password, new { @class = "auth-label" })
-                @Html.EditorFor(model => model.Input.Password, new { htmlAttributes = new { @class = "auth-input" } })
-                @Html.ValidationMessageFor(model => model.Input.Password)
-                <a class="auth-link text-end" href="/auth/forgotpassword">Forgotten password?</a>
-            </div>
+        <div class="auth-inp-label">
+            @Html.LabelFor(model => model.Input.Password, new { @class = "auth-label" })
+            @Html.EditorFor(model => model.Input.Password, new { htmlAttributes = new { @class = "auth-input" } })
+            @Html.ValidationMessageFor(model => model.Input.Password)
+            <a class="auth-link" href="/auth/forgotpassword">Forgotten password?</a>
+        </div>
 
-            @Html.AntiForgeryToken()
+        @Html.AntiForgeryToken()
+    </div>
 
-            <button class="auth-button" type="submit">Log in</button>
-            <div class="flex flex-row items-center justify-center gap-1">
-                <div class="text-auth-bottom-text text-xs font-normal">Don't own an account yet?</div>
-                <a class="auth-link" href="/auth/register">Create one!</a>
-            </div>
-        }
-    </section>
-</main>
+    <div class="auth-items-group">
+        <button class="btn btn-yellow" type="submit">Log in</button>
+        <span class="subtext mx-auto w-min">or</span>
+        <a class="btn btn-purple" href="/auth/register">Create one!</a>
+    </div>
+}

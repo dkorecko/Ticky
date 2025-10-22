@@ -49,6 +49,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="wwwroot\assets\" />
     <Folder Include="wwwroot\uploaded\files\" />
   </ItemGroup>
 

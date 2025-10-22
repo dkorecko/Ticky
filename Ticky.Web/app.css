@@ -2,175 +2,48 @@
 @config "./tailwind.config.js";
 
 @theme {
-    --color-primary: oklch(0.595 0.2538 297);
-    --color-primary-hover: oklch(0.381 0.176 304.987); /* purple 900 */
-
-    --color-card-bg: oklch(0.968 0.007 247.896); /* slate 100 */
-    --color-card-diff-bg: oklch(0.923 0.003 48.717); /* stone 200 */
-    --color-card-blocked-bg: oklch(0.901 0.076 70.697); /* orange 200 */
-    --color-card-blocked-text: oklch(0.444 0.177 26.899); /* red 800 */
-    --color-add-outline: oklch(0.551 0.027 264.364); /* gray 500 */
-    --color-add-outline-hover: oklch(0.21 0.034 264.665); /* gray 900 */
-
-    --color-column-limit-reached: oklch(0.885 0.062 18.334); /* red 200 */
-    --color-cancel-button: oklch(0.551 0.027 264.364); /* gray 500 */
-    --color-cancel-button-hover: oklch(0.373 0.034 259.733); /* gray 700 */
-    --color-red-button: oklch(0.637 0.237 25.331); /* red 500 */
-    --color-red-button-hover: oklch(0.505 0.213 27.518); /* red 700 */
-    --color-green-button: oklch(0.527 0.154 150.069); /* green 700 */
-    --color-green-button-hover: oklch(0.393 0.095 152.535); /* green 900 */
-    --color-backdrop: oklch(0.446 0.03 256.802); /* gray 600 */
-    --color-modal: #fff; /* white */
-
-    --color-dropdown-option: oklch(0.872 0.01 258.338); /* gray 300 */
-    --color-icon: oklch(0.551 0.027 264.364); /* gray 500 */
-    --color-icon-hover: oklch(0.21 0.034 264.665); /* gray 900 */
-    --color-icon-bg-hover: oklch(0.704 0.04 256.788); /* slate 400 */
-    --color-card-icon-bg-hover: oklch(0.872 0.01 258.338); /* gray 300 */
-    --color-disabled-icon: oklch(0.872 0.01 258.338); /* gray 300 */
-
-    --color-label-text: #fff; /* white */
-
-    --color-card-data-points: oklch(0.551 0.027 264.364); /* gray 500 */
-
-    --color-search-bar: oklch(0.929 0.013 255.508); /* slate 200 */
-    --color-full-dropdown: oklch(0.929 0.013 255.508); /* slate 200 */
-    --color-full-dropdown-hover: oklch(0.869 0.022 252.894); /* slate 300 */
-    --color-full-dropdown-disabled: oklch(0.967 0.003 264.542); /* gray 100 */
-
-    --color-typing-outline: oklch(0.809 0.105 251.813); /* blue 300 */
-
-    --color-card-heading: oklch(0.709 0.01 56.259); /* stone 400 */
-
-    --color-auth-bottom-text: oklch(0.707 0.022 261.325); /* gray 400 */
-    --color-auth-bg: #fff; /* white */
-
-    --color-tab-outline: oklch(0.707 0.022 261.325); /* gray 400 */
-
-    --color-nav-link: oklch(0.554 0.046 257.417); /* slate 500 */
-    --color-nav-link-hover: oklch(0.595 0.2538 297); /* primary */
-    --color-avatar-ring: #fff; /* white */
-
-    --color-app-bg: oklch(0.869 0.022 252.894); /* slate 300 */
-
-    --color-button-text: oklch(0.968 0.007 247.896); /* slate 100 */
-    --color-app-text: #000; /* black */
-    --color-card-heading: oklch(0.279 0.041 260.031); /* slate 800 */
-
-    --color-auth-gradient-start: oklch(0.777 0.152 181.912); /* teal 400 */
-    --color-auth-gradient-via: oklch(0.714 0.203 305.504); /* purple 400 */
-    --color-auth-gradient-to: oklch(0.595 0.2538 297); /* primary */
-
-    --color-checkbox-bg: oklch(0.707 0.022 261.325); /* gray 400 */
-    --color-divide: oklch(0.928 0.006 264.531); /* gray 200 */
-
-    --color-card-header-highlight: #000; /* black */
-    --color-card-edit-label: oklch(0.554 0.046 257.417); /* slate 500 */
-
-    --color-person-label-bg: oklch(0.929 0.013 255.508); /* slate 200 */
+    --color-background: oklch(97.9% 0.010 270);
+    --color-primary: oklch(100% 0.000 0);
+    --color-secondary: oklch(61.4% 0.158 287);
+    --color-tint: oklch(82.5% 0.184 86);
+    --color-text: oklch(33.5% 0.047 264);
+    --color-subtext: oklch(68.2% 0.063 280);
+    --color-red: oklch(66.5% 0.183 27);
+    --color-bgDark: oklch(22.4% 0.015 278);
+    --color-primaryDark: oklch(25.1% 0.014 272);
+    --color-secondaryDark: oklch(71.8% 0.154 288);
+    --color-tintDark: oklch(83.8% 0.187 85);
+    --color-textDark: oklch(97.3% 0.010 275);
+    --color-subtextDark: oklch(73.5% 0.049 280);
+    --color-redDark: oklch(63.8% 0.201 25);
 
     --text-2xs: 0.65rem;
+
     --breakpoint-xs: 30rem;
     --breakpoint-2xs: 20rem;
+
+    --radius-input: 0.5rem;
+    --radius-button: 0.5rem;
+    --radius-button-nav: 1rem;
+    --radius-island: 1rem;
+
+    --spacing-island-x: 1rem;
+    --spacing-island-y: 0.5rem;
+    --spacing-button-x: 0.5rem;
+    --spacing-button-y: 0.25rem;
 }
 
-@layer base {
-    [data-theme='dark'] {
-        --color-primary: oklch(0.595 0.2538 297); /* purple 500 - same as light mode, as it's a vibrant accent */
-        --color-primary-hover: oklch(0.700 0.280 297); /* Lighter hover for contrast on dark background */
+body,
+html {
+    font-family: 'Poppins', sans-serif;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    @apply text-text dark:text-textDark font-normal;
+}
 
-        --color-card-bg: oklch(0.25 0.005 247.896); /* Dark slate for card backgrounds */
-        --color-card-diff-bg: oklch(0.32 0.005 48.717); /* Slightly lighter dark stone for differentiated cards */
-        --color-card-blocked-bg: oklch(0.258 0.092 26.042); /* red 950 */
-        --color-card-blocked-text: oklch(0.808 0.114 19.571); /* red 300 */
-
-        --color-add-outline: oklch(0.8 0.027 264.364); /* Darker gray for outlines */
-        --color-add-outline-hover: oklch(0.95 0.034 264.665); /* Lighter gray on hover */
-
-        --color-column-limit-reached: oklch(0.258 0.092 26.042); /* red 950 */
-        --color-cancel-button: oklch(0.45 0.027 264.364); /* Darker gray for cancel button */
-        --color-cancel-button-hover: oklch(0.60 0.034 259.733); /* Lighter gray on hover */
-        --color-red-button: oklch(0.637 0.237 25.331); /* red 500 */
-        --color-red-button-hover: oklch(0.700 0.250 25.331); /* Lighter red on hover */
-        --color-green-button: oklch(0.527 0.154 150.069); /* green 700 */
-        --color-green-button-hover: oklch(0.723 0.219 149.579); /* green 500 */
-        --color-backdrop: oklch(0.1 0.01 256.802); /* Very dark gray for backdrop, near black */
-        --color-modal: oklch(0.20 0.01 247.896); /* Dark background for modals */
-
-        --color-dropdown-option: oklch(0.35 0.01 258.338); /* Darker gray for dropdown options */
-        --color-icon: oklch(0.65 0.027 264.364); /* Lighter gray for icons */
-        --color-icon-hover: oklch(0.85 0.034 264.665); /* Even lighter gray on hover */
-        --color-icon-bg-hover: oklch(0.4 0.01 252.894);
-        --color-card-icon-bg-hover: oklch(0.4 0.005 247.896);
-        --color-disabled-icon: oklch(0.50 0.027 264.364); /* Darker gray for disabled icons */
-
-        --color-label-text: #fff; /* Off-white for labels */
-
-        --color-card-data-points: oklch(0.70 0.027 264.364); /* Lighter gray for data points */
-
-        --color-search-bar: oklch(0.22 0.01 255.508); /* Dark slate for search bar */
-        --color-full-dropdown: oklch(0.22 0.01 255.508); /* slate 200 */
-        --color-full-dropdown-hover: oklch(0.35 0.01 255.508); /* slate 300 */
-        --color-full-dropdown-disabled: oklch(0.33 0.01 255.508);
-        --color-typing-outline: oklch(0.65 0.105 251.813); /* Brighter blue for typing outline */
-
-        --color-card-heading: oklch(0.50 0.01 56.259); /* Darker stone for card headings */
-
-        --color-auth-bottom-text: oklch(0.55 0.022 261.325); /* Mid-gray for authentication bottom text */
-        --color-auth-bg: oklch(0.15 0.01 247.896); /* Very dark background for auth pages */
-
-        --color-tab-outline: oklch(0.55 0.022 261.325); /* Mid-gray for tab outlines */
-
-        --color-nav-link: oklch(0.85 0.04 257.417); /* Lighter slate for navigation links */
-        --color-nav-link-hover: oklch(0.8 0.2538 297); /* primary */
-        --color-avatar-ring: oklch(0.90 0.01 250); /* Off-white for avatar ring */
-
-        --color-app-bg: oklch(0.12 0.01 252.894); /* Very dark main app background */
-
-        --color-button-text: oklch(0.968 0.007 247.896); /* slate 100 */
-        --color-app-text: oklch(0.95 0.01 250); /* Near white for main app text */
-        --color-card-heading: #fff; /* white */
-
-        --color-auth-gradient-start: oklch(0.277 0.046 192.524); /* teal 950 */
-        --color-auth-gradient-via: oklch(0.291 0.149 302.717); /* purple 950 */
-        --color-auth-gradient-to: oklch(0.284 0.109 3.907); /* pink 950 */
-
-        --color-checkbox-bg: oklch(0.12 0.01 252.894); /* Very dark main app background */
-        --color-divide: oklch(0.45 0.006 264.531);
-        --color-card-header-highlight: #fff; /* white */
-        --color-card-edit-label: oklch(0.95 0.01 250);
-        --color-person-label-bg: oklch(0.20 0.01 247.896);
-        --color-scrollbar-track: oklch(0.15 0.005 250); /* Very dark gray for scrollbar track */
-        --color-scrollbar-thumb: oklch(0.50 0.01 250); /* Mid-gray for scrollbar thumb */
-        --color-scrollbar-thumb-hover: oklch(0.65 0.015 250); /* Lighter gray for scrollbar thumb on hover */
+    html[data-theme='dark'] {
+        color-scheme: dark;
     }
-
-    *,
-    ::after,
-    ::before,
-    ::backdrop,
-    ::file-selector-button {
-        border-color: var(--color-divide, currentColor);
-    }
-}
-    
-/* Regular checkbox styling */
-input[type="checkbox"]:not(.switch) {
-    @apply h-4 w-4 min-w-4 cursor-pointer appearance-none rounded-sm border-1 border-add-outline bg-card-bg transition-all;
-}
-
-input[type="checkbox"]:not(.switch):checked {
-    @apply bg-primary;
-    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
-}
-
-option {
-    @apply bg-modal;
-}
-
-html[data-theme='dark'] {
-    color-scheme: dark;
-}
 
 [data-theme='dark'] body {
     color-scheme: dark;
@@ -191,40 +64,182 @@ html[data-theme='dark'] {
         background: var(--color-scrollbar-thumb-hover);
     }
 
+.full-screen {
+    @apply h-screen w-full;
+}
+
+button, a, .smooth-animation, .auth-link {
+    transition: all 0.2s ease-in;
+    @apply cursor-pointer;
+}
+
+h1, h2, h3, h4, h5, h6, .title {
+    font-family: "Unbounded", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 700;
+    font-style: normal;
+}
+h1 {
+    font-size: clamp(1.75rem, 4vw + 1rem, 2.75rem) !important;
+}
+
+h2 {
+    font-size: clamp(1.4rem, 2.5vw + 0.8rem, 1.741rem) !important;
+}
+
+h3 {
+    font-size: clamp(1.2rem, 2vw + 0.7rem, 1.516rem) !important;
+}
+
+h4 {
+    font-size: clamp(1.1rem, 1.8vw + 0.5rem, 1.32rem) !important;
+}
+
+h5 {
+    font-size: clamp(1rem, 1.5vw + 0.4rem, 1.149rem) !important;
+}
+
+h6 {
+    font-size: clamp(0.9rem, 1vw + 0.3rem, 1rem) !important;
+}
+
+.subtext {
+    @apply text-subtext dark:text-subtextDark dark:font-light;
+}
+
+.btn {
+    @apply w-full rounded-button px-button-x py-button-y text-center;
+}
+
+.btn-yellow {
+    @apply bg-tint text-text hover:bg-tint/70 dark:bg-tintDark dark:text-primaryDark dark:hover:bg-tint/70;
+}
+
+.btn-purple {
+    @apply bg-secondary text-primary hover:bg-secondary/70 dark:bg-secondaryDark dark:text-primaryDark dark:hover:bg-secondaryDark/70;
+}
+
+.auth-bg {
+    @apply bg-background dark:bg-bgDark grid h-screen grid-cols-1 lg:grid-cols-2 p-4 md:p-8 w-full items-center justify-center;
+}
+
+.auth-card {
+    @apply bg-primary dark:bg-primaryDark h-full rounded-xl flex flex-col lg:justify-center space-y-8 p-6 md:p-12 w-full;
+}
+
+.auth-form {
+    @apply flex flex-col justify-center space-y-8;
+}
+
+.auth-section {
+    @apply flex flex-col space-y-4 w-full max-w-sm mx-auto;
+}
+
+.auth-items-group, .auth-inp-label {
+    @apply flex flex-col space-y-1 w-full max-w-sm mx-auto;
+}
+
+.auth-label {
+    @apply ml-1 text-sm dark:font-light;
+}
+
+.auth-link {
+    @apply cursor-pointer dark:font-light text-xs text-subtext dark:text-subtextDark hover:text-secondary dark:hover:text-secondaryDark;
+}
+
+.input-field, .auth-input, .devity-select-toggle, .blazored-typeahead__controls {
+    @apply rounded-input w-full dark:font-light border-[1px] border-subtext dark:border-subtextDark bg-background dark:bg-bgDark px-4 py-2 text-sm font-medium text-subtext dark:text-subtextDark ring-0 outline-0 focus:border-secondary dark:focus:border-secondaryDark;
+}
+
+.input-validation-error {
+    @apply border-red dark:border-redDark bg-red/5 dark:bg-redDark/5 text-red dark:text-redDark;
+}
+
+.devity-select {
+    @apply w-full border-0 bg-background dark:bg-bgDark text-subtext dark:text-subtextDark;
+}
+
+.devity-select-options, .blazored-typeahead__results {
+    @apply rounded-input w-full bg-background dark:bg-bgDark p-0 text-sm font-medium text-subtext dark:text-subtextDark ring-0 outline-0 focus:border-secondary dark:focus:border-secondaryDark;
+}
+
+.devity-select-option label {
+    @apply m-0 px-4 py-2 font-medium;
+    transition: all 0.2s ease-in;
+    margin: 0px !important;
+}
+
+.devity-select-option, .blazored-typeahead__result {
+    @apply hover:bg-pink-600 hover:text-white;
+}
+
+.blazored-typeahead__input-icon, .blazored-typeahead {
+    box-shadow: 0 0 0 0 !important;
+}
+
+.blazored-typeahead__input-icon {
+    @apply flex items-center justify-center hover:bg-pink-600;
+}
+
+.blazored-typeahead__input, .blazored-typeahead__input-icon, .blazored-typeahead__input-mask, .blazored-typeahead__clear {
+    @apply p-0;
+}
+
+.blazored-typeahead {
+    @apply border-0;
+}
+
+.warning {
+    @apply rounded-island px-island-x py-island-y border-red text-red bg-red/5 w-full border-[1px] dark:border-redDark dark:text-redDark dark:bg-redDark/5;
+}
+
+.field-validation-error {
+    @apply text-red dark:text-redDark dark:font-light text-sm;
+}
+
+/*
+.auth-input {
+    @apply h-8 w-full border-b-2 border-gray-600 bg-auth-bg px-2 text-sm font-normal transition-all ease-in-out focus:border-primary;
+}
+
+.auth-button {
+    @apply mt-5 !rounded-full !text-base;
+}
+
+   */
+/* Regular checkbox styling
+input[type="checkbox"]:not(.switch) {
+    @apply h-4 w-4 min-w-4 cursor-pointer appearance-none rounded-sm border-1 border-add-outline bg-card-bg transition-all;
+}
+
+input[type="checkbox"]:not(.switch):checked {
+    @apply bg-primary;
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+}
+
+option {
+    @apply bg-modal;
+}
+
+ */
 /* For Firefox 
- Note: Firefox's scrollbar-color doesn't support a separate hover state for the thumb */
+ Note: Firefox's scrollbar-color doesn't support a separate hover state for the thumb
 [data-theme='dark'] html {
     scrollbar-width: thin;
     scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
 }
-
+ */
+/*
 h1:focus {
     outline: none;
 }
 
-body, input {
-    font-family: 'Noto Sans';
-}
-
-input {
-    outline: none;
-}
-
 .nav-links {
-    @apply flex;
-    @apply flex-row;
-    @apply gap-10;
-    @apply self-center;
-    @apply text-nav-link;
-    @apply text-sm tracking-wide;
+    @apply flex flex-row gap-10 self-center text-sm tracking-wide text-nav-link;
 }
 
 .nav-link {
-    @apply transition-all;
-    @apply select-none;
-    @apply hover:text-nav-link-hover;
-    @apply cursor-pointer;
-    @apply z-10;
+    @apply z-10 cursor-pointer transition-all select-none hover:text-nav-link-hover;
 }
 
 .active {
@@ -232,10 +247,7 @@ input {
 }
 
 .avatar {
-    @apply w-8 min-w-8;
-    @apply h-8 min-h-8;
-
-    @apply bg-center;
+    @apply h-8 min-h-8 w-8 min-w-8 bg-center;
     background-size: cover;
     border-radius: 50%;
 
@@ -299,59 +311,28 @@ button, .label-as-button > label {
 button, .label-as-button > i {
     @apply cursor-pointer;
 }
-
+ */
+/* 
 ::-webkit-scrollbar {
     @apply h-2 w-2;
   }
-  
-  /* Track */
+
+Track 
   ::-webkit-scrollbar-track {
     background: #f1f1f1;
   }
-  
-  /* Handle */
+  */
+/* Handle 
   ::-webkit-scrollbar-thumb {
     background: #888;
     border-radius: 8px;
   }
-  
-  /* Handle on hover */
+  */
+/* Handle on hover
   ::-webkit-scrollbar-thumb:hover {
     background: #555;
   }
 
-.auth-bg {
-    @apply from-auth-gradient-start via-auth-gradient-via to-auth-gradient-to flex h-full w-full items-center justify-center bg-gradient-to-tr;
-}
-
-.auth-inp-label {
-    @apply flex flex-col gap-2;
-}
-
-.auth-label {
-    @apply ml-1 text-sm font-semibold opacity-80;
-}
-
-.auth-input {
-    @apply h-8 w-full border-b-2 border-gray-600 bg-auth-bg px-2 text-sm font-normal
-        transition-all ease-in-out focus:border-primary;
-}
-
-.auth-button {
-    @apply mt-5 !rounded-full !text-base;
-}
-
-.auth-card {
-    @apply mx-2 flex w-[30rem] flex-col gap-12 rounded-lg bg-auth-bg px-12 py-24 shadow-2xl;
-}
-
-.auth-form {
-    @apply flex flex-col gap-6;
-}
-
-.auth-link {
-    @apply cursor-pointer text-xs font-semibold text-primary transition-all hover:text-primary-hover;
-}
 
 input[type="checkbox"].switch{
 	font-size: 30px;
@@ -422,11 +403,9 @@ input[type="checkbox"].switch{
 .card-button {
     @apply icon-button hover:!bg-card-icon-bg-hover;
 }
-
 .board-card {
-    @apply flex h-min w-full cursor-pointer flex-col rounded-lg bg-card-bg px-5 py-5 shadow-sm transition-all ease-in-out select-none hover:shadow-xl sm:w-72 /*hover:scale-105*/;
-}
-
+    @apply flex h-min w-full cursor-pointer flex-col rounded-lg bg-card-bg px-5 py-5 shadow-sm transition-all ease-in-out select-none hover:shadow-xl sm:w-72*/ /*hover:scale-105*/
+/*
 [data-theme=''] .board-card {
     @apply hover:shadow-gray-500;
 }
@@ -641,3 +620,4 @@ input[type="checkbox"].switch{
   transform: translateY(0);
   opacity: 1;
 }
+*/

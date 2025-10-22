@@ -1,29 +1,27 @@
 ﻿@page
 @model ConfirmMailModel
 
-<main class="auth-bg">
-    <section class="auth-card">
-        <div class="flex flex-col gap-1">
-            <h1 class="text-3xl font-extrabold">Confirm e-mail</h1>
-            <label class="opacity-40">We have sent a code to the provided e-mail address</label>
+<div class="auth-items-group">
+    <h1>Confirm e-mail</h1>
+    <p class="subtext">We have sent a code to the provided e-mail address</p>
+</div>
+@using (Html.BeginForm(FormMethod.Post, true, new { @class = "auth-form" }))
+{
+    <div class="auth-section">
+        @Html.HiddenFor(model => model.Input.EmailAddress)
+
+        <div class="auth-inp-label">
+            @Html.LabelFor(model => model.Input.Code, new { @class = "auth-label" })
+            @Html.EditorFor(model => model.Input.Code, new { htmlAttributes = new { @class = "auth-input" } })
+            @Html.ValidationMessageFor(model => model.Input.Code)
         </div>
-        @using (Html.BeginForm(FormMethod.Post, true, new { @class = "auth-form" }))
-        {
-            @Html.HiddenFor(model => model.Input.EmailAddress)
 
-            <div class="auth-inp-label">
-                @Html.LabelFor(model => model.Input.Code, new { @class = "auth-label" })
-                @Html.EditorFor(model => model.Input.Code, new { htmlAttributes = new { @class = "auth-input" } })
-                @Html.ValidationMessageFor(model => model.Input.Code)
-            </div>
+        @Html.AntiForgeryToken()
+    </div>
 
-            @Html.AntiForgeryToken()
-
-            <button class="auth-button" type="submit">Submit</button>
-            <div class="flex flex-row items-center justify-center gap-1">
-                <div class="text-auth-bottom-text text-xs font-normal">Wrong e-mail?</div>
-                <a class="auth-link" href="/auth/register">Back to creating an account</a>
-            </div>
-        }
-    </section>
-</main>
+    <div class="auth-items-group">
+        <button class="btn btn-yellow" type="submit">Submit</button>
+        <span class="subtext mx-auto w-min">or</span>
+        <a class="btn btn-purple" href="/auth/register">Back to creating an account</a>
+    </div>
+}
