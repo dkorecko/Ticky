@@ -1,102 +1,274 @@
-@implements IDisposable
+﻿@implements IDisposable
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
 @inject SearchService _searchService
 
-<nav id="nav-menu" class="z-10 flex w-full items-center justify-center bg-card-bg px-10 py-2">
+<nav id="nav-menu" class="bg-primary z-10 p-4 py-2 dark:bg-primaryDark">
     <!-- Desktop version -->
-    <div class="hidden w-full flex-row justify-center self-center lg:flex">
-        <div class="mr-auto flex flex-row items-center gap-5">
+    <div class="hidden w-full flex-row justify-between self-center lg:flex">
+        <div class="nav-links w-1/4">
             <NavLink href="/">
-                <img height="32" width="32" src='@Assets["/images/ticky.png"]' alt="Ticky app logo"/>
+                <img height="25" width="37" src="/assets/ticky-light.svg" alt="Ticky app logo" class="block dark:hidden" />
+                <img height="25" width="37" src="/assets/ticky-dark.svg" alt="Ticky app logo" class="hidden dark:block" />
             </NavLink>
-            <input @ref="_triggerElement" class="w-80 rounded-2xl bg-search-bar p-2 text-center text-xs" type="search"
-                   placeholder="Search for tasks ..." @oninput="UpdateSearchTerm"
-                   @onclick='OpenSearchResults' @onclick:stopPropagation=true/>
+            <input @ref="_triggerElement" class="input-field w-full" type="search" placeholder="Search for tasks ..." @oninput="UpdateSearchTerm" @onclick='OpenSearchResults' @onclick:stopPropagation=true/>
         </div>
-        <div @ref="_dropdownElement" class="dropdown absolute top-0 left-0 z-10 hidden min-w-80 bg-modal shadow">
-            @if(_isLoading)
-            {
-                <Spinner Class="py-2"/>
-            } else if (_resultCards.Count == 0) 
-            {
-                <div class="px-3 py-2 text-xs">
-                    No results have been found.
-                </div>
-            } else {
-                foreach(var result in _resultCards) {
-                    <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-dropdown-option" @onclick='() => GoToCard(result.Column.BoardId, result.Id)'>
-                        <div class="flex flex-row justify-between gap-3">
-                            <label class="cursor-pointer whitespace-nowrap">@result.Column.Board.Code-@result.Number</label>
-                            <label class="cursor-pointer truncate whitespace-nowrap">@result.Name</label>
-                        </div>
-                        <label class="text-2xs cursor-pointer font-light">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</label>
+        <div @ref="_dropdownElement" class="dropdown absolute top-4 left-0 hidden min-w-80">
+            <div class="dropdown-box">
+                @if (_isLoading)
+                {
+                    <Spinner Class="py-2" />
+                }
+                else if (_resultCards.Count == 0)
+                {
+                    <div class="px-3 py-2 text-xs">
+                        No results have been found.
                     </div>
                 }
-            }
-        </div>
-        <div class="mr-auto grid">
-            <div class="nav-links" style="grid-column: 1; grid-row: 1;">
-                <NavLink class="nav-link" Match="NavLinkMatch.All" href="/">
-                    Home
-                </NavLink>
-                @if (_user?.LastVisitedBoardId is not null)
+                else
                 {
-                    <NavLink class="nav-link" href=@($"{Constants.Mappings.BOARD_PATH}/{_user?.LastVisitedBoardId}")>
-                        Recent board
-                    </NavLink>
+                    foreach (var result in _resultCards)
+                    {
+                        <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-dropdown-option" @onclick='() => GoToCard(result.Column.BoardId, result.Id)'>
+                            <div class="flex flex-row justify-between gap-3">
+                                <label class="cursor-pointer whitespace-nowrap">@result.Column.Board.Code-@result.Number</label>
+                                <label class="cursor-pointer truncate whitespace-nowrap">@result.Name</label>
+                            </div>
+                            <label class="text-2xs cursor-pointer font-light">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</label>
+                        </div>
+                    }
                 }
-                <AuthorizeView Policy="@Constants.Policies.RequireAdmin">
-                    <NavLink class="nav-link" href="/admin">
-                        Admin Panel
-                    </NavLink>
-                </AuthorizeView>
-                <NavLink class="nav-link" href="@Constants.Mappings.LOGOUT_PATH">
-                    Log out
-                </NavLink>
-            </div>
-            <div class="flex w-100 flex-col justify-end" style="grid-column: 1; grid-row: 1;">
-                <div id="nav-button-underline" class="h-0.5 w-0 bg-primary transition-all ease-in-out"></div>
             </div>
         </div>
-        <div class="ml-auto flex flex-row items-center gap-5">
-            <span class="fa fa-circle-half-stroke cursor-pointer text-2xl text-nav-link transition-all hover:text-nav-link-hover" onclick="switchTheme()" title="Switch theme"></span>
-            <NavLink href="/settings">
-                <div class="avatar avatar-border" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
+        <div class="nav-links w-max">
+            <NavLink class="nav-link h-full" Match="NavLinkMatch.All" href="/">
+                <span class="material-symbols-rounded self-center">
+                    home
+                </span>
+                <span class="self-center">
+                    Home
+                </span>
             </NavLink>
+            @if (_user?.LastVisitedBoardId is not null)
+            {
+                <NavLink class="nav-link" href=@($"{Constants.Mappings.BOARD_PATH}/{_user?.LastVisitedBoardId}")>
+                    <span class="material-symbols-rounded self-center">
+                        tab_recent
+                    </span>
+                    <span class="self-center">
+                        Recent board
+                    </span>
+                </NavLink>
+            }
+            <div class="relative">
+                <button @onclick=ToggleMenu class="nav-link !px-button-y flex flex-row !space-x-8">
+                    <div class="flex flex-row items-center space-x-2">
+                        <div class="bg-secondary h-8 w-8 rounded-lg bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
+                        <div class="flex flex-col">
+                            <span class="subtext text-xs">John</span>
+                            <span class="text-xs uppercase">Doe</span>
+                        </div>
+                    </div>
+                    @if (_dropdownMenu)
+                    {
+                        <span class="material-symbols-rounded self-center">
+                            keyboard_arrow_up
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="material-symbols-rounded self-center">
+                            keyboard_arrow_down
+                        </span>
+                    }
+                </button>
+                <div class="@(_dropdownMenu ? "absolute" : "hidden") top-12 right-0">
+                    <div class="dropdown-box">
+                        <a href="/settings" class="nav-link">
+                            <span class="material-symbols-rounded self-center">
+                                settings
+                            </span>
+                            <span class="self-center">
+                                Settings
+                            </span>
+                        </a>
+                        <AuthorizeView Policy="@Constants.Policies.RequireAdmin">
+                            <NavLink class="nav-link" href="/admin">
+                                <span class="material-symbols-rounded self-center">
+                                    admin_panel_settings
+                                </span>
+                                <span class="self-center">
+                                    Admin Panel
+                                </span>
+                            </NavLink>
+                        </AuthorizeView>
+                        <div class="block dark:hidden">
+                            <button id="themePicker" onclick="switchTheme()" class="nav-link">
+                                <span class="material-symbols-rounded self-center">
+                                    sunny
+                                </span>
+                                <span class="self-center text-left">
+                                    Light mode
+                                </span>
+                            </button>
+                        </div>
+                        <div class="hidden dark:block">
+                            <button id="themePicker" onclick="switchTheme()" class="nav-link">
+                                <span class="material-symbols-rounded self-center">
+                                    moon_stars
+                                </span>
+                                <span class="self-center text-left">
+                                    Dark mode
+                                </span>
+                            </button>
+                        </div>
+                        <NavLink class="nav-link" href="@Constants.Mappings.LOGOUT_PATH">
+                            <span class="material-symbols-rounded self-center">
+                                logout
+                            </span>
+                            <span class="self-center">
+                                Log out
+                            </span>
+                        </NavLink>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Mobile version -->
-    <div class="flex w-full flex-row items-center justify-between text-nav-link lg:hidden">
+    <div class="text-nav-link flex w-full flex-row items-center justify-between space-x-4 lg:hidden">
         <SearchModal @ref="_searchModal"/>
 
         <NavLink href="/">
-            <img height="32" width="32" src='@Assets["/images/ticky.png"]' alt="Ticky app logo" />
+            <img height="25" width="37" src="/assets/ticky-light.svg" alt="Ticky app logo" class="block dark:hidden" />
+            <img height="25" width="37" src="/assets/ticky-dark.svg" alt="Ticky app logo" class="hidden dark:block" />
         </NavLink>
-        @if (_user?.LastVisitedBoardId is not null)
-        {
-            <NavLink class="nav-link" Match="NavLinkMatch.All" href=@($"{Constants.Mappings.BOARD_PATH}/{_user?.LastVisitedBoardId}")>
-                <span class="fa fa-briefcase" title="Recent board"></span>
-            </NavLink>
-        }
-        <div class="nav-link" @onclick="() => _searchModal?.Open()">
-            <span class="fa fa-magnifying-glass" title="Search"></span>
-        </div>
-        <AuthorizeView Policy="@Constants.Policies.RequireAdmin">
-            <NavLink class="nav-link" href="/admin">
-                <span class="fa fa-users" title="Admin panel"></span>
-            </NavLink>
-        </AuthorizeView>
 
-        <Dropdown Actions='new() {
-            { "User settings", () => _navigationManager.NavigateTo("/settings") },
-            { "Switch theme", () => _js.InvokeVoidAsync("switchTheme") },
-            { "Log out", () => _navigationManager.NavigateTo(Constants.Mappings.LOGOUT_PATH, true) },
-        }'>
-            <div class="avatar avatar-border" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
-        </Dropdown>
+        <input @ref="_triggerElement" class="input-field w-full" type="search" placeholder="Search for tasks ..." @oninput="UpdateSearchTerm" @onclick='OpenSearchResults' @onclick:stopPropagation=true />
+        <div @ref="_dropdownElement" class="dropdown absolute top-4 left-0 hidden w-full sm:min-w-80">
+            <div class="dropdown-box">
+                @if (_isLoading)
+                {
+                    <Spinner Class="py-2" />
+                }
+                else if (_resultCards.Count == 0)
+                {
+                    <div class="px-3 py-2 text-xs">
+                        No results have been found.
+                    </div>
+                }
+                else
+                {
+                    foreach (var result in _resultCards)
+                    {
+                        <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-dropdown-option" @onclick='() => GoToCard(result.Column.BoardId, result.Id)'>
+                            <div class="flex flex-row justify-between gap-3">
+                                <label class="cursor-pointer whitespace-nowrap">@result.Column.Board.Code-@result.Number</label>
+                                <label class="cursor-pointer truncate whitespace-nowrap">@result.Name</label>
+                            </div>
+                            <label class="text-2xs cursor-pointer font-light">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</label>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="relative">
+            <button @onclick=ToggleMenu class="nav-link !px-button-y flex flex-row !space-x-0 !sm:space-x-8">
+                <div class="flex flex-row items-center sm:space-x-2">
+                    <div class="bg-secondary h-8 w-8 rounded-lg bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
+                    <div class="hidden flex-col sm:flex">
+                        <span class="subtext text-xs">John</span>
+                        <span class="text-xs uppercase">Doe</span>
+                    </div>
+                </div>
+                <div class="hidden self-center sm:flex">
+                    @if (_dropdownMenu)
+                    {
+                        <span class="material-symbols-rounded self-center">
+                            keyboard_arrow_up
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="material-symbols-rounded self-center">
+                            keyboard_arrow_down
+                        </span>
+                    }
+                </div>
+            </button>
+            <div class="@(_dropdownMenu ? "absolute" : "hidden") top-12 right-0">
+                <div class="dropdown-box">
+                    <NavLink class="nav-link h-full" Match="NavLinkMatch.All" href="/">
+                        <span class="material-symbols-rounded self-center">
+                            home
+                        </span>
+                        <span class="self-center">
+                            Home
+                        </span>
+                    </NavLink>
+                    @if (_user?.LastVisitedBoardId is not null)
+                    {
+                        <NavLink class="nav-link" href=@($"{Constants.Mappings.BOARD_PATH}/{_user?.LastVisitedBoardId}")>
+                            <span class="material-symbols-rounded self-center">
+                                tab_recent
+                            </span>
+                            <span class="self-center">
+                                Recent board
+                            </span>
+                        </NavLink>
+                    }
+                    <a href="/settings" class="nav-link">
+                        <span class="material-symbols-rounded self-center">
+                            settings
+                        </span>
+                        <span class="self-center">
+                            Settings
+                        </span>
+                    </a>
+                    <AuthorizeView Policy="@Constants.Policies.RequireAdmin">
+                        <NavLink class="nav-link" href="/admin">
+                            <span class="material-symbols-rounded self-center">
+                                admin_panel_settings
+                            </span>
+                            <span class="self-center">
+                                Admin Panel
+                            </span>
+                        </NavLink>
+                    </AuthorizeView>
+                    <div class="block dark:hidden">
+                        <button id="themePicker" onclick="switchTheme()" class="nav-link">
+                            <span class="material-symbols-rounded self-center">
+                                sunny
+                            </span>
+                            <span class="self-center text-left">
+                                Light mode
+                            </span>
+                        </button>
+                    </div>
+                    <div class="hidden dark:block">
+                        <button id="themePicker" onclick="switchTheme()" class="nav-link">
+                            <span class="material-symbols-rounded self-center">
+                                moon_stars
+                            </span>
+                            <span class="self-center text-left">
+                                Dark mode
+                            </span>
+                        </button>
+                    </div>
+                    <NavLink class="nav-link" href="@Constants.Mappings.LOGOUT_PATH">
+                        <span class="material-symbols-rounded self-center">
+                            logout
+                        </span>
+                        <span class="self-center">
+                            Log out
+                        </span>
+                    </NavLink>
+                </div>
+            </div>
+        </div>
     </div>
 </nav>
 
@@ -113,6 +285,8 @@
     private ElementReference? _triggerElement;
     private ElementReference? _dropdownElement;
     private SearchModal? _searchModal;
+
+    private bool _dropdownMenu = false;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -158,4 +332,9 @@
 
     void IDisposable.Dispose()
         => _timer?.Dispose();
+
+    private void ToggleMenu()
+    {
+        _dropdownMenu = !_dropdownMenu;
+    }
 }

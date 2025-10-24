@@ -1,4 +1,4 @@
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject NavigationManager _navigationManager
 
@@ -7,9 +7,9 @@
 <CascadingValue Name="@Constants.CascadingParameters.CurrentAccount" Value="@_user">
     <Notifications @ref="_notifications" />
     <CascadingValue Name="@Constants.CascadingParameters.MainLayout" Value="this">
-        <div class="h-visible-screen">
+        <div class="full-screen">
             <NavMenu/>
-
+            <!--
             <main class="overflow-x-clip overflow-y-auto">
                 @if(_user is null)
                 {
@@ -18,6 +18,7 @@
                     @Body
                 }
             </main>
+            -->
         </div>
 
         <div id="blazor-error-ui" data-nosnippet>

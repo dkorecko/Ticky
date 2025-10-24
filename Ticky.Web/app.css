@@ -1,8 +1,10 @@
 ﻿@import "tailwindcss";
 @config "./tailwind.config.js";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-    --color-background: oklch(97.9% 0.010 270);
+    --color-background: oklch(0.9468 0.0268 288.17);
     --color-primary: oklch(100% 0.000 0);
     --color-secondary: oklch(61.4% 0.158 287);
     --color-tint: oklch(82.5% 0.184 86);
@@ -35,10 +37,14 @@
 
 body,
 html {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     scroll-behavior: smooth;
     overflow-x: hidden;
     @apply text-text dark:text-textDark font-normal;
+}
+
+body {
+    @apply bg-background dark:bg-bgDark text-text dark:text-textDark;
 }
 
     html[data-theme='dark'] {
@@ -82,6 +88,10 @@ h1, h2, h3, h4, h5, h6, .title {
 h1 {
     font-size: clamp(1.75rem, 4vw + 1rem, 2.75rem) !important;
 }
+
+    h1:focus {
+        outline: none;
+    }
 
 h2 {
     font-size: clamp(1.4rem, 2.5vw + 0.8rem, 1.741rem) !important;
@@ -148,7 +158,7 @@ h6 {
 }
 
 .input-field, .auth-input, .devity-select-toggle, .blazored-typeahead__controls {
-    @apply rounded-input w-full dark:font-light border-[1px] border-subtext dark:border-subtextDark bg-background dark:bg-bgDark px-4 py-2 text-sm font-medium text-subtext dark:text-subtextDark ring-0 outline-0 focus:border-secondary dark:focus:border-secondaryDark;
+    @apply rounded-input w-full dark:font-light border-[1px] border-subtext dark:border-subtextDark bg-background dark:bg-bgDark px-3 py-2 text-xs font-medium text-subtext dark:text-subtextDark ring-0 outline-0 focus:border-secondary dark:focus:border-secondaryDark;
 }
 
 .input-validation-error {
@@ -197,6 +207,30 @@ h6 {
     @apply text-red dark:text-redDark dark:font-light text-sm;
 }
 
+.nav-links {
+    @apply flex flex-row space-x-4 items-center;
+}
+
+.nav-link {
+    @apply z-10 rounded-button px-button-x py-button-y h-full text-sm bg-background dark:bg-bgDark text-text dark:text-textDark hover:bg-secondary/30 dark:hover:bg-secondaryDark/30 flex flex-row space-x-2 items-stretch;
+}
+
+.avatar {
+    @apply h-8 min-h-8 w-8 min-w-8 bg-center bg-secondary dark:bg-secondaryDark rounded-full bg-cover;
+}
+
+.stack-avatars {
+    margin-left: -1rem;
+}
+
+.avatar-border {
+    @apply border-[1px] border-secondary dark:border-secondary;
+}
+
+.dropdown-box {
+    @apply bg-background z-10 text-text rounded-button flex w-full flex-col space-y-2 p-2 text-xs drop-shadow dark:bg-bgDark dark:text-textDark;
+}
+
 /*
 .auth-input {
     @apply h-8 w-full border-b-2 border-gray-600 bg-auth-bg px-2 text-sm font-normal transition-all ease-in-out focus:border-primary;
@@ -230,38 +264,6 @@ option {
 }
  */
 /*
-h1:focus {
-    outline: none;
-}
-
-.nav-links {
-    @apply flex flex-row gap-10 self-center text-sm tracking-wide text-nav-link;
-}
-
-.nav-link {
-    @apply z-10 cursor-pointer transition-all select-none hover:text-nav-link-hover;
-}
-
-.active {
-    @apply text-nav-link-hover;
-}
-
-.avatar {
-    @apply h-8 min-h-8 w-8 min-w-8 bg-center;
-    background-size: cover;
-    border-radius: 50%;
-
-    @apply cursor-pointer;
-}
-
-.stack-avatars {
-    margin-left: -1rem;
-    @apply outline-1 outline-avatar-ring;
-}
-
-.avatar-border {
-    @apply shadow-primary shadow-[0_0_2px_2px];
-}
 
 .max-h-visible-screen {
     @apply max-h-[calc(var(--vvh)*100-(var(--spacing)*6)-(var(--spacing)*2)*6-(var(--spacing)*8)*2-17px)];

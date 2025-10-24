@@ -1,18 +1,22 @@
-<!DOCTYPE html>
-<html class="text-app-text" lang="en" data-theme="">
+﻿<!DOCTYPE html>
+<html id="html" lang="en" class="light">
 
 <head>
     <meta charset="utf-8" />
     <meta name="description" content="Ticky, the kanban board app designed to make your life simpler and your tasks feel lighter. With its intuitive visual layout, you can effortlessly move your projects from to-do to done, making productivity feel like a breeze. Get ready to tick off your goals with a smile!">
     <link rel="preload" href="fonts/o-0bIpQlx3QUlC5A4PNB6Ryti20_6n1iPHjc5a7duw.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/JTUSjIg1_i6t8kCHKm459WlhyyTn89ddpQ.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="google-icons/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDAvHOej.woff2" as="font" type="font/woff2" crossorigin>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <base href="/" />
     <link rel="stylesheet" href="@Assets["css/app.css"]" />
     <link rel="icon" type="image/png" href="./images/favicon.ico" />
-    <link rel="stylesheet" href="@Assets["fonts/Noto-Sans.css"]">
+    <link rel="stylesheet" href="@Assets["fonts/Poppins.css"]">
+    <link rel="stylesheet" href="@Assets["fonts/Montserrat.css"]">
     <link rel="stylesheet" href="@Assets["font-awesome/css/fontawesome.min.css"]">
     <link rel="stylesheet" href="@Assets["font-awesome/css/solid.min.css"]">
     <link rel="stylesheet" href="@Assets["font-awesome/css/regular.min.css"]">
+    <link rel="stylesheet" href="@Assets["google-icons/material-symbol.css"]">
     <link href="Ticky.Web.styles.css" rel="stylesheet" />
     <script src="js/main.js"></script>
     <script src="@Assets["js/sortable/Sortable.min.js"]"></script>
@@ -22,7 +26,7 @@
     <title>@Constants.APP_NAME</title>
 </head>
 
-<body class="flex flex-col bg-app-bg transition-colors">
+<body class="flex flex-col transition-colors">
     <Routes @rendermode="InteractiveServer" />
     <script src="_framework/blazor.web.js"></script>
     <script src="js/screenHeight.js" type="text/javascript"></script>
