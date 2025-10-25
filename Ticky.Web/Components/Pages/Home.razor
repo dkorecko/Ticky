@@ -1,4 +1,4 @@
-@page "/"
+﻿@page "/"
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inherits NotifiableBase
 
@@ -12,15 +12,33 @@
 
 <PageTitle>Home - @Constants.APP_NAME</PageTitle>
 
-<div class="flex w-full flex-col gap-10 overflow-y-auto px-12 py-14">
-    <div class="flex flex-row items-center justify-end gap-5">
-        <div class="mr-auto flex flex-col gap-2">
-            <header class="text-2xl font-bold">
-                Hey there
-            </header>
-            <label class="opacity-60">On this home page you can create a new board/project or open an existing one.</label>
+<div class="flex w-full flex-col gap-10 overflow-y-auto">
+    <div class="island flex flex-col space-y-6">
+        <h2>
+            Hey, there 👋 <br/>
+            What are you up to today?
+        </h2>
+        <p class="subtext">
+            On this home page you can create a new board/project or open an existing one.
+        </p>
+        <div class="flex flex-row space-x-2">
+            <a class="btn btn-purple flex !w-max" href=@($"{Constants.Mappings.BOARD_PATH}/{_user?.LastVisitedBoardId}")>
+                <span class="material-symbols-rounded self-center">
+                    tab_recent
+                </span>
+                <span class="self-center">
+                    Recent board
+                </span>
+            </a>
+            <button class="btn btn-yellow flex !w-max" @onclick="() => _createProjectModal?.Open()">
+                <span class="material-symbols-rounded self-center">
+                    add_ad
+                </span>
+                <span class="self-center">
+                    New project
+                </span>
+            </button>
         </div>
-        <button class="flex flex-row items-center justify-between gap-2 px-10 py-2 shadow-lg" @onclick="() => _createProjectModal?.Open()"><i class="fa fa-plus" title="Create new project"></i>New project</button>
     </div>
 
     @if (_projects is not null && _remainingBoards is not null)

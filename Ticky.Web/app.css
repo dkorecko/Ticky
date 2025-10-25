@@ -30,7 +30,7 @@
     --radius-island: 1rem;
 
     --spacing-island-x: 1rem;
-    --spacing-island-y: 0.5rem;
+    --spacing-island-y: 2rem;
     --spacing-button-x: 0.5rem;
     --spacing-button-y: 0.25rem;
 }
@@ -40,7 +40,7 @@ html {
     font-family: 'Montserrat', sans-serif;
     scroll-behavior: smooth;
     overflow-x: hidden;
-    @apply text-text dark:text-textDark font-normal;
+    @apply text-text dark:text-textDark font-normal text-sm;
 }
 
 body {
@@ -80,7 +80,7 @@ button, a, .smooth-animation, .auth-link {
 }
 
 h1, h2, h3, h4, h5, h6, .title {
-    font-family: "Unbounded", sans-serif;
+    font-family: "Poppins", sans-serif;
     font-optical-sizing: auto;
     font-weight: 700;
     font-style: normal;
@@ -201,6 +201,10 @@ h6 {
 
 .warning {
     @apply rounded-island px-island-x py-island-y border-red text-red bg-red/5 w-full border-[1px] dark:border-redDark dark:text-redDark dark:bg-redDark/5;
+}
+
+.island {
+    @apply rounded-island px-island-x py-island-y bg-primary dark:bg-primaryDark text-text dark:text-textDark;
 }
 
 .field-validation-error {
