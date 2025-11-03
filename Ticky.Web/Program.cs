@@ -155,7 +155,9 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddControllers();
 
+#if !DEBUG
 builder.WebHost.UseUrls("http://0.0.0.0:8080");
+#endif
 
 var app = builder.Build();
 
