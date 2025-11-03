@@ -178,10 +178,10 @@
 
         var httpContext = _httpContextAccessor.HttpContext;
 
-        _logger.LogInformation("Connecting to hub at {HubUrl}", Path.Combine($"{Constants.BASE_URL}/{Constants.Hubs.UPDATE_HUB}"));
+        _logger.LogInformation("Connecting to hub at {HubUrl}", Path.Combine($"{Constants.BASE_URL}{Constants.Hubs.UPDATE_HUB}"));
 
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(Path.Combine($"{Constants.BASE_URL}/{Constants.Hubs.UPDATE_HUB}"), options =>
+            .WithUrl(Path.Combine($"{Constants.BASE_URL}{Constants.Hubs.UPDATE_HUB}"), options =>
         {
             if(httpContext?.Request.Cookies is not null)
             {
