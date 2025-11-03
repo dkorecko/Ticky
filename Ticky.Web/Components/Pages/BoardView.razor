@@ -181,7 +181,7 @@
         _logger.LogInformation("Connecting to hub at {HubUrl}", _navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB));
 
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(_navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB), options =>
+            .WithUrl(Path.Combine($"{Constants.BASE_URL}/{Constants.Hubs.UPDATE_HUB}"), options =>
         {
             if(httpContext?.Request.Cookies is not null)
             {
