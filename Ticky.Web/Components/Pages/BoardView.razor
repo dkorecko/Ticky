@@ -1,5 +1,7 @@
 @page "/boards/{Id:int}/{CardId:int?}"
 @using System.Security.Cryptography
+@using System.IO
+@using System.Runtime.InteropServices
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ProtectedLocalStorage _protectedLocalStorage
@@ -178,26 +180,42 @@
 
         var httpContext = _httpContextAccessor.HttpContext;
 
-        var hubUri = _navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB);
-
-        _logger.LogInformation("Connecting to hub at {HubUrl}", hubUri);
+        Uri hubUri;
+        try
+        {
+            var runningInDocker = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && File.Exists("/.dockerenv");
+            if (runningInDocker)
+            {
+                hubUri = new Uri(new Uri("http://localhost:8080"), Constants.Hubs.UPDATE_HUB);
+                _logger.LogInformation("Detected Docker container. Connecting to hub at {HubUrl}", hubUri);
+            }
+            else
+            {
+                hubUri = _navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB);
+                _logger.LogInformation("Connecting to hub at {HubUrl}", hubUri);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to determine runtime environment for hub URL; falling back to NavigationManager.");
+            hubUri = _navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB);
+        }
 
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(hubUri, options =>
-        {
-            if (httpContext?.Request.Cookies is not null)
             {
-                foreach (var cookie in httpContext.Request.Cookies)
+                if (httpContext?.Request.Cookies is not null)
                 {
-                    options.Cookies.Add(new System.Net.Cookie
+                    foreach (var cookie in httpContext.Request.Cookies)
                     {
-                        Name = cookie.Key,
-                        Value = cookie.Value,
-                        Domain = hubUri.Host
-                    });
+                        options.Cookies.Add(new System.Net.Cookie
+                        {
+                            Name = cookie.Key,
+                            Value = cookie.Value
+                        });
+                    }
                 }
-            }
-        })
+            })
             .WithAutomaticReconnect()
             .Build();
 
