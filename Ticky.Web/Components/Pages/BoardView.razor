@@ -178,12 +178,14 @@
 
         var httpContext = _httpContextAccessor.HttpContext;
 
-        _logger.LogInformation("Connecting to hub at {HubUrl}", Path.Combine($"{Constants.BASE_URL}{Constants.Hubs.UPDATE_HUB}"));
+        var hubUri = _navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB);
+
+        _logger.LogInformation("Connecting to hub at {HubUrl}", hubUri);
 
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(Path.Combine($"{Constants.BASE_URL}{Constants.Hubs.UPDATE_HUB}"), options =>
+            .WithUrl(hubUri, options =>
         {
-            if(httpContext?.Request.Cookies is not null)
+            if (httpContext?.Request.Cookies is not null)
             {
                 foreach (var cookie in httpContext.Request.Cookies)
                 {
@@ -191,7 +193,7 @@
                     {
                         Name = cookie.Key,
                         Value = cookie.Value,
-                        Domain = new Uri(_navigationManager.BaseUri).Host
+                        Domain = hubUri.Host
                     });
                 }
             }
