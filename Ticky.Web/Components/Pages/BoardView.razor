@@ -208,11 +208,18 @@
                 {
                     foreach (var cookie in httpContext.Request.Cookies)
                     {
-                        options.Cookies.Add(new System.Net.Cookie
+                        var toAdd = new System.Net.Cookie
                         {
                             Name = cookie.Key,
-                            Value = cookie.Value
-                        });
+                            Value = cookie.Value,
+                            Domain = string.IsNullOrWhiteSpace(hubUri.Host) ? null : hubUri.Host
+                        };
+
+                        // Cookie.Domain must not be an empty string; only set if available
+                        if (toAdd.Domain is null)
+                            toAdd.Domain = null;
+
+                        options.Cookies.Add(toAdd);
                     }
                 }
             })
