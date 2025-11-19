@@ -60,31 +60,6 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    //options.Events ??= new Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationEvents();
-    //options.Events.OnRedirectToLogin = context =>
-    //{
-    //    var path = context.Request.Path;
-    //    if (path.StartsWithSegments(Constants.Hubs.UPDATE_HUB) || path.StartsWithSegments("/api"))
-    //    {
-    //        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-    //        return Task.CompletedTask;
-    //    }
-
-    //    context.Response.Redirect(context.RedirectUri);
-    //    return Task.CompletedTask;
-    //};
-    //options.Events.OnRedirectToAccessDenied = context =>
-    //{
-    //    var path = context.Request.Path;
-    //    if (path.StartsWithSegments(Constants.Hubs.UPDATE_HUB) || path.StartsWithSegments("/api"))
-    //    {
-    //        context.Response.StatusCode = StatusCodes.Status403Forbidden;
-    //        return Task.CompletedTask;
-    //    }
-
-    //    context.Response.Redirect(context.RedirectUri);
-    //    return Task.CompletedTask;
-    //};
 });
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
