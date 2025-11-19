@@ -185,21 +185,20 @@
         uri = new Uri("https://localhost:7225" + Constants.Hubs.UPDATE_HUB);
 #endif
 
-
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(uri, options =>
             {
-                if (httpContext?.Request.Cookies is not null)
+				var cookieName = ".AspNetCore.Identity.Application";
+                var cookieValue = httpContext?.Request?.Cookies[cookieName];
+
+                if (!string.IsNullOrEmpty(cookieValue))
                 {
-                    foreach (var cookie in httpContext.Request.Cookies)
+                    options.Cookies.Add(new System.Net.Cookie
                     {
-                        options.Cookies.Add(new System.Net.Cookie
-                        {
-                            Name = cookie.Key,
-                            Value = cookie.Value,
-                            Domain = uri.Host
-                        });
-                    }
+                        Name = cookieName,
+                        Value = cookieValue,
+                        Domain = uri.Host
+                    });
                 }
             })
             .WithAutomaticReconnect()
