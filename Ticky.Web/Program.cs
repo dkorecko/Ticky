@@ -156,6 +156,8 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddControllers();
 
 #if !DEBUG
+// NOTE: In production, the application is expected to run behind a reverse proxy (e.g., Nginx, Traefik) that terminates HTTPS.
+//       Binding to HTTP here is intentional and safe in that context. Do NOT expose this endpoint directly to the internet.
 builder.WebHost.UseUrls("http://0.0.0.0:8080");
 #endif
 
