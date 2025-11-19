@@ -180,46 +180,42 @@
 
         var httpContext = _httpContextAccessor.HttpContext;
 
-        Uri hubUri;
-        try
-        {
-            var runningInDocker = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && File.Exists("/.dockerenv");
-            if (runningInDocker)
-            {
-                hubUri = new Uri(new Uri("http://localhost:8080"), Constants.Hubs.UPDATE_HUB);
-                _logger.LogInformation("Detected Docker container. Connecting to hub at {HubUrl}", hubUri);
-            }
-            else
-            {
-                hubUri = _navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB);
-                _logger.LogInformation("Connecting to hub at {HubUrl}", hubUri);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to determine runtime environment for hub URL; falling back to NavigationManager.");
-            hubUri = _navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB);
-        }
+        // Uri hubUri;
+        // try
+        // {
+        //     var runningInDocker = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && File.Exists("/.dockerenv");
+        //     if (runningInDocker)
+        //     {
+        //         hubUri = new Uri(new Uri("http:localhost:8080"), Constants.Hubs.UPDATE_HUB);
+        //         _logger.LogInformation("Detected Docker container. Connecting to hub at {HubUrl}", hubUri);
+        //     }
+        //     else
+        //     {
+        //         hubUri = _navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB);
+        //         _logger.LogInformation("Connecting to hub at {HubUrl}", hubUri);
+        //     }
+        // }
+        // catch (Exception ex)
+        // {
+        //     _logger.LogWarning(ex, "Failed to determine runtime environment for hub URL; falling back to NavigationManager.");
+        //     hubUri = _navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB);
+        // }
+
+		var uri = _navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB);
 
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(hubUri, options =>
+            .WithUrl(uri, options =>
             {
                 if (httpContext?.Request.Cookies is not null)
                 {
                     foreach (var cookie in httpContext.Request.Cookies)
                     {
-                        var toAdd = new System.Net.Cookie
+                        options.Cookies.Add(new System.Net.Cookie
                         {
                             Name = cookie.Key,
                             Value = cookie.Value,
-                            Domain = string.IsNullOrWhiteSpace(hubUri.Host) ? null : hubUri.Host
-                        };
-
-                        // Cookie.Domain must not be an empty string; only set if available
-                        if (toAdd.Domain is null)
-                            toAdd.Domain = null;
-
-                        options.Cookies.Add(toAdd);
+                            Domain = uri.Host
+                        });
                     }
                 }
             })
