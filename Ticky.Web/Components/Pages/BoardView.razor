@@ -1,5 +1,6 @@
 @page "/boards/{Id:int}/{CardId:int?}"
 @using System.Security.Cryptography
+@using System.IO
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ProtectedLocalStorage _protectedLocalStorage
@@ -177,23 +178,28 @@
             return;
 
         var httpContext = _httpContextAccessor.HttpContext;
+        var uri = new Uri("http://localhost:8080" + Constants.Hubs.UPDATE_HUB);
+
+#if DEBUG
+        uri = new Uri("https://localhost:7225" + Constants.Hubs.UPDATE_HUB);
+#endif
 
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(_navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB), options =>
-        {
-            if(httpContext?.Request.Cookies is not null)
+            .WithUrl(uri, options =>
             {
-                foreach (var cookie in httpContext.Request.Cookies)
+				var cookieName = ".AspNetCore.Identity.Application";
+                var cookieValue = httpContext?.Request?.Cookies[cookieName];
+
+                if (!string.IsNullOrEmpty(cookieValue))
                 {
                     options.Cookies.Add(new System.Net.Cookie
                     {
-                        Name = cookie.Key,
-                        Value = cookie.Value,
-                        Domain = new Uri(_navigationManager.BaseUri).Host
+                        Name = cookieName,
+                        Value = cookieValue,
+                        Domain = uri.Host
                     });
                 }
-            }
-        })
+            })
             .WithAutomaticReconnect()
             .Build();
 
