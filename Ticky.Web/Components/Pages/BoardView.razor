@@ -179,7 +179,12 @@
             return;
 
         var httpContext = _httpContextAccessor.HttpContext;
-        var uri = new Uri("https://localhost:8080" + Constants.Hubs.UPDATE_HUB);
+        var uri = new Uri("http://localhost:8080" + Constants.Hubs.UPDATE_HUB);
+
+#if DEBUG
+        uri = new Uri("https://localhost:7225" + Constants.Hubs.UPDATE_HUB);
+#endif
+
 
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(uri, options =>
