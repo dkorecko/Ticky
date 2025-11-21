@@ -78,7 +78,10 @@
             }
         }
 
-        _navigationManager.NavigateTo(Constants.Mappings.LOGIN_PATH, true);
+        var currentRelative = _navigationManager.ToBaseRelativePath(_navigationManager.Uri);
+        var returnUrl = "/" + (string.IsNullOrEmpty(currentRelative) ? string.Empty : currentRelative);
+        var loginWithReturn = $"{Constants.Mappings.LOGIN_PATH}?returnUrl={Uri.EscapeDataString(returnUrl)}";
+        _navigationManager.NavigateTo(loginWithReturn, true);
     }
 
     public void RunNotification(Notification notification)

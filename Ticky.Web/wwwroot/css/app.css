@@ -1,4 +1,4 @@
-/*! tailwindcss v4.1.14 | MIT License | https://tailwindcss.com */
+/*! tailwindcss v4.1.17 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
 @layer theme {
@@ -81,6 +81,7 @@
     --color-modal: #fff;
     --color-dropdown-option: oklch(0.872 0.01 258.338);
     --color-icon: oklch(0.551 0.027 264.364);
+    --color-icon-hover: oklch(0.21 0.034 264.665);
     --color-icon-bg-hover: oklch(0.704 0.04 256.788);
     --color-card-icon-bg-hover: oklch(0.872 0.01 258.338);
     --color-disabled-icon: oklch(0.872 0.01 258.338);
@@ -401,6 +402,9 @@
   .\!h-32 {
     height: calc(var(--spacing) * 32) !important;
   }
+  .h-0 {
+    height: calc(var(--spacing) * 0);
+  }
   .h-0\.5 {
     height: calc(var(--spacing) * 0.5);
   }
@@ -460,6 +464,9 @@
   }
   .w-2 {
     width: calc(var(--spacing) * 2);
+  }
+  .w-4 {
+    width: calc(var(--spacing) * 4);
   }
   .w-4\/5 {
     width: calc(4/5 * 100%);
@@ -532,6 +539,9 @@
   }
   .grow {
     flex-grow: 1;
+  }
+  .border-collapse {
+    border-collapse: collapse;
   }
   .border-separate {
     border-collapse: separate;
@@ -719,7 +729,7 @@
     border-radius: var(--radius-2xl);
   }
   .rounded-full {
-    border-radius: calc(infinity * 1px) !important;
+    border-radius: calc(infinity * 1px);
   }
   .rounded-lg {
     border-radius: var(--radius-lg);
@@ -772,6 +782,9 @@
   }
   .bg-app-bg {
     background-color: var(--color-app-bg);
+  }
+  .bg-backdrop {
+    background-color: var(--color-backdrop);
   }
   .bg-backdrop\/0 {
     background-color: color-mix(in srgb, oklch(0.446 0.03 256.802) 0%, transparent);
@@ -857,6 +870,9 @@
   .\!p-0 {
     padding: calc(var(--spacing) * 0) !important;
   }
+  .p-0 {
+    padding: calc(var(--spacing) * 0);
+  }
   .p-0\.5 {
     padding: calc(var(--spacing) * 0.5);
   }
@@ -895,6 +911,9 @@
   }
   .px-12 {
     padding-inline: calc(var(--spacing) * 12);
+  }
+  .py-0 {
+    padding-block: calc(var(--spacing) * 0);
   }
   .py-0\.5 {
     padding-block: calc(var(--spacing) * 0.5);
@@ -1116,6 +1135,10 @@
   .shadow-sm {
     --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  .outline {
+    outline-style: var(--tw-outline-style);
+    outline-width: 1px;
   }
   .outline-0 {
     outline-style: var(--tw-outline-style);
@@ -2079,7 +2102,7 @@ input[type="checkbox"].switch:checked:after {
   justify-content: center;
   gap: calc(var(--spacing) * 1);
   overflow: hidden;
-  border-radius: calc(infinity * 1px) !important;
+  border-radius: calc(infinity * 1px);
   background-color: var(--color-person-label-bg);
   padding: calc(var(--spacing) * 1);
   font-size: var(--text-xs);
@@ -2105,7 +2128,7 @@ input[type="checkbox"].switch:checked:after {
   justify-content: center;
   gap: calc(var(--spacing) * 2);
   overflow: hidden;
-  border-radius: calc(infinity * 1px) !important;
+  border-radius: calc(infinity * 1px);
   background-color: var(--color-person-label-bg);
   padding-inline: calc(var(--spacing) * 2);
   padding-block: calc(var(--spacing) * 1.5);
