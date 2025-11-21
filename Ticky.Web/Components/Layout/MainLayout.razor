@@ -79,7 +79,7 @@
         }
 
         var currentRelative = _navigationManager.ToBaseRelativePath(_navigationManager.Uri);
-        var returnUrl = "/" + (string.IsNullOrEmpty(currentRelative) ? string.Empty : currentRelative);
+        var returnUrl = "/" + currentRelative;
         var loginWithReturn = $"{Constants.Mappings.LOGIN_PATH}?returnUrl={Uri.EscapeDataString(returnUrl)}";
         _navigationManager.NavigateTo(loginWithReturn, true);
     }
