@@ -477,6 +477,7 @@
 
         _members = members;
         _columns = columns;
+        _subtasks = null;
 
         _identifier = $"{_card.Column.Board.Code}-{_card.Number}";
         UpdateTimer();
@@ -1223,10 +1224,12 @@
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
             _subtasks = null;
             await InvokeAsync(StateHasChanged);
+            _mainLayout.RunNotification(new Notification("Failed to load subtasks.", NotificationType.Fail));
+            _logger.LogError(ex, "Failed to load subtasks for card {CardId}", _card.Id);
         }
     }
 
