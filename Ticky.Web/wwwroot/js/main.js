@@ -242,3 +242,20 @@ function detachCardPasteHandler() {
     pasteHandler = null;
     pasteDotNetRef = null;
 }
+
+function getElementScrollTop(element) {
+    try {
+        if (!element) return null;
+        return element.scrollTop;
+    } catch (e) {
+        return null;
+    }
+}
+
+function setElementScrollTop(element, value) {
+    try {
+        if (!element) return;
+        element.scrollTop = value;
+    } catch (e) {
+    }
+}

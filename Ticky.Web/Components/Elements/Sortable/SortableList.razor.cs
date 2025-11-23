@@ -104,25 +104,32 @@ namespace Ticky.Web.Components.Elements.Sortable
             if (firstRender)
             {
                 selfReference = DotNetObjectReference.Create(this);
-                var module = await JS.InvokeAsync<IJSObjectReference>(
-                    "import",
-                    "../Components/Elements/Sortable/SortableList.razor.js"
-                );
+                try
+                {
+                    var module = await JS.InvokeAsync<IJSObjectReference>(
+                        "import",
+                        "../Components/Elements/Sortable/SortableList.razor.js"
+                    );
 
-                await module.InvokeAsync<string>(
-                    "init",
-                    Id,
-                    Group,
-                    Pull,
-                    Put,
-                    Sort,
-                    Handle,
-                    Filter,
-                    selfReference,
-                    ForceFallback,
-                    Direction,
-                    Animation
-                );
+                    await module.InvokeAsync<string>(
+                        "init",
+                        Id,
+                        Group,
+                        Pull,
+                        Put,
+                        Sort,
+                        Handle,
+                        Filter,
+                        selfReference,
+                        ForceFallback,
+                        Direction,
+                        Animation
+                    );
+                }
+                catch (JSException ex)
+                {
+                    Console.WriteLine($"Sortable init skipped for Id={Id}: {ex.Message}");
+                }
             }
         }
     }
