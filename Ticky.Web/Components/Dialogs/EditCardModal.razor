@@ -26,7 +26,7 @@
     }
     else
     {
-        <div class="h-[90vh] overflow-x-hidden overflow-y-scroll">
+        <div class="h-[90vh] overflow-x-hidden overflow-y-scroll" @ref="_scrollContainerRef">
             <div class="flex flex-col gap-3 px-5 py-5">
                 <i class="edit-icon fa fa-x ml-auto" @onclick="async () => await Modal!.Close()" title="Close"></i>
                 <textarea class="min-h-12 resize-none px-2 py-2 text-2xl font-bold transition-all ease-in-out" @onchange="OnTextChanged">@_card.Name</textarea>
@@ -229,11 +229,23 @@
                             <h5 class="font-normal text-card-heading select-none">SUB-TASKS</h5>
                             <i @ref="_addSubtaskTrigger" class="fa fa-plus edit-icon !p-0" @onclick="() => _addSubtaskModal?.Open(_addSubtaskTrigger, _card)" title="Add subtask"></i>
                         </div>
-                        @if (_card.Subtasks.Any())
+                        @if (_subtasks is null)
+                        {
+                            <div class="flex flex-col gap-2 pl-3">
+                                @for (int s = 0; s < 6; s++)
+                                {
+                                    <div class="flex flex-row items-center gap-2">
+                                        <div class="h-4 w-4 animate-pulse rounded bg-slate-200"></div>
+                                        <div class="h-4 w-full animate-pulse rounded bg-slate-200"></div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else if (_subtasks.Any())
                         {
                             <div class="flex flex-row items-center justify-between gap-2 px-3 py-2">
                                 @{
-                                    double percentage = Math.Round((_card.Subtasks.Where(x => x.Completed).Count() / (double)_card.Subtasks.Count) * 100);
+                                    double percentage = Math.Round((_subtasks.Where(x => x.Completed).Count() / (double)_subtasks.Count) * 100);
                                 }
                                 <label class="w-9 text-center text-xs text-stone-500">@percentage%</label>
                                 <div class="grid h-3 w-full overflow-hidden rounded-lg">
@@ -242,7 +254,7 @@
                                 </div>
                             </div>
                             <div class="flex flex-col gap-2 pl-3">
-                                <SortableList Class="flex flex-col gap-2" Animation=@(_card.Column.Board.DisableSortingAnimations ? 0 : 200) Items="_card.Subtasks.OrderBy(x => x.Index).ToList()" OnUpdate="OnSubtaskMoved" Handle=".drag-toggle">
+                                <SortableList Class="flex flex-col gap-2" Animation=@(_card.Column.Board.DisableSortingAnimations ? 0 : 200) Items="_subtasks.OrderBy(x => x.Index).ToList()" OnUpdate="OnSubtaskMoved" Handle=".drag-toggle">
                                     <SortableItemTemplate>
                                         <SubtaskView @key="context.Id" Subtask="context" AssigneesModal="_assigneesModal" EditSubtaskModal="_editSubtaskModal" Members="_members" UpdateCard="UpdateCard" />
                                     </SortableItemTemplate>
@@ -419,6 +431,7 @@
     public EventCallback OnSubmit { get; set; }
 
     private Card? _card;
+    private List<Subtask>? _subtasks;
     private List<User> _members = [];
     private List<Column>? _columns;
 
@@ -452,6 +465,7 @@
     private int _lastColumnIndex;
     private System.Timers.Timer? _timer;
     private TimeSpan _ongoingTimer;
+    private ElementReference _scrollContainerRef;
 
     public async Task Open(int cardId, List<User> members, List<Column> columns)
     {
@@ -473,6 +487,7 @@
     {
         _pasteObjRef = DotNetObjectReference.Create(this);
         _ = _js.InvokeVoidAsync("attachCardPasteHandler", _pasteObjRef, _card!.Id);
+        _ = LoadSubtasksAsync();
     }
 
     [JSInvokable]
@@ -828,6 +843,7 @@
 
         using var db = _dbContextFactory.CreateDbContext();
         _card = await GetNoTrackingCard(db, _card.Id);
+        await LoadSubtasksAsync();
         StateHasChanged();
 
         await OnSubmit.InvokeAsync();
@@ -913,21 +929,29 @@
     {
         if (_card is null)
             return;
+
         var movedSubtaskId = Convert.ToInt32(args.movedItemId);
-        var movedSubtask = _card.Subtasks.FirstOrDefault(x => x.Id.Equals(movedSubtaskId));
+
+        if (_subtasks is null)
+            return;
+
+        var movedSubtask = _subtasks.FirstOrDefault(x => x.Id.Equals(movedSubtaskId));
+
         if (movedSubtask is null)
             return;
 
         int? targetItemId = args.targetItemId is not null ? Convert.ToInt32(args.targetItemId) : null;
-        var targetIndex = ComputeReindexedListOrAdjustIndices(_card.Subtasks, movedSubtaskId, targetItemId);
+        var targetIndex = ComputeReindexedListOrAdjustIndices(_subtasks, movedSubtaskId, targetItemId);
         movedSubtask.Index = targetIndex;
-        IndexHelper.FixIndices(_card.Subtasks);
+        IndexHelper.FixIndices(_subtasks);
         StateHasChanged();
 
         try
         {
             using var db = _dbContextFactory.CreateDbContext();
-            var card = await GetCard(db, _card.Id);
+            var card = await db.Cards
+                .Include(x => x.Subtasks)
+                .FirstOrDefaultAsync(x => x.Id == _card.Id);
 
             if (card is null)
                 throw new InvalidOperationException("Card not found in DB.");
@@ -941,7 +965,8 @@
             IndexHelper.FixIndices(card.Subtasks);
 
             await db.SaveChangesAsync();
-            await UpdateCard();
+
+            await LoadSubtasksAsync();
         }
         catch (Exception ex)
         {
@@ -1115,8 +1140,6 @@
             .Include(x => x.Attachments)
             .Include(x => x.Activities)
                 .ThenInclude(x => x.User)
-            .Include(x => x.Subtasks)
-                .ThenInclude(x => x.Assignees)
             .Include(x => x.Reminders)
             .Include(x => x.Labels)
             .Include(x => x.TimeRecords)
@@ -1146,8 +1169,6 @@
             .Include(x => x.Assignees)
             .Include(x => x.Attachments)
             .Include(x => x.Activities)
-            .Include(x => x.Subtasks)
-                .ThenInclude(x => x.Assignees)
             .Include(x => x.Reminders)
             .Include(x => x.Labels)
             .Include(x => x.TimeRecords)
@@ -1163,6 +1184,50 @@
             _lastColumnIndex = await db.Columns.Where(x => x.BoardId.Equals(card.Column.BoardId)).Select(x => x.Index).MaxAsync();
 
         return card;
+    }
+
+    private async Task LoadSubtasksAsync()
+    {
+        if (_card is null)
+            return;
+
+        int? scrollPos = null;
+
+        try
+        {
+            scrollPos = await _js.InvokeAsync<int?>("getElementScrollTop", _scrollContainerRef);
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            using var db = _dbContextFactory.CreateDbContext();
+            _subtasks = await db.Subtasks
+                .Where(x => x.CardId == _card.Id)
+                .Include(x => x.Assignees)
+                .OrderBy(x => x.Index)
+                .ToListAsync();
+
+            await InvokeAsync(StateHasChanged);
+
+            if (scrollPos.HasValue)
+            {
+                try
+                {
+                    await _js.InvokeVoidAsync("setElementScrollTop", _scrollContainerRef, scrollPos.Value);
+                }
+                catch
+                {
+                }
+            }
+        }
+        catch
+        {
+            _subtasks = null;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task UnsnoozeCard()
