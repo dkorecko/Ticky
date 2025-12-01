@@ -6,26 +6,27 @@
         <DataAnnotationsValidator />
 
         <div class="form-group">
-            <Name For="() => _board.Name" />
-            <InputText class="form-control" @bind-Value="_board.Name" @ref="FocusElement"/>
+            <Name For="() => _board.Name" class="form-label" />
+            <InputText class="input-field" @bind-Value="_board.Name" @ref="FocusElement" />
             <ValidationMessage For="() => _board.Name" />
         </div>
         
         <div class="form-group">
-            <Name For="() => _board.Description" />
-            <InputText class="form-control" @bind-Value="_board.Description" />
+            <Name For="() => _board.Description" class="form-label" />
+            <InputText class="input-field" @bind-Value="_board.Description" />
             <ValidationMessage For="() => _board.Description" />
         </div>
 
         <div class="form-group">
-            <Name For="() => _board.Code" />
-            <InputText class="form-control" @bind-Value="_board.Code" />
+            <Name For="() => _board.Code" class="form-label" />
+            <InputText class="input-field" @bind-Value="_board.Code" />
             <ValidationMessage For="() => _board.Code" />
         </div>
 
-        <div class="form-group text-xs font-normal">
-            Got an existing board? <a class="auth-link" @onclick="GoToImport">Import</a>
-        </div>
+        <span class="subtext mx-auto w-min">or</span>
+
+        <button class="btn btn-purple" @onclick="GoToImport">Import existing board</button>
+
     </EditForm>
 </Modal>
 

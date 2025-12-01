@@ -1,48 +1,76 @@
-@inject NavigationManager _navigationManager
+﻿@inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
 <EditBoardModal @ref="_editBoardModal" OnSubmit="OnEdit" />
 <CloneBoardModal @ref="_cloneBoardModal" OnCloned="OnEdit" />
 
-<div class="board-card" @onclick='GoToBoard'>
-    <div class="flex w-full flex-row justify-end gap-2 align-middle">
-        <i class='@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "fa-solid" : "fa-regular") fa-star card-button' @onclick='MakeFavorite' @onclick:stopPropagation="true" title="@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "Remove from favorites" : "Add to favorites")"></i>
-        @if (IsAdmin)
-        {
-            <Dropdown Actions='new() {
+<div class="board-card w-full" @onclick='GoToBoard'>
+
+    <div class="flex w-full flex-row justify-between space-x-12">
+        <div class="h-24 w-24 rounded-lg bg-pink-600" title="project image">
+        </div>
+        
+        <div class="aligned-middle flex flex-row gap-1">
+            <button class="add btn-transparent btn flex h-min !p-1" @onclick="MakeFavorite" @onclick:stopPropagation="true" title="@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "Remove from favorites" : "Add to favorites")">
+                <span class="@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "material-symbols-filled" : "material-symbols-rounded")">
+                    kid_star
+                </span>
+            </button>
+            @if (IsAdmin)
+            {
+                <Dropdown Actions='new() {
                         { "Edit board", () => _editBoardModal?.Open(Board.Id) },
                         { "Clone board", () => _cloneBoardModal?.Open(Board) },
                         { "Delete board", async () => await DeleteConfirmationDialog.OpenDialog(Board) }
                     }'>
-                <i class="fa fa-ellipsis card-button" title="Board options"></i>
-            </Dropdown>
-        }
+                    <div class="btn-transparent btn flex h-min !p-1">
+                        <span class="material-symbols-rounded self-center" title="Board options">
+                            more_horiz
+                        </span>
+                    </div>
+                </Dropdown>
+            }
+        </div>
     </div>
 
-        <div class="flex flex-col gap-2">
-            <label class="cursor-pointer text-xl font-semibold text-card-heading">@Board.Name</label>
-            <label class="text-card-data-points cursor-pointer text-xs">@Board.Description</label>
-        </div>
+    <div class="flex flex-col gap-1">
+        <h4>@Board.Name</h4>
+        <label class="subtext">@Board.Description</label>
+    </div>
 
-        <div class="mt-5 flex flex-row items-center justify-between">
-            <div class="flex flex-col gap-2">
+    <div class="grid grid-cols-2 gap-2">
+        <div class="flex flex-col">
             @{
                 var lastVisit = Board.LastVisits.FirstOrDefault(x => x.UserId.Equals(_user.Id));
+            }
+            <label class="subtext !text-xs">Last change</label>
+            <p class="text-secondary dark:text-secondaryDark">@(lastVisit is null ? "never" : lastVisit.VisitTime.ToElapsedString())</p>
+        </div>
+        <div class="flex flex-col">
+            <label class="subtext !text-xs">Team</label>
+            @{
+                var index = 0;
+            }
+            @foreach (var member in _members)
+            {
+                var extraClass = index > 0 ? "stack-avatars" : "";
+                <div class="avatar @extraClass"
+                     style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');">
+                </div>
+                index++;
+            }
+        </div>
+        <div class="flex flex-col">
+            @{
                 var trackedTime = new TimeSpan(Board.Columns.SelectMany(x => x.Cards).SelectMany(x => x.TimeRecords).Select(x => ((x.EndedAt ?? DateTime.Now) - x.StartedAt).Ticks).Sum()).ToElapsedString(true);
             }
-            <label class="board-card-data-point"><i class="fa-regular fa-calendar" title="Last visited"></i> @(lastVisit is null ? "never" : lastVisit.VisitTime.ToElapsedString())</label>
             @if (!string.IsNullOrWhiteSpace(trackedTime))
             {
-                <label class="board-card-data-point"><i class="fa-regular fa-hourglass" title="Total time tracked"></i> @trackedTime</label>
+                <label class="subtext !text-xs">Total time</label>
+                <p class="text-secondary dark:text-secondaryDark">@trackedTime</p>
             }
         </div>
-            <div class="flex flex-row gap-1">
-                @foreach(var member in _members) 
-                {
-                    <div class="avatar stack-avatars" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"></div>
-                }
-            </div>
-        </div>
+    </div>        
 </div>
 
 @code {

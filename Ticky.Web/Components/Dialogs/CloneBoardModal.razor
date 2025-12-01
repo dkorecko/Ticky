@@ -7,7 +7,7 @@
 
 		<div class="form-group">
 			<Name For="() => _model.TargetProjectId" />
-			<InputSelect class="form-control" @bind-Value="_model.TargetProjectId">
+			<InputSelect class="input-field" @bind-Value="_model.TargetProjectId">
 				<option value="">Select project...</option>
 				@foreach (var project in _projects)
 				{
@@ -19,7 +19,7 @@
 
 		<div class="form-group">
 			<Name For="() => _model.Code" />
-			<InputText class="form-control" @bind-Value="_model.Code" />
+			<InputText class="input-field" @bind-Value="_model.Code" />
 			<ValidationMessage For="() => _model.Code" />
 		</div>
 	</EditForm>

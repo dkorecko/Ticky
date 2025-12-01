@@ -12,7 +12,7 @@
 
 <PageTitle>Home - @Constants.APP_NAME</PageTitle>
 
-<div class="flex w-full flex-col gap-10 overflow-y-auto">
+<div class="flex w-full flex-col space-y-8 overflow-y-auto">
     <div class="island flex flex-col space-y-6">
         <h2>
             Hey, there 👋 <br/>
@@ -45,50 +45,57 @@
     {
         foreach (var project in _projects)
         {
-            <section class="flex flex-col gap-2">
-                <div class="flex flex-row justify-between">
-                    <div class="flex flex-row items-center gap-2">
-                        <label>Project @project.Name</label>
-                        @if(project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin) 
-                        {
-                            <Dropdown Actions='new() {
-                                { "Edit project", () => _editProjectModal?.Open(project.Id)},
-                                { "Delete project", () => _deleteProjectModal?.OpenDialog(project) }
-                            }'>
-                                <i class="fa fa-ellipsis icon-button" title="Project options"></i>
-                            </Dropdown>
-                        }
-                    </div>
+            <section class="flex flex-col space-y-4">
+                <div class="island flex w-full flex-row justify-between">
+                    <h3>@project.Name</h3>
 
-                    <div class="flex flex-row gap-1">
+                    <div class="flex flex-row space-x-2">
                         @{
                             var i = 0;
                         }
                         @foreach(var member in project.Memberships.OrderBy(x => x.AddedAt))
                         {
                             string id = $"avatar_{i}";
-                            <div id="@id" class="avatar stack-avatars" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.User.ProfilePictureFileName');"
+                            <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.User.ProfilePictureFileName');"
                             @onclick="() => _mainLayout.UserInfoModal?.Open(id, member.UserId)"></div>
                         }
                         @if (project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin)
                         {
-                            <div class="avatar add" @onclick="() => _editProjectMembershipsModal?.Open(project.Id)" title="Add member">
-                                <i class="fa fa-plus text-sm"></i>
-                            </div>
+                            <button class="add btn-transparent btn flex" @onclick="() => _editProjectMembershipsModal?.Open(project.Id)" title="Add member">
+                                <span class="material-symbols-rounded self-center">
+                                    add
+                                </span>
+                            </button>
+                        }
+                        <div class="border-secondary h-full w-1 border-l-[1px]"></div>
+                        @if (project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin)
+                        {
+                            <Dropdown Actions='new() {
+                                { "Edit project", () => _editProjectModal?.Open(project.Id)},
+                                { "Delete project", () => _deleteProjectModal?.OpenDialog(project) }
+                            }'>
+                                <div class="btn-transparent btn flex h-full">
+                                    <span class="material-symbols-rounded self-center" title="Project options">
+                                        more_horiz
+                                    </span>
+                                </div>
+                            </Dropdown>
                         }
                     </div>
                 </div>
-                <div class="flex w-full flex-row flex-wrap gap-5">
+                <div class="grid gap-4 px-4 sm:grid-cols-2 md:grid-cols-3 md:px-8 lg:grid-cols-4">
                     @foreach (var board in project.Boards.OrderByDescending(x => x.Favorites.Any(y => y.BoardId.Equals(x.Id))).ThenByDescending(x => x.LastVisits.Select(y => y.VisitTime).OrderByDescending(y => y).FirstOrDefault()))
                     {
                         <BoardCard Board="board" IsAdmin="board.Memberships.Any(x => x.UserId.Equals(_user.Id) && x.IsAdmin) || project.Memberships.Any(x => x.UserId.Equals(_user.Id) && x.IsAdmin)" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" DeleteConfirmationDialog="_deleteBoardModal" />
                     }
                     @if(project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin) 
                     {
-                        <div class="board-card-create" @onclick="() => _createBoardModal?.Open(project.Id)" title="Create new board">
-                            <i class="fa fa-plus text-3xl"></i>
-                            New board
-                        </div>
+                        <button class="btn bg-text text-primary flex h-full flex-col justify-between gap-2 !p-4 hover:bg-text/90 dark:text-primary dark:bg-secondaryDark dark:hover:bg-secondaryDark/80" @onclick="() => _createBoardModal?.Open(project.Id)" title="Create new board">
+                            <span class="material-symbols-rounded" title="Add project">
+                                add
+                            </span>
+                            <h6>New board</h6>
+                        </button>
                     }
                 </div>
             </section>

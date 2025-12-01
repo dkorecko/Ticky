@@ -118,7 +118,7 @@ h6 {
 }
 
 .btn {
-    @apply w-full rounded-button px-button-x py-button-y text-center;
+    @apply w-full rounded-button px-button-x py-button-y text-center cursor-pointer;
 }
 
 .btn-yellow {
@@ -127,6 +127,18 @@ h6 {
 
 .btn-purple {
     @apply bg-secondary text-primary hover:bg-secondary/70 dark:bg-secondaryDark dark:text-primaryDark dark:hover:bg-secondaryDark/70;
+}
+
+.btn-red {
+    @apply bg-red text-primary hover:bg-red/80 dark:bg-redDark dark:text-redDark dark:hover:bg-redDark/70;
+}
+
+.btn-light {
+    @apply bg-background dark:bg-bgDark text-text dark:text-textDark hover:bg-secondary/50 dark:hover:bg-secondaryDark/50;
+}
+
+.btn-transparent {
+    @apply hover:bg-secondary/20 dark:hover:bg-secondaryDark/20 text-secondary dark:text-secondary;
 }
 
 .auth-bg {
@@ -141,6 +153,14 @@ h6 {
     @apply flex flex-col justify-center space-y-8;
 }
 
+.form {
+    @apply flex flex-col space-y-4;
+}
+
+.form-group {
+    @apply flex flex-col space-y-1 w-full;
+}
+
 .auth-section {
     @apply flex flex-col space-y-4 w-full max-w-sm mx-auto;
 }
@@ -149,19 +169,23 @@ h6 {
     @apply flex flex-col space-y-1 w-full max-w-sm mx-auto;
 }
 
-.auth-label {
+.auth-label, .form-label {
     @apply ml-1 text-sm dark:font-light;
 }
 
+.form-link, .auth-link {
+    @apply cursor-pointer dark:font-light text-subtext dark:text-subtextDark hover:text-secondary dark:hover:text-secondaryDark;
+}
+
 .auth-link {
-    @apply cursor-pointer dark:font-light text-xs text-subtext dark:text-subtextDark hover:text-secondary dark:hover:text-secondaryDark;
+    @apply text-xs;
 }
 
 .input-field, .auth-input, .devity-select-toggle, .blazored-typeahead__controls {
     @apply rounded-input w-full dark:font-light border-[1px] border-subtext dark:border-subtextDark bg-background dark:bg-bgDark px-3 py-2 text-xs font-medium text-subtext dark:text-subtextDark ring-0 outline-0 focus:border-secondary dark:focus:border-secondaryDark;
 }
 
-.input-validation-error {
+.input-validation-error{
     @apply border-red dark:border-redDark bg-red/5 dark:bg-redDark/5 text-red dark:text-redDark;
 }
 
@@ -207,7 +231,7 @@ h6 {
     @apply rounded-island px-island-x py-island-y bg-primary dark:bg-primaryDark text-text dark:text-textDark;
 }
 
-.field-validation-error {
+.field-validation-error, .validation-message {
     @apply text-red dark:text-redDark dark:font-light text-sm;
 }
 
@@ -220,7 +244,7 @@ h6 {
 }
 
 .avatar {
-    @apply h-8 min-h-8 w-8 min-w-8 bg-center bg-secondary dark:bg-secondaryDark rounded-full bg-cover;
+    @apply h-8 min-h-8 w-8 min-w-8 bg-center bg-secondary/50 dark:bg-secondaryDark/50 border-2 border-secondary dark:border-secondaryDark rounded-full bg-cover;
 }
 
 .stack-avatars {
@@ -232,7 +256,22 @@ h6 {
 }
 
 .dropdown-box {
-    @apply bg-background z-10 text-text rounded-button flex w-full flex-col space-y-2 p-2 text-xs drop-shadow dark:bg-bgDark dark:text-textDark;
+    @apply bg-background z-10 text-text rounded-button flex w-max flex-col space-y-2 p-2 text-xs drop-shadow dark:bg-bgDark dark:text-textDark;
+}
+
+.dropdown-animate {
+    transition: opacity 0.1s cubic-bezier(0.4,0,0.2,1), transform 0.1s cubic-bezier(0.4,0,0.2,1);
+    transform: translateY(-10px);
+    opacity: 0;
+}
+
+.dropdown-animate-in {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.board-card {
+    @apply bg-primary dark:bg-primaryDark rounded-island p-island-x flex flex-col space-y-4;
 }
 
 /*
@@ -617,13 +656,4 @@ input[type="checkbox"].switch{
     @apply border-2;
 }
 
-.dropdown-animate {
-  transition: opacity 0.1s cubic-bezier(0.4,0,0.2,1), transform 0.1s cubic-bezier(0.4,0,0.2,1);
-  transform: translateY(-10px);
-  opacity: 0;
-}
-.dropdown-animate-in {
-  transform: translateY(0);
-  opacity: 1;
-}
 */

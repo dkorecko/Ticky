@@ -7,11 +7,13 @@
         <Spinner/>
     } else
     {
-        <div class="flex flex-col items-center gap-3">
-            <div class="flex w-full flex-row items-center gap-3">
-                <input class="w-full rounded-lg bg-search-bar px-2 py-1 text-sm" type="text"
-                       placeholder="Enter e-mail address" @oninput="OnInviteTextChanged" @ref="FocusElement" />
-                <button class="px-3 py-1.5" @onclick="AddAccess">Add</button>
+        <div class="form">
+            <div class="grid grid-cols-10 gap-2">
+                <div class="col-span-9">
+                    <input class="input-field" type="text"
+                           placeholder="Enter e-mail address" @oninput="OnInviteTextChanged" @ref="FocusElement" />
+                </div>
+                <button class="btn btn-purple" @onclick="AddAccess">Add</button>
             </div>
 
             <table class="border-separate border-spacing-x-5 border-spacing-y-1">
