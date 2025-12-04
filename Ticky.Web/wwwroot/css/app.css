@@ -433,6 +433,9 @@
   .w-9 {
     width: calc(var(--spacing) * 9);
   }
+  .w-12 {
+    width: calc(var(--spacing) * 12);
+  }
   .w-24 {
     width: calc(var(--spacing) * 24);
   }
@@ -721,6 +724,9 @@
   .rounded-2xl {
     border-radius: var(--radius-2xl);
   }
+  .rounded-button {
+    border-radius: var(--radius-button);
+  }
   .rounded-full {
     border-radius: calc(infinity * 1px);
   }
@@ -1004,9 +1010,6 @@
   }
   .text-green-500 {
     color: var(--color-green-500);
-  }
-  .text-orange-500 {
-    color: var(--color-orange-500);
   }
   .text-primary {
     color: var(--color-primary);
@@ -1927,6 +1930,18 @@ p, label {
     color: var(--color-textDark);
   }
 }
+.island-title {
+  border-radius: var(--radius-island);
+  background-color: var(--color-primary);
+  padding: var(--spacing-island-x);
+  color: var(--color-text);
+  &:where(.dark, .dark *) {
+    background-color: var(--color-primaryDark);
+  }
+  &:where(.dark, .dark *) {
+    color: var(--color-textDark);
+  }
+}
 .field-validation-error, .validation-message {
   font-size: var(--text-sm);
   line-height: var(--tw-leading, var(--text-sm--line-height));
@@ -2071,6 +2086,7 @@ p, label {
 }
 .board-card {
   display: flex;
+  cursor: pointer;
   flex-direction: column;
   :where(& > :not(:last-child)) {
     --tw-space-y-reverse: 0;
