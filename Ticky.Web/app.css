@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 @config "./tailwind.config.js";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -40,41 +40,18 @@ html {
     font-family: 'Montserrat', sans-serif;
     scroll-behavior: smooth;
     overflow-x: hidden;
-    @apply text-text dark:text-textDark font-normal text-sm;
+    @apply text-text dark:text-textDark font-normal;
 }
 
 body {
     @apply bg-background dark:bg-bgDark text-text dark:text-textDark;
 }
 
-    html[data-theme='dark'] {
-        color-scheme: dark;
-    }
-
-[data-theme='dark'] body {
-    color-scheme: dark;
-}
-
-[data-theme='dark'] ::-webkit-scrollbar-track {
-    background: var(--color-scrollbar-track);
-    border-radius: 10px;
-}
-
-[data-theme='dark'] ::-webkit-scrollbar-thumb {
-    background: var(--color-scrollbar-thumb);
-    border-radius: 10px;
-    border: 3px solid var(--color-scrollbar-track);
-}
-
-    [data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
-        background: var(--color-scrollbar-thumb-hover);
-    }
-
 .full-screen {
     @apply h-screen w-full;
 }
 
-button, a, .smooth-animation, .auth-link {
+button, a, .smooth-animation, .auth-link, .settings-menu-item {
     transition: all 0.2s ease-in;
     @apply cursor-pointer;
 }
@@ -113,12 +90,16 @@ h6 {
     font-size: clamp(0.9rem, 1vw + 0.3rem, 1rem) !important;
 }
 
+p, label {
+    @apply text-sm;
+}
+
 .subtext {
     @apply text-subtext dark:text-subtextDark dark:font-light;
 }
 
 .btn {
-    @apply w-full rounded-button px-button-x py-button-y text-center cursor-pointer;
+    @apply w-full text-sm rounded-button px-button-x py-button-y text-center cursor-pointer;
 }
 
 .btn-yellow {
@@ -130,7 +111,7 @@ h6 {
 }
 
 .btn-red {
-    @apply bg-red text-primary hover:bg-red/80 dark:bg-redDark dark:text-redDark dark:hover:bg-redDark/70;
+    @apply bg-red text-primary hover:bg-red/80 dark:bg-redDark dark:text-primaryDark dark:hover:bg-redDark/70;
 }
 
 .btn-light {
@@ -227,6 +208,27 @@ h6 {
     @apply rounded-island px-island-x py-island-y border-red text-red bg-red/5 w-full border-[1px] dark:border-redDark dark:text-redDark dark:bg-redDark/5;
 }
 
+#blazor-error-ui {
+    color-scheme: light only;
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
+
 .island {
     @apply rounded-island px-island-x py-island-y bg-primary dark:bg-primaryDark text-text dark:text-textDark;
 }
@@ -255,6 +257,10 @@ h6 {
     @apply border-[1px] border-secondary dark:border-secondary;
 }
 
+.avatar-settings {
+    @apply bg-secondary bg-cover bg-center w-full;
+}
+
 .dropdown-box {
     @apply bg-background z-10 text-text rounded-button flex w-max flex-col space-y-2 p-2 text-xs drop-shadow dark:bg-bgDark dark:text-textDark;
 }
@@ -273,6 +279,57 @@ h6 {
 .board-card {
     @apply bg-primary dark:bg-primaryDark rounded-island p-island-x flex flex-col space-y-4;
 }
+
+.settings-menu {
+    @apply rounded-island p-3 max-w-full flex-wrap gap-2 border-[1px] border-subtext dark:border-subtextDark flex flex-row w-max;
+}
+
+.settings-menu-item {
+    @apply rounded-sm text-sm bg-transparent px-2 py-1 font-bold hover:bg-secondary/30 hover:dark:bg-secondaryDark/30;
+}
+
+.settings-menu-item.selected {
+    @apply bg-secondary/30 dark:bg-secondaryDark/30;
+}
+
+.settings-section {
+    @apply grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2;
+}
+
+.setting-description {
+    @apply flex flex-col space-y-1 col-span-2 md:col-span-1;
+}
+
+.vertical-separator {
+    @apply w-full h-1 border-subtext dark:border-subtextDark;
+}
+
+input[type="checkbox"].toggle {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    -webkit-transition: all .2s ease-in-out;
+    transition: all .2s ease-in-out;
+    @apply rounded-full bg-transparent w-10 h-6 relative cursor-pointer border-[1px] border-subtext dark:border-subtextDark;
+}
+
+    input[type="checkbox"].toggle:checked {
+        @apply bg-secondary dark:bg-secondaryDark border-secondary dark:border-secondaryDark;
+    }
+
+    input[type="checkbox"].toggle:after {
+        position: absolute;
+        content: "";
+        border-radius: 50%;
+        -webkit-transition: all .2s ease-in-out;
+        transition: all .2s ease-in-out;
+        @apply w-4 h-4 top-1/2 -translate-y-1/2 left-[3px] bg-subtext dark:bg-subtextDark;
+    }
+
+    input[type="checkbox"].toggle:checked:after {
+        left: calc(100% - 1.25rem);
+        @apply bg-primary dark:bg-primaryDark;
+    }
 
 /*
 .auth-input {
@@ -420,14 +477,6 @@ input[type="checkbox"].switch{
   input[type="checkbox"].switch:checked:after{
 	left: calc(100% - 1.5em);
   }
-
-.settings-menu-item {
-    @apply cursor-pointer rounded-lg px-2 py-1 transition-all ease-in-out select-none hover:bg-slate-400 hover:text-app-text data-[active=true]:bg-primary-hover/20 data-[active=true]:text-primary-hover;
-}
-
-.settings-item {
-    @apply flex flex-col justify-between gap-2 py-5 lg:flex-row lg:items-center;
-}
 
 @utility add {
     @apply flex cursor-pointer flex-col items-center justify-center gap-5 text-add-outline outline-1 outline-add-outline transition-all ease-in-out outline-dashed hover:text-add-outline-hover hover:outline-add-outline-hover;

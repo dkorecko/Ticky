@@ -1,4 +1,4 @@
-@page "/settings/{Tab:int?}"
+﻿@page "/settings/{Tab:int?}"
 @using System.Reflection
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ILogger<UserSettings> _logger
@@ -11,167 +11,200 @@
 
 <PageTitle>Settings - @Constants.APP_NAME</PageTitle>
 
-<div class="w-full">
-    <section class="flex w-full max-w-4xl grow flex-col gap-5 overflow-y-auto px-12 py-14">
-        <header class="flex flex-row justify-between text-2xl font-bold">
-            User settings
-        </header>
+<div class="island flex flex-col space-y-6">
+    <h2 class="">
+        User settings
+    </h2>
 
-        <section
-            class="flex w-full flex-row flex-wrap items-center justify-start gap-1 rounded-lg border border-tab-outline px-1 py-1 text-sm">
-            <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(1)">General</div>
-            <div data-active='@(_tab == 2 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(2)">Avatar</div>
-            <div data-active='@(_tab == 3 ? "true" : "false")' class="settings-menu-item" @onclick="() => GoToTab(3)">Credentials</div>
-        </section>
-
-        <section class="flex w-full flex-col divide-y divide-tab-outline">
-            @if(_user is null)
-            {
-                <Spinner/>
-            } else if (_tab == 1)
-            {
-                <div class="flex flex-col py-5">
-                    <label class="font-bold">General settings</label>
-                    <label class="text-sm opacity-70">All the most important settings for your profile, which do not belong to any other categories.</label>
-                </div>
-                <div class="settings-item">
-                    <div class="flex flex-col text-sm">
-                        <label class="font-bold opacity-90">Advanced card settings after creation</label>
-                        <label class="w-4/5 max-w-2xl opacity-70">Changes, whether the large modal for setting up a card should open
-                            after creating a card on the board.</label>
-                    </div>
-
-                    <input type="checkbox" class="switch" checked=@_user.AutomaticCardEdit @onchange="(e) => OnSettingChanged(e, x => x.AutomaticCardEdit)">
-                </div>
-
-                <div class="settings-item">
-                    <div class="flex flex-col text-sm">
-                        <label class="font-bold opacity-90">Delete without confirmation</label>
-                        <label class="w-4/5 max-w-2xl opacity-70">This defines whether you should receive a confirmation pop-up whenever you
-                            initiate a deletion of an object.</label>
-                    </div>
-
-                    <input type="checkbox" class="switch" checked=@_user.InstantDelete @onchange="(e) => OnSettingChanged(e, x => x.InstantDelete)">
-                </div>
-
-                <div class="settings-item">
-                    <div class="flex flex-col text-sm">
-                        <label class="font-bold opacity-90">Automatic reminder on deadline</label>
-                        <label class="w-4/5 max-w-2xl opacity-70">
-                            This option sets whether you will automatically be reminded about a card's deadline at the start of the day.
-                        </label>
-                    </div>
-
-                    <input type="checkbox" class="switch" checked=@_user.AutomaticDeadlineReminder @onchange="(e) => OnSettingChanged(e, x => x.AutomaticDeadlineReminder)">
-                </div>
-
-                <div class="settings-item">
-                    <div class="flex flex-col text-sm">
-                        <label class="font-bold opacity-90">Automatically assign self</label>
-                        <label class="w-4/5 max-w-2xl opacity-70">
-                            This option sets whether you will automatically assign yourself to created cards.
-                        </label>
-                    </div>
-
-                    <input type="checkbox" class="switch" checked=@_user.AutomaticAssign @onchange="(e) => OnSettingChanged(e, x => x.AutomaticAssign)">
-                </div>
-            } else if(_tab == 2)
-            {
-                <div class="flex flex-col py-5">
-                    <label class="font-bold">Avatar</label>
-                    <label class="text-sm opacity-70">Here you can change your profile picture.</label>
-                </div>
-
-                <div class="flex flex-col items-center justify-around gap-2 py-5 md:flex-row">
-                    <div class="flex flex-col items-center">
-                        <div class="h-60 w-60 bg-cover bg-center" 
-                            style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user.ProfilePictureFileName?v=@DateTime.Now.Ticks');"/>
-                        <label>Full image</label>
-                    </div>
-
-                    <div class="flex flex-col items-center">
-                        <div 
-                            class="h-32 w-32 rounded-full bg-cover bg-center" 
-                            style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user.ProfilePictureFileName?v=@DateTime.Now.Ticks');"/>
-                        <label>Rounded version</label>
-                    </div>
-
-                    <div class="flex flex-col items-center">
-                        <div 
-                            class="h-8 w-8 rounded-full bg-cover bg-center" 
-                            style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user.ProfilePictureFileName?v=@DateTime.Now.Ticks');"/>
-                        <label>Avatar version</label>
-                    </div>
-                </div>
-
-                <div class="py-5">
-                    @if(_isLoading)
-                    {
-                        <Spinner/>
-                    }
-
-                    <div class="flex flex-row justify-end gap-5">
-                        <label class="label-as-button w-min cursor-pointer px-5 py-2" for="file-upload">Upload</label>
-                        <InputFile class="hidden" id="file-upload" OnChange="OnFileChanged"/>
-                        <button class="bg-cancel-button px-5 py-2 hover:bg-cancel-button-hover" @onclick="RestoreToOriginal">Reset</button>
-                    </div>
-                </div>
-            } else if(_tab == 3)
-            {
-                <NavigationLock ConfirmExternalNavigation=true OnBeforeInternalNavigation="OnBeforeInternalNavigation"/>
-
-                <div class="flex flex-col py-5">
-                    <label class="font-bold">Credentials</label>
-                    @if(_user.NeedsNewCredentials)
-                    {
-                        <label class="text-sm text-orange-500 opacity-70">This account is either using default credentials or they have been set up by the administrator, therefore they must be changed before going any further.</label>
-                    } else {
-                        <label class="text-sm opacity-70">Here you can change your credentials.</label>
-                    }
-                </div>
-
-                <EditForm class="form py-5" EditContext="_credentialsContext" OnValidSubmit="OnCredentialsValidSubmit">
-                    
-                    <DataAnnotationsValidator />
-
-                    <div class="form-group">
-                        <Name For="() => _credentialsModel.OldEmailAddress" />
-                        <InputText class="form-control" @bind-Value="_credentialsModel.OldEmailAddress" disabled/>
-                        <ValidationMessage For="() => _credentialsModel.OldEmailAddress" />
-                    </div>
-
-                    <div class="form-group">
-                        <Name For="() => _credentialsModel.NewEmailAddress" />
-                        <InputText class="form-control" @bind-Value="_credentialsModel.NewEmailAddress" autofocus/>
-                        <ValidationMessage For="() => _credentialsModel.NewEmailAddress" />
-                    </div>
-
-                    @if(!_user.NeedsNewCredentials)
-                    {
-                        <div class="form-group">
-                            <Name For="() => _credentialsModel.OldPassword" />
-                            <InputText type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" class="form-control" @bind-Value="_credentialsModel.OldPassword"/>
-                            <ValidationMessage For="() => _credentialsModel.OldPassword" />
-                        </div>
-                    }
-
-                    <div class="form-group">
-                        <Name For="() => _credentialsModel.NewPassword" />
-                        <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="form-control" @bind-Value="_credentialsModel.NewPassword"/>
-                        <ValidationMessage For="() => _credentialsModel.NewPassword" />
-                    </div>
-
-                    <div class="form-group">
-                        <Name For="() => _credentialsModel.RepeatPassword" />
-                        <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="form-control" @bind-Value="_credentialsModel.RepeatPassword"/>
-                        <ValidationMessage For="() => _credentialsModel.RepeatPassword" />
-                    </div>
-
-                    <button class="auth-button" type="submit">Save</button>
-                </EditForm>
-            }
-        </section>
+    <section class="settings-menu">
+        <div data-active='@(_tab == 1 ? "true" : "false")' class="settings-menu-item @(_tab == 1 ? "selected" : "")" @onclick="() => GoToTab(1)">General</div>
+        <div data-active='@(_tab == 2 ? "true" : "false")' class="settings-menu-item @(_tab == 2 ? "selected" : "")" @onclick="() => GoToTab(2)">Avatar</div>
+        <div data-active='@(_tab == 3 ? "true" : "false")' class="settings-menu-item @(_tab == 3 ? "selected" : "")" @onclick="() => GoToTab(3)">Credentials</div>
     </section>
+
+    @if (_user is null)
+    {
+        <Spinner />
+    }
+    else if (_tab == 1)
+    {
+        <div class="setting-description">
+            <h6 class="font-bold">General settings</h6>
+            <p class="text-sm opacity-70">All the most important settings for your profile, which do not belong to any other categories.</p>
+        </div>
+
+        <VerticalSeparator/>
+
+        <div class="settings-section">
+            <div class="setting-description">
+                <label class="font-bold opacity-90">Advanced card settings after creation</label>
+                <label class="w-4/5 max-w-2xl opacity-70">
+                    Changes, whether the large modal for setting up a card should open
+                    after creating a card on the board.
+                </label>
+            </div>
+
+            <div class="flex flex-row space-x-2">
+                <input type="checkbox" class="toggle" checked=@_user.AutomaticCardEdit @onchange="(e) => OnSettingChanged(e, x => x.AutomaticCardEdit)">
+            </div>
+        </div>
+
+        <VerticalSeparator />
+
+        <div class="settings-section">
+            <div class="setting-description">
+                <label class="font-bold opacity-90">Delete without confirmation</label>
+                <label class="w-4/5 max-w-2xl opacity-70">
+                    This defines whether you should receive a confirmation pop-up whenever you
+                    initiate a deletion of an object.
+                </label>
+            </div>
+
+            <input type="checkbox" class="toggle" checked=@_user.InstantDelete @onchange="(e) => OnSettingChanged(e, x => x.InstantDelete)">
+        </div>
+
+        <VerticalSeparator />
+
+        <div class="settings-section">
+            <div class="setting-description">
+                <label class="font-bold opacity-90">Automatic reminder on deadline</label>
+                <label class="w-4/5 max-w-2xl opacity-70">
+                    This option sets whether you will automatically be reminded about a card's deadline at the start of the day.
+                </label>
+            </div>
+
+            <input type="checkbox" class="toggle" checked=@_user.AutomaticDeadlineReminder @onchange="(e) => OnSettingChanged(e, x => x.AutomaticDeadlineReminder)">
+        </div>
+
+        <VerticalSeparator />
+
+        <div class="settings-section">
+            <div class="setting-description">
+                <label class="font-bold opacity-90">Automatically assign self</label>
+                <label class="w-4/5 max-w-2xl opacity-70">
+                    This option sets whether you will automatically assign yourself to created cards.
+                </label>
+            </div>
+
+            <input type="checkbox" class="toggle" checked=@_user.AutomaticAssign @onchange="(e) => OnSettingChanged(e, x => x.AutomaticAssign)">
+        </div>
+    }
+    else if (_tab == 2)
+    {
+        <div class="setting-description">
+            <h6 class="font-bold">Avatar</h6>
+            <p class="text-sm opacity-70">Here you can change your profile picture.</p>
+        </div>
+
+        <VerticalSeparator />
+
+        <div class="settings-section">
+            <div class="setting-description">
+                <label class="font-bold opacity-90">Avatar image</label>
+            </div>
+
+            <div class="avatar-settings aspect-square max-h-8 max-w-8 rounded-full"
+                 style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user.ProfilePictureFileName?v=@DateTime.Now.Ticks');" />
+        </div>
+
+        <VerticalSeparator />
+
+        <div class="settings-section">
+            <div class="setting-description">
+                <label class="font-bold opacity-90">Rounded image</label>
+            </div>
+
+            <div class="avatar-settings aspect-square max-h-32 max-w-32 rounded-full"
+                 style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user.ProfilePictureFileName?v=@DateTime.Now.Ticks');" />
+        </div>
+
+        <VerticalSeparator />
+
+        <div class="settings-section">
+            <div class="setting-description">
+                <label class="font-bold opacity-90">Full image</label>
+                <label class="w-4/5 max-w-2xl opacity-70">
+                    Profile picture in a full size.
+                </label>
+            </div>
+
+            <div class="rounded-island avatar-settings aspect-square max-h-60 max-w-60"
+                 style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user.ProfilePictureFileName?v=@DateTime.Now.Ticks');" />
+        </div>
+
+        <VerticalSeparator />
+
+        <div class="">
+            @if (_isLoading)
+            {
+                <Spinner />
+            }
+
+            <div class="flex flex-row gap-4">
+                <label class="btn btn-yellow max-w-44" for="file-upload">Upload</label>
+                <InputFile class="hidden" id="file-upload" OnChange="OnFileChanged" />
+                <button class="btn btn-red max-w-44" @onclick="RestoreToOriginal">Reset</button>
+            </div>
+        </div>
+    }
+    else if (_tab == 3)
+    {
+        <NavigationLock ConfirmExternalNavigation=true OnBeforeInternalNavigation="OnBeforeInternalNavigation" />
+
+        <div class="setting-description">
+            <h6 class="font-bold">Credentials</h6>
+            @if (_user.NeedsNewCredentials)
+            {
+                <label class="warning">This account is either using default credentials or they have been set up by the administrator, therefore they must be changed before going any further.</label>
+            }
+            else
+            {
+                <p class="text-sm opacity-70">Here you can change your credentials.</p>
+            }
+        </div>
+
+        <VerticalSeparator />
+
+        <EditForm class="form max-w-sm" EditContext="_credentialsContext" OnValidSubmit="OnCredentialsValidSubmit">
+
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <Name For="() => _credentialsModel.OldEmailAddress" class="form-label" />
+                <InputText class="input-field" @bind-Value="_credentialsModel.OldEmailAddress" disabled />
+                <ValidationMessage For="() => _credentialsModel.OldEmailAddress" />
+            </div>
+
+            <div class="form-group">
+                <Name For="() => _credentialsModel.NewEmailAddress" class="form-label" />
+                <InputText class="input-field" @bind-Value="_credentialsModel.NewEmailAddress" autofocus />
+                <ValidationMessage For="() => _credentialsModel.NewEmailAddress" />
+            </div>
+
+            @if (!_user.NeedsNewCredentials)
+            {
+                <div class="form-group">
+                    <Name For="() => _credentialsModel.OldPassword" class="form-label" />
+                    <InputText type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_credentialsModel.OldPassword" />
+                    <ValidationMessage For="() => _credentialsModel.OldPassword" />
+                </div>
+            }
+
+            <div class="form-group">
+                <Name For="() => _credentialsModel.NewPassword" class="form-label" />
+                <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_credentialsModel.NewPassword" />
+                <ValidationMessage For="() => _credentialsModel.NewPassword" />
+            </div>
+
+            <div class="form-group">
+                <Name For="() => _credentialsModel.RepeatPassword" class="form-label" />
+                <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_credentialsModel.RepeatPassword" />
+                <ValidationMessage For="() => _credentialsModel.RepeatPassword" />
+            </div>
+
+            <button class="btn btn-purple max-w-sm" type="submit">Save</button>
+        </EditForm>
+    }
 </div>
 
 @code {

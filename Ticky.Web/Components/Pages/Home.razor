@@ -47,7 +47,7 @@
         {
             <section class="flex flex-col space-y-4">
                 <div class="island flex w-full flex-row justify-between">
-                    <h3>@project.Name</h3>
+                    <h4>@project.Name</h4>
 
                     <div class="flex flex-row space-x-2">
                         @{
@@ -67,7 +67,7 @@
                                 </span>
                             </button>
                         }
-                        <div class="border-secondary h-full w-1 border-l-[1px]"></div>
+                        <div class="h-full w-1 border-secondary border-l-[1px]"></div>
                         @if (project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin)
                         {
                             <Dropdown Actions='new() {
@@ -90,7 +90,7 @@
                     }
                     @if(project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin) 
                     {
-                        <button class="btn bg-text text-primary flex h-full flex-col justify-between gap-2 !p-4 hover:bg-text/90 dark:text-primary dark:bg-secondaryDark dark:hover:bg-secondaryDark/80" @onclick="() => _createBoardModal?.Open(project.Id)" title="Create new board">
+                        <button class="btn flex h-full flex-col justify-between gap-2 bg-text !p-4 text-primary hover:bg-text/90 dark:bg-secondaryDark dark:text-primary dark:hover:bg-secondaryDark/80" @onclick="() => _createBoardModal?.Open(project.Id)" title="Create new board">
                             <span class="material-symbols-rounded" title="Add project">
                                 add
                             </span>
