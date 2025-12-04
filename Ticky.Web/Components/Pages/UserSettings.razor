@@ -33,7 +33,7 @@
             <p class="text-sm opacity-70">All the most important settings for your profile, which do not belong to any other categories.</p>
         </div>
 
-        <VerticalSeparator/>
+        <HorizontalSeparator/>
 
         <div class="settings-section">
             <div class="setting-description">
@@ -49,7 +49,7 @@
             </div>
         </div>
 
-        <VerticalSeparator />
+        <HorizontalSeparator />
 
         <div class="settings-section">
             <div class="setting-description">
@@ -63,7 +63,7 @@
             <input type="checkbox" class="toggle" checked=@_user.InstantDelete @onchange="(e) => OnSettingChanged(e, x => x.InstantDelete)">
         </div>
 
-        <VerticalSeparator />
+        <HorizontalSeparator />
 
         <div class="settings-section">
             <div class="setting-description">
@@ -76,7 +76,7 @@
             <input type="checkbox" class="toggle" checked=@_user.AutomaticDeadlineReminder @onchange="(e) => OnSettingChanged(e, x => x.AutomaticDeadlineReminder)">
         </div>
 
-        <VerticalSeparator />
+        <HorizontalSeparator />
 
         <div class="settings-section">
             <div class="setting-description">
@@ -96,7 +96,7 @@
             <p class="text-sm opacity-70">Here you can change your profile picture.</p>
         </div>
 
-        <VerticalSeparator />
+        <HorizontalSeparator />
 
         <div class="settings-section">
             <div class="setting-description">
@@ -107,7 +107,7 @@
                  style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user.ProfilePictureFileName?v=@DateTime.Now.Ticks');" />
         </div>
 
-        <VerticalSeparator />
+        <HorizontalSeparator />
 
         <div class="settings-section">
             <div class="setting-description">
@@ -118,7 +118,7 @@
                  style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user.ProfilePictureFileName?v=@DateTime.Now.Ticks');" />
         </div>
 
-        <VerticalSeparator />
+        <HorizontalSeparator />
 
         <div class="settings-section">
             <div class="setting-description">
@@ -132,7 +132,7 @@
                  style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user.ProfilePictureFileName?v=@DateTime.Now.Ticks');" />
         </div>
 
-        <VerticalSeparator />
+        <HorizontalSeparator />
 
         <div class="">
             @if (_isLoading)
@@ -163,7 +163,7 @@
             }
         </div>
 
-        <VerticalSeparator />
+        <HorizontalSeparator />
 
         <EditForm class="form max-w-sm" EditContext="_credentialsContext" OnValidSubmit="OnCredentialsValidSubmit">
 
