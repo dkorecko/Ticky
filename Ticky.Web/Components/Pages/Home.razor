@@ -23,7 +23,7 @@
         </p>
         <div class="flex flex-row space-x-2">
             <a class="btn btn-purple flex !w-max" href=@($"{Constants.Mappings.BOARD_PATH}/{_user?.LastVisitedBoardId}")>
-                <span class="material-symbols-rounded self-center">
+                <span class="material-symbols-rounded g-icon self-center">
                     tab_recent
                 </span>
                 <span class="self-center">
@@ -31,7 +31,7 @@
                 </span>
             </a>
             <button class="btn btn-yellow flex !w-max" @onclick="() => _createProjectModal?.Open()">
-                <span class="material-symbols-rounded self-center">
+                <span class="material-symbols-rounded g-icon self-center">
                     add_ad
                 </span>
                 <span class="self-center">
@@ -62,7 +62,7 @@
                         @if (project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin)
                         {
                             <button class="add btn-transparent btn flex" @onclick="() => _editProjectMembershipsModal?.Open(project.Id)" title="Add member">
-                                <span class="material-symbols-rounded self-center">
+                                <span class="material-symbols-rounded g-icon self-center">
                                     add
                                 </span>
                             </button>
@@ -75,7 +75,7 @@
                                 { "Delete project", () => _deleteProjectModal?.OpenDialog(project) }
                             }'>
                                 <div class="btn-transparent btn flex h-full">
-                                    <span class="material-symbols-rounded self-center" title="Project options">
+                        <span class="material-symbols-rounded g-icon self-center" title="Project options">
                                         more_horiz
                                     </span>
                                 </div>
@@ -91,7 +91,7 @@
                     @if(project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin) 
                     {
                         <button class="btn flex h-full flex-col justify-between gap-2 bg-text !p-4 text-primary hover:bg-text/90 dark:bg-secondaryDark dark:text-primary dark:hover:bg-secondaryDark/80" @onclick="() => _createBoardModal?.Open(project.Id)" title="Create new board">
-                            <span class="material-symbols-rounded" title="Add project">
+                            <span class="material-symbols-rounded g-icon" title="Add project">
                                 add
                             </span>
                             <h6>New board</h6>

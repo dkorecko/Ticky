@@ -6,29 +6,25 @@
 @theme {
     --color-background: oklch(0.9468 0.0268 288.17);
     --color-primary: oklch(100% 0.000 0);
-    --color-secondary: oklch(61.4% 0.158 287);
-    --color-tint: oklch(82.5% 0.184 86);
-    --color-text: oklch(33.5% 0.047 264);
-    --color-subtext: oklch(68.2% 0.063 280);
-    --color-red: oklch(66.5% 0.183 27);
-    --color-bgDark: oklch(22.4% 0.015 278);
-    --color-primaryDark: oklch(25.1% 0.014 272);
-    --color-secondaryDark: oklch(71.8% 0.154 288);
-    --color-tintDark: oklch(83.8% 0.187 85);
-    --color-textDark: oklch(97.3% 0.010 275);
-    --color-subtextDark: oklch(73.5% 0.049 280);
-    --color-redDark: oklch(63.8% 0.201 25);
-
+    --color-secondary: oklch(0.5714 0.1438 289.17);
+    --color-tint: oklch(0.8365 0.171982 83.0703);
+    --color-text: oklch(0.2982 0.0591 282.21);
+    --color-subtext: oklch(0.6794 0.041 285.26);
+    --color-red: oklch(0.6554 0.1889 23.93);
+    --color-bgDark: oklch(0.2396 0.0266 290.79);
+    --color-primaryDark: oklch(0.2807 0.028 275.67);
+    --color-secondaryDark: oklch(0.7007 0.137 290.64);
+    --color-tintDark: oklch(0.8462 0.1709 85.18);
+    --color-textDark: oklch(0.9711 0.0146 290.31);
+    --color-subtextDark: oklch(0.7711 0.0397 288.71);
+    --color-redDark: oklch(0.647 0.1987 24.6);
     --text-2xs: 0.65rem;
-
     --breakpoint-xs: 30rem;
     --breakpoint-2xs: 20rem;
-
     --radius-input: 0.5rem;
     --radius-button: 0.5rem;
     --radius-button-nav: 1rem;
     --radius-island: 1rem;
-
     --spacing-island-x: 1rem;
     --spacing-island-y: 2rem;
     --spacing-button-x: 0.5rem;
@@ -51,8 +47,8 @@ body {
     @apply h-screen w-full;
 }
 
-button, a, .smooth-animation, .auth-link, .settings-menu-item {
-    transition: all 0.2s ease-in;
+button, a, .btn, .smooth-animation, .auth-link, .settings-menu-item {
+    transition: all 0.15s ease-in;
     @apply cursor-pointer;
 }
 
@@ -92,6 +88,10 @@ h6 {
 
 p, label {
     @apply text-sm;
+}
+
+.g-icon {
+    @apply !text-xl;
 }
 
 .subtext {
@@ -233,6 +233,10 @@ p, label {
     @apply rounded-island px-island-x py-island-y bg-primary dark:bg-primaryDark text-text dark:text-textDark;
 }
 
+.island-title {
+    @apply rounded-button py-button-x px-island-x bg-primary dark:bg-primaryDark text-text dark:text-textDark;
+}
+
 .field-validation-error, .validation-message {
     @apply text-red dark:text-redDark dark:font-light text-sm;
 }
@@ -245,8 +249,16 @@ p, label {
     @apply z-10 rounded-button px-button-x py-button-y h-full text-sm bg-background dark:bg-bgDark text-text dark:text-textDark hover:bg-secondary/30 dark:hover:bg-secondaryDark/30 flex flex-row space-x-2 items-stretch;
 }
 
+.avatar, .avatar-mini {
+    @apply bg-center bg-secondary/50 dark:bg-secondaryDark/50 border-2 border-secondary dark:border-secondaryDark rounded-full bg-cover;
+}
+
 .avatar {
-    @apply h-8 min-h-8 w-8 min-w-8 bg-center bg-secondary/50 dark:bg-secondaryDark/50 border-2 border-secondary dark:border-secondaryDark rounded-full bg-cover;
+    @apply h-8 min-h-8 w-8 min-w-8;
+}
+
+.avatar-mini {
+    @apply h-6 min-h-6 w-6 min-w-6;
 }
 
 .stack-avatars {
@@ -277,7 +289,7 @@ p, label {
 }
 
 .board-card {
-    @apply bg-primary dark:bg-primaryDark rounded-island p-island-x flex flex-col space-y-4;
+    @apply bg-primary dark:bg-primaryDark rounded-island p-island-x flex flex-col space-y-4 cursor-pointer;
 }
 
 .settings-menu {
@@ -331,7 +343,39 @@ input[type="checkbox"].toggle {
         @apply bg-primary dark:bg-primaryDark;
     }
 
+.max-h-visible-screen {
+    @apply max-h-[calc(var(--vvh)*100-(var(--spacing)*6)-(var(--spacing)*2)*6-(var(--spacing)*8)*2-17px)];
+}
+
+.h-board-content {
+    @apply h-[calc(var(--vvh)*100-(var(--spacing)*6)*4-1px)];
+}
+
+.h-visible-screen {
+    @apply h-[calc(var(--vvh)*100)];
+}
+
+.board-column {
+    @apply flex w-80 flex-col items-center space-y-2;
+}
+
+.task-card {
+    @apply rounded-button py-button-y px-button-x flex w-full cursor-pointer flex-col space-y-2 border-2 border-primary bg-primary text-text select-none dark:border-primaryDark dark:bg-primaryDark dark:text-textDark data-[blocked=True]:border-red dark:data-[blocked=True]:border-redDark;
+}
+
+.priority, .label {
+    @apply text-2xs w-max cursor-pointer rounded-button px-2 py-1 font-medium;
+}
+
+.card-data-point {
+    @apply flex cursor-pointer flex-row items-center justify-center gap-1 whitespace-nowrap text-xs rounded-button py-1 px-2 bg-background dark:bg-bgDark;
+}
+
 /*
+
+.to-task-card {
+    @apply select-none data-[active=True]:flex data-[active=True]:flex-col data-[active=True]:gap-3 data-[active=True]:bg-card-bg data-[active=True]:p-3 data-[active=True]:shadow-sm data-[active=True]:outline-0;
+}
 .auth-input {
     @apply h-8 w-full border-b-2 border-gray-600 bg-auth-bg px-2 text-sm font-normal transition-all ease-in-out focus:border-primary;
 }
@@ -362,41 +406,7 @@ option {
     scrollbar-width: thin;
     scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
 }
- */
-/*
 
-.max-h-visible-screen {
-    @apply max-h-[calc(var(--vvh)*100-(var(--spacing)*6)-(var(--spacing)*2)*6-(var(--spacing)*8)*2-17px)];
-}
-
-.h-board-content {
-    @apply h-[calc(var(--vvh)*100-(var(--spacing)*6)*4-1px)];
-}
-
-.h-visible-screen {
-    @apply h-[calc(var(--vvh)*100)];
-}
-
-.board-column {
-    @apply flex w-64 flex-col items-center;
-}
-
-.task-card {
-    @apply mb-2 flex w-full cursor-pointer flex-col gap-3 rounded-lg bg-card-bg p-3 shadow-sm select-none data-[blocked=True]:bg-card-blocked-bg;
-}
-
-.to-task-card {
-    @apply select-none data-[active=True]:flex data-[active=True]:flex-col data-[active=True]:gap-3 data-[active=True]:bg-card-bg data-[active=True]:p-3 data-[active=True]:shadow-sm
-        data-[active=True]:outline-0;
-}
-
-.priority {
-    @apply text-2xs w-fit cursor-pointer rounded-lg px-3 py-1 font-bold;
-}
-
-.label {
-    @apply text-2xs flex w-fit cursor-pointer items-center justify-center rounded-lg px-3 py-1 font-bold;
-}
 
 .card-data-point {
     @apply flex cursor-pointer flex-row items-center justify-center gap-1 whitespace-nowrap;

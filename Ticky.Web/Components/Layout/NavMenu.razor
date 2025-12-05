@@ -4,7 +4,7 @@
 @inject NavigationManager _navigationManager
 @inject SearchService _searchService
 
-<nav id="nav-menu" class="bg-primary z-10 px-4 py-2 dark:bg-primaryDark">
+<nav id="nav-menu" class="z-10 bg-primary px-4 py-2 dark:bg-primaryDark">
     <!-- Desktop version -->
     <div class="hidden w-full flex-row justify-between self-center lg:flex">
         <div class="nav-links w-1/4">
@@ -43,7 +43,7 @@
         </div>
         <div class="nav-links w-max">
             <NavLink class="nav-link h-full" Match="NavLinkMatch.All" href="/">
-                <span class="material-symbols-rounded self-center">
+                <span class="material-symbols-rounded g-icon self-center">
                     home
                 </span>
                 <span class="self-center">
@@ -53,7 +53,7 @@
             @if (_user?.LastVisitedBoardId is not null)
             {
                 <NavLink class="nav-link" href=@($"{Constants.Mappings.BOARD_PATH}/{_user?.LastVisitedBoardId}")>
-                    <span class="material-symbols-rounded self-center">
+                    <span class="material-symbols-rounded g-icon self-center">
                         tab_recent
                     </span>
                     <span class="self-center">
@@ -64,7 +64,7 @@
             <div class="relative">
                 <button @onclick=ToggleMenu class="nav-link !px-button-y flex flex-row !space-x-8">
                     <div class="flex flex-row items-center space-x-2">
-                        <div class="bg-secondary h-8 w-8 rounded-lg bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
+                        <div class="h-8 w-8 rounded-lg bg-secondary bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
                         <div class="flex flex-col">
                             <span class="subtext text-xs">John</span>
                             <span class="text-xs uppercase">Doe</span>
@@ -72,13 +72,13 @@
                     </div>
                     @if (_dropdownMenu)
                     {
-                        <span class="material-symbols-rounded self-center">
+                        <span class="material-symbols-rounded g-icon self-center">
                             keyboard_arrow_up
                         </span>
                     }
                     else
                     {
-                        <span class="material-symbols-rounded self-center">
+                        <span class="material-symbols-rounded g-icon self-center">
                             keyboard_arrow_down
                         </span>
                     }
@@ -86,7 +86,7 @@
                 <div class="@(_dropdownMenu ? "absolute" : "hidden") top-12 right-0">
                     <div class="dropdown-box">
                         <a href="/settings" class="nav-link">
-                            <span class="material-symbols-rounded self-center">
+                            <span class="material-symbols-rounded g-icon self-center">
                                 settings
                             </span>
                             <span class="self-center">
@@ -95,7 +95,7 @@
                         </a>
                         <AuthorizeView Policy="@Constants.Policies.RequireAdmin">
                             <NavLink class="nav-link" href="/admin">
-                                <span class="material-symbols-rounded self-center">
+                                <span class="material-symbols-rounded g-icon self-center">
                                     admin_panel_settings
                                 </span>
                                 <span class="self-center">
@@ -105,7 +105,7 @@
                         </AuthorizeView>
                         <div class="block dark:hidden">
                             <button id="themePicker" onclick="switchTheme()" class="nav-link">
-                                <span class="material-symbols-rounded self-center">
+                                <span class="material-symbols-rounded g-icon self-center">
                                     moon_stars
                                 </span>
                                 <span class="self-center text-left">
@@ -115,7 +115,7 @@
                         </div>
                         <div class="hidden dark:block">
                             <button id="themePicker" onclick="switchTheme()" class="nav-link">
-                                <span class="material-symbols-rounded self-center">
+                                <span class="material-symbols-rounded g-icon self-center">
                                     sunny
                                 </span>
                                 <span class="self-center text-left">
@@ -124,7 +124,7 @@
                             </button>
                         </div>
                         <NavLink class="nav-link" href="@Constants.Mappings.LOGOUT_PATH">
-                            <span class="material-symbols-rounded self-center">
+                            <span class="material-symbols-rounded g-icon self-center">
                                 logout
                             </span>
                             <span class="self-center">
@@ -178,7 +178,7 @@
         <div class="relative">
             <button @onclick=ToggleMenu class="nav-link !px-button-y flex flex-row !space-x-0 !sm:space-x-8">
                 <div class="flex flex-row items-center sm:space-x-2">
-                    <div class="bg-secondary h-8 w-8 rounded-lg bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
+                    <div class="h-8 w-8 rounded-lg bg-secondary bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
                     <div class="hidden flex-col sm:flex">
                         <span class="subtext text-xs">John</span>
                         <span class="text-xs uppercase">Doe</span>

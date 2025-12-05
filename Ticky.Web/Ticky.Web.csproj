@@ -40,10 +40,10 @@
     <Content Update="wwwroot\fonts\JTUSjIg1_i6t8kCHKm459WlhyyTn89ddpQ.woff2">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\google-icons\kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDAvHOej.woff2">
+    <Content Update="wwwroot\google-s\kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDAvHOej.woff2">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\google-icons\material-symbol.css">
+    <Content Update="wwwroot\google-s\material-symbol.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Update="wwwroot\images\question_mark_avatar.png">

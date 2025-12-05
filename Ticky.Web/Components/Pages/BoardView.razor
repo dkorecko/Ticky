@@ -1,4 +1,4 @@
-@page "/boards/{Id:int}/{CardId:int?}"
+﻿@page "/boards/{Id:int}/{CardId:int?}"
 @using System.Security.Cryptography
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
@@ -23,54 +23,73 @@
 <EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
 <FilterCardsModal @ref="_filterCardsModal" Model="_filterModel" SearchUpdated="LoadCardsAsync" BoardMembers="_members" BoardLabels="_labels" />
 
-<div class="flex w-screen flex-col divide-y divide-tab-outline">
-    <header id="board-header" class="flex flex-row items-center justify-end gap-1 px-2 py-2 text-2xl font-bold sm:gap-5 sm:px-12">
-        @if(_board is null)
-        {
-            <Spinner/>
-        } else {
-            <label class="mr-auto text-sm text-ellipsis md:text-xl">@_board.Name <label class="text-2xs font-normal text-ellipsis">(Project @_board.Project.Name)</label></label>
-
-            <div class="hidden flex-row gap-1 2xs:flex">
-                @{
-                    var i = 0;
-                }
-                @foreach(var member in _members)
-                {
-                    string id = $"avatar_{i}";
-                    <div id="@id" class="avatar stack-avatars" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
-                    i++;
-                }
-                @if (IsAdmin())
-                {
-                    <div class="avatar add" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
-                        <i class="fa fa-plus text-sm"></i>
-                    </div>
-                }
+@if(_board is null)
+{
+    <Spinner/>
+} else
+{
+    <div class="island-title flex w-full flex-row justify-between">
+        <div class="flex flex-row space-x-4">
+            <div class="avatar-settings rounded-button aspect-square h-full w-12">
+                &nbsp;
             </div>
+            <div>
+                <h5 class="w-max font-bold">@_board.Name</h5>
+                <p class="text-xs opacity-70">@_board.Project.Name</p>
+            </div>
+        </div>
+
+        <div class="flex flex-row space-x-1">
+            @{
+                var i = 0;
+            }
+            @foreach (var member in _members)
+            {
+                string id = $"avatar_{i}";
+                <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
+                i++;
+            }
+            @if (IsAdmin())
+            {
+                <button class="add btn-transparent btn flex" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
+                    <span class="material-symbols-rounded g-icon self-center">
+                        add
+                    </span>
+                </button>
+            }
+            <VerticalSeparator />
+
+            @{
+                var filterIcon = "filter-icon";
+            }
+            <span class="relative z-0 inline-block self-center">
+                <button title="Filter cards" id=@filterIcon @onclick="() => _filterCardsModal?.Open(filterIcon)" class="material-symbols-rounded g-icon  btn-transparent btn flex self-center">
+                    tune
+                </button>
+                @if (_filterModel.IsAnyFilterApplied())
+                {
+                    <span class="absolute top-1 right-2 h-2 w-2 rounded-full bg-secondary dark:bg-secondaryDark"></span>
+                }
+            </span>
+
+            <button @onclick="SwitchStatsDisplay" title="Toggle statistics" class="material-symbols-rounded g-icon btn-transparent btn flex self-center">
+                finance
+            </button>
 
             @if (IsAdmin())
             {
-                <a href="/boards/settings/@_board.Id"><i class="fa fa-gear icon-button" title="Board settings"></i></a>
+                <button href="/boards/settings/@_board.Id" title="Board settings" class="material-symbols-rounded g-icon btn-transparent btn flex self-center">
+                    settings
+                </button>
             }
+        </div>
+    </div>
 
-            var filterIcon = "filter-icon";
-            <span class="relative inline-block">
-                <i id=@filterIcon class="fa fa-filter icon-button @( _filterModel.IsAnyFilterApplied() ? "text-primary hover:text-primary-hover" : string.Empty)" title="Filter cards" @onclick="() => _filterCardsModal?.Open(filterIcon)"></i>
-                @if (_filterModel.IsAnyFilterApplied())
-                {
-                    <span class="absolute top-0 right-0 h-2 w-2 rounded-full border-2 border-white bg-primary hover:bg-primary-hover"></span>
-                }
-            </span>
-            <i class="fa fa-chart-simple icon-button" @onclick="SwitchStatsDisplay" title="Toggle statistics"></i>
-        }
-    </header>
-    <section class='h-board-content flex w-screen flex-row divide-x divide-tab-outline'>
-        <!-- Board section -->
+    <div class="h-board-content flex w-full flex-row">
         @if (_board is not null)
         {
-            <section id="board-section" class="w-full flex-row gap-5 overflow-x-auto @(_preferences.ShowStats ? "hidden md:flex" : "flex") py-6">
-                <SortableList Class="ml-12 flex flex-row gap-5" Animation=@(_board.DisableSortingAnimations ? 0 : 200) Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
+            <section id="board-section" class="w-full flex-row gap-2 overflow-x-auto pt-2 @(_preferences.ShowStats ? "hidden md:flex" : "flex")">
+                <SortableList Class="flex flex-row gap-2" Animation=@(_board.DisableSortingAnimations ? 0 : 200) Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                     <SortableItemTemplate>
                         <ColumnView @key="column.Id" Column="column" Cards="_cards" Members="_members" Board="@_board" EditColumnModal="_editColumnModal" DeleteColumnModal="_deleteColumnModal" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" OnCardMoved=StateHasChanged AddingSetter=SetAdding IsAdmin="IsAdmin" AddingCardHere="(_adding == column.Id)" OnUpdate="HandleUpdate" />
                     </SortableItemTemplate>
@@ -78,19 +97,18 @@
 
                 @if (IsAdmin())
                 {
-                    <div class="add max-h-visible-screen mt-1 mr-12 min-w-64 rounded-lg px-8" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id)+1 : 0);">
-                        <i class="fa fa-plus text-3xl" title="Add new column"></i>
-                        <label>New column</label>
-                    </div>
+                    <button class="btn btn-purple h-min w-80 min-w-80 font-bold" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id) + 1 : 0);" title="Add new column">
+                        New column
+                    </button>
                 }
             </section>
-            
-            if(_preferences.ShowStats) 
+
+            if (_preferences.ShowStats)
             {
                 <section class="flex w-screen flex-col items-center gap-6 px-2 py-6 md:w-80">
                     <div class="flex w-full flex-row items-center justify-between">
                         <h1>Progress</h1>
-                        <i class="fa fa-xmark icon-button" @onclick=SwitchStatsDisplay title="Close statistics"></i>
+                        <i class="fa fa-xmark -button" @onclick=SwitchStatsDisplay title="Close statistics"></i>
                     </div>
                     <div class="flex w-full flex-col gap-8">
                         <!-- Side section -->
@@ -106,7 +124,7 @@
                                         <label class="text-gray-500">@completedCards/@totalCards</label>
                                     </div>
                                     <div class="grid h-1 w-full rounded-lg">
-                                        <div class="z-10 w-24 rounded-lg bg-pink-500 transition-all" style="grid-row: 1; grid-column: 1; width: @(totalCards == 0 ? 0 : Math.Round((double) completedCards/totalCards*100))%;"></div>
+                                        <div class="z-10 w-24 rounded-lg bg-pink-500 transition-all" style="grid-row: 1; grid-column: 1; width: @(totalCards == 0 ? 0 : Math.Round((double)completedCards / totalCards * 100))%;"></div>
                                         <div class="rounded-lg bg-pink-300" style="grid-row: 1; grid-column: 1;"></div>
                                     </div>
                                 </div>
@@ -124,8 +142,8 @@
         {
             <Spinner />
         }
-    </section>
-</div>
+    </div>
+}
 
 @code {
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]

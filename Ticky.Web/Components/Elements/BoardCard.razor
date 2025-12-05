@@ -12,7 +12,7 @@
         
         <div class="aligned-middle flex flex-row gap-1">
             <button class="add btn-transparent btn flex h-min !p-1" @onclick="MakeFavorite" @onclick:stopPropagation="true" title="@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "Remove from favorites" : "Add to favorites")">
-                <span class="@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "material-symbols-filled" : "material-symbols-rounded")">
+                <span class="@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "material-symbols-filled  " : "material-symbols-rounded  ") g-icon">
                     kid_star
                 </span>
             </button>
@@ -24,7 +24,7 @@
                         { "Delete board", async () => await DeleteConfirmationDialog.OpenDialog(Board) }
                     }'>
                     <div class="btn-transparent btn flex h-min !p-1">
-                        <span class="material-symbols-rounded self-center" title="Board options">
+                    <span class="material-symbols-rounded g-icon self-center" title="Board options">
                             more_horiz
                         </span>
                     </div>

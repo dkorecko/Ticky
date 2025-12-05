@@ -1,12 +1,12 @@
 ﻿@if(_triggeredShow)
 {
-	<div data-active="@_shown.ToString()" class='bg-background/0 fixed top-0 left-0 @(ForceOverlay ? "z-50" : "z-10") flex h-screen w-full items-center justify-center transition-all ease-in-out dark:bg-bgDark/0 data-[active=True]:bg-background/70 dark:data-[active=True]:bg-bgDark/70' @onmousedown="Cancel" @onkeydown="this.OnKey">
-		<div role="dialog" aria-modal="true" data-active="@_shown.ToString()" class='bg-primary/0 island divide-subtext m-5 flex w-[90vw] max-w-2xl flex-col divide-y overflow-hidden transition-all ease-in-out dark:divide-subtextDark dark:bg-primaryDark/0 data-[active=True]:bg-primary data-[active=False]:translate-y-[500%] dark:data-[active=True]:bg-primaryDark @Class' @onmousedown:stopPropagation=true>
+	<div data-active="@_shown.ToString()" class='fixed top-0 left-0 flex @(ForceOverlay ? "z-50" : "z-10") h-screen w-full items-center justify-center bg-background/0 transition-all ease-in-out dark:bg-bgDark/0 data-[active=True]:bg-background/70 dark:data-[active=True]:bg-bgDark/70' @onmousedown="Cancel" @onkeydown="this.OnKey">
+		<div role="dialog" aria-modal="true" data-active="@_shown.ToString()" class='island m-5 flex w-[90vw] max-w-2xl flex-col divide-y divide-subtext overflow-hidden bg-primary/0 transition-all ease-in-out dark:divide-subtextDark dark:bg-primaryDark/0 data-[active=False]:translate-y-[500%] data-[active=True]:bg-primary dark:data-[active=True]:bg-primaryDark @Class' @onmousedown:stopPropagation=true>
 			@if(!DisableButtons || EnableTitle) 
 			{
 				<section class="flex flex-row items-center justify-between gap-10 py-3">
 					<h3>@Title</h3>
-					<button @onclick="Cancel" title="Close" class="material-symbols-rounded">
+					<button @onclick="Cancel" title="Close" class="material-symbols-rounded g-icon">
 						close
 					</button>
 				</section>

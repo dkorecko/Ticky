@@ -1,4 +1,4 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+﻿@inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject CardNumberingService _cardNumberingService
 @inject ILogger<ColumnView> _logger
@@ -9,38 +9,44 @@
     var cardsCount = columnCards.Count;
 }
 <div @key="Column.Id" id="@Column.Id" class="board-column max-h-visible-screen gap-1">
-    <div class="flex w-full flex-row items-start justify-between">
+    <div class="rounded-button px-island-x py-button-x flex w-full flex-row items-center justify-between bg-text text-primary">
         <div class="flex flex-row items-center gap-2">
-            <label class="align-middle">
+            <h6 class="font-bold">
                 @Column.Name
-                <span class='text-2xs ml-1 rounded-full p-0.5 align-middle shadow-sm @(Column.MaxCards != 0 && cardsCount >= Column.MaxCards ? "bg-column-limit-reached" : "bg-card-bg")'>
-                    @if (Column.MaxCards == 0)
-                    {
-                        <span>@cardsCount</span>
-                    }
-                    else
-                    {
-                        <span>@cardsCount/@Column.MaxCards</span>
-                    }
-                </span>
-                @if (Column.Collapsed)
+            </h6>
+            <span class='text-2xs rounded-button border-[1px] px-3 py-1 align-middle @(Column.MaxCards != 0 && cardsCount >= Column.MaxCards ? "border-red dark:border-redDark" : "border-primary")'>
+                @if (Column.MaxCards == 0)
                 {
-                    <label class="ml-2 text-xs font-normal">(Collapsed)</label>
+                    <span>@cardsCount</span>
                 }
-            </label>
+                else
+                {
+                    <span class="tracking-wider">@cardsCount/@Column.MaxCards</span>
+                }
+            </span>
+            @if (Column.Collapsed)
+            {
+                <label class="ml-2 text-xs font-normal">(Collapsed)</label>
+            }
         </div>
 
         @if (IsAdmin())
         {
             <div class="flex flex-row items-center gap-2">
-                <i class="fa fa-up-down-left-right drag-toggle icon-button cursor-move text-icon" title="Drag to reorder column"></i>
+                <span class="material-symbols-rounded g-icon drag-toggle cursor-move self-center select-none" title="Drag to reorder column">
+                    open_with
+                </span>
 
                 <Dropdown Actions='new() {
                     { "Edit column", () => EditColumnModal?.Open(Column.Id) },
                     { "Delete column", async () => await OpenDeleteColumnDialog(Column) },
                     { $"{(Column.Collapsed ? "Expand" : "Collapse")} column", async () => await ExpandOrCollapseColumn(Column.Id) },
                 }'>
-                <i class="fa fa-ellipsis icon-button pr-1" title="Column options"></i>
+                <div class="smooth-animation rounded-button flex h-full cursor-pointer hover:bg-primary/20 dark:hover:bg-primaryDark/20">
+                    <span class="material-symbols-rounded g-icon self-center" title="Column options">
+                            more_horiz
+                        </span>
+                    </div>
                 </Dropdown>
             </div>
         }
@@ -48,7 +54,7 @@
 
     @if (!Column.Collapsed)
     {
-        <SortableList Id=@($"{COLUMN_PREFIX}{Column.Id}") Animation=@(Board.DisableSortingAnimations ? 0 : 200) Class="min-h-[1rem] w-full overflow-y-auto" Group="group" Items="columnCards.OrderBy(x => x.Index).ToList()" MaxItems=Column.MaxCards Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList" OnExceededLimit="OnExceededCardLimit">
+        <SortableList Id=@($"{COLUMN_PREFIX}{Column.Id}") Animation=@(Board.DisableSortingAnimations ? 0 : 200) Class="flex min-h-[1rem] w-full flex-col space-y-2 overflow-y-auto" Group="group" Items="columnCards.OrderBy(x => x.Index).ToList()" MaxItems=Column.MaxCards Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList" OnExceededLimit="OnExceededCardLimit">
             <SortableItemTemplate>
                 <CardView @key="context.Id" Card="@context" Column="Column" BoardCode="@Board.Code" EditCardModal="EditCardModal" DeleteCardModal="DeleteCardModal" Members="Members" OnCardUpdated="OnUpdate" Columns="Board.Columns" />
             </SortableItemTemplate>
@@ -57,37 +63,41 @@
         @if (Column.MaxCards == 0 || cardsCount < Column.MaxCards)
         {
             <div data-active=@(AddingCardHere.ToString()) @onclick="() => StartAddingToColumn(Column.Id)"
-                 class="add rounded-lg select-none p-5 h-min w-full to-task-card">
+                 class="add select-none h-min w-full to-task-card">
                 @if (!AddingCardHere)
                 {
-                    <i class="fa fa-plus text-3xl" title="Add new card"></i>
-                    <label>New card</label>
+                    <div class="btn btn-purple font-bold" title="New card">
+                        <span>New card</span>
+                    </div>
                 }
                 else
                 {
-                    <div class="flex w-full flex-row items-center justify-between text-sm font-semibold">
-                        <label>Create new card</label>
-                        <i class="fa fa-xmark card-button" @onclick="() => AddingSetter.InvokeAsync(-1)" @onclick:stopPropagation=true title="Cancel"></i>
-                    </div>
+                    <div class="island-title flex flex-col space-y-2">
+                        <div class="flex w-full flex-row items-center justify-between text-sm font-semibold">
+                            <label>Create new card</label>
+                            <a class="material-symbols-rounded g-icon self-center" @onclick="() => AddingSetter.InvokeAsync(-1)" @onclick:stopPropagation=true title="Cancel">
+                                close
+                            </a>
+                        </div>
 
-                    <textarea class="h-16 w-full rounded-lg bg-card-bg p-2 text-start text-xs outline-1 outline-typing-outline"
-                              @bind="CreateTaskText"
-                              @bind:event="oninput"
-                              @ref=_textElement
-                              @onkeydown='async (e) => {
-                              if (!e.Key.Contains("Enter"))
-                                  return;
+                        <textarea class="bg-card-bg outline-typing-outline h-16 w-full rounded-lg p-2 text-start text-xs outline-1"
+                                  @bind="CreateTaskText"
+                                  @bind:event="oninput"
+                                  @ref=_textElement
+                                  @onkeydown='async (e) => {
+                                  if (!e.Key.Contains("Enter"))
+                                      return;
 
-                              await AttemptCreateTaskSubmit(Column.Id);
-                          }'
-                            autofocus placeholder="Describe the task ..." wrap="soft" />
+                                  await AttemptCreateTaskSubmit(Column.Id);
+                              }'
+                              autofocus placeholder="Describe the task ..." wrap="soft" />
 
-                <hr class="border-t-tab-outline">
-                <button class="w-full" @onclick="async () => await AttemptCreateTaskSubmit(Column.Id)" @onclick:stopPropagation="true">Create</button>
-            }
-        </div>
-    }
+                        <button class="btn btn-yellow" @onclick="async () => await AttemptCreateTaskSubmit(Column.Id)" @onclick:stopPropagation="true">Create</button>
+                    </div>                
+                }
+            </div>
         }
+    }
 </div>
 
 @code {

@@ -6,11 +6,10 @@
     src: url(kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDAvHOej.woff2) format('woff2');
 }
 
-.material-symbols-rounded {
+.material-symbols-rounded  {
     font-family: 'Material Symbols Rounded';
     font-weight: normal;
     font-style: normal;
-    font-size: 24px;
     line-height: 1;
     letter-spacing: normal;
     text-transform: none;
@@ -30,11 +29,10 @@
     src: url(syl0-zNym6YjUruM-QrEh7-nyTnjDwKNJ_190FjpZIvDmUSVOK7BDJ_vb9vUSzq3wzLK-P0J-V_Zs-QtQth3-jOcbTCVpeRL2w5rwZu2rAelXxc.woff2) format('woff2');
 }
 
-.material-symbols-filled {
+.material-symbols-filled  {
     font-family: 'Material Symbols Filled';
     font-weight: normal;
     font-style: normal;
-    font-size: 24px;
     line-height: 1;
     letter-spacing: normal;
     text-transform: none;
