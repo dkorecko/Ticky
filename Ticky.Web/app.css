@@ -326,7 +326,7 @@ input[type="checkbox"].toggle {
     appearance: none;
     -webkit-transition: all .2s ease-in-out;
     transition: all .2s ease-in-out;
-    @apply rounded-full bg-transparent w-10 h-6 relative cursor-pointer border-[1px] border-subtext dark:border-subtextDark;
+    @apply rounded-full bg-transparent w-10 !min-w-10 h-6 relative cursor-pointer border-[1px] border-subtext dark:border-subtextDark;
 }
 
     input[type="checkbox"].toggle:checked {
