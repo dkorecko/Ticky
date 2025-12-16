@@ -1189,6 +1189,11 @@
       display: flex;
     }
   }
+  .sm\:hidden {
+    @media (width >= 40rem) {
+      display: none;
+    }
+  }
   .sm\:min-w-80 {
     @media (width >= 40rem) {
       min-width: calc(var(--spacing) * 80);
