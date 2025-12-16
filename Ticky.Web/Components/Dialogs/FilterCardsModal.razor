@@ -1,21 +1,17 @@
-@implements IDisposable
+﻿@implements IDisposable
 
 <ActionModal @ref=_modalRef Title="Filter cards">
-    <div class="form p-2">
+    <div class="form">
         <div class="form-group">
-            <label for="text">Text, description or card code</label>
-            <input value="@Model.Text" id="text" class="form-control" @oninput="OnSearchChanged"/>
+            <label for="text" class="form-label-category">Text, description or card code</label>
+            <input value="@Model.Text" id="text" class="input-field" @oninput="OnSearchChanged"/>
         </div>
 
         <div class="form-group">
-            <div class="flex flex-row items-center gap-1 text-xs">
-                <label>Completion</label>
-            </div>
-            <div class="flex flex-col gap-1">
-                <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="ToggleExcludeCompleted">
-                    <span class="font-bold">Exclude completed cards</span>
-                    <i class='fa fa-check icon ml-auto @(Model.ExcludeCompleted ? string.Empty : "opacity-0")'></i>
-                </div>
+            <label class="form-label-category">Completion</label>
+            <div class="flex flex-row items-center space-x-2">
+                <input type="checkbox" class="toggle" checked=@(Model.ExcludeCompleted) @onchange="ToggleExcludeCompleted">
+                <span class="text-xs">Exclude completed cards</span>
             </div>
         </div>
 
