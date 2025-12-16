@@ -1,4 +1,4 @@
-const OPEN_OFFSET = 5;
+const OPEN_OFFSET = 8;
 
 function positionDropdown(dropdownElement, left, top, width = null) {
     //console.log('positioning')

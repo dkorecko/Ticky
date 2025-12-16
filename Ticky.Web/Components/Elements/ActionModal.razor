@@ -1,12 +1,14 @@
 ﻿@inject IJSRuntime _js
 
-<div @ref="_element" class="dropdown dropdown-animate absolute top-0 left-0 z-20 hidden overflow-y-auto rounded-xs bg-modal shadow-2xl">
-	<section class="flex w-full flex-row items-center justify-center gap-10 px-2 py-3">
-		<label class="text-sm font-normal">@Title</label>
-		<i class="fa fa-xmark card-button ml-auto" @onclick="Close" title="Close"></i>
+<div @ref="_element" class="dropdown dropdown-animate island-mini absolute top-0 left-0 z-20 my-6 hidden overflow-y-auto">
+	<section class="flex w-full flex-row items-center justify-between px-2 py-4">
+		<h5 class="font-bold">@Title</h5>
+		<a class="material-symbols-rounded g-icon self-center" @onclick="Close" title="Cancel">
+			close
+		</a>
 	</section>
-	<hr/>
-	<div class="px-2 py-2">
+	<HorizontalSeparator/>
+	<div class="p-2">
 		@ChildContent
 	</div>
 </div>

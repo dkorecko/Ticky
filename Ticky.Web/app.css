@@ -154,6 +154,10 @@ p, label {
     @apply ml-1 text-sm dark:font-light;
 }
 
+.form-label-category {
+    @apply font-semibold;
+}
+
 .form-link, .auth-link {
     @apply cursor-pointer dark:font-light text-subtext dark:text-subtextDark hover:text-secondary dark:hover:text-secondaryDark;
 }
@@ -233,7 +237,7 @@ p, label {
     @apply rounded-island px-island-x py-island-y bg-primary dark:bg-primaryDark text-text dark:text-textDark;
 }
 
-.island-title {
+.island-title, .island-mini {
     @apply rounded-button py-button-x px-island-x bg-primary dark:bg-primaryDark text-text dark:text-textDark;
 }
 
@@ -369,6 +373,14 @@ input[type="checkbox"].toggle {
 
 .card-data-point {
     @apply flex cursor-pointer flex-row items-center justify-center gap-1 whitespace-nowrap text-xs rounded-button py-1 px-2 bg-background dark:bg-bgDark;
+}
+
+.list-members-table {
+    @apply border-separate border-spacing-x-5 border-spacing-y-1;
+}
+
+.disabled-icon {
+    @apply !text-subtext dark:!text-subtextDark !cursor-not-allowed;
 }
 
 /*

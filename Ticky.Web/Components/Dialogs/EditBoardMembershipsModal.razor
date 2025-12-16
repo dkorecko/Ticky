@@ -1,4 +1,4 @@
-@inherits AbstractModal
+﻿@inherits AbstractModal
 @inject IDbContextFactory<DataContext> _dbContextFactory
 
 <Modal @ref="Modal" Title=@($"Edit memberships for board {_board?.Name}") DisableButtons="true" EnableTitle="true">
@@ -7,17 +7,22 @@
         <Spinner/>
     } else
     {
-        <div class="flex flex-col items-center gap-3">
-            <div class="flex w-full flex-row items-center gap-3">
-                <input class="w-full rounded-lg bg-search-bar px-2 py-1 text-sm" type="text"
-                       placeholder="Enter e-mail address" @oninput="OnInviteTextChanged" @ref="FocusElement" />
-                <button class="px-3 py-1.5" @onclick="AddAccess">Add</button>
+        <div class="form">
+            <div class="grid grid-cols-10 gap-2">
+                <div class="col-span-9">
+                    <input class="input-field" type="text"
+                           placeholder="Enter e-mail address" @oninput="OnInviteTextChanged" @ref="FocusElement" />
+                </div>
+                <button class="btn btn-purple" @onclick="AddAccess">Add</button>
             </div>
 
-            <label class="text-sm">Board members</label>
-            <table class="border-separate border-spacing-x-5 border-spacing-y-1">
+            <table class="list-members-table">
+                @{
+                    var i = 0;
+                }
                 @foreach(var membership in _board.Memberships.OrderByDescending(x => x.IsAdmin).ThenBy(x => x.AddedAt))
                 {
+                    string avatarId = $"avatar_{i}";
                     <tr class="text-sm">
                         <td>
                             <div class="avatar" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@membership.User.ProfilePictureFileName');"></div>
@@ -30,15 +35,18 @@
                                 { "Admin", () => ChangeAdmin(membership.Id, true)},
                                 { "Member", () => ChangeAdmin(membership.Id, false)}
                             }'>
-                        <div class='flex flex-row items-center justify-between pr-2 pl-5 transition-all ease-in-out @(!membership.UserId.Equals(_user.Id) ? "bg-full-dropdown hover:bg-full-dropdown-hover cursor-pointer" : "bg-gray-100 cursor-not-allowed")'>
+                                <div class='flex flex-row items-center justify-between pr-2 pl-5 transition-all ease-in-out @(!membership.UserId.Equals(_user.Id) ? "bg-full-dropdown hover:bg-full-dropdown-hover cursor-pointer" : "bg-gray-100 cursor-not-allowed")'>
                                     @(membership.IsAdmin ? "Admin" : "Member")
-                                    <i class='fa fa-chevron-down edit-icon @(membership.UserId.Equals(_user.Id) ? "!cursor-not-allowed" : string.Empty)' title="Change role"></i>
+
+                                    <span class="material-symbols-rounded self-center @(membership.UserId.Equals(_user.Id) ? "disabled-icon" : string.Empty)" title="Change role">
+                                        keyboard_arrow_down
+                                    </span>
                                 </div>
                             </Dropdown>
                         </td>
                         <td>
                             <i @onclick="() => RemoveUser(membership.UserId)" 
-                                class='fa fa-trash edit-icon @(membership.UserId.Equals(_user.Id) ? "!text-disabled-icon !hover:text-disabled-icon !cursor-not-allowed" : string.Empty)' title="Remove member">
+                       class='fa fa-trash edit-icon @(membership.UserId.Equals(_user.Id) ? "disabled-icon" : string.Empty)' title="Remove member">
                             </i>
                         </td>
                     </tr>
@@ -48,7 +56,7 @@
             <label class="text-sm">Project members</label>
             <table class="border-separate border-spacing-x-5 border-spacing-y-1">
                 @{
-                    var i = 0;
+                    i = 0;
                 }
                 @foreach (var membership in _project.Memberships.OrderByDescending(x => x.IsAdmin).ThenBy(x => x.AddedAt))
                 {
@@ -61,13 +69,13 @@
                             @membership.User.DisplayName @(membership.UserId.Equals(_user.Id) ? "(you)" : string.Empty)
                         </td>
                         <td>
-                            <div class="flex cursor-not-allowed flex-row items-center justify-between bg-search-bar pr-2 pl-5 transition-all ease-in-out">
+                            <div class="bg-search-bar flex cursor-not-allowed flex-row items-center justify-between pr-2 pl-5 transition-all ease-in-out">
                                 @(membership.IsAdmin ? "Admin" : "Member")
-                                <i class="fa fa-chevron-down edit-icon !text-disabled-icon !cursor-not-allowed !hover:text-disabled-icon"></i>
+                                <i class="fa fa-chevron-down edit-icon disabled-icon"></i>
                             </div>
                         </td>
                         <td>
-                            <i class="fa fa-trash edit-icon !text-disabled-icon !cursor-not-allowed !hover:text-disabled-icon"></i>
+                            <i class="fa fa-trash edit-icon disabled-icon"></i>
                         </td>
                     </tr>
 

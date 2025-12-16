@@ -47,7 +47,6 @@
     --font-weight-bold: 700;
     --font-weight-extrabold: 800;
     --tracking-wider: 0.05em;
-    --radius-xs: 0.125rem;
     --radius-sm: 0.25rem;
     --radius-md: 0.375rem;
     --radius-lg: 0.5rem;
@@ -294,6 +293,9 @@
   .mx-auto {
     margin-inline: auto;
   }
+  .my-6 {
+    margin-block: calc(var(--spacing) * 6);
+  }
   .mr-2 {
     margin-right: calc(var(--spacing) * 2);
   }
@@ -474,9 +476,6 @@
   .max-w-60 {
     max-width: calc(var(--spacing) * 60);
   }
-  .max-w-80 {
-    max-width: calc(var(--spacing) * 80);
-  }
   .max-w-sm {
     max-width: var(--container-sm);
   }
@@ -513,9 +512,6 @@
   }
   .\!cursor-help {
     cursor: help !important;
-  }
-  .\!cursor-not-allowed {
-    cursor: not-allowed !important;
   }
   .cursor-move {
     cursor: move;
@@ -732,9 +728,6 @@
   .rounded-sm {
     border-radius: var(--radius-sm);
   }
-  .rounded-xs {
-    border-radius: var(--radius-xs);
-  }
   .border {
     border-style: var(--tw-border-style);
     border-width: 1px;
@@ -884,14 +877,14 @@
   .py-1 {
     padding-block: calc(var(--spacing) * 1);
   }
-  .py-1\.5 {
-    padding-block: calc(var(--spacing) * 1.5);
-  }
   .py-2 {
     padding-block: calc(var(--spacing) * 2);
   }
   .py-3 {
     padding-block: calc(var(--spacing) * 3);
+  }
+  .py-4 {
+    padding-block: calc(var(--spacing) * 4);
   }
   .py-5 {
     padding-block: calc(var(--spacing) * 5);
@@ -1046,10 +1039,6 @@
   }
   .shadow {
     --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-  }
-  .shadow-2xl {
-    --tw-shadow: 0 25px 50px -12px var(--tw-shadow-color, rgb(0 0 0 / 0.25));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
   .shadow-lg {
@@ -1710,6 +1699,10 @@ p, label {
     font-weight: var(--font-weight-light);
   }
 }
+.form-label-category {
+  --tw-font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-semibold);
+}
 .form-link, .auth-link {
   cursor: pointer;
   color: var(--color-subtext);
@@ -1938,7 +1931,7 @@ p, label {
     color: var(--color-textDark);
   }
 }
-.island-title {
+.island-title, .island-mini {
   border-radius: var(--radius-button);
   background-color: var(--color-primary);
   padding-inline: var(--spacing-island-x);
@@ -2342,6 +2335,19 @@ input[type="checkbox"].toggle:checked:after {
   white-space: nowrap;
   &:where(.dark, .dark *) {
     background-color: var(--color-bgDark);
+  }
+}
+.list-members-table {
+  border-collapse: separate;
+  --tw-border-spacing-x: calc(var(--spacing) * 5);
+  --tw-border-spacing-y: calc(var(--spacing) * 1);
+  border-spacing: var(--tw-border-spacing-x) var(--tw-border-spacing-y);
+}
+.disabled-icon {
+  cursor: not-allowed !important;
+  color: var(--color-subtext) !important;
+  &:where(.dark, .dark *) {
+    color: var(--color-subtextDark) !important;
   }
 }
 @property --tw-border-spacing-x {
