@@ -188,7 +188,7 @@ public class RepeatHostedService(IServiceScopeFactory serviceScopeFactory) : Abs
         if (populatedPendingRepeatCards.Count != 0)
         {
             await db.SaveChangesAsync();
-            logger.LogInformation($"{populatedPendingRepeatCards.Count} cards have been repeated.");
+            logger.LogInformation("{Count} cards have been repeated.", populatedPendingRepeatCards.Count);
         }
     }
 }
