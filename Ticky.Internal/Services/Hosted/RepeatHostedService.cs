@@ -28,11 +28,10 @@ public class RepeatHostedService(IServiceScopeFactory serviceScopeFactory) : Abs
             .Include(x => x.Labels)
             .Include(x => x.Attachments)
             .Include(x => x.Reminders)
-            .Include(x => x.Activities)
             .Include(x => x.LinkedIssuesOne)
             .Include(x => x.LinkedIssuesTwo)
-            .ThenInclude(x => x.CardOne)
             .Where(x => pendingNextRepeatCardIds.Contains(x.Id))
+            .AsSplitQuery()
             .ToListAsync();
 
         foreach (var card in populatedPendingRepeatCards)
