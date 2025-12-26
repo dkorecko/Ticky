@@ -1,15 +1,11 @@
 namespace Ticky.Internal.Services.Hosted;
 
-public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
+public class RepeatHostedService(IServiceScopeFactory serviceScopeFactory) : AbstractHostedService<RepeatHostedService>(
+    serviceScopeFactory,
+    TimeSpan.FromSeconds(Constants.Limits.MINIMUM_SECOND_HOSTED_SERVICE_DELAY),
+    TimeSpan.FromMinutes(2))
 {
-    public RepeatHostedService(IServiceScopeFactory serviceScopeFactory)
-        : base(
-            serviceScopeFactory,
-            TimeSpan.FromSeconds(Constants.Limits.MINIMUM_SECOND_HOSTED_SERVICE_DELAY),
-            TimeSpan.FromMinutes(2)
-        ) { }
-
-    protected override async void OnRun()
+    protected override async Task OnRun()
     {
         using var scope = ServiceScopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<DataContext>()!;
@@ -17,7 +13,14 @@ public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
         var cardNumberingService =
             scope.ServiceProvider.GetRequiredService<CardNumberingService>()!;
 
-        var allRepeatCards = await db
+        var allRepeatCards = await db.Cards.Where(x => x.RepeatInfo != null).ToListAsync();
+
+        var pendingNextRepeatCardIds = allRepeatCards
+            .Where(x => x.CalculateNextRepeat(DateTime.Now) < DateTime.Now)
+            .Select(x => x.Id)
+            .ToList();
+
+        var populatedPendingRepeatCards = await db
             .Cards.Include(x => x.Column)
             .ThenInclude(x => x.Board)
             .Include(x => x.Subtasks)
@@ -29,14 +32,10 @@ public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
             .Include(x => x.LinkedIssuesOne)
             .Include(x => x.LinkedIssuesTwo)
             .ThenInclude(x => x.CardOne)
-            .Where(x => x.RepeatInfo != null)
+            .Where(x => pendingNextRepeatCardIds.Contains(x.Id))
             .ToListAsync();
 
-        var pendingNextRepeatCards = allRepeatCards
-            .Where(x => x.CalculateNextRepeat(DateTime.Now) < DateTime.Now)
-            .ToList();
-
-        foreach (var card in pendingNextRepeatCards)
+        foreach (var card in populatedPendingRepeatCards)
         {
             card.RepeatInfo!.LastRepeat = DateTime.Now;
 
@@ -119,14 +118,9 @@ public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
                 ? Constants.LINK_TYPE_PAIRS[Constants.REPEATED_KEY]
                 : Constants.LINK_TYPE_PAIRS.First(x => x.Value.Equals(Constants.REPEATED_KEY)).Key;
 
-            foreach (var linkedIssueOne in card.LinkedIssuesOne)
+            foreach (var linkedIssueOne in card.LinkedIssuesOne.Where(linkedIssueOne => !linkedIssueOne.Category.Equals(Constants.REPEATED_KEY)
+                         && !linkedIssueOne.Category.Equals(oppositeCategory)))
             {
-                if (
-                    linkedIssueOne.Category.Equals(Constants.REPEATED_KEY)
-                    || linkedIssueOne.Category.Equals(oppositeCategory)
-                )
-                    continue;
-
                 newCard.LinkedIssuesOne.Add(
                     new()
                     {
@@ -137,14 +131,9 @@ public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
                 );
             }
 
-            foreach (var linkedIssueTwo in card.LinkedIssuesTwo)
+            foreach (var linkedIssueTwo in card.LinkedIssuesTwo.Where(linkedIssueTwo => !linkedIssueTwo.Category.Equals(Constants.REPEATED_KEY)
+                         && !linkedIssueTwo.Category.Equals(oppositeCategory)))
             {
-                if (
-                    linkedIssueTwo.Category.Equals(Constants.REPEATED_KEY)
-                    || linkedIssueTwo.Category.Equals(oppositeCategory)
-                )
-                    continue;
-
                 newCard.LinkedIssuesTwo.Add(
                     new()
                     {
@@ -189,17 +178,17 @@ public class RepeatHostedService : AbstractHostedService<RepeatHostedService>
                 targetColumn.Cards.ForEach(x => x.Index++);
             else if (
                 card.RepeatInfo.CardPlacement.Equals(CardPlacement.Bottom)
-                && targetColumn.Cards.Any()
+                && targetColumn.Cards.Count != 0
             )
                 newCard.Index = targetColumn.Cards.Max(x => x.Index) + 1;
             else
                 throw new Exception("Unsupported card placement type");
         }
 
-        if (pendingNextRepeatCards.Any())
+        if (populatedPendingRepeatCards.Count != 0)
         {
             await db.SaveChangesAsync();
-            logger.LogInformation($"{pendingNextRepeatCards.Count()} cards have been repeated.");
+            logger.LogInformation($"{populatedPendingRepeatCards.Count} cards have been repeated.");
         }
     }
 }

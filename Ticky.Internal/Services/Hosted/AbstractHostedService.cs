@@ -11,7 +11,7 @@ public abstract class AbstractHostedService<T> : IHostedService
     private TimeSpan _untilStart;
     private TimeSpan _frequency;
 
-    public AbstractHostedService(
+    protected AbstractHostedService(
         IServiceScopeFactory serviceScopeFactory,
         TimeSpan untilStart,
         TimeSpan frequency
@@ -34,7 +34,7 @@ public abstract class AbstractHostedService<T> : IHostedService
     {
         using var scope = ServiceScopeFactory.CreateScope();
 
-        Logger.LogDebug($"{GetType().Name} starting.");
+        Logger.LogDebug("{Name} starting.", GetType().Name);
 
         OnStart();
 
@@ -45,7 +45,7 @@ public abstract class AbstractHostedService<T> : IHostedService
     {
         using var scope = ServiceScopeFactory.CreateScope();
 
-        Logger.LogDebug($"{GetType().Name} stopping.");
+        Logger.LogDebug("{Name} stopping.", GetType().Name);
 
         _timer!.Change(Timeout.Infinite, 0);
         Dispose();
@@ -53,18 +53,25 @@ public abstract class AbstractHostedService<T> : IHostedService
         return Task.CompletedTask;
     }
 
-    private void DoWork(object? state)
+    private async void DoWork(object? state)
     {
-        var startedAt = DateTime.Now;
-        using var scope = ServiceScopeFactory.CreateScope();
+        try
+        {
+            var startedAt = DateTime.Now;
+            using var scope = ServiceScopeFactory.CreateScope();
 
-        Logger.LogDebug($"{GetType().Name} job running.");
+            Logger.LogDebug("{Name} job running.", GetType().Name);
 
-        OnRun();
+            await OnRun();
 
-        Logger.LogDebug(
-            $"{GetType().Name} job finished, next run will happen at {GetNextRunDateTime(startedAt)}."
-        );
+            Logger.LogDebug(
+                "{Name} job finished, next run will happen at {GetNextRunDateTime}.", GetType().Name, GetNextRunDateTime(startedAt)
+            );
+        } 
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, ex.Message);
+        }
     }
 
     private string GetNextRunDateTime(DateTime startedAt)
@@ -90,7 +97,10 @@ public abstract class AbstractHostedService<T> : IHostedService
 
     protected virtual void OnStop() { }
 
-    protected virtual void OnRun() { }
+    protected virtual Task OnRun()
+    {
+        return Task.CompletedTask;
+    }
 
     public void Dispose()
     {

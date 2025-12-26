@@ -1,15 +1,11 @@
 namespace Ticky.Internal.Services.Hosted;
 
-public class SnoozeHostedService : AbstractHostedService<SnoozeHostedService>
+public class SnoozeHostedService(IServiceScopeFactory serviceScopeFactory) : AbstractHostedService<SnoozeHostedService>(
+    serviceScopeFactory,
+    TimeSpan.FromSeconds(Constants.Limits.MINIMUM_SECOND_HOSTED_SERVICE_DELAY),
+    TimeSpan.FromMinutes(2))
 {
-    public SnoozeHostedService(IServiceScopeFactory serviceScopeFactory)
-        : base(
-            serviceScopeFactory,
-            TimeSpan.FromSeconds(Constants.Limits.MINIMUM_SECOND_HOSTED_SERVICE_DELAY),
-            TimeSpan.FromMinutes(2)
-        ) { }
-
-    protected override async void OnRun()
+    protected override async Task OnRun()
     {
         using var scope = ServiceScopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<DataContext>()!;
@@ -24,10 +20,10 @@ public class SnoozeHostedService : AbstractHostedService<SnoozeHostedService>
             card.SnoozedUntil = null;
         }
 
-        if (expiredSnoozes.Any())
+        if (expiredSnoozes.Count != 0)
         {
             await db.SaveChangesAsync();
-            logger.LogInformation($"{expiredSnoozes.Count} cards unsnoozed.");
+            logger.LogInformation("{ExpiredSnoozesCount} cards unsnoozed.", expiredSnoozes.Count);
         }
     }
 }
