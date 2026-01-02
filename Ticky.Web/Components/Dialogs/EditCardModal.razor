@@ -599,12 +599,22 @@
         if(_card is null || targetRecord is null)
         {
             if (_timer is not null)
+            {
                 _timer.Stop();
+                _timer.Dispose();
+            }
+
             return;
         }
 
         _ongoingTimer = DateTime.Now - targetRecord.StartedAt;
         StateHasChanged();
+        
+        if (_timer is not null)
+        {
+            _timer.Stop();
+            _timer.Dispose();
+        }
 
         _timer = new System.Timers.Timer(1000);
         _timer.Elapsed += OnTimerTick;
