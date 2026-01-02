@@ -525,6 +525,8 @@
             _timer.Dispose();
             _timer = null;
         }
+
+        base.Dispose();
     }
 
     private async Task CopyDeepLink()
