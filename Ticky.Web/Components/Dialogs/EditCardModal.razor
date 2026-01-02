@@ -513,11 +513,18 @@
 
     public override void Dispose()
     {
-        if (_pasteObjRef is null)
-            return;
+        if (_pasteObjRef is not null)
+        {
+            _pasteObjRef.Dispose();
+            _pasteObjRef = null;
+        }
 
-        _pasteObjRef.Dispose();
-        _pasteObjRef = null;
+        if (_timer is not null)
+        {
+            _timer.Stop();
+            _timer.Dispose();
+            _timer = null;
+        }
     }
 
     private async Task CopyDeepLink()
