@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 
 **/uploaded/**/*
+
+# Idea
+.idea/

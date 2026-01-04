@@ -34,10 +34,10 @@
             }
             @if (Card.Subtasks.Any())
             {
-                <label class="card-data-point"><i class="fa fa-check" title="Subtasks"></i> @Card.Subtasks.Where(x => x.Completed).Count()/@Card.Subtasks.Count</label>
+                <label class="card-data-point"><i class="fa fa-check" title="Subtasks"></i> @Card.Subtasks.Count(x => x.Completed)/@Card.Subtasks.Count</label>
             }
             @{
-                var trackedTime = new TimeSpan(Card.TimeRecords.Select(x => ((x.EndedAt ?? DateTime.Now) - x.StartedAt).Ticks).Sum()).ToElapsedString(true);
+                var trackedTime = Card.GetTotalTime().ToElapsedString(true);
             }
             @if (!string.IsNullOrWhiteSpace(trackedTime))
             {

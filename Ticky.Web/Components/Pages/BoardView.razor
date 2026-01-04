@@ -97,7 +97,7 @@
                         <!-- Side section -->
                         @if (_board is not null)
                         {
-                            var completedCards = _cards.Where(x => x.Column.Finished).Count();
+                            var completedCards = _cards.Count(x => x.Column.Finished);
                             var totalCards = _cards.Count();
 
                             <div class="flex flex-col gap-4">
@@ -118,15 +118,15 @@
                                     @foreach(var col in _board.Columns.OrderBy(c => c.Index))
                                     {
                                         var colCards = _cards.Where(c => c.ColumnId == col.Id).ToList();
-                                        var colTotal = GetTotalForCards(colCards);
-                                        var perUser = GetTotalsByUser(colCards);
-                                        var expandId = $"coltime_{col.Id}";
+                                        var colTotal = colCards.Select(x => x.GetTotalTime()).Sum();
+                                        var perUser = colCards.SelectMany(x => x.TimeRecords).GroupBy(x => x.UserId).Select(x => new KeyValuePair<int,TimeSpan>(x.Key, x.Select(y => y.GetTotalTime()).Sum())).ToDictionary(x => x.Key, x => x.Value);
+                                        var expandId = $"columnTime_{col.Id}";
 
                                         <div class="rounded-lg border border-tab-outline p-2">
                                             <div class="flex flex-row items-center justify-between">
                                                 <div class="flex items-center gap-2">
                                                     <label class="text-sm font-semibold">@col.Name</label>
-                                                    <label class="text-2xs text-gray-500">@colTotal.ToElapsedString(true)</label>
+                                                    <label class="text-2xs text-gray-500">@colTotal.ToElapsedString()</label>
                                                 </div>
                                                 <div>
                                                     <button class="text-xs text-primary px-3 py-1 rounded" @onclick="() => ToggleExpand(expandId)">@(IsExpanded(expandId) ? "Hide" : "Show")</button>
@@ -142,8 +142,8 @@
                                                         {
                                                             var user = _members.FirstOrDefault(m => m.Id == kv.Key);
                                                             <div class="flex flex-row justify-between">
-                                                                <div class="text-ellipsis">@((user != null) ? user.Name : "Unknown")</div>
-                                                                <div class="text-gray-500">@kv.Value.ToElapsedString(true)</div>
+                                                                <div class="text-ellipsis">@(user != null ? user.Name : "Unknown")</div>
+                                                                <div class="text-gray-500">@kv.Value.ToElapsedString()</div>
                                                             </div>
                                                         }
                                                     }
@@ -589,54 +589,5 @@
     }
 
     private bool IsExpanded(string id) => _expandedSections.Contains(id);
-
-    private static TimeSpan GetTotalForCards(List<Card> cards)
-    {
-        TimeSpan total = TimeSpan.Zero;
-        var now = DateTime.Now;
-
-        foreach (var card in cards)
-        {
-            if (card.TimeRecords is null)
-                continue;
-
-            foreach (var tr in card.TimeRecords)
-            {
-                var end = tr.EndedAt ?? now;
-                if (end > tr.StartedAt)
-                    total += end - tr.StartedAt;
-            }
-        }
-
-        return total;
-    }
-
-    private static Dictionary<int, TimeSpan> GetTotalsByUser(List<Card> cards)
-    {
-        var totals = new Dictionary<int, TimeSpan>();
-        var now = DateTime.Now;
-
-        foreach (var card in cards)
-        {
-            if (card.TimeRecords is null)
-                continue;
-
-            foreach (var tr in card.TimeRecords)
-            {
-                var end = tr.EndedAt ?? now;
-                if (end <= tr.StartedAt)
-                    continue;
-
-                var d = end - tr.StartedAt;
-                if (!totals.ContainsKey(tr.UserId))
-                    totals[tr.UserId] = TimeSpan.Zero;
-
-                totals[tr.UserId] += d;
-            }
-        }
-
-        return totals;
-    }
-
 }
 
