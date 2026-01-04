@@ -111,6 +111,51 @@
                                         <div class="rounded-lg bg-pink-300" style="grid-row: 1; grid-column: 1;"></div>
                                     </div>
                                 </div>
+
+                                <!-- Column time totals -->
+                                <div class="flex flex-col gap-2">
+                                    <h2 class="text-sm">Column time totals</h2>
+                                    @foreach(var col in _board.Columns.OrderBy(c => c.Index))
+                                    {
+                                        var colCards = _cards.Where(c => c.ColumnId == col.Id).ToList();
+                                        var colTotal = GetTotalForCards(colCards);
+                                        var perUser = GetTotalsByUser(colCards);
+                                        var expandId = $"coltime_{col.Id}";
+
+                                        <div class="rounded-lg border border-tab-outline p-2">
+                                            <div class="flex flex-row items-center justify-between">
+                                                <div class="flex items-center gap-2">
+                                                    <label class="text-sm font-semibold">@col.Name</label>
+                                                    <label class="text-2xs text-gray-500">@colTotal.ToElapsedString(true)</label>
+                                                </div>
+                                                <div>
+                                                    <button class="text-xs text-primary px-3 py-1 rounded" @onclick="() => ToggleExpand(expandId)">@(IsExpanded(expandId) ? "Hide" : "Show")</button>
+                                                </div>
+                                            </div>
+
+                                            @if (IsExpanded(expandId))
+                                            {
+                                                <div class="mt-2 ml-2 text-xs">
+                                                    @if (perUser.Any())
+                                                    {
+                                                        @foreach(var kv in perUser.OrderByDescending(k => k.Value))
+                                                        {
+                                                            var user = _members.FirstOrDefault(m => m.Id == kv.Key);
+                                                            <div class="flex flex-row justify-between">
+                                                                <div class="text-ellipsis">@((user != null) ? user.Name : "Unknown")</div>
+                                                                <div class="text-gray-500">@kv.Value.ToElapsedString(true)</div>
+                                                            </div>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="text-gray-500">No time tracked</div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         }
                         else
@@ -162,6 +207,7 @@
     private int? _initialCardId;
 
     private HubConnection? _hubConnection;
+    private HashSet<string> _expandedSections = new();
 
     protected override void OnParametersSet()
     {
@@ -531,5 +577,66 @@
     {
         _adding = columnId;
     }
+
+    private void ToggleExpand(string id)
+    {
+        if (_expandedSections.Contains(id))
+            _expandedSections.Remove(id);
+        else
+            _expandedSections.Add(id);
+
+        StateHasChanged();
+    }
+
+    private bool IsExpanded(string id) => _expandedSections.Contains(id);
+
+    private static TimeSpan GetTotalForCards(List<Card> cards)
+    {
+        TimeSpan total = TimeSpan.Zero;
+        var now = DateTime.Now;
+
+        foreach (var card in cards)
+        {
+            if (card.TimeRecords is null)
+                continue;
+
+            foreach (var tr in card.TimeRecords)
+            {
+                var end = tr.EndedAt ?? now;
+                if (end > tr.StartedAt)
+                    total += end - tr.StartedAt;
+            }
+        }
+
+        return total;
+    }
+
+    private static Dictionary<int, TimeSpan> GetTotalsByUser(List<Card> cards)
+    {
+        var totals = new Dictionary<int, TimeSpan>();
+        var now = DateTime.Now;
+
+        foreach (var card in cards)
+        {
+            if (card.TimeRecords is null)
+                continue;
+
+            foreach (var tr in card.TimeRecords)
+            {
+                var end = tr.EndedAt ?? now;
+                if (end <= tr.StartedAt)
+                    continue;
+
+                var d = end - tr.StartedAt;
+                if (!totals.ContainsKey(tr.UserId))
+                    totals[tr.UserId] = TimeSpan.Zero;
+
+                totals[tr.UserId] += d;
+            }
+        }
+
+        return totals;
+    }
+
 }
 
