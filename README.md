@@ -21,7 +21,7 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Cards**: Create, edit, and move task cards between columns with drag-and-drop functionality. At a glance see all important information about a card. Decide where new cards are placed.
 - **Subtasks**: Break down tasks into smaller, manageable subtasks with completion tracking.
 - **Deadline Management**: Set and track deadlines with color-coded indicators.
-- **Time Tracking**: Track time spent on tasks with built-in timer functionality.
+- **Time Tracking**: Track time spent on tasks with built-in timer functionality. Additionally view how much time has been spent on a specific column in the stats section.
 - **Labels and Priorities**: Organize tasks with custom labels and priority levels. Label colors are fully customizable.
 - **Attachments**: Upload and manage files associated with tasks.
 - **Reminders**: Set email reminders for tasks.
