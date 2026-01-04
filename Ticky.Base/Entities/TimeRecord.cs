@@ -13,9 +13,7 @@ public class TimeRecord : AbstractDbEntity
     public required DateTime StartedAt { get; set; }
 
     public DateTime? EndedAt { get; set; }
-    
+
     public TimeSpan GetTotalTime() =>
-        new TimeSpan(
-            ((EndedAt ?? DateTime.Now) - StartedAt).Ticks
-        );
+        (EndedAt ?? DateTime.Now) - StartedAt;
 }
