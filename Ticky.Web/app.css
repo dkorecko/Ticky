@@ -383,6 +383,14 @@ input[type="checkbox"].toggle {
     @apply !text-subtext dark:!text-subtextDark !cursor-not-allowed;
 }
 
+.renterStuffDontRemove {
+    @apply right-0 left-0 my-16;
+}
+
+.top-18 {
+    top: 68px !important;
+}
+
 /*
 
 .to-task-card {

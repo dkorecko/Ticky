@@ -1,6 +1,6 @@
 ﻿@inject IJSRuntime _js
 
-<div @ref="_element" class="dropdown dropdown-animate island-mini absolute top-0 left-0 z-20 my-6 hidden overflow-y-auto">
+<div @ref="_element" class="dropdown dropdown-animate island-mini absolute z-20 hidden max-w-sm @PositionClass overflow-y-auto">
 	<section class="flex w-full flex-row items-center justify-between px-2 py-4">
 		<h5 class="font-bold">@Title</h5>
 		<a class="material-symbols-rounded g-icon self-center" @onclick="Close" title="Cancel">
@@ -19,6 +19,9 @@
 
 	[Parameter]
 	public required string Title { get; set; }
+
+	[Parameter]
+	public string PositionClass { get; set; } = string.Empty;
 
 	private ElementReference? _element;
 	private string? _elementId;

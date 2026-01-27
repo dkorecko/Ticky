@@ -1,6 +1,6 @@
 ﻿@implements IDisposable
 
-<ActionModal @ref=_modalRef Title="Filter cards">
+<ActionModal @ref=_modalRef Title="Filter cards" PositionClass="top-18 !right-0 w-full">
     <div class="form">
         <div class="form-group">
             <label for="text" class="form-label-category">Text, description or card code</label>
@@ -10,14 +10,14 @@
         <div class="form-group">
             <label class="form-label-category">Completion</label>
             <div class="flex flex-row items-center space-x-2">
-                <input type="checkbox" class="toggle" checked=@(Model.ExcludeCompleted) @onchange="ToggleExcludeCompleted">
                 <span class="text-xs">Exclude completed cards</span>
+                <input type="checkbox" class="toggle" checked=@(Model.ExcludeCompleted) @onchange="ToggleExcludeCompleted">
             </div>
         </div>
 
         <div class="form-group">
             <div class="flex flex-row items-center gap-1 text-xs">
-                <label>Assigned users</label>
+                <label class="form-label-category">Assigned users</label>
 
                 @if (BoardMembers.Count > 2)
                 {
@@ -32,18 +32,28 @@
                     }
                 }
             </div>
-            <div class="flex flex-col gap-1">
-                <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="ToggleUnassignedFilter">
-                    <div class="avatar mr-auto"></div>
-                    <label class="cursor-pointer">No assignee</label>
-                    <i class='fa fa-check icon ml-auto @(Model.IncludeUnassigned ? string.Empty : "opacity-0")'></i>
+            <div class="flex flex-wrap gap-1">
+                <div class="rounded-button flex w-max cursor-pointer flex-row items-center gap-2 px-2 py-1 text-sm transition-all ease-in-out select-none @(Model.IncludeUnassigned ? "bg-secondary dark:bg-secondaryDark text-primary dark:text-primaryDark" : "bg-background dark:bg-bgDark dark:text-textDark") hover:bg-secondary" @onclick="ToggleUnassignedFilter">
+                    <span class="material-symbols-rounded g-icon self-center">
+                        account_circle_off
+                    </span>
+                    <label>No assignee</label>
                 </div>
                 @foreach (var member in Model.ExpandAssignedUsersSection ? BoardMembers : BoardMembers.Take(2))
                 {
-                    <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="() => ToggleUserFilter(member.Id)">
-                        <div class="avatar mr-auto" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"></div>
-                        <label class="cursor-pointer">@member.DisplayName</label>
-                        <i class='fa fa-check icon ml-auto @(Model.AssignedUserIds.Contains(member.Id) ? string.Empty : "opacity-0")'></i>
+                    <div class="rounded-button flex w-max cursor-pointer flex-row items-center gap-2 px-2 py-1 transition-all ease-in-out select-none @(Model.AssignedUserIds.Contains(member.Id) ? "bg-secondary dark:bg-secondaryDark text-primary dark:text-primaryDark" : "bg-background dark:bg-bgDark dark:text-textDark") hover:bg-secondary" @onclick="() => ToggleUserFilter(member.Id)">
+                        <div class="h-8 w-8 rounded-lg bg-cover bg-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"></div>
+                        @{
+                            var name = member.DisplayName ?? "";
+                            var lastSpace = name.LastIndexOf(' ');
+
+                            var firstPart = lastSpace > 0 ? name[..lastSpace] : name;
+                            var secondPart = lastSpace > 0 ? name[(lastSpace + 1)..] : "";
+                        }
+                        <div class="flex flex-col">
+                            <span class="text-xs">@firstPart</span>
+                            <span class="text-sm font-semibold uppercase">@secondPart</span>
+                        </div>
                     </div>
                 }
             </div>
@@ -51,7 +61,7 @@
 
         <div class="form-group">
             <div class="flex flex-row items-center gap-1 text-xs">
-                <label>Labels</label>
+                <label class="form-label-category">Labels</label>
 
                 @if (BoardLabels.Count > 3)
                 {
@@ -66,17 +76,14 @@
                     }
                 }
             </div>
-            <div class="flex flex-col gap-1">
+            <div class="grid gap-2 xs:grid-cols-2">
                 @if (BoardLabels != null && BoardLabels.Any())
                 {
                     @foreach (var label in Model.ExpandLabelsSection ? BoardLabels : BoardLabels.Take(3))
                     {
-                        <div class="priority-selector-item cursor-pointer" @onclick="() => ToggleLabelFilter(label.Id)">
+                        <div class="flex flex-row gap-4 xs:justify-between xs:gap-1">
                             <LabelView Label="label" />
-                            @if (Model.LabelIds.Contains(label.Id))
-                            {
-                                <i class="fa fa-check text-add-outline" title="Selected"></i>
-                            }
+                            <input type="checkbox" class="toggle" checked=@(Model.LabelIds.Contains(label.Id)) @onchange="() => ToggleLabelFilter(label.Id)">
                         </div>
                     }
                 }
@@ -87,7 +94,7 @@
             </div>
         </div>
 
-        <button type="button" @onclick="ResetFilters">Reset filters</button>
+        <button type="button" class="btn btn-yellow font-bold" @onclick="ResetFilters">Reset filters</button>
     </div>
 </ActionModal>
 

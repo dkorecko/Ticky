@@ -8,11 +8,12 @@ function positionDropdown(dropdownElement, left, top, width = null) {
         //console.log('width')
         dropdownElement.style.width = width + 'px';
     }
-    dropdownElement.style.left = left + 'px';
-    dropdownElement.style.top = top + 'px';
+    //dropdownElement.style.left = left + 'px';
+    //dropdownElement.style.top = top + 'px';
 
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
+            /*
             const rect = dropdownElement.getBoundingClientRect();
             const mostRightPoint = left + rect.width;
             const mostBottomPoint = top + rect.height;
@@ -36,7 +37,7 @@ function positionDropdown(dropdownElement, left, top, width = null) {
                     dropdownElement.style.maxHeight = availableHeight + 'px';
                 }
             }
-
+            */
             dropdownElement.style.visibility = 'visible';
             void dropdownElement.offsetWidth;
             dropdownElement.classList.add('dropdown-animate-in');
