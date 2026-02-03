@@ -179,7 +179,7 @@
 
                 @if (IsAdmin())
                 {
-                    <button class="btn btn-purple h-min w-80 min-w-80 font-bold" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id) + 1 : 0);" title="Add new column">
+                    <button class="btn btn-purple h-min !w-80 font-bold" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id) + 1 : 0);" title="Add new column">
                         New column
                     </button>
                 }
