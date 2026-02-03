@@ -384,7 +384,7 @@ input[type="checkbox"].toggle {
 }
 
 .renterStuffDontRemove {
-    @apply right-0 left-0 my-16;
+    @apply right-0 left-0 my-16 border-darkBg;
 }
 
 .top-18 {

@@ -8,6 +8,7 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
     --color-red-500: oklch(63.7% 0.237 25.331);
+    --color-red-600: oklch(57.7% 0.245 27.325);
     --color-orange-500: oklch(70.5% 0.213 47.604);
     --color-yellow-500: oklch(79.5% 0.184 86.047);
     --color-lime-500: oklch(76.8% 0.233 130.85);
@@ -1345,6 +1346,16 @@
       :where(& > :not(:last-child)) {
         border-color: var(--color-subtextDark);
       }
+    }
+  }
+  .dark\:border-bgDark {
+    &:where(.dark, .dark *) {
+      border-color: var(--color-bgDark);
+    }
+  }
+  .dark\:border-red-600 {
+    &:where(.dark, .dark *) {
+      border-color: var(--color-red-600);
     }
   }
   .dark\:border-redDark {
