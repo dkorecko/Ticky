@@ -179,7 +179,7 @@
 
                 @if (IsAdmin())
                 {
-                    <button class="btn btn-purple h-min !w-80 font-bold" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id) + 1 : 0);" title="Add new column">
+                    <button class="btn btn-purple h-min !w-80 min-w-80 font-bold" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id) + 1 : 0);" title="Add new column">
                         New column
                     </button>
                 }
@@ -187,37 +187,42 @@
 
             if (_preferences.ShowStats)
             {
-                <section class="flex w-screen flex-col items-center gap-6 px-2 py-6 md:w-80">
-                    <div class="flex w-full flex-row items-center justify-between">
-                        <h1>Progress</h1>
-                        <i class="fa fa-xmark -button" @onclick=SwitchStatsDisplay title="Close statistics"></i>
-                    </div>
-                    <div class="flex w-full flex-col gap-8">
-                        <!-- Side section -->
-                        @if (_board is not null)
-                        {
-                            var completedCards = _cards.Where(x => x.Column.Finished).Count();
-                            var totalCards = _cards.Count();
+                <div class="mt-2 flex w-screen border-background md:w-80 md:border-l-8 dark:bg-bgDark">
+                    <section class="island-mini flex w-full flex-col items-center">
+                        <section class="flex w-full flex-row items-center justify-between px-2 py-4">
+                            <h5 class="font-bold">Progress</h5>
+                            <a class="material-symbols-rounded g-icon self-center" @onclick=SwitchStatsDisplay title="Close statistics">
+                                close
+                            </a>
+                        </section>
+                        <HorizontalSeparator />
+                        <div class="flex w-full flex-col gap-4 p-2">
+                            <!-- Side section -->
+                            @if (_board is not null)
+                            {
+                                var completedCards = _cards.Where(x => x.Column.Finished).Count();
+                                var totalCards = _cards.Count();
 
-                            <div class="flex flex-col gap-4">
-                                <div class="flex flex-col gap-1">
-                                    <div class="flex flex-row justify-between text-xs">
-                                        <label>Tasks completed</label>
-                                        <label class="text-gray-500">@completedCards/@totalCards</label>
-                                    </div>
-                                    <div class="grid h-1 w-full rounded-lg">
-                                        <div class="z-10 w-24 rounded-lg bg-pink-500 transition-all" style="grid-row: 1; grid-column: 1; width: @(totalCards == 0 ? 0 : Math.Round((double)completedCards / totalCards * 100))%;"></div>
-                                        <div class="rounded-lg bg-pink-300" style="grid-row: 1; grid-column: 1;"></div>
+                                <div class="flex flex-col gap-4">
+                                    <div class="flex flex-col gap-1">
+                                        <div class="flex flex-row justify-between text-xs">
+                                            <label>Tasks completed</label>
+                                            <label class="subtext">@completedCards/@totalCards</label>
+                                        </div>
+                                        <div class="grid h-1 w-full rounded-full">
+                                            <div class="z-10 w-24 rounded-full bg-pink-500 transition-all dark:bg-pink-500" style="grid-row: 1; grid-column: 1; width: @(totalCards == 0 ? 0 : Math.Round((double)completedCards / totalCards * 100))%;"></div>
+                                            <div class="rounded-full bg-pink-100 dark:bg-pink-300" style="grid-row: 1; grid-column: 1;"></div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <Spinner />
-                        }
-                    </div>
-                </section>
+                            }
+                            else
+                            {
+                                <Spinner />
+                            }
+                        </div>
+                    </section>
+                </div>
             }
         }
         else
