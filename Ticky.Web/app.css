@@ -383,6 +383,29 @@ input[type="checkbox"].toggle {
     @apply !text-subtext dark:!text-subtextDark !cursor-not-allowed;
 }
 
+@layer utilities {
+    /* Firefox */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: #0a0a0a transparent;
+    }
+        /* Chrome, Edge, and Safari */
+        *::-webkit-scrollbar {
+            width: 7px;
+        }
+
+        *::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 5px;
+        }
+
+        *::-webkit-scrollbar-thumb {
+            background-color: #0a0a0a;
+            border-radius: 14px;
+            border: 3px solid transparent;
+        }
+}
+
 .renterStuffDontRemove {
     @apply right-0 left-0 my-16 border-darkBg;
 }
