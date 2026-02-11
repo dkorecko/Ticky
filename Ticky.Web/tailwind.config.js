@@ -5,5 +5,5 @@ module.exports = {
     "./wwwroot/information.json",
     // Explicitly exclude email templates
     "!./wwwroot/emails/**/*"
-  ]
+    ]
 }

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @config "./tailwind.config.js";
+/* Load plugin here */
+@plugin "tailwind-scrollbar";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -383,29 +385,6 @@ input[type="checkbox"].toggle {
     @apply !text-subtext dark:!text-subtextDark !cursor-not-allowed;
 }
 
-@layer utilities {
-    /* Firefox */
-    * {
-        scrollbar-width: thin;
-        scrollbar-color: #0a0a0a transparent;
-    }
-        /* Chrome, Edge, and Safari */
-        *::-webkit-scrollbar {
-            width: 7px;
-        }
-
-        *::-webkit-scrollbar-track {
-            background: transparent;
-            border-radius: 5px;
-        }
-
-        *::-webkit-scrollbar-thumb {
-            background-color: #0a0a0a;
-            border-radius: 14px;
-            border: 3px solid transparent;
-        }
-}
-
 .renterStuffDontRemove {
     @apply right-0 left-0 my-16 border-darkBg;
 }
@@ -445,12 +424,29 @@ option {
  */
 /* For Firefox 
  Note: Firefox's scrollbar-color doesn't support a separate hover state for the thumb
-[data-theme='dark'] html {
+html {
     scrollbar-width: thin;
     scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
 }
+::-webkit-scrollbar {
+    @apply h-2 w-2;
+  }
+    */
+/*Track 
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}*/
+/* Handle
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 8px;
+} */
+/* Handle on hover
+    ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }*/
 
-
+    /*
 .card-data-point {
     @apply flex cursor-pointer flex-row items-center justify-center gap-1 whitespace-nowrap;
 }
@@ -467,27 +463,7 @@ button, .label-as-button > i {
     @apply cursor-pointer;
 }
  */
-/* 
-::-webkit-scrollbar {
-    @apply h-2 w-2;
-  }
-
-Track 
-  ::-webkit-scrollbar-track {
-    background: #f1f1f1;
-  }
-  */
-/* Handle 
-  ::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 8px;
-  }
-  */
-/* Handle on hover
-  ::-webkit-scrollbar-thumb:hover {
-    background: #555;
-  }
-
+  /*
 
 input[type="checkbox"].switch{
 	font-size: 30px;
