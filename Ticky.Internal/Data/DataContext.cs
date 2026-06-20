@@ -25,6 +25,7 @@ namespace Ticky.Internal.Data
         public DbSet<LastVisit> LastVisits { get; set; } = default!;
         public DbSet<CardLink> CardLinks { get; set; } = default!;
         public DbSet<Favorite> Favorites { get; set; } = default!;
+        public DbSet<CardColumnHistory> CardColumnHistories { get; set; } = default!;
         public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = default!;
 
         public DataContext(DbContextOptions<DataContext> options)
@@ -224,6 +225,34 @@ namespace Ticky.Internal.Data
                 .WithOne(x => x.User)
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder
+                .Entity<CardColumnHistory>()
+                .HasOne(x => x.Card)
+                .WithMany()
+                .HasForeignKey(x => x.CardId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder
+                .Entity<CardColumnHistory>()
+                .HasOne(x => x.FromColumn)
+                .WithMany()
+                .HasForeignKey(x => x.FromColumnId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder
+                .Entity<CardColumnHistory>()
+                .HasOne(x => x.ToColumn)
+                .WithMany()
+                .HasForeignKey(x => x.ToColumnId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder
+                .Entity<CardColumnHistory>()
+                .HasOne(x => x.MovedBy)
+                .WithMany()
+                .HasForeignKey(x => x.MovedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

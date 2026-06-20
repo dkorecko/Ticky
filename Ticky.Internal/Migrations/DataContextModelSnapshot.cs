@@ -533,6 +533,50 @@ namespace Ticky.Internal.Migrations
                     b.ToTable("Comments");
                 });
 
+            modelBuilder.Entity("Ticky.Base.Entities.CardColumnHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CardId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("FromColumnId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FromColumnName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("MovedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ToColumnId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ToColumnName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CardId");
+
+                    b.HasIndex("FromColumnId");
+
+                    b.HasIndex("MovedByUserId");
+
+                    b.HasIndex("ToColumnId");
+
+                    b.ToTable("CardColumnHistories");
+                });
+
             modelBuilder.Entity("Ticky.Base.Entities.Favorite", b =>
                 {
                     b.Property<int>("Id")
@@ -953,6 +997,38 @@ namespace Ticky.Internal.Migrations
                         .HasForeignKey("SubtasksId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.CardColumnHistory", b =>
+                {
+                    b.HasOne("Ticky.Base.Entities.Card", "Card")
+                        .WithMany()
+                        .HasForeignKey("CardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ticky.Base.Entities.Column", "FromColumn")
+                        .WithMany()
+                        .HasForeignKey("FromColumnId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Ticky.Base.Entities.User", "MovedBy")
+                        .WithMany()
+                        .HasForeignKey("MovedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Ticky.Base.Entities.Column", "ToColumn")
+                        .WithMany()
+                        .HasForeignKey("ToColumnId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Card");
+
+                    b.Navigation("FromColumn");
+
+                    b.Navigation("MovedBy");
+
+                    b.Navigation("ToColumn");
                 });
 
             modelBuilder.Entity("Ticky.Base.Entities.Activity", b =>
