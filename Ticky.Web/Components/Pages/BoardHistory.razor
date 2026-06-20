@@ -105,11 +105,11 @@ else
         public DateTime MovedAt { get; init; }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnParametersSetAsync()
     {
-        if (!firstRender)
-            return;
-
+        _board = null;
+        _burndownPoints = [];
+        _recentMoves = [];
         await LoadAsync();
     }
 
@@ -150,15 +150,13 @@ else
 
         var cardIds = cards.Select(c => c.Id).ToList();
 
-        var history = await db.CardColumnHistories
-            .Where(h => cardIds.Contains(h.CardId))
-            .AsNoTracking()
-            .ToListAsync();
-
-        var completionDates = history
-            .Where(h => h.ToColumnId.HasValue && finishedColumnIds.Contains(h.ToColumnId.Value))
+        // Burndown: use ToColumnFinished snapshot — accurate even if column settings change later
+        var completionDates = await db.CardColumnHistories
+            .Where(h => cardIds.Contains(h.CardId) && h.ToColumnFinished)
             .GroupBy(h => h.CardId)
-            .ToDictionary(g => g.Key, g => g.Min(h => h.CreatedAt.Date));
+            .Select(g => new { CardId = g.Key, FirstDone = g.Min(h => h.CreatedAt) })
+            .AsNoTracking()
+            .ToDictionaryAsync(x => x.CardId, x => x.FirstDone.Date);
 
         var startDate = cards.Min(c => c.CreatedAt).Date;
         var endDate = DateTime.Today;
@@ -177,40 +175,23 @@ else
         _totalCards = cards.Count;
         _doneCards = completionDates.Count;
 
-        var recentHistory = history
+        // Recent moves: DB-side sort + take so memory usage stays bounded
+        _recentMoves = await db.CardColumnHistories
+            .Where(h => cardIds.Contains(h.CardId))
             .OrderByDescending(h => h.CreatedAt)
             .Take(50)
-            .ToList();
-
-        var recentCardIds = recentHistory.Select(h => h.CardId).Distinct().ToList();
-        var recentUserIds = recentHistory
-            .Where(h => h.MovedByUserId.HasValue)
-            .Select(h => h.MovedByUserId!.Value)
-            .Distinct()
-            .ToList();
-
-        var cardNames = await db.Cards
-            .Where(c => recentCardIds.Contains(c.Id))
-            .Select(c => new { c.Id, c.Name })
+            .Join(db.Cards, h => h.CardId, c => c.Id, (h, c) => new { h, CardName = c.Name })
+            .GroupJoin(db.Users, x => x.h.MovedByUserId, u => u.Id, (x, users) => new { x.h, x.CardName, User = users.FirstOrDefault() })
             .AsNoTracking()
-            .ToDictionaryAsync(c => c.Id, c => c.Name);
-
-        var userNames = await db.Users
-            .Where(u => recentUserIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.DisplayName })
-            .AsNoTracking()
-            .ToDictionaryAsync(u => u.Id, u => u.DisplayName);
-
-        _recentMoves = recentHistory
-            .Select(h => new RecentMove
+            .Select(x => new RecentMove
             {
-                CardName       = cardNames.GetValueOrDefault(h.CardId, "Deleted card"),
-                FromColumnName = h.FromColumnName,
-                ToColumnName   = h.ToColumnName,
-                MovedByName    = h.MovedByUserId.HasValue ? userNames.GetValueOrDefault(h.MovedByUserId.Value) : null,
-                MovedAt        = h.CreatedAt,
+                CardName       = x.CardName,
+                FromColumnName = x.h.FromColumnName,
+                ToColumnName   = x.h.ToColumnName,
+                MovedByName    = x.User != null ? x.User.DisplayName : null,
+                MovedAt        = x.h.CreatedAt,
             })
-            .ToList();
+            .ToListAsync();
 
         StateHasChanged();
     }

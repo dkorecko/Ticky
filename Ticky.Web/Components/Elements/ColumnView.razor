@@ -339,12 +339,13 @@
 
             db.CardColumnHistories.Add(new CardColumnHistory
             {
-                CardId         = movedCardId,
-                FromColumnId   = oldColumnId,
-                FromColumnName = dbOldColumn.Name,
-                ToColumnId     = newColumnId,
-                ToColumnName   = dbNewColumn.Name,
-                MovedByUserId  = User.Id,
+                CardId            = movedCardId,
+                FromColumnId      = oldColumnId,
+                FromColumnName    = dbOldColumn.Name,
+                ToColumnId        = newColumnId,
+                ToColumnName      = dbNewColumn.Name,
+                ToColumnFinished  = dbNewColumn.Finished,
+                MovedByUserId     = User.Id,
             });
 
             await db.SaveChangesAsync();

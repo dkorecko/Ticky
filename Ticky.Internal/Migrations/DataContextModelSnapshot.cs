@@ -560,6 +560,9 @@ namespace Ticky.Internal.Migrations
                     b.Property<int?>("ToColumnId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("ToColumnFinished")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("ToColumnName")
                         .IsRequired()
                         .HasColumnType("longtext");

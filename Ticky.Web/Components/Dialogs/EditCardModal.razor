@@ -763,12 +763,13 @@
             });
         db.CardColumnHistories.Add(new CardColumnHistory
         {
-            CardId         = card.Id,
-            FromColumnId   = fromColumn.Id,
-            FromColumnName = fromColumn.Name,
-            ToColumnId     = targetColumn.Id,
-            ToColumnName   = targetColumn.Name,
-            MovedByUserId  = _user.Id,
+            CardId           = card.Id,
+            FromColumnId     = fromColumn.Id,
+            FromColumnName   = fromColumn.Name,
+            ToColumnId       = targetColumn.Id,
+            ToColumnName     = targetColumn.Name,
+            ToColumnFinished = targetColumn.Finished,
+            MovedByUserId    = _user.Id,
         });
 
         await db.SaveChangesAsync();
@@ -863,12 +864,13 @@
             });
         db.CardColumnHistories.Add(new CardColumnHistory
         {
-            CardId         = card.Id,
-            FromColumnId   = fromColumnNext.Id,
-            FromColumnName = fromColumnNext.Name,
-            ToColumnId     = targetColumn.Id,
-            ToColumnName   = targetColumn.Name,
-            MovedByUserId  = _user.Id,
+            CardId           = card.Id,
+            FromColumnId     = fromColumnNext.Id,
+            FromColumnName   = fromColumnNext.Name,
+            ToColumnId       = targetColumn.Id,
+            ToColumnName     = targetColumn.Name,
+            ToColumnFinished = targetColumn.Finished,
+            MovedByUserId    = _user.Id,
         });
 
         await db.SaveChangesAsync();

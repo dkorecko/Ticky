@@ -9,6 +9,7 @@ public class CardColumnHistory : AbstractDbEntity
 
     public int? ToColumnId { get; set; }
     public required string ToColumnName { get; set; }
+    public required bool ToColumnFinished { get; set; }
 
     public int? MovedByUserId { get; set; }
 
