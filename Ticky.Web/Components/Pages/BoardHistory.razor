@@ -35,12 +35,17 @@ else
     {
         <section class="flex flex-col gap-3">
             <h2 class="text-lg font-semibold">Burndown</h2>
+            <div class="flex flex-row gap-6 text-sm px-1 mb-1">
+                <span class="opacity-60">Total <span class="font-semibold text-foreground">@_totalCards</span></span>
+                <span class="text-pink-500">Open <span class="font-semibold">@(_totalCards - _doneCards)</span></span>
+                <span class="opacity-60">Done <span class="font-semibold text-foreground">@_doneCards</span></span>
+            </div>
             <div class="rounded-lg border border-tab-outline p-4 overflow-x-auto">
                 @((MarkupString)RenderBurndownSvg())
             </div>
             <div class="flex flex-row gap-6 text-xs opacity-60 px-1">
-                <span><span class="inline-block w-6 border-t border-dashed border-gray-400 align-middle mr-1"></span>Ideal</span>
-                <span><span class="inline-block w-6 border-t-2 border-pink-500 align-middle mr-1"></span>Actual open cards</span>
+                <span><svg width="24" height="10" class="inline align-middle mr-1"><line x1="0" y1="5" x2="24" y2="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/></svg>Ideal</span>
+                <span><svg width="24" height="10" class="inline align-middle mr-1"><line x1="0" y1="5" x2="24" y2="5" stroke="#ec4899" stroke-width="2"/></svg>Actual open cards</span>
             </div>
         </section>
 
@@ -88,6 +93,8 @@ else
     private Board? _board;
     private List<(DateTime Date, int Open)> _burndownPoints = [];
     private List<RecentMove> _recentMoves = [];
+    private int _totalCards;
+    private int _doneCards;
 
     private class RecentMove
     {
@@ -166,6 +173,9 @@ else
                 return (day, Math.Max(0, created - completed));
             })
             .ToList();
+
+        _totalCards = cards.Count;
+        _doneCards = completionDates.Count;
 
         var recentHistory = history
             .OrderByDescending(h => h.CreatedAt)
@@ -251,6 +261,7 @@ else
 
         var sb = new System.Text.StringBuilder();
         sb.Append($"<svg viewBox=\"0 0 {svgW} {svgH}\" xmlns=\"http://www.w3.org/2000/svg\" class=\"w-full\">");
+        sb.Append($"<text x=\"10\" y=\"{padTop + chartH / 2}\" text-anchor=\"middle\" font-size=\"10\" opacity=\"0.5\" transform=\"rotate(-90,10,{padTop + chartH / 2})\">Open cards</text>");
         sb.Append($"<line x1=\"{padLeft}\" y1=\"{padTop}\" x2=\"{padLeft}\" y2=\"{padTop + chartH}\" stroke=\"currentColor\" stroke-width=\"1\" opacity=\"0.15\"/>");
         sb.Append($"<line x1=\"{padLeft}\" y1=\"{padTop + chartH}\" x2=\"{padLeft + chartW}\" y2=\"{padTop + chartH}\" stroke=\"currentColor\" stroke-width=\"1\" opacity=\"0.15\"/>");
         sb.Append(yLabels);
