@@ -1,11 +1,15 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Ticky.Internal.Data;
 
 #nullable disable
 
 namespace Ticky.Internal.Migrations
 {
+    [DbContext(typeof(DataContext))]
+    [Migration("20260620000001_CardColumnHistory")]
     /// <inheritdoc />
     public partial class CardColumnHistory : Migration
     {
