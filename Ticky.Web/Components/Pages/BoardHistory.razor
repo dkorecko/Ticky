@@ -191,6 +191,7 @@ else
                 MovedByName    = x.User != null ? x.User.DisplayName : null,
                 MovedAt        = x.h.CreatedAt,
             })
+            .OrderByDescending(x => x.MovedAt)
             .ToListAsync();
 
         StateHasChanged();
