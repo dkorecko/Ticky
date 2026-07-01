@@ -8,6 +8,7 @@
 @inject ILogger<BoardView> _logger
 @inject IHttpContextAccessor _httpContextAccessor
 @inherits NotifiableBase
+@implements IAsyncDisposable
 
 @if (_board is not null)
 {
@@ -208,6 +209,7 @@
 
     private HubConnection? _hubConnection;
     private HashSet<string> _expandedSections = new();
+    private bool _isDisposed;
 
     protected override void OnParametersSet()
     {
@@ -340,6 +342,9 @@
         try
         {
             await _protectedLocalStorage.SetAsync(Constants.StorageKeys.BoardPreferences, _preferences);
+        }
+        catch (JSDisconnectedException)
+        {
         }
         catch (Exception ex)
         {
@@ -497,6 +502,9 @@
 
     private async Task LoadCardsAsync()
     {
+        if (_isDisposed)
+            return;
+
         ArgumentNullException.ThrowIfNull(_board);
 
         using var db = _dbContextFactory.CreateDbContext();
@@ -534,15 +542,38 @@
 
         _cards = await queryableCards.ToListAsync();
 
+        if (_isDisposed)
+            return;
+
         await InvokeAsync(StateHasChanged);
 
         try
         {
             await _protectedLocalStorage.SetAsync(FILTERS_SCOPED_KEY, _filterModel);
         }
+        catch (JSDisconnectedException)
+        {
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save filter preferences.");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _isDisposed = true;
+
+        if (_hubConnection is null)
+            return;
+
+        try
+        {
+            await _hubConnection.DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to dispose board hub connection.");
         }
     }
 
@@ -590,4 +621,3 @@
 
     private bool IsExpanded(string id) => _expandedSections.Contains(id);
 }
-
