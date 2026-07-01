@@ -6,11 +6,11 @@ public class LabelModel
     [Display(Name = "Label text")]
     public string Text { get; set; } = string.Empty;
 
-    [Required(AllowEmptyStrings = false)]
+    [Required]
     [Display(Name = "Text color")]
-    public Color? TextColor { get; set; }
+    public Color TextColor { get; set; } = Color.White;
 
-    [Required(AllowEmptyStrings = false)]
+    [Required]
     [Display(Name = "Background color")]
-    public Color? BackgroundColor { get; set; }
+    public Color BackgroundColor { get; set; } = Color.Red;
 }
