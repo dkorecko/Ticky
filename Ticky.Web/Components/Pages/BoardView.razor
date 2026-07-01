@@ -268,6 +268,10 @@
             var boardPreferences = await _protectedLocalStorage.GetAsync<BoardPreferencesModel>(Constants.StorageKeys.BoardPreferences);
             _preferences = (boardPreferences.Success ? boardPreferences.Value : new()) ?? new();
         }
+        catch (JSDisconnectedException)
+        {
+            _preferences = new();
+        }
         catch (CryptographicException)
         {
             _preferences = new();
@@ -277,6 +281,10 @@
         {
             var filterPreferences = await _protectedLocalStorage.GetAsync<FilterCardsModel>(FILTERS_SCOPED_KEY);
             _filterModel = (filterPreferences.Success ? filterPreferences.Value : new()) ?? new();
+        }
+        catch (JSDisconnectedException)
+        {
+            _filterModel = new();
         }
         catch(CryptographicException)
         {
@@ -330,6 +338,9 @@
             await _hubConnection.SendAsync(nameof(UpdateHub.SubscribeBoard), Id);
         } catch(Exception ex)
         {
+            if (_isDisposed)
+                return;
+
             _logger.LogError(ex, "Failed to start hub connection or subscribe to board {BoardId}", Id);
             MainLayout.RunNotification(new("Real-time updates unavailable. Please refresh the page.", NotificationType.Fail));
         }
@@ -496,6 +507,9 @@
         _board = board;
 
         await LoadCardsAsync();
+
+        if (_isDisposed)
+            return;
 
         await InvokeAsync(StateHasChanged);
     }
