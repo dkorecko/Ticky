@@ -1,11 +1,9 @@
 namespace Ticky.Internal.Services.Hosted;
 
-public class CleanupHostedService : AbstractHostedService<CleanupHostedService>
+public class CleanupHostedService(IServiceScopeFactory serviceScopeFactory)
+    : AbstractHostedService<CleanupHostedService>(serviceScopeFactory, TimeSpan.FromMinutes(15), TimeSpan.FromHours(1))
 {
-    public CleanupHostedService(IServiceScopeFactory serviceScopeFactory)
-        : base(serviceScopeFactory, TimeSpan.FromMinutes(15), TimeSpan.FromHours(1)) { }
-
-    protected override async void OnRun()
+    protected override async Task OnRun()
     {
         await CleanCodes();
         await DeleteUnusedProfilePictures();

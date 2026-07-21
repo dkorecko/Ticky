@@ -7,6 +7,11 @@ export function init(id, group, pull, put, sort, handle, filter, component, forc
 
     let htmlElement = document.getElementById(id);
 
+    if (!htmlElement) {
+        if (DEBUG_MODE) console.warn("Sortable init: element with id '" + id + "' not found. Aborting init.");
+        return;
+    }
+
     var sortable = new Sortable(htmlElement, {
         animation: animation,
         delayOnTouchOnly: true,

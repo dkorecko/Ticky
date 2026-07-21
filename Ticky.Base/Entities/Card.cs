@@ -31,6 +31,9 @@ public class Card : AbstractDbEntity, IOrderable, IDeletable, IAssignable
 
     public DateTime? SnoozedUntil { get; set; }
 
+    public TimeSpan GetTotalTime() =>
+        TimeRecords.Select(x => x.GetTotalTime()).Sum();
+
     public DateTime CalculateNextRepeat(DateTime from)
     {
         if (RepeatInfo is null)

@@ -9,18 +9,20 @@ public class LoginModel : PageModel
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
+    public string ReturnUrl { get; set; } = string.Empty;
 
     public LoginModel(SignInManager<User> signInManager)
     {
         _signInManager = signInManager;
     }
 
-    public IActionResult OnGet()
+    public IActionResult OnGet(string? returnUrl = null)
     {
+        ReturnUrl = returnUrl ?? Url.Content("~/");
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
         if (ModelState.IsValid)
         {
@@ -32,7 +34,7 @@ public class LoginModel : PageModel
             );
 
             if (result.Succeeded)
-                return LocalRedirect("~/");
+                return LocalRedirect(returnUrl ?? Url.Content("~/"));
             else
                 ModelState.AddModelError(
                     $"{nameof(Input)}.{nameof(Input.Email)}",

@@ -18,6 +18,12 @@ namespace Ticky.Base
             public const string MainLayout = "MainLayout";
         }
 
+        public static class Cookies
+        {
+            public const string Authentication = "ticky-auth";
+            public const string Antiforgery = "ticky-antiforgery";
+        }
+
         public static class Defaults
         {
             public const string ADMIN_EMAIL = "admin@ticky.com";

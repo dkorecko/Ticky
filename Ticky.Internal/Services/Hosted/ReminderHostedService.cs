@@ -1,15 +1,11 @@
 namespace Ticky.Internal.Services.Hosted;
 
-public class ReminderHostedService : AbstractHostedService<ReminderHostedService>
+public class ReminderHostedService(IServiceScopeFactory serviceScopeFactory)
+    : AbstractHostedService<ReminderHostedService>(serviceScopeFactory,
+        TimeSpan.FromSeconds(Constants.Limits.MINIMUM_SECOND_HOSTED_SERVICE_DELAY),
+        TimeSpan.FromMinutes(2))
 {
-    public ReminderHostedService(IServiceScopeFactory serviceScopeFactory)
-        : base(
-            serviceScopeFactory,
-            TimeSpan.FromSeconds(Constants.Limits.MINIMUM_SECOND_HOSTED_SERVICE_DELAY),
-            TimeSpan.FromMinutes(2)
-        ) { }
-
-    protected override async void OnRun()
+    protected override async Task OnRun()
     {
         using var scope = ServiceScopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<DataContext>()!;

@@ -1,5 +1,6 @@
 using Devity.Mailing;
 using Devity.NETCore.MailKit.Infrastructure.Internal;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
@@ -52,6 +53,7 @@ builder
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
+    options.Cookie.Name = Constants.Cookies.Authentication;
     options.ExpireTimeSpan = TimeSpan.FromDays(365);
     options.SlidingExpiration = true;
     options.LoginPath = "/auth/login";
@@ -60,6 +62,11 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+});
+
+builder.Services.Configure<AntiforgeryOptions>(options =>
+{
+    options.Cookie.Name = Constants.Cookies.Antiforgery;
 });
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
@@ -155,7 +162,11 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddControllers();
 
-builder.WebHost.UseUrls("https://0.0.0.0:7225");
+#if !DEBUG
+// NOTE: In production, the application is expected to run behind a reverse proxy (e.g., Nginx, Traefik) that terminates HTTPS.
+//       Binding to HTTP here is intentional and safe in that context. Do NOT expose this endpoint directly to the internet.
+builder.WebHost.UseUrls("http://0.0.0.0:8080");
+#endif
 
 var app = builder.Build();
 

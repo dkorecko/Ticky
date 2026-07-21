@@ -7,6 +7,10 @@
 </div>
 @using (Html.BeginForm(FormMethod.Post, true, new { @class = "auth-form" }))
 {
+    @if(!string.IsNullOrEmpty(Model.ReturnUrl)) 
+    {
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+    }
     <div class="auth-section">
         <div class="auth-inp-label">
             @Html.LabelFor(model => model.Input.Email, new { @class = "auth-label" })

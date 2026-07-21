@@ -16,13 +16,13 @@
 
             <div class="form-group">
                 <Name For="() => _labelModel.TextColor" />
-                <input type="color" value="@(_labelModel.TextColor.HasValue ? ColorTranslator.ToHtml(_labelModel.TextColor.Value) : string.Empty)" @onchange="OnTextColorUpdated" />
+                <input type="color" value="@_labelModel.TextColor.ToColorInputValue()" @onchange="OnTextColorUpdated" />
                 <ValidationMessage For="() => _labelModel.TextColor" />
             </div>
 
             <div class="form-group">
                 <Name For="() => _labelModel.BackgroundColor" />
-                <input type="color" value="@(_labelModel.BackgroundColor.HasValue ? ColorTranslator.ToHtml(_labelModel.BackgroundColor.Value) : string.Empty)" @onchange="OnBackgroundColorUpdated" />
+                <input type="color" value="@_labelModel.BackgroundColor.ToColorInputValue()" @onchange="OnBackgroundColorUpdated" />
                 <ValidationMessage For="() => _labelModel.BackgroundColor" />
             </div>
 
@@ -63,7 +63,7 @@
                 BackgroundColor = label.BackgroundColor,
                 TextColor = label.TextColor
             };
-        _editContext = new EditContext(_board);
+        _editContext = new EditContext(_labelModel);
 
         base.Open();
     }
@@ -121,8 +121,8 @@
 
         targetLabel.BoardId = board.Id;
         targetLabel.Name = _labelModel.Text;
-        targetLabel.TextColor = _labelModel.TextColor!.Value;
-        targetLabel.BackgroundColor = _labelModel.BackgroundColor!.Value;
+        targetLabel.TextColor = _labelModel.TextColor;
+        targetLabel.BackgroundColor = _labelModel.BackgroundColor;
 
         await db.SaveChangesAsync();
 

@@ -1,5 +1,6 @@
 ﻿@page "/boards/{Id:int}/{CardId:int?}"
 @using System.Security.Cryptography
+@using System.IO
 @inject NavigationManager _navigationManager
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ProtectedLocalStorage _protectedLocalStorage
@@ -7,6 +8,7 @@
 @inject ILogger<BoardView> _logger
 @inject IHttpContextAccessor _httpContextAccessor
 @inherits NotifiableBase
+@implements IAsyncDisposable
 
 @if (_board is not null)
 {
@@ -200,7 +202,7 @@
                             <!-- Side section -->
                             @if (_board is not null)
                             {
-                                var completedCards = _cards.Where(x => x.Column.Finished).Count();
+                                var completedCards = _cards.Count(x => x.Column.Finished);
                                 var totalCards = _cards.Count();
 
                                 <div class="flex flex-col gap-4">
@@ -215,19 +217,60 @@
                                         </div>
                                     </div>
                                 </div>
-                            }
-                            else
-                            {
-                                <Spinner />
-                            }
-                        </div>
-                    </section>
-                </div>
+
+                                <!-- Column time totals -->
+                                <div class="flex flex-col gap-2">
+                                    <h2 class="text-sm">Column time totals</h2>
+                                    @foreach(var col in _board.Columns.OrderBy(c => c.Index))
+                                    {
+                                        var colCards = _cards.Where(c => c.ColumnId == col.Id).ToList();
+                                        var colTotal = colCards.Select(x => x.GetTotalTime()).Sum();
+                                        var perUser = colCards.SelectMany(x => x.TimeRecords).GroupBy(x => x.UserId).Select(x => new KeyValuePair<int,TimeSpan>(x.Key, x.Select(y => y.GetTotalTime()).Sum())).ToDictionary(x => x.Key, x => x.Value);
+                                        var expandId = $"columnTime_{col.Id}";
+
+                                        <div class="rounded-lg border border-tab-outline p-2">
+                                            <div class="flex flex-row items-center justify-between">
+                                                <div class="flex items-center gap-2">
+                                                    <label class="text-sm font-semibold">@col.Name</label>
+                                                    <label class="text-2xs text-gray-500">@colTotal.ToElapsedString()</label>
+                                                </div>
+                                                <div>
+                                                    <button class="text-xs text-primary px-3 py-1 rounded" @onclick="() => ToggleExpand(expandId)">@(IsExpanded(expandId) ? "Hide" : "Show")</button>
+                                                </div>
+                                            </div>
+
+                                            @if (IsExpanded(expandId))
+                                            {
+                                                <div class="mt-2 ml-2 text-xs">
+                                                    @if (perUser.Any())
+                                                    {
+                                                        @foreach(var kv in perUser.OrderByDescending(k => k.Value))
+                                                        {
+                                                            var user = _members.FirstOrDefault(m => m.Id == kv.Key);
+                                                            <div class="flex flex-row justify-between">
+                                                                <div class="text-ellipsis">@(user != null ? user.Name : "Unknown")</div>
+                                                                <div class="text-gray-500">@kv.Value.ToElapsedString()</div>
+                                                            </div>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="text-gray-500">No time tracked</div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <Spinner />
+                        }
+                    </div>
+                </section>
             }
-        }
-        else
-        {
-            <Spinner />
         }
     </div>
 }
@@ -268,6 +311,8 @@
     private int? _initialCardId;
 
     private HubConnection? _hubConnection;
+    private HashSet<string> _expandedSections = new();
+    private bool _isDisposed;
 
     protected override void OnParametersSet()
     {
@@ -284,23 +329,28 @@
             return;
 
         var httpContext = _httpContextAccessor.HttpContext;
+        var uri = new Uri("http://localhost:8080" + Constants.Hubs.UPDATE_HUB);
+
+#if DEBUG
+        uri = new Uri("https://localhost:7225" + Constants.Hubs.UPDATE_HUB);
+#endif
 
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(_navigationManager.ToAbsoluteUri(Constants.Hubs.UPDATE_HUB), options =>
-        {
-            if(httpContext?.Request.Cookies is not null)
+            .WithUrl(uri, options =>
             {
-                foreach (var cookie in httpContext.Request.Cookies)
+                var cookieName = Constants.Cookies.Authentication;
+                var cookieValue = httpContext?.Request?.Cookies[cookieName];
+
+                if (!string.IsNullOrEmpty(cookieValue))
                 {
                     options.Cookies.Add(new System.Net.Cookie
                     {
-                        Name = cookie.Key,
-                        Value = cookie.Value,
-                        Domain = new Uri(_navigationManager.BaseUri).Host
+                        Name = cookieName,
+                        Value = cookieValue,
+                        Domain = uri.Host
                     });
                 }
-            }
-        })
+            })
             .WithAutomaticReconnect()
             .Build();
 
@@ -321,6 +371,10 @@
             var boardPreferences = await _protectedLocalStorage.GetAsync<BoardPreferencesModel>(Constants.StorageKeys.BoardPreferences);
             _preferences = (boardPreferences.Success ? boardPreferences.Value : new()) ?? new();
         }
+        catch (JSDisconnectedException)
+        {
+            _preferences = new();
+        }
         catch (CryptographicException)
         {
             _preferences = new();
@@ -330,6 +384,10 @@
         {
             var filterPreferences = await _protectedLocalStorage.GetAsync<FilterCardsModel>(FILTERS_SCOPED_KEY);
             _filterModel = (filterPreferences.Success ? filterPreferences.Value : new()) ?? new();
+        }
+        catch (JSDisconnectedException)
+        {
+            _filterModel = new();
         }
         catch(CryptographicException)
         {
@@ -383,6 +441,9 @@
             await _hubConnection.SendAsync(nameof(UpdateHub.SubscribeBoard), Id);
         } catch(Exception ex)
         {
+            if (_isDisposed)
+                return;
+
             _logger.LogError(ex, "Failed to start hub connection or subscribe to board {BoardId}", Id);
             MainLayout.RunNotification(new("Real-time updates unavailable. Please refresh the page.", NotificationType.Fail));
         }
@@ -395,6 +456,9 @@
         try
         {
             await _protectedLocalStorage.SetAsync(Constants.StorageKeys.BoardPreferences, _preferences);
+        }
+        catch (JSDisconnectedException)
+        {
         }
         catch (Exception ex)
         {
@@ -547,11 +611,17 @@
 
         await LoadCardsAsync();
 
+        if (_isDisposed)
+            return;
+
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadCardsAsync()
     {
+        if (_isDisposed)
+            return;
+
         ArgumentNullException.ThrowIfNull(_board);
 
         using var db = _dbContextFactory.CreateDbContext();
@@ -587,7 +657,13 @@
         if (_filterModel.LabelIds.Count > 0)
             queryableCards = queryableCards.Where(card => card.Labels.Any(x => _filterModel.LabelIds.Contains(x.Id)));
 
+        if (_filterModel.ExcludedLabelIds.Count > 0)
+            queryableCards = queryableCards.Where(card => !card.Labels.Any(x => _filterModel.ExcludedLabelIds.Contains(x.Id)));
+
         _cards = await queryableCards.ToListAsync();
+
+        if (_isDisposed)
+            return;
 
         await InvokeAsync(StateHasChanged);
 
@@ -595,9 +671,29 @@
         {
             await _protectedLocalStorage.SetAsync(FILTERS_SCOPED_KEY, _filterModel);
         }
+        catch (JSDisconnectedException)
+        {
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save filter preferences.");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _isDisposed = true;
+
+        if (_hubConnection is null)
+            return;
+
+        try
+        {
+            await _hubConnection.DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to dispose board hub connection.");
         }
     }
 
@@ -637,5 +733,16 @@
     {
         _dropdownMenu = !_dropdownMenu;
     }
-}
 
+    private void ToggleExpand(string id)
+    {
+        if (_expandedSections.Contains(id))
+            _expandedSections.Remove(id);
+        else
+            _expandedSections.Add(id);
+
+        StateHasChanged();
+    }
+
+    private bool IsExpanded(string id) => _expandedSections.Contains(id);
+}

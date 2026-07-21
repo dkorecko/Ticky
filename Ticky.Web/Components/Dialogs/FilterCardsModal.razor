@@ -81,9 +81,16 @@
                 {
                     @foreach (var label in Model.ExpandLabelsSection ? BoardLabels : BoardLabels.Take(3))
                     {
-                        <div class="flex flex-row gap-4 xs:justify-between xs:gap-1">
+                        <div class="priority-selector-item cursor-pointer" @onclick="() => ToggleLabelFilter(label.Id)">
                             <LabelView Label="label" />
-                            <input type="checkbox" class="toggle" checked=@(Model.LabelIds.Contains(label.Id)) @onchange="() => ToggleLabelFilter(label.Id)">
+                            @if (Model.LabelIds.Contains(label.Id))
+                            {
+                                <i class="fa fa-check text-add-outline" title="Selected"></i>
+                            }
+                            else if (Model.ExcludedLabelIds.Contains(label.Id))
+                            {
+                                <i class="fa fa-xmark" title="Excluded"></i>
+                            }
                         </div>
                     }
                 }
@@ -114,9 +121,15 @@
     private async Task ToggleLabelFilter(int labelId)
     {
         if (Model.LabelIds.Contains(labelId))
+        {
             Model.LabelIds.Remove(labelId);
+            Model.ExcludedLabelIds.Add(labelId);
+        }
+        else if (Model.ExcludedLabelIds.Contains(labelId))
+            Model.ExcludedLabelIds.Remove(labelId);
         else
             Model.LabelIds.Add(labelId);
+
         await SearchUpdated.InvokeAsync();
     }
 

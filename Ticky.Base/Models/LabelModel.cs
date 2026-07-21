@@ -8,9 +8,9 @@ public class LabelModel
 
     [Required(AllowEmptyStrings = false)]
     [Display(Name = "Text color")]
-    public Color? TextColor { get; set; }
+    public Color TextColor { get; set; } = Color.White;
 
     [Required(AllowEmptyStrings = false)]
     [Display(Name = "Background color")]
-    public Color? BackgroundColor { get; set; }
+    public Color BackgroundColor { get; set; } = Color.Red;
 }
