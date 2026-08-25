@@ -24,7 +24,19 @@
 
 <body class="flex flex-col bg-app-bg transition-colors">
     <Routes @rendermode="InteractiveServer" />
-    <script src="_framework/blazor.web.js"></script>
+    <script src="_framework/blazor.web.js" autostart="false"></script>
+    <script>
+        // A brief network hiccup (weak wifi, VPN, proxy hop) can silently drop a keep-alive
+        // ping and trip the default 30s server timeout mid-typing. Widen the tolerance so a
+        // late ping doesn't kill the circuit.
+        Blazor.start({
+            circuit: {
+                configureSignalR: function (builder) {
+                    builder.withServerTimeout(60000).withKeepAliveInterval(15000);
+                }
+            }
+        });
+    </script>
     <script src="js/screenHeight.js" type="text/javascript"></script>
     <script src="js/downloadFile.js" type="text/javascript"></script>
     <script src="js/focusTrap.js" type="text/javascript"></script>
