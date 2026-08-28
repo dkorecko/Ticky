@@ -1,0 +1,257 @@
+@page "/boards/{Id:int}/history"
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject NavigationManager _navigationManager
+
+@if (_board is not null)
+{
+    <PageTitle>History - @_board.Name - @Constants.APP_NAME</PageTitle>
+}
+else
+{
+    <PageTitle>History - @Constants.APP_NAME</PageTitle>
+}
+
+<div class="w-full max-w-4xl px-12 py-14 flex flex-col gap-8">
+    <header class="flex flex-col gap-3 text-2xl font-bold">
+        <a class="text-sm transition-colors link-muted hover:text-primary" href="/boards/@Id" title="Back to board">
+            <i class="fa fa-chevron-left mr-2"></i>
+            Back to board
+        </a>
+        <span>@(_board?.Name ?? "Loading...")</span>
+        <span class="text-base font-normal opacity-60">Card history &amp; burndown</span>
+    </header>
+
+    @if (_board is null)
+    {
+        <Spinner />
+    }
+    else if (!_burndownPoints.Any())
+    {
+        <div class="rounded-lg border border-tab-outline px-6 py-12 text-center text-sm opacity-60">
+            No cards found on this board yet.
+        </div>
+    }
+    else
+    {
+        <section class="flex flex-col gap-3">
+            <h2 class="text-lg font-semibold">Burndown</h2>
+            <div class="flex flex-row gap-6 text-sm px-1 mb-1">
+                <span class="opacity-60">Total <span class="font-semibold text-foreground">@_totalCards</span></span>
+                <span class="text-pink-500">Open <span class="font-semibold">@(_totalCards - _doneCards)</span></span>
+                <span class="opacity-60">Done <span class="font-semibold text-foreground">@_doneCards</span></span>
+            </div>
+            <div class="rounded-lg border border-tab-outline p-4 overflow-x-auto">
+                @((MarkupString)RenderBurndownSvg())
+            </div>
+            <div class="flex flex-row gap-6 text-xs opacity-60 px-1">
+                <span><svg width="24" height="10" class="inline align-middle mr-1"><line x1="0" y1="5" x2="24" y2="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/></svg>Ideal</span>
+                <span><svg width="24" height="10" class="inline align-middle mr-1"><line x1="0" y1="5" x2="24" y2="5" stroke="#ec4899" stroke-width="2"/></svg>Actual open cards</span>
+            </div>
+        </section>
+
+        <section class="flex flex-col gap-3">
+            <h2 class="text-lg font-semibold">Recent moves</h2>
+            @if (!_recentMoves.Any())
+            {
+                <p class="text-sm opacity-60">
+                    No moves recorded yet. Move a card between columns to start building history.
+                </p>
+            }
+            else
+            {
+                <div class="flex flex-col divide-y divide-tab-outline rounded-lg border border-tab-outline">
+                    @foreach (var move in _recentMoves)
+                    {
+                        <div class="flex flex-row items-center justify-between px-4 py-3 text-sm">
+                            <div class="flex flex-col gap-0.5">
+                                <span class="font-medium">@move.CardName</span>
+                                <span class="text-xs opacity-60">
+                                    @move.FromColumnName
+                                    <i class="fa fa-arrow-right mx-1 text-2xs"></i>
+                                    @move.ToColumnName
+                                </span>
+                            </div>
+                            <div class="flex flex-col items-end gap-0.5 text-xs opacity-60 whitespace-nowrap ml-4">
+                                <span>@(move.MovedByName ?? "Unknown")</span>
+                                <span>@move.MovedAt.ToElapsedString()</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private Board? _board;
+    private List<(DateTime Date, int Open)> _burndownPoints = [];
+    private List<RecentMove> _recentMoves = [];
+    private int _totalCards;
+    private int _doneCards;
+
+    private class RecentMove
+    {
+        public string CardName { get; init; } = string.Empty;
+        public string FromColumnName { get; init; } = string.Empty;
+        public string ToColumnName { get; init; } = string.Empty;
+        public string? MovedByName { get; init; }
+        public DateTime MovedAt { get; init; }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _board = null;
+        _burndownPoints = [];
+        _recentMoves = [];
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var board = await db.Boards
+            .Include(x => x.Columns)
+            .Include(x => x.Project).ThenInclude(x => x.Memberships)
+            .Include(x => x.Memberships)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == Id);
+
+        if (board is null || !board.VerifyAccess(_user))
+        {
+            _navigationManager.NavigateTo("/");
+            return;
+        }
+
+        _board = board;
+        StateHasChanged();
+
+        var columnIds = board.Columns.Select(c => c.Id).ToList();
+        var finishedColumnIds = board.Columns.Where(c => c.Finished).Select(c => c.Id).ToHashSet();
+
+        var cards = await db.Cards
+            .Where(c => columnIds.Contains(c.ColumnId))
+            .Select(c => new { c.Id, c.CreatedAt })
+            .AsNoTracking()
+            .ToListAsync();
+
+        if (!cards.Any())
+        {
+            StateHasChanged();
+            return;
+        }
+
+        var cardIds = cards.Select(c => c.Id).ToList();
+
+        // Burndown: use ToColumnFinished snapshot — accurate even if column settings change later
+        var completionDates = await db.CardColumnHistories
+            .Where(h => cardIds.Contains(h.CardId) && h.ToColumnFinished)
+            .GroupBy(h => h.CardId)
+            .Select(g => new { CardId = g.Key, FirstDone = g.Min(h => h.CreatedAt) })
+            .AsNoTracking()
+            .ToDictionaryAsync(x => x.CardId, x => x.FirstDone.Date);
+
+        var startDate = cards.Min(c => c.CreatedAt).Date;
+        var endDate = DateTime.Today;
+        int totalDays = Math.Max(1, (endDate - startDate).Days + 1);
+
+        _burndownPoints = Enumerable.Range(0, totalDays)
+            .Select(d =>
+            {
+                var day = startDate.AddDays(d);
+                int created = cards.Count(c => c.CreatedAt.Date <= day);
+                int completed = completionDates.Values.Count(dt => dt <= day);
+                return (day, Math.Max(0, created - completed));
+            })
+            .ToList();
+
+        _totalCards = cards.Count;
+        _doneCards = completionDates.Count;
+
+        // Recent moves: DB-side sort + take so memory usage stays bounded
+        _recentMoves = await db.CardColumnHistories
+            .Where(h => cardIds.Contains(h.CardId))
+            .OrderByDescending(h => h.CreatedAt)
+            .Take(50)
+            .Join(db.Cards, h => h.CardId, c => c.Id, (h, c) => new { h, CardName = c.Name })
+            .GroupJoin(db.Users, x => x.h.MovedByUserId, u => u.Id, (x, users) => new { x.h, x.CardName, User = users.FirstOrDefault() })
+            .AsNoTracking()
+            .Select(x => new RecentMove
+            {
+                CardName       = x.CardName,
+                FromColumnName = x.h.FromColumnName,
+                ToColumnName   = x.h.ToColumnName,
+                MovedByName    = x.User != null ? x.User.DisplayName : null,
+                MovedAt        = x.h.CreatedAt,
+            })
+            .OrderByDescending(x => x.MovedAt)
+            .ToListAsync();
+
+        StateHasChanged();
+    }
+
+    private string RenderBurndownSvg()
+    {
+        if (!_burndownPoints.Any())
+            return string.Empty;
+
+        const int svgW = 760, svgH = 240;
+        const int padLeft = 48, padTop = 16, padBottom = 32, padRight = 16;
+        int chartW = svgW - padLeft - padRight;
+        int chartH = svgH - padTop - padBottom;
+
+        int maxOpen = Math.Max(1, _burndownPoints.Max(p => p.Open));
+        int days = _burndownPoints.Count;
+
+        double xScale = days > 1 ? (double)chartW / (days - 1) : chartW;
+        double yScale = (double)chartH / maxOpen;
+
+        string Px(int i) => (padLeft + i * xScale).ToString("F1");
+        string Py(int open) => (padTop + chartH - open * yScale).ToString("F1");
+
+        var actualPoints = string.Join(" ", _burndownPoints.Select((p, i) => $"{Px(i)},{Py(p.Open)}"));
+        string idealStart = $"{Px(0)},{Py(maxOpen)}";
+        string idealEnd   = $"{Px(days - 1)},{Py(0)}";
+
+        var xLabels = new System.Text.StringBuilder();
+        int xStep = Math.Max(1, days / 6);
+        for (int i = 0; i < days; i += xStep)
+        {
+            xLabels.Append(
+                $"<text x=\"{Px(i)}\" y=\"{svgH - 4}\" text-anchor=\"middle\" font-size=\"10\" opacity=\"0.5\">"
+                + _burndownPoints[i].Date.ToString("MM/dd")
+                + "</text>"
+            );
+        }
+
+        var yLabels = new System.Text.StringBuilder();
+        int yStep = Math.Max(1, maxOpen / 4);
+        for (int v = 0; v <= maxOpen; v += yStep)
+        {
+            yLabels.Append(
+                $"<text x=\"{padLeft - 6}\" y=\"{Py(v)}\" text-anchor=\"end\""
+                + $" dominant-baseline=\"middle\" font-size=\"10\" opacity=\"0.5\">{v}</text>"
+            );
+        }
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<svg viewBox=\"0 0 {svgW} {svgH}\" xmlns=\"http://www.w3.org/2000/svg\" class=\"w-full\">");
+        sb.Append($"<text x=\"10\" y=\"{padTop + chartH / 2}\" text-anchor=\"middle\" font-size=\"10\" opacity=\"0.5\" transform=\"rotate(-90,10,{padTop + chartH / 2})\">Open cards</text>");
+        sb.Append($"<line x1=\"{padLeft}\" y1=\"{padTop}\" x2=\"{padLeft}\" y2=\"{padTop + chartH}\" stroke=\"currentColor\" stroke-width=\"1\" opacity=\"0.15\"/>");
+        sb.Append($"<line x1=\"{padLeft}\" y1=\"{padTop + chartH}\" x2=\"{padLeft + chartW}\" y2=\"{padTop + chartH}\" stroke=\"currentColor\" stroke-width=\"1\" opacity=\"0.15\"/>");
+        sb.Append(yLabels);
+        sb.Append(xLabels);
+        sb.Append($"<polyline points=\"{idealStart} {idealEnd}\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-dasharray=\"4 3\" opacity=\"0.35\"/>");
+        sb.Append($"<polyline points=\"{actualPoints}\" fill=\"none\" stroke=\"#ec4899\" stroke-width=\"2\" stroke-linejoin=\"round\"/>");
+        sb.Append($"<circle cx=\"{Px(days - 1)}\" cy=\"{Py(_burndownPoints[^1].Open)}\" r=\"3\" fill=\"#ec4899\"/>");
+        sb.Append("</svg>");
+        return sb.ToString();
+    }
+}
