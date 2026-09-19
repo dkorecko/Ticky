@@ -1,0 +1,243 @@
+@page "/boards/{Id:int}/history"
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject NavigationManager _navigationManager
+
+@if (_board is not null)
+{
+    <PageTitle>History - @_board.Name - @Constants.APP_NAME</PageTitle>
+}
+else
+{
+    <PageTitle>History - @Constants.APP_NAME</PageTitle>
+}
+
+<div class="w-full max-w-4xl px-12 py-14 flex flex-col gap-8">
+    <header class="flex flex-col gap-3 text-2xl font-bold">
+        <a class="text-sm transition-colors link-muted hover:text-primary" href="/boards/@Id" title="Back to board">
+            <i class="fa fa-chevron-left mr-2"></i>
+            Back to board
+        </a>
+        <span>@(_board?.Name ?? "Loading...")</span>
+        <span class="text-base font-normal opacity-60">Activity &amp; burndown</span>
+    </header>
+
+    @if (_board is null)
+    {
+        <Spinner />
+    }
+    else if (!_burndownPoints.Any())
+    {
+        <div class="rounded-lg border border-tab-outline px-6 py-12 text-center text-sm opacity-60">
+            No cards found on this board yet.
+        </div>
+    }
+    else
+    {
+        <section class="flex flex-col gap-3">
+            <h2 class="text-lg font-semibold">Burndown</h2>
+            <div class="flex flex-row gap-6 text-sm px-1 mb-1">
+                <span class="opacity-60">Total <span class="font-semibold text-foreground">@_totalCards</span></span>
+                <span class="text-pink-500">Open <span class="font-semibold">@(_totalCards - _doneCards)</span></span>
+                <span class="opacity-60">Done <span class="font-semibold text-foreground">@_doneCards</span></span>
+            </div>
+            <div class="rounded-lg border border-tab-outline p-4 overflow-x-auto">
+                @((MarkupString)BurndownHelper.RenderSvg(_burndownPoints))
+            </div>
+            <div class="flex flex-row gap-6 text-xs opacity-60 px-1">
+                <span><svg width="24" height="10" class="inline align-middle mr-1"><line x1="0" y1="5" x2="24" y2="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/></svg>Ideal</span>
+                <span><svg width="24" height="10" class="inline align-middle mr-1"><line x1="0" y1="5" x2="24" y2="5" stroke="#ec4899" stroke-width="2"/></svg>Actual open cards</span>
+            </div>
+        </section>
+
+        <section class="flex flex-col gap-3">
+            <div class="flex flex-row flex-wrap items-center justify-between gap-3">
+                <h2 class="text-lg font-semibold">Activity</h2>
+                <select class="form-control !w-auto text-sm" title="Filter activity" @onchange="OnFeedFilterChanged">
+                    <option value="" selected="@(_feedFilter is null)">All activity</option>
+                    @foreach (var type in Enum.GetValues<ActivityType>())
+                    {
+                        <option value="@type" selected="@(_feedFilter == type)">@type.GetDisplayName()</option>
+                    }
+                </select>
+            </div>
+            @if (!_feed.Any())
+            {
+                <p class="text-sm opacity-60">
+                    @(_feedFilter == ActivityType.CardMoved
+                        ? "No moves recorded yet. Move a card between columns to start building history."
+                        : "No activity recorded yet.")
+                </p>
+            }
+            else
+            {
+                <div class="flex flex-col divide-y divide-tab-outline rounded-lg border border-tab-outline">
+                    @foreach (var entry in _feed)
+                    {
+                        <div class="flex flex-row items-center justify-between px-4 py-3 text-sm">
+                            <div class="flex flex-col gap-0.5 min-w-0">
+                                <a class="font-medium hover:text-primary" href="/boards/@Id/@entry.CardId">@entry.CardName</a>
+                                <span class="text-xs opacity-60">
+                                    @if (entry.ActivityType == ActivityType.CardMoved)
+                                    {
+                                        @entry.FromColumnName
+                                        <i class="fa fa-arrow-right mx-1 text-2xs"></i>
+                                        @entry.ToColumnName
+                                    }
+                                    else
+                                    {
+                                        @((MarkupString)entry.Text)
+                                    }
+                                </span>
+                            </div>
+                            <div class="flex flex-col items-end gap-0.5 text-xs opacity-60 whitespace-nowrap ml-4">
+                                <span>@entry.UserName</span>
+                                <span title="@entry.CreatedAt.ToShortString()">@entry.CreatedAt.ToElapsedString()</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+                @if (_feedHasMore)
+                {
+                    <button class="self-center text-sm" @onclick="LoadMoreFeedAsync">Load more</button>
+                }
+            }
+        </section>
+    }
+</div>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private Board? _board;
+    private List<(DateTime Date, int Open)> _burndownPoints = [];
+    private int _totalCards;
+    private int _doneCards;
+
+    private const int FEED_PAGE_SIZE = 50;
+    private List<FeedEntry> _feed = [];
+    private ActivityType? _feedFilter;
+    private int _feedLimit = FEED_PAGE_SIZE;
+    private bool _feedHasMore;
+
+    private class FeedEntry
+    {
+        public int CardId { get; init; }
+        public string CardName { get; init; } = string.Empty;
+        public ActivityType ActivityType { get; init; }
+        public string Text { get; init; } = string.Empty;
+        public string FromColumnName { get; init; } = string.Empty;
+        public string ToColumnName { get; init; } = string.Empty;
+        public string UserName { get; init; } = string.Empty;
+        public DateTime CreatedAt { get; init; }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _board = null;
+        _burndownPoints = [];
+        _feed = [];
+        _feedLimit = FEED_PAGE_SIZE;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var board = await db.Boards
+            .Include(x => x.Columns)
+            .Include(x => x.Project).ThenInclude(x => x.Memberships)
+            .Include(x => x.Memberships)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == Id);
+
+        if (board is null || !board.VerifyAccess(_user))
+        {
+            _navigationManager.NavigateTo("/");
+            return;
+        }
+
+        _board = board;
+        StateHasChanged();
+
+        var cards = await db.Cards
+            .Where(c => c.Column.BoardId == Id)
+            .Select(c => new { c.Id, c.CreatedAt })
+            .AsNoTracking()
+            .ToListAsync();
+
+        if (!cards.Any())
+        {
+            StateHasChanged();
+            return;
+        }
+
+        // A card counts as done from the first time it entered a column that was Finished at move-time
+        var completionDates = await db.Activities
+            .Where(a => a.ActivityType == ActivityType.CardMoved && a.ToColumnFinished == true && a.Card.Column.BoardId == Id)
+            .GroupBy(a => a.CardId)
+            .Select(g => g.Min(a => a.CreatedAt))
+            .ToListAsync();
+
+        _burndownPoints = BurndownHelper.GetOpenPerDay(
+            cards.Select(c => c.CreatedAt).ToList(),
+            completionDates,
+            DateTime.Today);
+
+        _totalCards = cards.Count;
+        _doneCards = completionDates.Count;
+
+        await LoadFeedAsync(db);
+        StateHasChanged();
+    }
+
+    private async Task LoadFeedAsync(DataContext db)
+    {
+        var query = db.Activities.Where(a => a.Card.Column.BoardId == Id);
+
+        if (_feedFilter is not null)
+            query = query.Where(a => a.ActivityType == _feedFilter);
+
+        // Fetch one extra row to know whether "Load more" should be shown
+        var entries = await query
+            .OrderByDescending(a => a.CreatedAt)
+            .ThenByDescending(a => a.Id)
+            .Take(_feedLimit + 1)
+            .Select(a => new FeedEntry
+            {
+                CardId         = a.CardId,
+                CardName       = a.Card.Name,
+                ActivityType   = a.ActivityType,
+                Text           = a.Text,
+                FromColumnName = a.FromColumnName ?? string.Empty,
+                ToColumnName   = a.ToColumnName ?? string.Empty,
+                UserName       = a.User.DisplayName,
+                CreatedAt      = a.CreatedAt,
+            })
+            .ToListAsync();
+
+        _feedHasMore = entries.Count > _feedLimit;
+        _feed = entries.Take(_feedLimit).ToList();
+    }
+
+    private async Task OnFeedFilterChanged(ChangeEventArgs e)
+    {
+        _feedFilter = Enum.TryParse<ActivityType>(e.Value?.ToString(), out var type) ? type : null;
+        _feedLimit = FEED_PAGE_SIZE;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        await LoadFeedAsync(db);
+    }
+
+    private async Task LoadMoreFeedAsync()
+    {
+        _feedLimit += FEED_PAGE_SIZE;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        await LoadFeedAsync(db);
+    }
+}

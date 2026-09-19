@@ -137,6 +137,22 @@ namespace Ticky.Internal.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder
+                .Entity<Activity>()
+                .HasOne(x => x.FromColumn)
+                .WithMany()
+                .HasForeignKey(x => x.FromColumnId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder
+                .Entity<Activity>()
+                .HasOne(x => x.ToColumn)
+                .WithMany()
+                .HasForeignKey(x => x.ToColumnId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Activity>().HasIndex(x => new { x.ActivityType, x.CreatedAt });
+
+            modelBuilder
                 .Entity<Card>()
                 .HasMany(x => x.Subtasks)
                 .WithOne(x => x.Card)

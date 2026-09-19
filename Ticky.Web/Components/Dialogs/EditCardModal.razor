@@ -553,6 +553,7 @@
         card.Name = e.Value?.ToString() ?? string.Empty;
         card.Activities.Add(new Activity
         {
+            ActivityType = ActivityType.TitleChanged,
             Text = "<b>changed</b> the title",
             UserId = _user.Id,
             CardId = card.Id,
@@ -582,6 +583,7 @@
         card.Description = e.Value?.ToString() ?? string.Empty;
         card.Activities.Add(new Activity
         {
+            ActivityType = ActivityType.DescriptionChanged,
             Text = "<b>changed</b> the description",
             UserId = _user.Id,
             CardId = card.Id,
@@ -650,6 +652,7 @@
             });
         card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.CommentPosted,
                 Text = "<b>posted</b> a comment",
                 UserId = _user.Id,
                 CardId = card.Id,
@@ -725,6 +728,7 @@
 
         db.Activities.Add(new Activity
         {
+            ActivityType = ActivityType.TimeRecordDeleted,
             Text = $"<b>deleted</b> time record of <b>{(timeRecord.EndedAt!.Value - timeRecord.StartedAt).ToElapsedString()}</b>",
             UserId = _user.Id,
             CardId = _card.Id,
@@ -753,13 +757,8 @@
         if (targetColumn is null)
             return;
 
+        card.Activities.Add(Activity.CardMoved(card.Id, _user.Id, card.Column, targetColumn));
         card.Column = targetColumn;
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>moved</b> the card to <b>{targetColumn.Name}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
 
         await db.SaveChangesAsync();
 
@@ -785,6 +784,7 @@
         card.Assignees.Add(targetUser);
         card.Activities.Add(new Activity
         {
+            ActivityType = ActivityType.AssigneeAdded,
             Text = $"<b>joined</b> the card",
             UserId = _user.Id,
             CardId = card.Id,
@@ -814,6 +814,7 @@
         card.Assignees.Remove(targetUser);
         card.Activities.Add(new Activity
         {
+            ActivityType = ActivityType.AssigneeRemoved,
             Text = $"<b>left</b> the card",
             UserId = _user.Id,
             CardId = card.Id,
@@ -843,13 +844,8 @@
         if (targetColumn is null)
             return;
 
+        card.Activities.Add(Activity.CardMoved(card.Id, _user.Id, card.Column, targetColumn));
         card.Column = targetColumn;
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>moved</b> the card to <b>{targetColumn.Name}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
 
         await db.SaveChangesAsync();
 
@@ -888,6 +884,7 @@
         card.Attachments.RemoveAll(x => x.Id.Equals(attachment.Id));
         card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.AttachmentDeleted,
                 Text = $"<b>deleted</b> file named <b>{attachment.OriginalName}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,
@@ -913,6 +910,7 @@
         card.Reminders.RemoveAll(x => x.Id.Equals(reminder.Id));
         card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.ReminderRemoved,
                 Text = $"<b>deleted</b> the reminder at <b>{reminder.At.ToReadableStringWithTime()}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,
@@ -936,6 +934,7 @@
         card.Deadline = null;
         card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.DeadlineRemoved,
                 Text = "<b>deleted</b> the deadline",
                 UserId = _user.Id,
                 CardId = card.Id,
@@ -1049,6 +1048,7 @@
 
             targetLink.CardTwo.Activities.Add(new Activity
                 {
+                    ActivityType = ActivityType.LinkRemoved,
                     Text = $"<b>deleted</b> a linked issue <b>{targetLink.CardOne.Column.Board.Code}-{targetLink.CardOne.Number}</b> with <b>{targetLink.Category}</b> relationship",
                     UserId = _user.Id,
                     CardId = targetLink.CardTwoId,
@@ -1059,6 +1059,7 @@
 
         targetLink.CardOne.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.LinkRemoved,
                 Text = $"<b>deleted</b> a linked issue <b>{targetLink.CardTwo.Column.Board.Code}-{targetLink.CardTwo.Number}</b> with <b>{targetLink.Category}</b> relationship",
                 UserId = _user.Id,
                 CardId = targetLink.CardOneId,
@@ -1127,6 +1128,7 @@
                 });
                 card.Activities.Add(new Activity
                     {
+                    ActivityType = ActivityType.AttachmentUploaded,
                     Text = $"<b>uploaded</b> file named <b>{cleanFileName}</b>",
                         UserId = _user.Id,
                         CardId = card.Id,
@@ -1266,6 +1268,7 @@
         card.SnoozedUntil = null;
         card.Activities.Add(new Activity
         {
+            ActivityType = ActivityType.Unsnoozed,
             Text = $"<b>unsnoozed</b> this card",
             UserId = _user.Id,
             CardId = card.Id,
@@ -1289,6 +1292,7 @@
         card.RepeatInfo = null;
         card.Activities.Add(new Activity
         {
+            ActivityType = ActivityType.RepeatDisabled,
             Text = $"<b>turned repeating off</b> for this card",
             UserId = _user.Id,
             CardId = card.Id,

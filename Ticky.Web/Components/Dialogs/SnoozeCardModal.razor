@@ -65,6 +65,7 @@
         card.SnoozedUntil = new DateTime(_snoozeCardModel.At.Year, _snoozeCardModel.At.Month, _snoozeCardModel.At.Day, time.Hour, time.Minute, 0);
         card.Activities.Add(new Activity
         {
+            ActivityType = ActivityType.Snoozed,
             Text = $"<b>snoozed</b> this card until <b>{card.SnoozedUntil.Value.ToReadableStringWithTime()}</b>",
             UserId = _user.Id,
             CardId = card.Id,

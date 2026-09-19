@@ -57,6 +57,7 @@
 
         subtask.Card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.SubtaskEdited,
                 Text = $"<b>edited</b> subtask <b>{subtask.Text}</b> to <b>{_subtaskModel.Text}</b>",
                 UserId = _user.Id,
                 CardId = subtask.CardId,
