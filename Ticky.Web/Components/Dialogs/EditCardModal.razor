@@ -753,24 +753,8 @@
         if (targetColumn is null)
             return;
 
-        var fromColumn = card.Column;
+        card.Activities.Add(Activity.CardMoved(card.Id, _user.Id, card.Column, targetColumn));
         card.Column = targetColumn;
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>moved</b> the card to <b>{targetColumn.Name}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-        db.CardColumnHistories.Add(new CardColumnHistory
-        {
-            CardId           = card.Id,
-            FromColumnId     = fromColumn.Id,
-            FromColumnName   = fromColumn.Name,
-            ToColumnId       = targetColumn.Id,
-            ToColumnName     = targetColumn.Name,
-            ToColumnFinished = targetColumn.Finished,
-            MovedByUserId    = _user.Id,
-        });
 
         await db.SaveChangesAsync();
 
@@ -854,24 +838,8 @@
         if (targetColumn is null)
             return;
 
-        var fromColumnNext = card.Column;
+        card.Activities.Add(Activity.CardMoved(card.Id, _user.Id, card.Column, targetColumn));
         card.Column = targetColumn;
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>moved</b> the card to <b>{targetColumn.Name}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-        db.CardColumnHistories.Add(new CardColumnHistory
-        {
-            CardId           = card.Id,
-            FromColumnId     = fromColumnNext.Id,
-            FromColumnName   = fromColumnNext.Name,
-            ToColumnId       = targetColumn.Id,
-            ToColumnName     = targetColumn.Name,
-            ToColumnFinished = targetColumn.Finished,
-            MovedByUserId    = _user.Id,
-        });
 
         await db.SaveChangesAsync();
 

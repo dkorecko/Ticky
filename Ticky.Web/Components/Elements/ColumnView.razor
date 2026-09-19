@@ -337,16 +337,7 @@
 
             IndexHelper.FixIndices(dbNewColumn.Cards);
 
-            db.CardColumnHistories.Add(new CardColumnHistory
-            {
-                CardId            = movedCardId,
-                FromColumnId      = oldColumnId,
-                FromColumnName    = dbOldColumn.Name,
-                ToColumnId        = newColumnId,
-                ToColumnName      = dbNewColumn.Name,
-                ToColumnFinished  = dbNewColumn.Finished,
-                MovedByUserId     = User.Id,
-            });
+            db.Activities.Add(Activity.CardMoved(movedCardId, User.Id, dbOldColumn, dbNewColumn));
 
             await db.SaveChangesAsync();
             await OnUpdate.InvokeAsync();
