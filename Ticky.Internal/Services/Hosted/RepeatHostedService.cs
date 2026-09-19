@@ -108,6 +108,7 @@ public class RepeatHostedService(IServiceScopeFactory serviceScopeFactory) : Abs
                 new()
                 {
                     CardId = newCard.Id,
+                    ActivityType = ActivityType.RepeatedFrom,
                     Text = $"<b>was repeated</b> from card <b>{identifier}</b>",
                     UserId = card.CreatedById
                 }
@@ -166,6 +167,7 @@ public class RepeatHostedService(IServiceScopeFactory serviceScopeFactory) : Abs
                 new()
                 {
                     CardId = card.Id,
+                    ActivityType = ActivityType.RepeatCardCreated,
                     Text = $"<b>created</b> repeat card <b>{newIdentifier}</b>",
                     UserId = card.CreatedById
                 }

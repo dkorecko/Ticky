@@ -58,13 +58,18 @@ public class ActivityTest
     }
 
     [Test]
-    public void NewActivity_DefaultsToGenericWithoutMovePayload()
+    public void NonMoveActivity_HasNoMovePayload()
     {
-        var activity = new Activity { Text = "<b>changed</b> the title", UserId = 1, CardId = 1 };
+        var activity = new Activity
+        {
+            ActivityType = ActivityType.TitleChanged,
+            Text = "<b>changed</b> the title",
+            UserId = 1,
+            CardId = 1,
+        };
 
         Assert.Multiple(() =>
         {
-            Assert.That(activity.ActivityType, Is.EqualTo(ActivityType.Generic));
             Assert.That(activity.FromColumnId, Is.Null);
             Assert.That(activity.ToColumnId, Is.Null);
             Assert.That(activity.ToColumnFinished, Is.Null);
@@ -79,6 +84,21 @@ public class ActivityTest
         {
             Assert.That((int)ActivityType.Generic, Is.EqualTo(0));
             Assert.That((int)ActivityType.CardMoved, Is.EqualTo(1));
+            Assert.That((int)ActivityType.RepeatCardCreated, Is.EqualTo(32));
+            Assert.That(Enum.GetValues<ActivityType>().Select(x => (int)x), Is.EqualTo(Enumerable.Range(0, 33)));
         });
+    }
+
+    [Test]
+    public void ActivityType_AllValuesHaveDisplayName()
+    {
+        foreach (var type in Enum.GetValues<ActivityType>())
+        {
+            var display = typeof(ActivityType)
+                .GetField(type.ToString())!
+                .GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), false);
+
+            Assert.That(display, Has.Length.EqualTo(1), type.ToString());
+        }
     }
 }

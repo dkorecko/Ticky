@@ -66,6 +66,7 @@
 
         timeRecord.Card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.TimeRecordChanged,
                 Text = $"<b>changed</b> the time record from <b>{_oldTimeRecord}</b> to <b>{_timeRecordModel.Time}</b>",
                 UserId = _user.Id,
                 CardId = timeRecord.CardId,

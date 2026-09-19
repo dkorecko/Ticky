@@ -136,6 +136,7 @@ public class AttachmentsController : ControllerBase
             card.Activities.Add(
                 new Activity
                 {
+                    ActivityType = ActivityType.AttachmentUploaded,
                     Text = $"<b>uploaded</b> file named <b>{safeFileName}</b>",
                     UserId = userId,
                     CardId = cardId

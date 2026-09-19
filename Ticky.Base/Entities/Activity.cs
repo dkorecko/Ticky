@@ -8,7 +8,7 @@ public class Activity : AbstractDbEntity
     public required int CardId { get; set; }
     public virtual Card Card { get; set; } = null!;
 
-    public ActivityType ActivityType { get; set; } = ActivityType.Generic;
+    public required ActivityType ActivityType { get; set; }
 
     // CardMoved payload. Names and Finished are snapshots at move-time so old rows
     // still read correctly after a column is renamed, deleted or has Finished toggled.

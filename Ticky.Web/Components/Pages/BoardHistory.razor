@@ -18,7 +18,7 @@ else
             Back to board
         </a>
         <span>@(_board?.Name ?? "Loading...")</span>
-        <span class="text-base font-normal opacity-60">Card history &amp; burndown</span>
+        <span class="text-base font-normal opacity-60">Activity &amp; burndown</span>
     </header>
 
     @if (_board is null)
@@ -50,34 +50,56 @@ else
         </section>
 
         <section class="flex flex-col gap-3">
-            <h2 class="text-lg font-semibold">Recent moves</h2>
-            @if (!_recentMoves.Any())
+            <div class="flex flex-row flex-wrap items-center justify-between gap-3">
+                <h2 class="text-lg font-semibold">Activity</h2>
+                <select class="form-control !w-auto text-sm" title="Filter activity" @onchange="OnFeedFilterChanged">
+                    <option value="" selected="@(_feedFilter is null)">All activity</option>
+                    @foreach (var type in Enum.GetValues<ActivityType>())
+                    {
+                        <option value="@type" selected="@(_feedFilter == type)">@type.GetDisplayName()</option>
+                    }
+                </select>
+            </div>
+            @if (!_feed.Any())
             {
                 <p class="text-sm opacity-60">
-                    No moves recorded yet. Move a card between columns to start building history.
+                    @(_feedFilter == ActivityType.CardMoved
+                        ? "No moves recorded yet. Move a card between columns to start building history."
+                        : "No activity recorded yet.")
                 </p>
             }
             else
             {
                 <div class="flex flex-col divide-y divide-tab-outline rounded-lg border border-tab-outline">
-                    @foreach (var move in _recentMoves)
+                    @foreach (var entry in _feed)
                     {
                         <div class="flex flex-row items-center justify-between px-4 py-3 text-sm">
-                            <div class="flex flex-col gap-0.5">
-                                <span class="font-medium">@move.CardName</span>
+                            <div class="flex flex-col gap-0.5 min-w-0">
+                                <a class="font-medium hover:text-primary" href="/boards/@Id/@entry.CardId">@entry.CardName</a>
                                 <span class="text-xs opacity-60">
-                                    @move.FromColumnName
-                                    <i class="fa fa-arrow-right mx-1 text-2xs"></i>
-                                    @move.ToColumnName
+                                    @if (entry.ActivityType == ActivityType.CardMoved)
+                                    {
+                                        @entry.FromColumnName
+                                        <i class="fa fa-arrow-right mx-1 text-2xs"></i>
+                                        @entry.ToColumnName
+                                    }
+                                    else
+                                    {
+                                        @((MarkupString)entry.Text)
+                                    }
                                 </span>
                             </div>
                             <div class="flex flex-col items-end gap-0.5 text-xs opacity-60 whitespace-nowrap ml-4">
-                                <span>@move.MovedByName</span>
-                                <span>@move.MovedAt.ToElapsedString()</span>
+                                <span>@entry.UserName</span>
+                                <span title="@entry.CreatedAt.ToShortString()">@entry.CreatedAt.ToElapsedString()</span>
                             </div>
                         </div>
                     }
                 </div>
+                @if (_feedHasMore)
+                {
+                    <button class="self-center text-sm" @onclick="LoadMoreFeedAsync">Load more</button>
+                }
             }
         </section>
     }
@@ -95,22 +117,30 @@ else
     private int _totalCards;
     private int _doneCards;
 
-    private List<RecentMove> _recentMoves = [];
+    private const int FEED_PAGE_SIZE = 50;
+    private List<FeedEntry> _feed = [];
+    private ActivityType? _feedFilter;
+    private int _feedLimit = FEED_PAGE_SIZE;
+    private bool _feedHasMore;
 
-    private class RecentMove
+    private class FeedEntry
     {
+        public int CardId { get; init; }
         public string CardName { get; init; } = string.Empty;
+        public ActivityType ActivityType { get; init; }
+        public string Text { get; init; } = string.Empty;
         public string FromColumnName { get; init; } = string.Empty;
         public string ToColumnName { get; init; } = string.Empty;
-        public string MovedByName { get; init; } = string.Empty;
-        public DateTime MovedAt { get; init; }
+        public string UserName { get; init; } = string.Empty;
+        public DateTime CreatedAt { get; init; }
     }
 
     protected override async Task OnParametersSetAsync()
     {
         _board = null;
         _burndownPoints = [];
-        _recentMoves = [];
+        _feed = [];
+        _feedLimit = FEED_PAGE_SIZE;
         await LoadAsync();
     }
 
@@ -161,19 +191,53 @@ else
         _totalCards = cards.Count;
         _doneCards = completionDates.Count;
 
-        _recentMoves = await db.Activities
-            .Where(a => a.ActivityType == ActivityType.CardMoved && a.Card.Column.BoardId == Id)
+        await LoadFeedAsync(db);
+        StateHasChanged();
+    }
+
+    private async Task LoadFeedAsync(DataContext db)
+    {
+        var query = db.Activities.Where(a => a.Card.Column.BoardId == Id);
+
+        if (_feedFilter is not null)
+            query = query.Where(a => a.ActivityType == _feedFilter);
+
+        // Fetch one extra row to know whether "Load more" should be shown
+        var entries = await query
             .OrderByDescending(a => a.CreatedAt)
-            .Take(50)
-            .Select(a => new RecentMove
+            .ThenByDescending(a => a.Id)
+            .Take(_feedLimit + 1)
+            .Select(a => new FeedEntry
             {
+                CardId         = a.CardId,
                 CardName       = a.Card.Name,
+                ActivityType   = a.ActivityType,
+                Text           = a.Text,
                 FromColumnName = a.FromColumnName ?? string.Empty,
                 ToColumnName   = a.ToColumnName ?? string.Empty,
-                MovedByName    = a.User.DisplayName,
-                MovedAt        = a.CreatedAt,
+                UserName       = a.User.DisplayName,
+                CreatedAt      = a.CreatedAt,
             })
             .ToListAsync();
-        StateHasChanged();
+
+        _feedHasMore = entries.Count > _feedLimit;
+        _feed = entries.Take(_feedLimit).ToList();
+    }
+
+    private async Task OnFeedFilterChanged(ChangeEventArgs e)
+    {
+        _feedFilter = Enum.TryParse<ActivityType>(e.Value?.ToString(), out var type) ? type : null;
+        _feedLimit = FEED_PAGE_SIZE;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        await LoadFeedAsync(db);
+    }
+
+    private async Task LoadMoreFeedAsync()
+    {
+        _feedLimit += FEED_PAGE_SIZE;
+
+        using var db = _dbContextFactory.CreateDbContext();
+        await LoadFeedAsync(db);
     }
 }
