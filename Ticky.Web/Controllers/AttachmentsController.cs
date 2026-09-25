@@ -58,6 +58,49 @@ public class AttachmentsController : ControllerBase
         }
     }
 
+    [HttpGet("preview/{*fileName}")]
+    public async Task<IActionResult> Preview(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return BadRequest();
+
+        var decodedFileName = WebUtility.UrlDecode(fileName);
+        string[] forbiddenChars = ["..", "/", "\\", "\n", "\r"];
+
+        if (forbiddenChars.Any(decodedFileName.Contains))
+            return BadRequest();
+
+        try
+        {
+            using var db = _dbContextFactory.CreateDbContext();
+            var attachment = await db.Attachments.FirstOrDefaultAsync(x =>
+                x.FileName == decodedFileName
+            );
+
+            if (attachment is null || !AttachmentHelper.IsImage(attachment))
+                return NotFound();
+
+            var absolutePath = Path.GetFullPath(
+                Path.Combine(Constants.SAVE_UPLOADED_FILES_PATH, attachment.FileName)
+            );
+
+            if (!System.IO.File.Exists(absolutePath))
+                return NotFound();
+
+            var contentTypeProvider =
+                new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+            if (!contentTypeProvider.TryGetContentType(attachment.OriginalName, out var contentType))
+                return NotFound();
+
+            return PhysicalFile(absolutePath, contentType, enableRangeProcessing: true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while previewing attachment {FileName}", decodedFileName);
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+    }
+
     [HttpPost("upload")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Upload([FromForm] IFormFile? file, [FromForm] int cardId)
