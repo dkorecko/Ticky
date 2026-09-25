@@ -265,27 +265,61 @@
                     <hr />
                     <section class="flex flex-col gap-4">
                         <h5 class="text-xs font-normal text-card-heading select-none">ATTACHMENTS</h5>
-                        <label class="add h-min w-full rounded-lg px-5 py-5 select-none" for="file-upload">
+                        <label class="add h-min w-full rounded-xl border border-dashed border-add-outline px-5 py-5 select-none" for="file-upload">
                             <i class="fa fa-file-arrow-down text-3xl" title="Upload attachment"></i>
-                            <label>Upload attachment</label>
+                            <span>Upload attachments</span>
                             <InputFile class="hidden" multiple id="file-upload" OnChange="OnFileChanged"/>
                         </label>
-                        <div class="flex flex-row flex-wrap items-center justify-start gap-2">
-                            @foreach(var attachment in _card.Attachments) 
+
+                        @{
+                            var imageAttachments = _card.Attachments.Where(AttachmentHelper.IsImage).ToList();
+                            var fileAttachments = _card.Attachments.Where(x => !AttachmentHelper.IsImage(x)).ToList();
+                        }
+
+                        @if (imageAttachments.Count > 0)
+                        {
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                @foreach (var attachment in imageAttachments)
+                                {
+                                    <article @key="attachment.Id" class="group relative overflow-hidden rounded-xl bg-search-bar shadow-sm outline-1 outline-add-outline transition-all hover:shadow-md hover:outline-add-outline-hover @(imageAttachments.Count == 1 ? "sm:col-span-2" : string.Empty)">
+                                        <button type="button" class="block w-full cursor-pointer overflow-hidden bg-search-bar text-left" aria-label="Download @attachment.OriginalName" @onclick="() => DownloadAttachment(attachment)">
+                                            <img class="w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] @(imageAttachments.Count == 1 ? "max-h-96 min-h-56" : "h-48")"
+                                                 src="@GetAttachmentPreviewUrl(attachment)"
+                                                 alt="@attachment.OriginalName"
+                                                 loading="lazy" />
+                                            <span class="absolute inset-x-0 bottom-0 flex items-end bg-gradient-to-t from-black/80 via-black/30 to-transparent px-3 pb-3 pt-10 text-sm font-medium text-white">
+                                                <span class="truncate pr-8">@attachment.OriginalName</span>
+                                            </span>
+                                        </button>
+                                        <button type="button" class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white opacity-100 backdrop-blur-sm transition hover:bg-red-button sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
+                                                title="Delete attachment"
+                                                aria-label="Delete @attachment.OriginalName"
+                                                @onclick="() => DeleteAttachment(attachment)"
+                                                @onclick:stopPropagation="true">
+                                            <i class="fa fa-trash-can"></i>
+                                        </button>
+                                    </article>
+                                }
+                            </div>
+                        }
+
+                        @if (fileAttachments.Count > 0)
+                        {
+                            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            @foreach (var attachment in fileAttachments)
                             {
-                                <div class="flex w-min cursor-pointer flex-row items-center justify-center gap-2 rounded-lg px-2 py-2 outline-2 outline-add-outline transition-all ease-in-out select-none hover:outline-add-outline-hover"
+                                <div @key="attachment.Id" class="flex min-w-0 cursor-pointer flex-row items-center gap-3 rounded-xl bg-search-bar px-3 py-3 outline-1 outline-add-outline transition-all ease-in-out select-none hover:outline-add-outline-hover"
                                     @onclick="() => DownloadAttachment(attachment)">
-                                    <div class="h-8 w-8 bg-cover bg-center" style="background-image: url('./images/icons/@AttachmentHelper.GetImageNameFromAttachment(attachment)');" />
-                                    <div class="flex flex-col text-xs font-normal">
-                                        <label class="cursor-pointer font-medium">@attachment.OriginalName</label>
-                                        <div class="flex flex-row gap-2">
-                                            <label class="cursor-pointer text-add-outline">@AttachmentHelper.GetFileTypeFromAttachment(attachment)</label>
-                                            <label class="ml-auto cursor-pointer text-red-button hover:text-red-button-hover" @onclick="() => DeleteAttachment(attachment)" @onclick:stopPropagation=true><i class="fa fa-trash-can" title="Delete attachment"></i></label>
-                                        </div>
+                                    <div class="h-10 w-10 shrink-0 bg-contain bg-center bg-no-repeat" style="background-image: url('./images/icons/@AttachmentHelper.GetImageNameFromAttachment(attachment)');"></div>
+                                    <div class="flex min-w-0 flex-1 flex-col text-xs font-normal">
+                                        <span class="truncate cursor-pointer font-medium" title="@attachment.OriginalName">@attachment.OriginalName</span>
+                                        <span class="cursor-pointer text-add-outline">@AttachmentHelper.GetFileTypeFromAttachment(attachment)</span>
                                     </div>
+                                    <button type="button" class="ml-auto shrink-0 p-2 text-red-button hover:text-red-button-hover" aria-label="Delete @attachment.OriginalName" @onclick="() => DeleteAttachment(attachment)" @onclick:stopPropagation="true"><i class="fa fa-trash-can" title="Delete attachment"></i></button>
                                 </div>
                             }
-                        </div>
+                            </div>
+                        }
                     </section>
                 }
                 else if (_tab == 1)
@@ -872,6 +906,11 @@
     private async Task DownloadAttachment(Attachment attachment)
     {
         await _js.InvokeVoidAsync("triggerFileDownload", attachment.OriginalName, $"{Constants.Mappings.ATTACHMENTS_DOWNLOAD_PATH}/{attachment.FileName}");
+    }
+
+    private static string GetAttachmentPreviewUrl(Attachment attachment)
+    {
+        return $"{Constants.Mappings.ATTACHMENTS_PREVIEW_PATH}/{Uri.EscapeDataString(attachment.FileName)}";
     }
 
     private async Task DeleteAttachment(Attachment attachment)

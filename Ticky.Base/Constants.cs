@@ -72,6 +72,24 @@ namespace Ticky.Base
             public const int DEBOUNCE_TIME_IN_MS = 1000;
         }
 
+        public static class Attachments
+        {
+            public const string AVIF_FILE_EXTENSION = ".avif";
+            public const string AVIF_CONTENT_TYPE = "image/avif";
+
+            public static readonly HashSet<string> IMAGE_FILE_EXTENSIONS =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                AVIF_FILE_EXTENSION,
+                ".bmp",
+                ".gif",
+                ".jpeg",
+                ".jpg",
+                ".png",
+                ".webp"
+            };
+        }
+
         public static class Mappings
         {
             public const string LOGIN_PATH = "/auth/login";
@@ -79,6 +97,7 @@ namespace Ticky.Base
             public const string BOARD_PATH = "/boards";
             public const string ATTACHMENTS_API_PATH = "/api/attachments";
             public const string ATTACHMENTS_DOWNLOAD_PATH = ATTACHMENTS_API_PATH + "/download";
+            public const string ATTACHMENTS_PREVIEW_PATH = ATTACHMENTS_API_PATH + "/preview";
         }
 
         public static class Policies
