@@ -282,7 +282,7 @@
                                 @foreach (var attachment in imageAttachments)
                                 {
                                     <article @key="attachment.Id" class="group relative overflow-hidden rounded-xl bg-search-bar shadow-sm outline-1 outline-add-outline transition-all hover:shadow-md hover:outline-add-outline-hover @(imageAttachments.Count == 1 ? "sm:col-span-2" : string.Empty)">
-                                        <button type="button" class="block w-full cursor-pointer overflow-hidden bg-search-bar text-left" aria-label="Download @attachment.OriginalName" @onclick="() => DownloadAttachment(attachment)">
+                                        <button type="button" class="block w-full cursor-pointer overflow-hidden bg-search-bar !p-0 text-left" aria-label="Download @attachment.OriginalName" @onclick="() => DownloadAttachment(attachment)">
                                             <img class="w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] @(imageAttachments.Count == 1 ? "max-h-96 min-h-56" : "h-48")"
                                                  src="@GetAttachmentPreviewUrl(attachment)"
                                                  alt="@attachment.OriginalName"
