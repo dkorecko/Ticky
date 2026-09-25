@@ -53,7 +53,7 @@ public class AttachmentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while downloading attachment {FileName}", decodedFileName);
+            _logger.LogError(ex, "Error while downloading an attachment");
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -96,7 +96,7 @@ public class AttachmentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while previewing attachment {FileName}", decodedFileName);
+            _logger.LogError(ex, "Error while previewing an attachment");
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
