@@ -89,6 +89,9 @@ public class AttachmentsController : ControllerBase
 
             var contentTypeProvider =
                 new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+            contentTypeProvider.Mappings[Constants.Attachments.AVIF_FILE_EXTENSION] =
+                Constants.Attachments.AVIF_CONTENT_TYPE;
+
             if (!contentTypeProvider.TryGetContentType(attachment.OriginalName, out var contentType))
                 return NotFound();
 

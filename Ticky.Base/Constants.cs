@@ -74,10 +74,13 @@ namespace Ticky.Base
 
         public static class Attachments
         {
+            public const string AVIF_FILE_EXTENSION = ".avif";
+            public const string AVIF_CONTENT_TYPE = "image/avif";
+
             public static readonly HashSet<string> IMAGE_FILE_EXTENSIONS =
             new(StringComparer.OrdinalIgnoreCase)
             {
-                ".avif",
+                AVIF_FILE_EXTENSION,
                 ".bmp",
                 ".gif",
                 ".jpeg",
