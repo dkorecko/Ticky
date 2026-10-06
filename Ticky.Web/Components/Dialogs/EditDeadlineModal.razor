@@ -66,6 +66,7 @@
         card.DeadlineProcessed = false;
         card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.DeadlineSet,
                 Text = $"<b>set</b> the deadline for <b>{card.Deadline.Value.ToReadableStringWithTime()}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,

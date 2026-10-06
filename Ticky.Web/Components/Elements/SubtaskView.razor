@@ -71,6 +71,7 @@
 
             target.Card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.SubtaskCompletionChanged,
                 Text = $"<b>marked</b> the subtask <b>{target.Text}</b> as <b>{(target.Completed ? "completed" : "to be done")}</b>",
                 UserId = _user.Id,
                 CardId = target.CardId,
@@ -102,6 +103,7 @@
 
             sub.Card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.SubtaskDeleted,
                 Text = $"<b>deleted</b> subtask <b>{sub.Text}</b>",
                 UserId = _user.Id,
                 CardId = sub.CardId,

@@ -68,6 +68,7 @@
         card.Reminders.Add(newReminder);
         card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.ReminderAdded,
                 Text = $"<b>added</b> a reminder for <b>{newReminder.At.ToReadableStringWithTime()}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,

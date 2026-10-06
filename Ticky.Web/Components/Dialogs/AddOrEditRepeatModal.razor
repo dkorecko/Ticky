@@ -179,6 +179,7 @@
 
         card.Activities.Add(new Activity
         {
+            ActivityType = ActivityType.RepeatSet,
             Text = $"<b>set up card repeat</b> for this card for <b>{card.RepeatInfo.Type.GetDisplayName()}</b>",
             UserId = _user.Id,
             CardId = card.Id,

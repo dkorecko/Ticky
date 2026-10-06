@@ -226,14 +226,32 @@ namespace Ticky.Internal.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("ActivityType")
+                        .HasColumnType("int");
+
                     b.Property<int>("CardId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("FromColumnId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FromColumnName")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Text")
                         .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<bool?>("ToColumnFinished")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int?>("ToColumnId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ToColumnName")
                         .HasColumnType("longtext");
 
                     b.Property<int>("UserId")
@@ -243,7 +261,13 @@ namespace Ticky.Internal.Migrations
 
                     b.HasIndex("CardId");
 
+                    b.HasIndex("FromColumnId");
+
+                    b.HasIndex("ToColumnId");
+
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ActivityType", "CreatedAt");
 
                     b.ToTable("Activities");
                 });
@@ -963,6 +987,16 @@ namespace Ticky.Internal.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Ticky.Base.Entities.Column", "FromColumn")
+                        .WithMany()
+                        .HasForeignKey("FromColumnId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Ticky.Base.Entities.Column", "ToColumn")
+                        .WithMany()
+                        .HasForeignKey("ToColumnId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Ticky.Base.Entities.User", "User")
                         .WithMany("Activities")
                         .HasForeignKey("UserId")
@@ -970,6 +1004,10 @@ namespace Ticky.Internal.Migrations
                         .IsRequired();
 
                     b.Navigation("Card");
+
+                    b.Navigation("FromColumn");
+
+                    b.Navigation("ToColumn");
 
                     b.Navigation("User");
                 });

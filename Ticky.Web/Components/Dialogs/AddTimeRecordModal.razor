@@ -66,6 +66,7 @@
         card.TimeRecords.Add(timeRecord);
         card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.TimeRecordAdded,
                 Text = $"<b>added</b> a time record for <b>{(timeRecord.EndedAt.Value-timeRecord.StartedAt).ToElapsedString()}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,

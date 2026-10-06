@@ -68,6 +68,7 @@
         card.Priority = priority;
         card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.PriorityChanged,
                 Text = $"<b>changed</b> the priority to <b>{priority}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,

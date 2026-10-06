@@ -60,6 +60,7 @@
             });
         card.Activities.Add(new Activity
             {
+                ActivityType = ActivityType.SubtaskAdded,
                 Text = $"<b>added</b> subtask <b>{_subtaskModel.Text}</b>",
                 UserId = _user.Id,
                 CardId = card.Id,
