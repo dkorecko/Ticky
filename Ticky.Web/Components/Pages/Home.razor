@@ -13,32 +13,67 @@
 <PageTitle>Home - @Constants.APP_NAME</PageTitle>
 
 <div class="flex w-full flex-col space-y-8 overflow-y-auto">
-    <div class="island flex flex-col space-y-6">
-        <h2>
-            Hey, there 👋 <br/>
-            What are you up to today?
-        </h2>
-        <p class="subtext">
-            On this home page you can create a new board/project or open an existing one.
-        </p>
-        <div class="flex flex-row space-x-2">
-            <a class="btn btn-purple flex !w-max" href=@($"{Constants.Mappings.BOARD_PATH}/{_user?.LastVisitedBoardId}")>
-                <span class="material-symbols-rounded g-icon self-center">
-                    tab_recent
-                </span>
-                <span class="self-center">
-                    Recent board
-                </span>
-            </a>
-            <button class="btn btn-yellow flex !w-max" @onclick="() => _createProjectModal?.Open()">
-                <span class="material-symbols-rounded g-icon self-center">
-                    add_ad
-                </span>
-                <span class="self-center">
-                    New project
-                </span>
-            </button>
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8">
+        <div class="island col-span-2 flex flex-col space-y-6 sm:col-span-4 lg:col-span-4">
+            <h2>
+                Hi, @(_user.DisplayName.Split(' ')[0]) 👋 <br/>
+                What are you up to today?
+            </h2>
+            <p class="subtext">
+                On this home page you can create a new board/project or open an existing one.
+            </p>
+            <div class="flex flex-row space-x-2">
+                <a class="btn btn-purple flex !w-max" href=@($"{Constants.Mappings.BOARD_PATH}/{_user?.LastVisitedBoardId}")>
+                    <span class="material-symbols-rounded g-icon self-center">
+                        tab_recent
+                    </span>
+                    <span class="self-center">
+                        Recent board
+                    </span>
+                </a>
+                <button class="btn btn-yellow flex !w-max" @onclick="() => _createProjectModal?.Open()">
+                    <span class="material-symbols-rounded g-icon self-center">
+                        add_ad
+                    </span>
+                    <span class="self-center">
+                        New project
+                    </span>
+                </button>
+            </div>
         </div>
+
+        <div class="island flex flex-col items-center justify-center gap-2 text-center">
+            <div class="flex h-14 w-14 items-center justify-center rounded-button bg-background dark:bg-bgDark">
+                <span class="material-symbols-rounded !text-2xl text-subtext dark:text-subtextDark">
+                    category
+                </span>
+            </div>
+            <span class="text-sm font-bold">Organize</span>
+        </div>
+        <div class="island flex flex-col items-center justify-center gap-2 text-center">
+            <div class="flex h-14 w-14 items-center justify-center rounded-button bg-background dark:bg-bgDark">
+                <span class="material-symbols-rounded !text-2xl text-subtext dark:text-subtextDark">
+                    share
+                </span>
+            </div>
+            <span class="text-sm font-bold">Share</span>
+        </div>
+        <div class="island flex flex-col items-center justify-center gap-2 text-center">
+            <div class="flex h-14 w-14 items-center justify-center rounded-button bg-background dark:bg-bgDark">
+                <span class="material-symbols-rounded !text-2xl text-subtext dark:text-subtextDark">
+                    groups
+                </span>
+            </div>
+            <span class="text-sm font-bold">Collab</span>
+        </div>
+        <button type="button" class="rounded-island px-island-x py-island-y flex flex-col items-center justify-center gap-2 bg-tint text-center hover:bg-tint/80 dark:bg-tintDark dark:hover:bg-tintDark/80" @onclick="() => _createProjectModal?.Open()" title="Create new project">
+            <div class="flex h-14 w-14 items-center justify-center rounded-button bg-primary/50 dark:bg-primaryDark/30">
+                <span class="material-symbols-rounded !text-2xl text-text dark:text-primaryDark">
+                    add_circle
+                </span>
+            </div>
+            <span class="text-text text-sm font-bold dark:text-primaryDark">New project</span>
+        </button>
     </div>
 
     @if (_projects is not null && _remainingBoards is not null)
@@ -90,11 +125,8 @@
                     }
                     @if(project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin) 
                     {
-                        <button class="btn flex h-full flex-col justify-between gap-2 bg-text !p-4 text-primary hover:bg-text/90 dark:bg-secondaryDark dark:text-primary dark:hover:bg-secondaryDark/80" @onclick="() => _createBoardModal?.Open(project.Id)" title="Create new board">
-                            <span class="material-symbols-rounded g-icon" title="Add project">
-                                add
-                            </span>
-                            <h6>New board</h6>
+                        <button class="btn rounded-island flex min-h-48 h-full flex-col items-center justify-end bg-text !p-4 text-primary hover:bg-text/90 dark:bg-secondaryDark dark:text-primaryDark dark:hover:bg-secondaryDark/80" @onclick="() => _createBoardModal?.Open(project.Id)" title="Create new board">
+                            <h6>Add new board</h6>
                         </button>
                     }
                 </div>

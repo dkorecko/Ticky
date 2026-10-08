@@ -35,7 +35,7 @@
                                 { "Admin", () => ChangeAdmin(membership.Id, true)},
                                 { "Member", () => ChangeAdmin(membership.Id, false)}
                             }'>
-                                <div class='flex flex-row items-center justify-between pr-2 pl-5 transition-all ease-in-out @(!membership.UserId.Equals(_user.Id) ? "bg-full-dropdown hover:bg-full-dropdown-hover cursor-pointer" : "bg-gray-100 cursor-not-allowed")'>
+                                <div class='flex flex-row items-center justify-between pr-2 pl-5 transition-all ease-in-out @(!membership.UserId.Equals(_user.Id) ? "hover:bg-dropdown-option cursor-pointer" : "bg-background dark:bg-bgDark cursor-not-allowed")'>
                                     @(membership.IsAdmin ? "Admin" : "Member")
 
                                     <span class="material-symbols-rounded self-center @(membership.UserId.Equals(_user.Id) ? "disabled-icon" : string.Empty)" title="Change role">

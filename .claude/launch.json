@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ticky-web",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["watch", "run", "--project", "Ticky.Web", "--launch-profile", "https"],
+      "port": 7225
+    }
+  ]
+}

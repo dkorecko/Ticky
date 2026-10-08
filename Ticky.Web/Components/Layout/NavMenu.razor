@@ -4,7 +4,7 @@
 @inject NavigationManager _navigationManager
 @inject SearchService _searchService
 
-<nav id="nav-menu" class="z-10 bg-primary px-4 py-2 dark:bg-primaryDark">
+<nav id="nav-menu" class="relative z-10 bg-primary px-4 py-2 dark:bg-primaryDark">
     <!-- Desktop version -->
     <div class="hidden w-full flex-row justify-between self-center lg:flex">
         <div class="nav-links w-1/4">
@@ -12,7 +12,7 @@
                 <img height="25" width="37" src="/assets/ticky-light.svg" alt="Ticky app logo" class="block dark:hidden" />
                 <img height="25" width="37" src="/assets/ticky-dark.svg" alt="Ticky app logo" class="hidden dark:block" />
             </NavLink>
-            <input @ref="_triggerElement" class="input-field w-full" type="search" placeholder="Search for tasks ..." @oninput="UpdateSearchTerm" @onclick='OpenSearchResults' @onclick:stopPropagation=true/>
+            <input @ref="_triggerElement" class="input-field w-full" type="search" placeholder="Search for tasks ..." @oninput="UpdateSearchTerm" @onclick='() => OpenSearchResults(false)' @onclick:stopPropagation=true/>
         </div>
         <div @ref="_dropdownElement" class="dropdown absolute top-4 left-0 hidden min-w-80">
             <div class="dropdown-box">
@@ -66,8 +66,8 @@
                     <div class="flex flex-row items-center space-x-2">
                         <div class="h-8 w-8 rounded-lg bg-secondary bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
                         <div class="flex flex-col">
-                            <span class="subtext text-xs">John</span>
-                            <span class="text-xs uppercase">Doe</span>
+                            <span class="subtext text-xs">@FirstName</span>
+                            <span class="text-xs uppercase">@LastName</span>
                         </div>
                     </div>
                     @if (_dropdownMenu)
@@ -146,8 +146,8 @@
             <img height="25" width="37" src="/assets/ticky-dark.svg" alt="Ticky app logo" class="hidden dark:block" />
         </NavLink>
 
-        <input @ref="_triggerElement" class="input-field w-full" type="search" placeholder="Search for tasks ..." @oninput="UpdateSearchTerm" @onclick='OpenSearchResults' @onclick:stopPropagation=true />
-        <div @ref="_dropdownElement" class="dropdown absolute top-4 left-0 hidden w-full sm:min-w-80">
+        <input @ref="_triggerElementMobile" class="input-field w-full" type="search" placeholder="Search for tasks ..." @oninput="UpdateSearchTerm" @onclick='() => OpenSearchResults(true)' @onclick:stopPropagation=true />
+        <div @ref="_dropdownElementMobile" class="dropdown absolute top-4 left-0 hidden w-full sm:min-w-80">
             <div class="dropdown-box">
                 @if (_isLoading)
                 {
@@ -180,8 +180,8 @@
                 <div class="flex flex-row items-center sm:space-x-2">
                     <div class="h-8 w-8 rounded-lg bg-secondary bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
                     <div class="hidden flex-col sm:flex">
-                        <span class="subtext text-xs">John</span>
-                        <span class="text-xs uppercase">Doe</span>
+                        <span class="subtext text-xs">@FirstName</span>
+                        <span class="text-xs uppercase">@LastName</span>
                     </div>
                 </div>
                 <div class="hidden self-center sm:flex">
@@ -276,6 +276,26 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
+    private string FirstName
+    {
+        get
+        {
+            var name = _user?.DisplayName ?? string.Empty;
+            var lastSpace = name.LastIndexOf(' ');
+            return lastSpace > 0 ? name[..lastSpace] : name;
+        }
+    }
+
+    private string LastName
+    {
+        get
+        {
+            var name = _user?.DisplayName ?? string.Empty;
+            var lastSpace = name.LastIndexOf(' ');
+            return lastSpace > 0 ? name[(lastSpace + 1)..] : string.Empty;
+        }
+    }
+
     private Timer? _timer;
     private string? _searchTerm;
     private bool _isLoading;
@@ -284,6 +304,8 @@
 
     private ElementReference? _triggerElement;
     private ElementReference? _dropdownElement;
+    private ElementReference? _triggerElementMobile;
+    private ElementReference? _dropdownElementMobile;
     private SearchModal? _searchModal;
 
     private bool _dropdownMenu = false;
@@ -318,9 +340,10 @@
         await _js.InvokeVoidAsync("closeDropdowns");
     }
 
-    private async Task OpenSearchResults()
+    private async Task OpenSearchResults(bool mobile)
     {
-        await _js.InvokeVoidAsync("openDropDownOnElementPosition", _dropdownElement, _triggerElement);
+        // The desktop and mobile layouts each render their own input + results dropdown; anchor to the one that was clicked.
+        await _js.InvokeVoidAsync("openDropDownOnElementPosition", mobile ? _dropdownElementMobile : _dropdownElement, mobile ? _triggerElementMobile : _triggerElement);
     }
 
     private async void Filter(Object? obj = null, ElapsedEventArgs? e = null)

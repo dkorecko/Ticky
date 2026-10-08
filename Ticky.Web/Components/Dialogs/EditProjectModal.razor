@@ -10,7 +10,7 @@
             <DataAnnotationsValidator/>
 
             <div class="form-section">
-                <Name For="() => _project.Name" class="form-label" />
+                <Name For="() => _project.Name" />
                 <InputText class="input-field" @bind-Value="_project.Name" @ref="FocusElement" />
                 <ValidationMessage For="() => _project.Name" />
             </div>

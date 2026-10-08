@@ -212,8 +212,8 @@
                                             <label class="subtext">@completedCards/@totalCards</label>
                                         </div>
                                         <div class="grid h-1 w-full rounded-full">
-                                            <div class="z-10 w-24 rounded-full bg-pink-500 transition-all dark:bg-pink-500" style="grid-row: 1; grid-column: 1; width: @(totalCards == 0 ? 0 : Math.Round((double)completedCards / totalCards * 100))%;"></div>
-                                            <div class="rounded-full bg-pink-100 dark:bg-pink-300" style="grid-row: 1; grid-column: 1;"></div>
+                                            <div class="z-10 w-24 rounded-full bg-secondary transition-all dark:bg-secondaryDark" style="grid-row: 1; grid-column: 1; width: @(totalCards == 0 ? 0 : Math.Round((double)completedCards / totalCards * 100))%;"></div>
+                                            <div class="rounded-full bg-background dark:bg-bgDark" style="grid-row: 1; grid-column: 1;"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -232,10 +232,10 @@
                                             <div class="flex flex-row items-center justify-between">
                                                 <div class="flex items-center gap-2">
                                                     <label class="text-sm font-semibold">@col.Name</label>
-                                                    <label class="text-2xs text-gray-500">@colTotal.ToElapsedString()</label>
+                                                    <label class="text-2xs subtext">@colTotal.ToElapsedString()</label>
                                                 </div>
                                                 <div>
-                                                    <button class="text-xs text-primary px-3 py-1 rounded" @onclick="() => ToggleExpand(expandId)">@(IsExpanded(expandId) ? "Hide" : "Show")</button>
+                                                    <button class="btn btn-transparent !w-max text-xs" @onclick="() => ToggleExpand(expandId)">@(IsExpanded(expandId) ? "Hide" : "Show")</button>
                                                 </div>
                                             </div>
 
@@ -249,20 +249,19 @@
                                                             var user = _members.FirstOrDefault(m => m.Id == kv.Key);
                                                             <div class="flex flex-row justify-between">
                                                                 <div class="text-ellipsis">@(user != null ? user.Name : "Unknown")</div>
-                                                                <div class="text-gray-500">@kv.Value.ToElapsedString()</div>
+                                                                <div class="subtext">@kv.Value.ToElapsedString()</div>
                                                             </div>
                                                         }
                                                     }
                                                     else
                                                     {
-                                                        <div class="text-gray-500">No time tracked</div>
+                                                        <div class="subtext">No time tracked</div>
                                                     }
                                                 </div>
                                             }
                                         </div>
                                     }
                                 </div>
-                            </div>
                         }
                         else
                         {
@@ -270,12 +269,14 @@
                         }
                     </div>
                 </section>
-            }
+            </div>
+        }
         }
     </div>
 }
 
 @code {
+
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 

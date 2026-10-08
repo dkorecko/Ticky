@@ -63,7 +63,7 @@
         @if (Column.MaxCards == 0 || cardsCount < Column.MaxCards)
         {
             <div data-active=@(AddingCardHere.ToString()) @onclick="() => StartAddingToColumn(Column.Id)"
-                 class="add select-none h-min w-full to-task-card">
+                 class="select-none h-min w-full">
                 @if (!AddingCardHere)
                 {
                     <div class="btn btn-purple font-bold" title="New card">
@@ -80,7 +80,7 @@
                             </a>
                         </div>
 
-                        <textarea class="bg-card-bg outline-typing-outline h-16 w-full rounded-lg p-2 text-start text-xs outline-1"
+                        <textarea class="input-field h-16 resize-none"
                                   @bind="CreateTaskText"
                                   @bind:event="oninput"
                                   @ref=_textElement

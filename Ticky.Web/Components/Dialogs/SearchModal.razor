@@ -5,25 +5,49 @@
 @inject IJSRuntime _js
 @inject SearchService _searchService
 
-<Modal Class="text-app-text" @ref="Modal" Title="Search" DisableButtons=true ForceOverlay=true OnShown="OnShown">
-    <input @ref=_input class="w-80 rounded-2xl bg-search-bar p-2 text-center text-xs" autofocus type="search"
-           placeholder="Search for tasks ..." @oninput="UpdateSearchTerm"/>
-
-    @if(_isLoading)
-    {
-        <Spinner/>
-    } else {
-        foreach(var card in _resultCards)
+<Modal Class="text-text dark:text-textDark" @ref="Modal" Title="@(CardToLink is null ? "Search" : "Link card")" DisableButtons=true EnableTitle=true ForceOverlay=true OnShown="OnShown">
+    <div class="flex flex-col gap-4">
+        @if (CardToLink is not null)
         {
-            <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-dropdown-option" @onclick='async () => await OnSelectedCard(card)'>
-                <div class="flex flex-row justify-between gap-3">
-                    <label class="cursor-pointer whitespace-nowrap">@card.Column.Board.Code-@card.Number</label>
-                    <label class="cursor-pointer truncate whitespace-nowrap">@card.Name</label>
-                </div>
-                <label class="text-2xs cursor-pointer font-light">Project @card.Column.Board.Project.Name – @card.Column.Board.Name</label>
-            </div>
+            <p class="subtext">Find the card you want to link to <span class="font-semibold text-text dark:text-textDark">@CardToLink.Column.Board.Code-@CardToLink.Number</span>.</p>
         }
-    }
+
+        <div class="flex flex-row items-center gap-2">
+            <span class="material-symbols-rounded g-icon self-center text-subtext dark:text-subtextDark">search</span>
+            <input @ref=_input class="input-field" autofocus type="search"
+                   placeholder="Search by name, description or card code ..." @oninput="UpdateSearchTerm"/>
+        </div>
+
+        <div class="flex max-h-80 flex-col gap-2 overflow-y-auto">
+            @if (_isLoading)
+            {
+                <Spinner/>
+            }
+            else if (_resultCards.Count > 0)
+            {
+                foreach (var card in _resultCards)
+                {
+                    <button type="button" class="flex w-full flex-col gap-1 rounded-button bg-background p-3 text-left hover:bg-secondary/20 dark:bg-bgDark dark:hover:bg-secondaryDark/20" @onclick='async () => await OnSelectedCard(card)'>
+                        <div class="flex flex-row items-center gap-2">
+                            <span class="card-data-point !cursor-pointer !bg-primary dark:!bg-primaryDark">
+                                <span class="material-symbols-rounded self-center">tag</span>
+                                @card.Column.Board.Code-@card.Number
+                            </span>
+                            <h6 class="truncate">@card.Name</h6>
+                        </div>
+                        <span class="subtext text-xs">Project @card.Column.Board.Project.Name · @card.Column.Board.Name · @card.Column.Name</span>
+                    </button>
+                }
+            }
+            else
+            {
+                <div class="flex flex-col items-center gap-1 py-6 text-center">
+                    <span class="material-symbols-rounded g-icon text-subtext dark:text-subtextDark">@(_searched ? "search_off" : "manage_search")</span>
+                    <p class="subtext">@(_searched ? "No cards found. Try a different search." : "Start typing to find a card.")</p>
+                </div>
+            }
+        </div>
+    </div>
 </Modal>
 
 @code {
@@ -39,6 +63,7 @@
     private Timer? _timer;
     private string? _searchTerm;
     private bool _isLoading;
+    private bool _searched;
     private ElementReference? _input;
 
     private List<Card> _resultCards = [];
@@ -50,7 +75,7 @@
 
         StateHasChanged();
 
-        _timer = new Timer(2000);
+        _timer = new Timer(Constants.Limits.DEBOUNCE_TIME_IN_MS);
         _timer.Stop();
         _timer.Elapsed += Filter;
         _timer.AutoReset = false;
@@ -96,6 +121,7 @@
     private async void Filter(Object? obj = null, ElapsedEventArgs? e = null)
     {
         _resultCards = await _searchService.SearchAsync(_searchTerm, _user);
+        _searched = !string.IsNullOrWhiteSpace(_searchTerm);
         _isLoading = false;
         await InvokeAsync(StateHasChanged);
     }

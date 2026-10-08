@@ -25,7 +25,7 @@
         </div>
     }
 
-    <i @ref=_assigneesTrigger class="fa fa-user edit-icon" @onclick='() => AssigneesModal?.Open(_assigneesTrigger, Subtask, Members)' title="Add/remove assignees"></i>
+    <button type="button" @ref=_assigneesTrigger class="chip-button" @onclick='() => AssigneesModal?.Open(_assigneesTrigger, Subtask, Members)' title="Add/remove assignees">Add members <i class="fa fa-plus"></i></button>
     <i id="subtask_edit_@Subtask.Id" class="fa fa-pencil edit-icon" @onclick='() => EditSubtaskModal?.Open($"subtask_edit_{Subtask.Id}", Subtask)' title="Edit subtask"></i>
     <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="DeleteSubtask" title="Delete subtask"></i>
 </div>

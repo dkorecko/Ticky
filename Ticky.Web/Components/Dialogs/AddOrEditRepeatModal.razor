@@ -53,7 +53,7 @@
 
             <div class="form-group">
                 <Name For="() => _repeatModel.StartDate" />
-                <InputDate @bind-Value="_repeatModel.StartDate" />
+                <InputDate class="form-control" @bind-Value="_repeatModel.StartDate" />
                 <ValidationMessage For="() => _repeatModel.StartDate" />
             </div>
 
@@ -100,7 +100,7 @@
                 <ValidationMessage For="() => _repeatModel.TargetColumnId" />
             </div>
 
-            <button type="submit">Set</button>
+            <button type="submit" class="btn btn-yellow">Set</button>
         </EditForm>
     }
 </ActionModal>

@@ -1,47 +1,50 @@
-const OPEN_OFFSET = 8;
+﻿const OPEN_OFFSET = 8;
 
 function positionDropdown(dropdownElement, left, top, width = null) {
-    //console.log('positioning')
+    const cssPositioned = dropdownElement.dataset.cssPositioned === 'true';
+
     dropdownElement.classList.remove('hidden');
     dropdownElement.style.visibility = 'hidden';
     if (width !== null) {
-        //console.log('width')
         dropdownElement.style.width = width + 'px';
     }
-    //dropdownElement.style.left = left + 'px';
-    //dropdownElement.style.top = top + 'px';
+
+    if (!cssPositioned) {
+        dropdownElement.style.left = left + 'px';
+        dropdownElement.style.top = top + 'px';
+    }
 
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            /*
-            const rect = dropdownElement.getBoundingClientRect();
-            const mostRightPoint = left + rect.width;
-            const mostBottomPoint = top + rect.height;
+            if (!cssPositioned && document.documentElement.clientWidth > 0 && document.documentElement.clientHeight > 0) {
+                // Use layout size/position, not getBoundingClientRect, so the entry animation's translate doesn't skew the math.
+                const curLeft = parseFloat(dropdownElement.style.left) || 0;
+                const curTop = parseFloat(dropdownElement.style.top) || 0;
+                const width = dropdownElement.offsetWidth;
+                const height = dropdownElement.offsetHeight;
+                const availableWidth = document.documentElement.clientWidth - OPEN_OFFSET;
+                const availableHeight = document.documentElement.clientHeight - OPEN_OFFSET;
 
-            const availableWidth = document.documentElement.clientWidth - (OPEN_OFFSET * 2)
-            const availableHeight = document.documentElement.clientHeight - (OPEN_OFFSET * 2)
-
-            if (mostRightPoint > availableWidth) {
-                if(availableWidth > rect.width) {
-                    dropdownElement.style.left = availableWidth - rect.width + 'px';
-                } else {
-                    dropdownElement.style.left = OPEN_OFFSET + 'px';
-                    dropdownElement.style.maxWidth = availableWidth + 'px';
+                if (curLeft + width > availableWidth) {
+                    if (availableWidth - OPEN_OFFSET > width) {
+                        dropdownElement.style.left = (availableWidth - width) + 'px';
+                    } else {
+                        dropdownElement.style.left = OPEN_OFFSET + 'px';
+                        dropdownElement.style.maxWidth = (availableWidth - OPEN_OFFSET) + 'px';
+                    }
+                }
+                if (curTop + height > availableHeight) {
+                    if (availableHeight - OPEN_OFFSET > height) {
+                        dropdownElement.style.top = (availableHeight - height) + 'px';
+                    } else {
+                        dropdownElement.style.top = OPEN_OFFSET + 'px';
+                        dropdownElement.style.maxHeight = (availableHeight - OPEN_OFFSET) + 'px';
+                    }
                 }
             }
-            if (mostBottomPoint > availableHeight) {
-                if(availableHeight > rect.height) {
-                    dropdownElement.style.top = availableHeight - rect.height + 'px';
-                } else {
-                    dropdownElement.style.top = OPEN_OFFSET + 'px';
-                    dropdownElement.style.maxHeight = availableHeight + 'px';
-                }
-            }
-            */
             dropdownElement.style.visibility = 'visible';
             void dropdownElement.offsetWidth;
             dropdownElement.classList.add('dropdown-animate-in');
-            //console.log('positioning done')
         });
     });
 }
@@ -115,7 +118,10 @@ function closeDropdowns() {
 }
 
 function openDropDownOnElementId(dropdownElement, triggerElementId) {
-    return openDropDownOnElementPosition(dropdownElement, document.getElementById(triggerElementId));
+    // The same id can exist twice (desktop + mobile layouts); anchor to the one that is actually visible.
+    const candidates = Array.from(document.querySelectorAll('[id="' + CSS.escape(triggerElementId) + '"]'));
+    const trigger = candidates.find(el => el.getClientRects().length > 0) || candidates[0] || null;
+    return openDropDownOnElementPosition(dropdownElement, trigger);
 }
 
 function openDropDownOnElementPosition(dropdownElement, triggerElement) {
