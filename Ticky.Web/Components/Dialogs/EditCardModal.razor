@@ -26,7 +26,7 @@
     }
     else
     {
-        <div class="h-[90vh] overflow-x-hidden overflow-y-scroll" @ref="_scrollContainerRef">
+        <div class="modal-scroll h-[90vh] overflow-x-hidden overflow-y-auto" @ref="_scrollContainerRef">
             <div class="flex flex-col gap-3">
                 <div class="flex flex-row items-start justify-between gap-3">
                     <textarea class="min-h-12 w-full resize-none px-2 py-2 text-2xl font-bold transition-all ease-in-out" @onchange="OnTextChanged">@_card.Name</textarea>

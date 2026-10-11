@@ -766,9 +766,6 @@
   .overflow-y-auto {
     overflow-y: auto;
   }
-  .overflow-y-scroll {
-    overflow-y: scroll;
-  }
   .\!rounded-button {
     border-radius: var(--radius-button) !important;
   }
@@ -3299,6 +3296,15 @@ input[type="checkbox"].toggle:checked:after {
 }
 .chip-button > i {
   font-size: var(--text-2xs) !important;
+}
+.modal-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-subtext) transparent;
+  padding-right: calc(var(--spacing) * 3);
+}
+.dark .modal-scroll {
+  scrollbar-color: var(--color-subtextDark) transparent;
 }
 .detail-tab {
   cursor: pointer;

@@ -42,7 +42,7 @@
             </div>
         </div>
 
-        <div class="island flex flex-col items-center justify-center gap-2 text-center">
+        <div class="island hidden lg:flex flex-col items-center justify-center gap-2 text-center">
             <div class="flex h-14 w-14 items-center justify-center rounded-button bg-background dark:bg-bgDark">
                 <span class="material-symbols-rounded !text-2xl text-subtext dark:text-subtextDark">
                     category
@@ -50,7 +50,7 @@
             </div>
             <span class="text-sm font-bold">Organize</span>
         </div>
-        <div class="island flex flex-col items-center justify-center gap-2 text-center">
+        <div class="island hidden lg:flex flex-col items-center justify-center gap-2 text-center">
             <div class="flex h-14 w-14 items-center justify-center rounded-button bg-background dark:bg-bgDark">
                 <span class="material-symbols-rounded !text-2xl text-subtext dark:text-subtextDark">
                     share
@@ -58,7 +58,7 @@
             </div>
             <span class="text-sm font-bold">Share</span>
         </div>
-        <div class="island flex flex-col items-center justify-center gap-2 text-center">
+        <div class="island hidden lg:flex flex-col items-center justify-center gap-2 text-center">
             <div class="flex h-14 w-14 items-center justify-center rounded-button bg-background dark:bg-bgDark">
                 <span class="material-symbols-rounded !text-2xl text-subtext dark:text-subtextDark">
                     groups
@@ -66,7 +66,7 @@
             </div>
             <span class="text-sm font-bold">Collab</span>
         </div>
-        <button type="button" class="rounded-island px-island-x py-island-y flex flex-col items-center justify-center gap-2 bg-tint text-center hover:bg-tint/80 dark:bg-tintDark dark:hover:bg-tintDark/80" @onclick="() => _createProjectModal?.Open()" title="Create new project">
+        <button type="button" class="rounded-island px-island-x py-island-y hidden lg:flex flex-col items-center justify-center gap-2 bg-tint text-center hover:bg-tint/80 dark:bg-tintDark dark:hover:bg-tintDark/80" @onclick="() => _createProjectModal?.Open()" title="Create new project">
             <div class="flex h-14 w-14 items-center justify-center rounded-button bg-primary/50 dark:bg-primaryDark/30">
                 <span class="material-symbols-rounded !text-2xl text-text dark:text-primaryDark">
                     add_circle

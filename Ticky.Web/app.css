@@ -569,6 +569,18 @@ input[type="checkbox"].toggle {
     @apply !text-2xs;
 }
 
+/* Reserve a gutter so the scrollbar never overlaps content, and keep it slim. */
+.modal-scroll {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-subtext) transparent;
+    @apply pr-3;
+}
+
+.dark .modal-scroll {
+    scrollbar-color: var(--color-subtextDark) transparent;
+}
+
 .detail-tab {
     @apply cursor-pointer rounded-button px-3 py-1 text-xs font-medium select-none transition-all ease-in-out hover:bg-secondary/10 data-[active=True]:bg-secondary/20 data-[active=True]:text-secondary data-[active=True]:font-semibold dark:hover:bg-secondaryDark/10 dark:data-[active=True]:bg-secondaryDark/20 dark:data-[active=True]:text-secondaryDark;
 }
