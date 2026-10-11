@@ -1,7 +1,7 @@
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @typeparam T where T : class, IDbEntry, IDeletable
 
-<Modal @ref=_dialog OnSubmitAttempted="HandleSubmit" RedSubmit=true Title=@($"Delete {_entityName} {_obj?.Name}")>
+<Modal @ref=_dialog OnSubmitAttempted="HandleSubmit" RedSubmit=true SubmitButtonText="Delete" Title=@($"Delete {_entityName} {_obj?.Name}")>
     @if(_obj is null)
     {
         <Spinner/>
