@@ -310,6 +310,20 @@
 
     private bool _dropdownMenu = false;
 
+    protected override void OnInitialized()
+    {
+        _navigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        if (!_dropdownMenu)
+            return;
+
+        _dropdownMenu = false;
+        InvokeAsync(StateHasChanged);
+    }
+
     protected override void OnAfterRender(bool firstRender)
     {
         if (!firstRender)
@@ -354,7 +368,10 @@
     }
 
     void IDisposable.Dispose()
-        => _timer?.Dispose();
+    {
+        _navigationManager.LocationChanged -= OnLocationChanged;
+        _timer?.Dispose();
+    }
 
     private void ToggleMenu()
     {
