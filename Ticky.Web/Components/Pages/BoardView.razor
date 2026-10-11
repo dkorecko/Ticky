@@ -185,7 +185,7 @@
 
                 @if (IsAdmin())
                 {
-                    <button class="btn btn-purple h-min !w-80 min-w-80 font-bold" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id) + 1 : 0);" title="Add new column">
+                    <button class="btn btn-purple h-min !w-72 min-w-72 font-bold" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id) + 1 : 0);" title="Add new column">
                         New column
                     </button>
                 }
@@ -193,7 +193,7 @@
 
             if (_preferences.ShowStats)
             {
-                <div class="mt-2 flex w-screen border-background md:w-80 md:border-l-8 dark:border-bgDark">
+                <div class="mt-2 flex w-screen border-background md:w-72 md:border-l-8 dark:border-bgDark">
                     <section class="island-mini flex w-full flex-col items-center">
                         <section class="flex w-full flex-row items-center justify-between px-2 py-4">
                             <h5 class="font-bold">Progress</h5>

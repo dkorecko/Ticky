@@ -419,7 +419,7 @@ input[type="checkbox"].toggle {
 }
 
 .board-column {
-    @apply flex w-80 flex-col items-center space-y-2;
+    @apply flex w-72 flex-col items-center space-y-2;
 }
 
 .task-card {
