@@ -9,19 +9,19 @@
             
             <div class="form-group">
                 <Name For=" () => _board.Name" />
-                <InputText class="input-field" @bind-Value="_board.Name" @ref="FocusElement" />
+                <InputText class="input-field" placeholder="Board name" @bind-Value="_board.Name" @ref="FocusElement" />
                 <ValidationMessage For="  () => _board.Name" />
             </div>
                 
             <div class="form-group">
                 <Name For="() => _board.Description" />
-                <InputText class="input-field" @bind-Value="_board.Description" />
+                <InputText class="input-field" @bind-Value="_board.Description" placeholder="What is this board for?" />
                 <ValidationMessage For=" () => _board.Description" />
             </div>
 
             <div class="form-group">
                 <Name For="() => _board.Code" />
-                <InputText class="input-field" @bind-Value="_board.Code" />
+                <InputText class="input-field" @bind-Value="_board.Code" placeholder="e.g. TCK" />
                 <ValidationMessage For=" () => _board.Code" />
             </div>
         </EditForm>

@@ -10,7 +10,7 @@
 
             <div class="form-group">
                 <Name For="() => _labelModel.Text" />
-                <input type="text" class="form-control" value="@_labelModel.Text" @oninput="OnTextUpdated" @ref="FocusElement" />
+                <input type="text" class="form-control" placeholder="e.g. Urgent" value="@_labelModel.Text" @oninput="OnTextUpdated" @ref="FocusElement" />
                 <ValidationMessage For="() => _labelModel.Text" />
             </div>
 

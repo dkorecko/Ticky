@@ -7,7 +7,7 @@
         
         <div class="form-section">
             <Name For="() => _project.Name"/>
-            <InputText class="input-field" @bind-Value="_project.Name" @ref="FocusElement" />
+            <InputText class="input-field" placeholder="Project name" @bind-Value="_project.Name" @ref="FocusElement" />
             <ValidationMessage For="() => _project.Name" />
         </div>
     </EditForm>

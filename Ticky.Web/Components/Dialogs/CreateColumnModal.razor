@@ -7,13 +7,13 @@
         
         <div class="form-group">
             <Name For="() => _column.Name" />
-            <InputText class="input-field" @bind-Value="_column.Name" @ref="FocusElement" />
+            <InputText class="input-field" placeholder="e.g. In progress" @bind-Value="_column.Name" @ref="FocusElement" />
             <ValidationMessage For="() => _column.Name" />
         </div>
 
         <div class="form-group">
             <Name For="() => _column.MaxCards" />
-            <InputNumber class="input-field" @bind-Value="_column.MaxCards" />
+            <InputNumber class="input-field" @bind-Value="_column.MaxCards" placeholder="0" />
             <ValidationMessage For="() => _column.MaxCards" />
         </div>
 

@@ -176,7 +176,7 @@
 
             <div class="form-group">
                 <Name For="() => _credentialsModel.NewEmailAddress" />
-                <InputText class="input-field" @bind-Value="_credentialsModel.NewEmailAddress" autofocus />
+                <InputText class="input-field" @bind-Value="_credentialsModel.NewEmailAddress" placeholder="sample@email.com" autofocus />
                 <ValidationMessage For="() => _credentialsModel.NewEmailAddress" />
             </div>
 
@@ -184,20 +184,20 @@
             {
                 <div class="form-group">
                     <Name For="() => _credentialsModel.OldPassword" />
-                    <InputText type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_credentialsModel.OldPassword" />
+                    <InputText type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_credentialsModel.OldPassword" placeholder="Current password" />
                     <ValidationMessage For="() => _credentialsModel.OldPassword" />
                 </div>
             }
 
             <div class="form-group">
                 <Name For="() => _credentialsModel.NewPassword" />
-                <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_credentialsModel.NewPassword" />
+                <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_credentialsModel.NewPassword" placeholder="New password" />
                 <ValidationMessage For="() => _credentialsModel.NewPassword" />
             </div>
 
             <div class="form-group">
                 <Name For="() => _credentialsModel.RepeatPassword" />
-                <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_credentialsModel.RepeatPassword" />
+                <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_credentialsModel.RepeatPassword" placeholder="Repeat new password" />
                 <ValidationMessage For="() => _credentialsModel.RepeatPassword" />
             </div>
 
