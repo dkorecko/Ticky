@@ -45,12 +45,14 @@
                 @{
                     var i = 0;
                 }
-                @foreach (var member in _members)
-                {
-                    string id = $"avatar_{i}";
-                    <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
-                    i++;
-                }
+                <div class="flex flex-row">
+                    @foreach (var member in _members)
+                    {
+                        string id = $"avatar_{i}";
+                        <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
+                        i++;
+                    }
+                </div>
                 <VerticalSeparator />
 
                 <div class="relative flex self-center">
@@ -128,12 +130,14 @@
                 @{
                     i = 0;
                 }
-                @foreach (var member in _members)
-                {
-                    string id = $"avatar_{i}";
-                    <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
-                    i++;
-                }
+                <div class="flex flex-row">
+                    @foreach (var member in _members)
+                    {
+                        string id = $"avatar_{i}";
+                        <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
+                        i++;
+                    }
+                </div>
                 @if (IsAdmin())
                 {
                     <button class="add btn-transparent btn flex" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">

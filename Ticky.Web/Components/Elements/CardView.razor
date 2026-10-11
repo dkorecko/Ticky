@@ -34,6 +34,7 @@
             {
                 string id = $"avatar_{i}";
                 <div id="@id" class="avatar-mini @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');"></div>
+                i++;
             }
         </div>
     </div>

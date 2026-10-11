@@ -51,14 +51,16 @@
             @{
                 var index = 0;
             }
-            @foreach (var member in _members)
-            {
-                var extraClass = index > 0 ? "stack-avatars" : "";
-                <div class="avatar @extraClass"
-                     style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');">
-                </div>
-                index++;
-            }
+            <div class="flex flex-row items-center">
+                @foreach (var member in _members)
+                {
+                    var extraClass = index > 0 ? "stack-avatars" : "";
+                    <div class="avatar @extraClass"
+                         style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');">
+                    </div>
+                    index++;
+                }
+            </div>
         </div>
         <div class="flex flex-col">
             @{

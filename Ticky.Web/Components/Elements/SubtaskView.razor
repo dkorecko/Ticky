@@ -18,7 +18,7 @@
                 foreach (var assignee in Subtask.Assignees.OrderBy(x => x.DisplayName))
         {
             var avatarId = $"subtask_assignee_{Subtask.Id}_{i}";
-                    <div id=@avatarId class="avatar stack-avatars" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(avatarId, assignee.Id)"></div>
+                    <div id=@avatarId class="avatar @(i > 0 ? "stack-avatars" : "")" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(avatarId, assignee.Id)"></div>
             i++;
         }
             }

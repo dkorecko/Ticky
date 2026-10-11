@@ -88,12 +88,15 @@
                         @{
                             var i = 0;
                         }
-                        @foreach(var member in project.Memberships.OrderBy(x => x.AddedAt))
-                        {
-                            string id = $"avatar_{i}";
-                            <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.User.ProfilePictureFileName');"
-                            @onclick="() => _mainLayout.UserInfoModal?.Open(id, member.UserId)"></div>
-                        }
+                        <div class="flex flex-row">
+                            @foreach(var member in project.Memberships.OrderBy(x => x.AddedAt))
+                            {
+                                string id = $"avatar_{i}";
+                                <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.User.ProfilePictureFileName');"
+                                @onclick="() => _mainLayout.UserInfoModal?.Open(id, member.UserId)"></div>
+                                i++;
+                            }
+                        </div>
                         @if (project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin)
                         {
                             <button class="add btn-transparent btn flex" @onclick="() => _editProjectMembershipsModal?.Open(project.Id)" title="Add member">
