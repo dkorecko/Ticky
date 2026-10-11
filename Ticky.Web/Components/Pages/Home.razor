@@ -128,7 +128,7 @@
                     }
                     @if(project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin) 
                     {
-                        <button class="btn rounded-island flex min-h-48 h-full flex-col items-center justify-end bg-text !p-4 text-primary hover:bg-text/90 dark:bg-secondaryDark dark:text-primaryDark dark:hover:bg-secondaryDark/80" @onclick="() => _createBoardModal?.Open(project.Id)" title="Create new board">
+                        <button class="btn rounded-island flex min-h-0 sm:min-h-48 h-full flex-col items-center justify-end bg-text !p-4 text-primary hover:bg-text/90 dark:bg-secondaryDark dark:text-primaryDark dark:hover:bg-secondaryDark/80" @onclick="() => _createBoardModal?.Open(project.Id)" title="Create new board">
                             <h6>Add new board</h6>
                         </button>
                     }

@@ -442,6 +442,9 @@
   .max-h-\[80vh\] {
     max-height: 80vh;
   }
+  .min-h-0 {
+    min-height: calc(var(--spacing) * 0);
+  }
   .min-h-12 {
     min-height: calc(var(--spacing) * 12);
   }
@@ -1501,6 +1504,11 @@
   .sm\:min-h-16 {
     @media (width >= 40rem) {
       min-height: calc(var(--spacing) * 16);
+    }
+  }
+  .sm\:min-h-48 {
+    @media (width >= 40rem) {
+      min-height: calc(var(--spacing) * 48);
     }
   }
   .sm\:w-auto {
