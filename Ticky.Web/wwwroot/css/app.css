@@ -375,6 +375,9 @@
   .h-2 {
     height: calc(var(--spacing) * 2);
   }
+  .h-3 {
+    height: calc(var(--spacing) * 3);
+  }
   .h-4 {
     height: calc(var(--spacing) * 4);
   }
@@ -443,6 +446,9 @@
   }
   .\!w-80 {
     width: calc(var(--spacing) * 80) !important;
+  }
+  .\!w-full {
+    width: 100% !important;
   }
   .\!w-max {
     width: max-content !important;
@@ -909,6 +915,18 @@
   }
   .bg-text {
     background-color: var(--color-text);
+  }
+  .bg-text\/10 {
+    background-color: color-mix(in srgb, oklch(0.2982 0.0591 282.21) 10%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-text) 10%, transparent);
+    }
+  }
+  .bg-text\/15 {
+    background-color: color-mix(in srgb, oklch(0.2982 0.0591 282.21) 15%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-text) 15%, transparent);
+    }
   }
   .bg-tint {
     background-color: var(--color-tint);
@@ -1409,11 +1427,6 @@
       display: none;
     }
   }
-  .sm\:min-w-80 {
-    @media (width >= 40rem) {
-      min-width: calc(var(--spacing) * 80);
-    }
-  }
   .sm\:grid-cols-2 {
     @media (width >= 40rem) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1617,6 +1630,22 @@
   .dark\:bg-subtextDark {
     &:where(.dark, .dark *) {
       background-color: var(--color-subtextDark);
+    }
+  }
+  .dark\:bg-textDark\/10 {
+    &:where(.dark, .dark *) {
+      background-color: color-mix(in srgb, oklch(0.9711 0.0146 290.31) 10%, transparent);
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix(in oklab, var(--color-textDark) 10%, transparent);
+      }
+    }
+  }
+  .dark\:bg-textDark\/15 {
+    &:where(.dark, .dark *) {
+      background-color: color-mix(in srgb, oklch(0.9711 0.0146 290.31) 15%, transparent);
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix(in oklab, var(--color-textDark) 15%, transparent);
+      }
     }
   }
   .dark\:bg-tintDark {
@@ -2173,6 +2202,16 @@ p, label {
       border-color: var(--color-secondaryDark);
     }
   }
+}
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 0.75rem;
+  width: 0.75rem;
+  cursor: pointer;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 input[type="color"] {
   height: calc(var(--spacing) * 8);

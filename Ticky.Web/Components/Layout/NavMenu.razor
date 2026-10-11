@@ -14,11 +14,11 @@
             </NavLink>
             <input @ref="_triggerElement" class="input-field w-full" type="search" placeholder="Search for tasks ..." @oninput="UpdateSearchTerm" @onclick='() => OpenSearchResults(false)' @onclick:stopPropagation=true/>
         </div>
-        <div @ref="_dropdownElement" class="dropdown absolute top-4 left-0 hidden min-w-80">
-            <div class="dropdown-box">
+        <div @ref="_dropdownElement" class="dropdown absolute top-4 left-0 hidden">
+            <div class="dropdown-box !w-full">
                 @if (_isLoading)
                 {
-                    <Spinner Class="py-2" />
+                    <SearchResultsSkeleton />
                 }
                 else if (_resultCards.Count == 0)
                 {
@@ -147,11 +147,11 @@
         </NavLink>
 
         <input @ref="_triggerElementMobile" class="input-field w-full" type="search" placeholder="Search for tasks ..." @oninput="UpdateSearchTerm" @onclick='() => OpenSearchResults(true)' @onclick:stopPropagation=true />
-        <div @ref="_dropdownElementMobile" class="dropdown absolute top-4 left-0 hidden w-full sm:min-w-80">
-            <div class="dropdown-box">
+        <div @ref="_dropdownElementMobile" class="dropdown absolute top-4 left-0 hidden w-full">
+            <div class="dropdown-box !w-full">
                 @if (_isLoading)
                 {
-                    <Spinner Class="py-2" />
+                    <SearchResultsSkeleton />
                 }
                 else if (_resultCards.Count == 0)
                 {
@@ -357,7 +357,7 @@
     private async Task OpenSearchResults(bool mobile)
     {
         // The desktop and mobile layouts each render their own input + results dropdown; anchor to the one that was clicked.
-        await _js.InvokeVoidAsync("openDropDownOnElementPosition", mobile ? _dropdownElementMobile : _dropdownElement, mobile ? _triggerElementMobile : _triggerElement);
+        await _js.InvokeVoidAsync("openDropDownOnElementPosition", mobile ? _dropdownElementMobile : _dropdownElement, mobile ? _triggerElementMobile : _triggerElement, true);
     }
 
     private async void Filter(Object? obj = null, ElapsedEventArgs? e = null)

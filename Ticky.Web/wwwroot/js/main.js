@@ -124,7 +124,7 @@ function openDropDownOnElementId(dropdownElement, triggerElementId) {
     return openDropDownOnElementPosition(dropdownElement, trigger);
 }
 
-function openDropDownOnElementPosition(dropdownElement, triggerElement) {
+function openDropDownOnElementPosition(dropdownElement, triggerElement, matchTriggerWidth = false) {
     if (!dropdownElement || !triggerElement)
         return;
 
@@ -147,6 +147,10 @@ function openDropDownOnElementPosition(dropdownElement, triggerElement) {
 
     setTimeout(() => {
         const clientRect = triggerElement.getBoundingClientRect();
+        if (matchTriggerWidth) {
+            dropdownElement.style.width = clientRect.width + 'px';
+            dropdownElement.style.minWidth = '0';
+        }
         positionDropdown(dropdownElement, clientRect.left, clientRect.top + clientRect.height);
         openDropdown = dropdownElement;
         isPreviousDropdownClosingAnimComplete = true;
