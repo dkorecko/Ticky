@@ -1,17 +1,17 @@
 @if(Priority.Equals(CardPriority.Normal)) {
-    <div class="priority bg-sky-500 text-white">
+    <div class="priority bg-sky-500/10 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300">
         Normal
     </div>
 } else if(Priority.Equals(CardPriority.Medium)) {
-    <div class="priority bg-tint text-text dark:bg-tintDark dark:text-primaryDark">
+    <div class="priority bg-tint/25 text-amber-800 dark:bg-tintDark/20 dark:text-tintDark">
         Medium
     </div>
 } else if(Priority.Equals(CardPriority.High)) {
-    <div class="priority bg-red text-primary dark:bg-redDark dark:text-primaryDark">
+    <div class="priority bg-orange-500/10 text-orange-700 dark:bg-orange-400/15 dark:text-orange-300">
         High
     </div>
 } else if(Priority.Equals(CardPriority.Critical)) {
-    <div class="priority bg-red-700 text-white">
+    <div class="priority bg-red-600 text-white dark:bg-red-500">
         Critical
     </div>
 }

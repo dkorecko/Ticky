@@ -48,7 +48,7 @@
                     category
                 </span>
             </div>
-            <span class="text-sm font-bold">Organize</span>
+            <span class="text-sm font-semibold">Organize</span>
         </div>
         <div class="island hidden lg:flex flex-col items-center justify-center gap-2 text-center">
             <div class="flex h-14 w-14 items-center justify-center rounded-button bg-background dark:bg-bgDark">
@@ -56,7 +56,7 @@
                     share
                 </span>
             </div>
-            <span class="text-sm font-bold">Share</span>
+            <span class="text-sm font-semibold">Share</span>
         </div>
         <div class="island hidden lg:flex flex-col items-center justify-center gap-2 text-center">
             <div class="flex h-14 w-14 items-center justify-center rounded-button bg-background dark:bg-bgDark">
@@ -64,7 +64,7 @@
                     groups
                 </span>
             </div>
-            <span class="text-sm font-bold">Collab</span>
+            <span class="text-sm font-semibold">Collab</span>
         </div>
         <button type="button" class="rounded-island px-island-x py-island-y hidden lg:flex flex-col items-center justify-center gap-2 bg-tint text-center hover:bg-tint/80 dark:bg-tintDark dark:hover:bg-tintDark/80" @onclick="() => _createProjectModal?.Open()" title="Create new project">
             <div class="flex h-14 w-14 items-center justify-center rounded-button bg-primary/50 dark:bg-primaryDark/30">
@@ -72,7 +72,7 @@
                     add_circle
                 </span>
             </div>
-            <span class="text-text text-sm font-bold dark:text-primaryDark">New project</span>
+            <span class="text-text text-sm font-semibold dark:text-primaryDark">New project</span>
         </button>
     </div>
 
@@ -80,11 +80,20 @@
     {
         foreach (var project in _projects)
         {
-            <section class="flex flex-col space-y-4">
-                <div class="island flex w-full flex-row justify-between">
-                    <h4>@project.Name</h4>
+            <section class="flex flex-col gap-4 rounded-2xl border border-line bg-primary p-3 sm:p-4 dark:bg-primaryDark">
+                <div class="flex w-full flex-row items-center justify-between gap-3 border-b border-line px-1 pb-3">
+                    <div class="flex min-w-0 flex-row items-center gap-3">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/15 text-lg font-semibold text-secondary dark:bg-secondaryDark/20 dark:text-secondaryDark" aria-hidden="true">
+                            @project.Name.Trim().FirstOrDefault().ToString().ToUpperInvariant()
+                        </div>
+                        <div class="flex min-w-0 flex-col">
+                            <span class="text-2xs font-medium tracking-wide text-subtext uppercase dark:text-subtextDark">Project</span>
+                            <h4 class="truncate leading-tight">@project.Name</h4>
+                        </div>
+                        <span class="hidden shrink-0 rounded-full bg-text/[0.06] px-2 py-0.5 text-2xs font-medium text-subtext sm:inline dark:bg-textDark/10 dark:text-subtextDark">@project.Boards.Count @(project.Boards.Count == 1 ? "board" : "boards")</span>
+                    </div>
 
-                    <div class="flex flex-row space-x-2">
+                    <div class="flex shrink-0 flex-row items-center space-x-2">
                         @{
                             var i = 0;
                         }
@@ -121,14 +130,14 @@
                         }
                     </div>
                 </div>
-                <div class="grid gap-4 px-4 sm:grid-cols-2 md:grid-cols-3 md:px-8 lg:grid-cols-4">
+                <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     @foreach (var board in project.Boards.OrderByDescending(x => x.Favorites.Any(y => y.BoardId.Equals(x.Id))).ThenByDescending(x => x.LastVisits.Select(y => y.VisitTime).OrderByDescending(y => y).FirstOrDefault()))
                     {
                         <BoardCard Board="board" IsAdmin="board.Memberships.Any(x => x.UserId.Equals(_user.Id) && x.IsAdmin) || project.Memberships.Any(x => x.UserId.Equals(_user.Id) && x.IsAdmin)" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" DeleteConfirmationDialog="_deleteBoardModal" />
                     }
                     @if(project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin) 
                     {
-                        <button class="btn rounded-island flex min-h-0 sm:min-h-48 h-full flex-col items-center justify-end bg-text !p-4 text-primary hover:bg-text/90 dark:bg-secondaryDark dark:text-primaryDark dark:hover:bg-secondaryDark/80" @onclick="() => _createBoardModal?.Open(project.Id)" title="Create new board">
+                        <button class="btn rounded-island flex min-h-0 sm:min-h-48 h-full flex-col items-center justify-end border border-dashed border-line bg-transparent !p-4 text-subtext hover:border-secondary hover:bg-secondary/5 hover:text-secondary dark:text-subtextDark dark:hover:border-secondaryDark dark:hover:bg-secondaryDark/10 dark:hover:text-secondaryDark" @onclick="() => _createBoardModal?.Open(project.Id)" title="Create new board">
                             <h6>Add new board</h6>
                         </button>
                     }
@@ -138,13 +147,17 @@
 
         @if (_remainingBoards.Any())
         {
-            <section class="flex flex-col gap-2">
-                <div class="flex flex-row justify-between">
-                    <div class="flex flex-row items-center gap-2">
-                        <label>Uncategorized boards</label>
+            <section class="flex flex-col gap-4 rounded-2xl border border-line bg-primary p-3 sm:p-4 dark:bg-primaryDark">
+                <div class="flex flex-row items-center gap-3 border-b border-line px-1 pb-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-text/[0.06] text-subtext dark:bg-textDark/10 dark:text-subtextDark" aria-hidden="true">
+                        <span class="material-symbols-rounded">folder_off</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-2xs font-medium tracking-wide text-subtext uppercase dark:text-subtextDark">No project</span>
+                        <h4 class="leading-tight">Uncategorized boards</h4>
                     </div>
                 </div>
-                <div class="flex w-full flex-row flex-wrap gap-5">
+                <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     @foreach (var board in _remainingBoards.OrderByDescending(x => x.Favorites.Any(y => y.BoardId.Equals(x.Id))).ThenByDescending(x => x.LastVisits.Select(y => y.VisitTime).OrderByDescending(y => y).FirstOrDefault()))
                     {
                         <BoardCard Board="board" IsAdmin="board.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" DeleteConfirmationDialog="_deleteBoardModal" />

@@ -2,7 +2,7 @@
 
 <div @ref="_element" data-css-positioned="@(!string.IsNullOrEmpty(PositionClass) ? "true" : "false")" class="dropdown dropdown-animate island-mini absolute z-20 hidden max-w-sm @PositionClass overflow-y-auto">
 	<section class="flex w-full flex-row items-center justify-between px-2 py-4">
-		<h5 class="font-bold">@Title</h5>
+		<h5 class="font-semibold">@Title</h5>
 		<a class="material-symbols-rounded g-icon self-center" @onclick="Close" title="Cancel">
 			close
 		</a>

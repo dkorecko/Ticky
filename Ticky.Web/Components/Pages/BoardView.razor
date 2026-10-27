@@ -32,11 +32,11 @@
     <div class="relative">
         <div class="island-title flex w-full flex-row justify-between">
             <div class="flex flex-row items-center gap-4">
-                <div class="rounded-button hidden h-12 w-12 bg-secondary sm:block">
+                <div class="hidden h-10 w-10 rounded-lg bg-secondary sm:block">
                     &nbsp;
                 </div>
                 <div class="flex flex-col space-y-1">
-                    <h5 class="w-max font-bold">@_board.Name</h5>
+                    <h5 class="w-max font-semibold">@_board.Name</h5>
                     <p class="text-xs opacity-70">@_board.Project.Name</p>
                 </div>
             </div>
@@ -185,7 +185,7 @@
 
                 @if (IsAdmin())
                 {
-                    <button class="btn btn-purple h-min !w-72 min-w-72 font-bold" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id) + 1 : 0);" title="Add new column">
+                    <button class="btn btn-purple h-min !w-72 min-w-72 font-semibold" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id) + 1 : 0);" title="Add new column">
                         New column
                     </button>
                 }
@@ -196,7 +196,7 @@
                 <div class="mt-2 flex w-screen border-background md:w-72 md:border-l-8 dark:border-bgDark">
                     <section class="island-mini flex w-full flex-col items-center">
                         <section class="flex w-full flex-row items-center justify-between px-2 py-4">
-                            <h5 class="font-bold">Progress</h5>
+                            <h5 class="font-semibold">Progress</h5>
                             <a class="material-symbols-rounded g-icon self-center" @onclick=SwitchStatsDisplay title="Close statistics">
                                 close
                             </a>

@@ -7,7 +7,7 @@
     {
         <div class="flex flex-col items-center gap-2 p-2">
             <div class="avatar !h-10 !w-10" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_targetUser.ProfilePictureFileName');"></div>
-            <label class="font-bold">@_targetUser.DisplayName</label>
+            <label class="font-semibold">@_targetUser.DisplayName</label>
             <div class="flex flex-col items-center gap-1">
                 @foreach(var commonProjectMembership in _targetUser.ProjectMemberships.Where(x => _user.ProjectMemberships.Any(userMembership => userMembership.ProjectId.Equals(x.ProjectId))))
                 {

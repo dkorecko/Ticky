@@ -9,12 +9,12 @@
     var cardsCount = columnCards.Count;
 }
 <div @key="Column.Id" id="@Column.Id" class="board-column max-h-visible-screen gap-1">
-    <div class="rounded-button px-island-x py-button-x flex w-full flex-row items-center justify-between bg-text text-primary">
+    <div class="flex w-full flex-row items-center justify-between px-2 py-1 text-text dark:text-textDark">
         <div class="flex flex-row items-center gap-2">
-            <h6 class="font-bold">
+            <h6 class="font-semibold">
                 @Column.Name
             </h6>
-            <span class='text-2xs rounded-button border-[1px] px-3 py-1 align-middle @(Column.MaxCards != 0 && cardsCount >= Column.MaxCards ? "border-red dark:border-redDark" : "border-primary")'>
+            <span class='text-2xs rounded-full px-2 py-0.5 align-middle font-medium @(Column.MaxCards != 0 && cardsCount >= Column.MaxCards ? "bg-red/10 text-red dark:bg-redDark/15 dark:text-redDark" : "bg-text/[0.06] text-subtext dark:bg-textDark/10 dark:text-subtextDark")'>
                 @if (Column.MaxCards == 0)
                 {
                     <span>@cardsCount</span>
@@ -33,7 +33,7 @@
         @if (IsAdmin())
         {
             <div class="flex flex-row items-center gap-2">
-                <span class="material-symbols-rounded g-icon drag-toggle cursor-move self-center select-none" title="Drag to reorder column">
+                <span class="material-symbols-rounded g-icon drag-toggle cursor-move self-center select-none text-subtext dark:text-subtextDark" title="Drag to reorder column">
                     open_with
                 </span>
 
@@ -42,7 +42,7 @@
                     { "Delete column", async () => await OpenDeleteColumnDialog(Column) },
                     { $"{(Column.Collapsed ? "Expand" : "Collapse")} column", async () => await ExpandOrCollapseColumn(Column.Id) },
                 }'>
-                <div class="smooth-animation rounded-button flex h-full cursor-pointer hover:bg-primary/20 dark:hover:bg-primaryDark/20">
+                <div class="smooth-animation rounded-button flex h-full cursor-pointer text-subtext hover:bg-text/10 dark:text-subtextDark dark:hover:bg-textDark/10">
                     <span class="material-symbols-rounded g-icon self-center" title="Column options">
                             more_horiz
                         </span>
@@ -66,7 +66,7 @@
                  class="select-none h-min w-full">
                 @if (!AddingCardHere)
                 {
-                    <div class="btn btn-purple font-bold" title="New card">
+                    <div class="btn btn-purple font-semibold" title="New card">
                         <span>New card</span>
                     </div>
                 }

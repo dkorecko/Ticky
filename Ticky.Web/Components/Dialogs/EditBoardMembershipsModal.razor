@@ -16,72 +16,54 @@
                 <button class="btn btn-purple" @onclick="AddAccess">Add</button>
             </div>
 
-            <table class="list-members-table">
+            <div class="flex flex-col">
                 @{
                     var i = 0;
                 }
-                @foreach(var membership in _board.Memberships.OrderByDescending(x => x.IsAdmin).ThenBy(x => x.AddedAt))
+                @foreach (var membership in _board.Memberships.OrderByDescending(x => x.IsAdmin).ThenBy(x => x.AddedAt))
                 {
                     string avatarId = $"avatar_{i}";
-                    <tr class="text-sm">
-                        <td>
-                            <div class="avatar" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@membership.User.ProfilePictureFileName');"></div>
-                        </td>
-                        <td>
-                            @membership.User.DisplayName @(membership.UserId.Equals(_user.Id) ? "(you)" : string.Empty)
-                        </td>
-                        <td>
-                            <Dropdown Disabled="@membership.UserId.Equals(_user.Id)" Actions='new() {
-                                { "Admin", () => ChangeAdmin(membership.Id, true)},
-                                { "Member", () => ChangeAdmin(membership.Id, false)}
-                            }'>
-                                <div class='flex flex-row items-center justify-between pr-2 pl-5 transition-all ease-in-out @(!membership.UserId.Equals(_user.Id) ? "hover:bg-dropdown-option cursor-pointer" : "bg-background dark:bg-bgDark cursor-not-allowed")'>
-                                    @(membership.IsAdmin ? "Admin" : "Member")
+                    bool isSelf = membership.UserId.Equals(_user.Id);
+                    <div class="flex flex-row items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-text/[0.04] dark:hover:bg-textDark/[0.05]">
+                        <div id="@avatarId" @onclick="() => _mainLayout.UserInfoModal?.Open(avatarId, membership.UserId)" class="avatar shrink-0 cursor-pointer" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@membership.User.ProfilePictureFileName');"></div>
+                        <span class="min-w-0 flex-1 truncate font-medium">@membership.User.DisplayName @(isSelf ? "(you)" : string.Empty)</span>
+                        <Dropdown Disabled="@isSelf" Actions='new() {
+                            { "Admin", () => ChangeAdmin(membership.Id, true)},
+                            { "Member", () => ChangeAdmin(membership.Id, false)}
+                        }'>
+                            <div class='role-select @(isSelf ? "role-select-disabled" : string.Empty)'>
+                                @(membership.IsAdmin ? "Admin" : "Member")
+                                <span class="material-symbols-rounded !text-lg" title="Change role">keyboard_arrow_down</span>
+                            </div>
+                        </Dropdown>
+                        <button type="button" @onclick="() => RemoveUser(membership.UserId)" class='material-symbols-rounded icon-button !text-lg hover:!text-red-button @(isSelf ? "disabled-icon" : string.Empty)' title="Remove member">delete</button>
+                    </div>
 
-                                    <span class="material-symbols-rounded self-center @(membership.UserId.Equals(_user.Id) ? "disabled-icon" : string.Empty)" title="Change role">
-                                        keyboard_arrow_down
-                                    </span>
-                                </div>
-                            </Dropdown>
-                        </td>
-                        <td>
-                            <i @onclick="() => RemoveUser(membership.UserId)" 
-                       class='fa fa-trash edit-icon @(membership.UserId.Equals(_user.Id) ? "disabled-icon" : string.Empty)' title="Remove member">
-                            </i>
-                        </td>
-                    </tr>
+                    i++;
                 }
-            </table>
+            </div>
 
-            <label class="text-sm">Project members</label>
-            <table class="border-separate border-spacing-x-5 border-spacing-y-1">
+            <span class="mt-2 px-2 text-2xs font-medium tracking-wide text-subtext uppercase dark:text-subtextDark">Project members</span>
+            <div class="flex flex-col">
                 @{
                     i = 0;
                 }
                 @foreach (var membership in _project.Memberships.OrderByDescending(x => x.IsAdmin).ThenBy(x => x.AddedAt))
                 {
                     string avatarId = $"avatar_{i}";
-                    <tr class="text-sm">
-                        <td>
-                            <div id="@avatarId" @onclick="() => _mainLayout.UserInfoModal?.Open(avatarId, membership.UserId)" class="avatar" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@membership.User.ProfilePictureFileName');"></div>
-                        </td>
-                        <td>
-                            @membership.User.DisplayName @(membership.UserId.Equals(_user.Id) ? "(you)" : string.Empty)
-                        </td>
-                        <td>
-                            <div class="bg-search-bar flex cursor-not-allowed flex-row items-center justify-between pr-2 pl-5 transition-all ease-in-out">
-                                @(membership.IsAdmin ? "Admin" : "Member")
-                                <i class="fa fa-chevron-down edit-icon disabled-icon"></i>
-                            </div>
-                        </td>
-                        <td>
-                            <i class="fa fa-trash edit-icon disabled-icon"></i>
-                        </td>
-                    </tr>
+                    <div class="flex flex-row items-center gap-3 rounded-lg px-2 py-2 text-sm">
+                        <div id="@avatarId" @onclick="() => _mainLayout.UserInfoModal?.Open(avatarId, membership.UserId)" class="avatar shrink-0 cursor-pointer" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@membership.User.ProfilePictureFileName');"></div>
+                        <span class="min-w-0 flex-1 truncate font-medium">@membership.User.DisplayName @(membership.UserId.Equals(_user.Id) ? "(you)" : string.Empty)</span>
+                        <div class="role-select role-select-disabled">
+                            @(membership.IsAdmin ? "Admin" : "Member")
+                            <span class="material-symbols-rounded !text-lg">keyboard_arrow_down</span>
+                        </div>
+                        <span class="material-symbols-rounded icon-button disabled-icon !text-lg">delete</span>
+                    </div>
 
                     i++;
                 }
-            </table>
+            </div>
         </div>
     }
 </Modal>

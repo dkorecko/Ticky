@@ -80,9 +80,9 @@
                             {
                                 <div class="flex flex-row items-center">
                                     <LabelView Label="label" />
-                                    <label class="ml-2 text-xs">Used on @label.OnCards.Count cards</label>
-                                    <i class="fa fa-pencil edit-icon ml-2" @onclick="() => _editLabelModal?.Open(_board, label)" title="Edit label"></i>
-                                    <i class="fa fa-trash-can edit-icon hover:text-red-button-hover" @onclick="() => _deleteLabelModal!.OpenDialog(label)" title="Delete label"></i>
+                                    <label class="ml-3 text-xs subtext">Used on @label.OnCards.Count cards</label>
+                                    <span class="material-symbols-rounded icon-button ml-2 !text-lg" @onclick="() => _editLabelModal?.Open(_board, label)" title="Edit label">edit</span>
+                                    <span class="material-symbols-rounded icon-button !text-lg hover:!text-red-button" @onclick="() => _deleteLabelModal!.OpenDialog(label)" title="Delete label">delete</span>
                                 </div>
                             }
                         </div>

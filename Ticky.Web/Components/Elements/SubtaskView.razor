@@ -5,29 +5,31 @@
 
 @inherits NotifiableBase
 
-<div id="@Subtask.Id" class="flex flex-row flex-wrap items-center gap-2 text-sm font-normal">
-    <i class="fa fa-grip-lines-vertical drag-toggle icon-button cursor-move text-icon" title="Drag to reorder subtask"></i>
-    <input id="subtask_checkbox_@Subtask.Id" type="checkbox" checked="@Subtask.Completed" @onchange="OnSubtaskStatusChanged" />
-    <label class="min-w-0 break-normal break-words" for="subtask_checkbox_@Subtask.Id">@Subtask.Text</label>
+<div id="@Subtask.Id" class="group flex flex-row items-center gap-2 rounded-lg px-1.5 py-1.5 text-sm font-normal hover:bg-text/[0.04] dark:hover:bg-textDark/[0.05]">
+    <span class="material-symbols-rounded drag-toggle cursor-move !text-lg text-subtext opacity-0 transition-opacity group-hover:opacity-100 dark:text-subtextDark" title="Drag to reorder subtask">drag_indicator</span>
+    <input id="subtask_checkbox_@Subtask.Id" class="check" type="checkbox" checked="@Subtask.Completed" @onchange="OnSubtaskStatusChanged" />
+    <label class='min-w-0 flex-1 break-words @(Subtask.Completed ? "text-subtext line-through dark:text-subtextDark" : "")' for="subtask_checkbox_@Subtask.Id">@Subtask.Text</label>
 
     @if (Subtask.Assignees.Any())
     {
-        <div class="ml-4 flex flex-row">
+        <div class="flex flex-row pl-2">
             @{
-        var i = 0;
+                var i = 0;
                 foreach (var assignee in Subtask.Assignees.OrderBy(x => x.DisplayName))
-        {
-            var avatarId = $"subtask_assignee_{Subtask.Id}_{i}";
-                    <div id=@avatarId class="avatar @(i > 0 ? "stack-avatars" : "")" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(avatarId, assignee.Id)"></div>
-            i++;
-        }
+                {
+                    var avatarId = $"subtask_assignee_{Subtask.Id}_{i}";
+                    <div id=@avatarId class="avatar-mini @(i > 0 ? "stack-avatars !-ml-2" : "") cursor-pointer" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(avatarId, assignee.Id)"></div>
+                    i++;
+                }
             }
         </div>
     }
 
-    <button type="button" @ref=_assigneesTrigger class="chip-button" @onclick='() => AssigneesModal?.Open(_assigneesTrigger, Subtask, Members)' title="Add/remove assignees">Add members <i class="fa fa-plus"></i></button>
-    <i id="subtask_edit_@Subtask.Id" class="fa fa-pencil edit-icon" @onclick='() => EditSubtaskModal?.Open($"subtask_edit_{Subtask.Id}", Subtask)' title="Edit subtask"></i>
-    <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="DeleteSubtask" title="Delete subtask"></i>
+    <div class="flex flex-row items-center gap-0.5 opacity-100 transition-opacity md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100">
+        <button type="button" @ref=_assigneesTrigger class="material-symbols-rounded icon-button !text-lg" @onclick='() => AssigneesModal?.Open(_assigneesTrigger, Subtask, Members)' title="Add/remove assignees">person_add</button>
+        <button type="button" id="subtask_edit_@Subtask.Id" class="material-symbols-rounded icon-button !text-lg" @onclick='() => EditSubtaskModal?.Open($"subtask_edit_{Subtask.Id}", Subtask)' title="Edit subtask">edit</button>
+        <button type="button" class="material-symbols-rounded icon-button !text-lg hover:!text-red-button" @onclick="DeleteSubtask" title="Delete subtask">delete</button>
+    </div>
 </div>
 
 @code {

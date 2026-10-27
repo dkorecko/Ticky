@@ -1,19 +1,16 @@
-﻿<div class="fixed inset-x-3 bottom-3 z-20 flex flex-col items-end gap-2 transition-all sm:inset-x-auto sm:right-5 sm:bottom-5 sm:gap-10">
+﻿<div class="fixed inset-x-3 bottom-3 z-20 flex flex-col items-end gap-2 transition-all sm:inset-x-auto sm:right-5 sm:bottom-5">
     @foreach(var notification in _notifications) 
     {
-        <div class="flex w-full max-w-full flex-row content-between items-stretch justify-between gap-2 overflow-hidden rounded-md bg-modal shadow transition-all sm:w-auto sm:gap-10">
-            <div class="flex min-w-0 flex-row content-start items-stretch gap-3 sm:gap-5">
-                <div class='@(notification.Type == NotificationType.Success ? "bg-green-500" : "bg-red-500") min-h-12 w-2 shrink-0 sm:min-h-16'>
-                </div>
-                <i class='@(notification.Type == NotificationType.Success ? "text-green-500 fa-circle-check" : "text-red-500 fa-circle-xmark") fa-regular self-center text-xl sm:text-2xl'></i>
-                <label class="self-center py-2 text-xs sm:text-sm">
-                    @notification.Text
-                </label>
+        var success = notification.Type == NotificationType.Success;
+        <div role="status" class="flex w-full max-w-full flex-row items-center gap-3 rounded-xl border border-line bg-modal py-2 pr-2 pl-2.5 text-text shadow-lg shadow-black/10 transition-all sm:w-auto sm:min-w-72 sm:max-w-md dark:text-textDark">
+            <div class='@(success ? "bg-green-500/15 text-green-600 dark:text-green-400" : "bg-red-500/15 text-red-600 dark:text-red-400") flex h-7 w-7 shrink-0 items-center justify-center rounded-full'>
+                <span class="material-symbols-rounded block !text-lg !leading-none">@(success ? "check" : "priority_high")</span>
             </div>
-            <div class="flex cursor-pointer items-center p-3 text-xs text-icon sm:p-5 sm:text-base transition-all hover:text-red-button" 
+            <span class="min-w-0 flex-1 text-sm font-medium">@notification.Text</span>
+            <button type="button" title="Dismiss" class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-subtext hover:bg-text/5 hover:text-text dark:text-subtextDark dark:hover:bg-textDark/10 dark:hover:text-textDark"
                 @onclick="() => _notifications.Remove(notification)">
-                CLOSE
-            </div>
+                <span class="material-symbols-rounded block !text-lg !leading-none">close</span>
+            </button>
         </div>
     }
 </div>

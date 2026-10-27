@@ -6,31 +6,33 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --color-background: oklch(0.9468 0.0268 288.17);
+    --color-background: oklch(0.9528 0.0075 290);
     --color-primary: oklch(100% 0.000 0);
     --color-secondary: oklch(0.5714 0.1438 289.17);
     --color-tint: oklch(0.8365 0.171982 83.0703);
-    --color-text: oklch(0.2982 0.0591 282.21);
-    --color-subtext: oklch(0.6794 0.041 285.26);
+    --color-text: oklch(0.2203 0.02 285);
+    --color-subtext: oklch(0.5517 0.02 285);
     --color-red: oklch(0.6554 0.1889 23.93);
-    --color-bgDark: oklch(0.2396 0.0266 290.79);
-    --color-primaryDark: oklch(0.2807 0.028 275.67);
+    --color-bgDark: oklch(0.1813 0.012 285);
+    --color-primaryDark: oklch(0.2262 0.013 285);
     --color-secondaryDark: oklch(0.7007 0.137 290.64);
     --color-tintDark: oklch(0.8462 0.1709 85.18);
     --color-textDark: oklch(0.9711 0.0146 290.31);
-    --color-subtextDark: oklch(0.7711 0.0397 288.71);
+    --color-subtextDark: oklch(0.7052 0.02 285);
     --color-redDark: oklch(0.647 0.1987 24.6);
     --text-2xs: 0.65rem;
     --breakpoint-xs: 30rem;
     --breakpoint-2xs: 20rem;
     --radius-input: 0.5rem;
+    --radius-card: 0.75rem;
     --radius-button: 0.5rem;
     --radius-button-nav: 1rem;
-    --radius-island: 1rem;
+    --radius-island: 0.75rem;
     --spacing-island-x: 1rem;
     --spacing-island-y: 2rem;
     --spacing-button-x: 0.5rem;
     --spacing-button-y: 0.25rem;
+    --color-line: oklch(0 0 0 / 0.08);
     --color-card-bg: var(--color-primary);
     --color-modal: var(--color-primary);
     --color-search-bar: var(--color-background);
@@ -43,7 +45,7 @@
     --color-icon: var(--color-subtext);
     --color-red-button: var(--color-red);
     --color-red-button-hover: color-mix(in oklch, var(--color-red) 80%, transparent);
-    --color-dropdown-option: color-mix(in oklch, var(--color-secondary) 30%, transparent);
+    --color-dropdown-option: color-mix(in oklch, var(--color-secondary) 12%, transparent);
     --color-card-diff-bg: var(--color-background);
     --color-card-heading: var(--color-text);
     --color-card-blocked-text: var(--color-red);
@@ -55,6 +57,7 @@
 /* Dark-mode values for the semantic aliases above, so components can use a
    single class (e.g. `bg-card-bg`) without needing a separate `dark:` utility. */
 .dark {
+    --color-line: oklch(1 0 0 / 0.09);
     --color-card-bg: var(--color-primaryDark);
     --color-modal: var(--color-primaryDark);
     --color-search-bar: var(--color-bgDark);
@@ -67,7 +70,7 @@
     --color-icon: var(--color-subtextDark);
     --color-red-button: var(--color-redDark);
     --color-red-button-hover: color-mix(in oklch, var(--color-redDark) 70%, transparent);
-    --color-dropdown-option: color-mix(in oklch, var(--color-secondaryDark) 30%, transparent);
+    --color-dropdown-option: color-mix(in oklch, var(--color-secondaryDark) 15%, transparent);
     --color-card-diff-bg: var(--color-bgDark);
     --color-card-heading: var(--color-textDark);
     --color-card-blocked-text: var(--color-redDark);
@@ -77,7 +80,7 @@
 
 body,
 html {
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     scroll-behavior: smooth;
     overflow-x: hidden;
     @apply text-text dark:text-textDark font-normal;
@@ -92,15 +95,16 @@ body {
 }
 
 button, a, .btn, .smooth-animation, .auth-link, .settings-menu-item {
-    transition: all 0.15s ease-in;
+    transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease;
     @apply cursor-pointer;
 }
 
 h1, h2, h3, h4, h5, h6, .title {
-    font-family: "Poppins", sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     font-optical-sizing: auto;
-    font-weight: 700;
+    font-weight: 600;
     font-style: normal;
+    letter-spacing: -0.02em;
 }
 h1 {
     font-size: clamp(1.75rem, 4vw + 1rem, 2.75rem) !important;
@@ -143,23 +147,23 @@ p, label {
 }
 
 .btn {
-    @apply w-full text-sm rounded-button px-button-x py-button-y text-center cursor-pointer;
+    @apply w-full text-sm font-medium rounded-button px-3 py-1.5 text-center cursor-pointer;
 }
 
 .btn-yellow {
-    @apply bg-tint text-text hover:bg-tint/70 dark:bg-tintDark dark:text-primaryDark dark:hover:bg-tint/70;
+    @apply bg-tint text-text hover:bg-tint/85 dark:bg-tintDark dark:text-primaryDark dark:hover:bg-tintDark/85;
 }
 
 .btn-purple {
-    @apply bg-secondary text-primary hover:bg-secondary/70 dark:bg-secondaryDark dark:text-primaryDark dark:hover:bg-secondaryDark/70;
+    @apply bg-secondary text-primary hover:bg-secondary/85 dark:bg-secondaryDark dark:text-primaryDark dark:hover:bg-secondaryDark/85;
 }
 
 .btn-red {
-    @apply bg-red text-primary hover:bg-red/80 dark:bg-redDark dark:text-primaryDark dark:hover:bg-redDark/70;
+    @apply bg-red text-primary hover:bg-red/85 dark:bg-redDark dark:text-primaryDark dark:hover:bg-redDark/85;
 }
 
 .btn-light {
-    @apply bg-background dark:bg-bgDark text-text dark:text-textDark hover:bg-secondary/50 dark:hover:bg-secondaryDark/50;
+    @apply bg-background dark:bg-bgDark text-text dark:text-textDark hover:bg-text/10 dark:hover:bg-textDark/10;
 }
 
 .btn-transparent {
@@ -211,7 +215,7 @@ p, label {
 }
 
 .input-field, .auth-input, .form-control, .devity-select-toggle, .blazored-typeahead__controls {
-    @apply rounded-input w-full dark:font-light border-[1px] border-subtext dark:border-subtextDark bg-background dark:bg-bgDark px-3 py-2 text-xs font-medium text-subtext dark:text-subtextDark ring-0 outline-0 focus:border-secondary dark:focus:border-secondaryDark;
+    @apply rounded-input w-full dark:font-light border border-line bg-background dark:bg-bgDark px-3 py-2 text-sm font-normal text-text dark:text-textDark placeholder:text-subtext dark:placeholder:text-subtextDark outline-0 focus:border-secondary dark:focus:border-secondaryDark focus:ring-[3px] focus:ring-secondary/15 dark:focus:ring-secondaryDark/20;
 }
 
 input[type="search"]::-webkit-search-cancel-button {
@@ -226,7 +230,7 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 input[type="color"] {
-    @apply h-8 w-16 cursor-pointer rounded-input border-[1px] border-subtext bg-background p-0.5 dark:border-subtextDark dark:bg-bgDark;
+    @apply h-8 w-16 cursor-pointer rounded-input border border-line bg-background p-0.5 dark:bg-bgDark;
 }
 
 .input-validation-error{
@@ -293,11 +297,11 @@ input[type="color"] {
     }
 
 .island {
-    @apply rounded-island px-island-x py-island-y bg-primary dark:bg-primaryDark text-text dark:text-textDark;
+    @apply rounded-island px-island-x py-island-y bg-primary dark:bg-primaryDark text-text dark:text-textDark border border-line;
 }
 
 .island-title, .island-mini {
-    @apply rounded-button py-button-x px-island-x bg-primary dark:bg-primaryDark text-text dark:text-textDark;
+    @apply rounded-card py-button-x px-island-x bg-primary dark:bg-primaryDark text-text dark:text-textDark border border-line;
 }
 
 .field-validation-error, .validation-message {
@@ -309,7 +313,11 @@ input[type="color"] {
 }
 
 .nav-link {
-    @apply z-10 rounded-button px-button-x py-button-y h-full text-sm bg-background dark:bg-bgDark text-text dark:text-textDark hover:bg-secondary/30 dark:hover:bg-secondaryDark/30 flex flex-row space-x-2 items-stretch;
+    @apply z-10 rounded-lg px-3 py-1.5 h-full text-sm font-normal bg-transparent text-neutral-500 dark:text-neutral-400 hover:bg-text/5 hover:text-neutral-900 dark:hover:bg-textDark/10 dark:hover:text-neutral-100 flex flex-row gap-2 items-center;
+}
+
+.nav-link.active {
+    @apply bg-secondary/10 text-secondary hover:bg-secondary/15 hover:text-secondary dark:bg-secondaryDark/15 dark:text-secondaryDark dark:hover:bg-secondaryDark/20 dark:hover:text-secondaryDark;
 }
 
 .avatar, .avatar-mini {
@@ -337,7 +345,7 @@ input[type="color"] {
 }
 
 .dropdown-box {
-    @apply bg-background z-10 text-text rounded-button flex w-max flex-col space-y-2 p-2 text-xs drop-shadow dark:bg-bgDark dark:text-textDark;
+    @apply bg-primary z-10 text-text rounded-button flex w-max flex-col space-y-2 p-2 text-xs shadow-lg shadow-black/10 border border-line dark:bg-primaryDark dark:text-textDark;
 }
 
 .dropdown-animate {
@@ -352,19 +360,19 @@ input[type="color"] {
 }
 
 .board-card {
-    @apply bg-primary dark:bg-primaryDark rounded-island p-island-x flex flex-col space-y-4 cursor-pointer;
+    @apply bg-primary dark:bg-primaryDark rounded-island p-island-x flex flex-col space-y-4 cursor-pointer border border-line hover:border-secondary/50 dark:hover:border-secondaryDark/50;
 }
 
 .settings-menu {
-    @apply rounded-island p-3 max-w-full flex-wrap gap-2 border-[1px] border-subtext dark:border-subtextDark flex flex-row w-max;
+    @apply rounded-island p-3 max-w-full flex-wrap gap-2 border border-line flex flex-row w-max;
 }
 
 .settings-menu-item {
-    @apply rounded-button text-base bg-transparent px-2 py-1 font-semibold hover:bg-secondary/30 hover:dark:bg-secondaryDark/30;
+    @apply rounded-button text-sm bg-transparent px-3 py-1.5 font-medium text-subtext dark:text-subtextDark hover:bg-text/5 hover:dark:bg-textDark/10;
 }
 
 .settings-menu-item.selected, .settings-menu-item[data-active="true"] {
-    @apply bg-background text-text hover:bg-background dark:bg-subtextDark dark:text-primaryDark dark:hover:bg-subtextDark;
+    @apply bg-secondary/10 text-secondary hover:bg-secondary/10 dark:bg-secondaryDark/15 dark:text-secondaryDark dark:hover:bg-secondaryDark/15;
 }
 
 .settings-section {
@@ -376,7 +384,7 @@ input[type="color"] {
 }
 
 .vertical-separator {
-    @apply w-full h-1 border-subtext dark:border-subtextDark;
+    @apply w-full h-1 border-line;
 }
 
 input[type="checkbox"].toggle {
@@ -419,19 +427,31 @@ input[type="checkbox"].toggle {
 }
 
 .board-column {
-    @apply flex w-72 flex-col items-center space-y-2;
+    @apply flex w-72 flex-col items-center space-y-2 rounded-card bg-text/[0.035] dark:bg-textDark/[0.04] p-1.5;
 }
 
 .task-card {
-    @apply rounded-button py-button-y px-button-x flex w-full cursor-pointer flex-col space-y-2 border-2 border-primary bg-primary text-text select-none dark:border-primaryDark dark:bg-primaryDark dark:text-textDark data-[blocked=True]:border-red dark:data-[blocked=True]:border-redDark;
+    @apply rounded-card p-3 flex w-full cursor-pointer flex-col space-y-2 border border-line bg-primary text-text select-none hover:border-secondary/40 dark:bg-primaryDark dark:text-textDark dark:hover:border-secondaryDark/40 data-[blocked=True]:border-red dark:data-[blocked=True]:border-redDark;
 }
 
 .priority, .label {
-    @apply text-2xs w-max cursor-pointer rounded-button px-2 py-1 font-medium;
+    @apply text-2xs w-max cursor-pointer rounded-md px-2 py-0.5 font-medium;
+}
+
+/* User labels: tinted background + readable text derived from the label's colour (--lc: "r g b"). */
+.label {
+    --lc: 100 100 100;
+    background-color: rgb(var(--lc) / 0.14);
+    box-shadow: inset 0 0 0 1px rgb(var(--lc) / 0.22);
+    color: color-mix(in oklab, rgb(var(--lc)) 50%, black);
+}
+
+.dark .label {
+    color: color-mix(in oklab, rgb(var(--lc)) 55%, white);
 }
 
 .card-data-point {
-    @apply flex cursor-pointer flex-row items-center justify-center gap-1 whitespace-nowrap text-xs rounded-button py-1 px-2 bg-background dark:bg-bgDark;
+    @apply flex cursor-pointer flex-row items-center justify-center gap-1 whitespace-nowrap text-xs rounded-md py-0.5 px-1.5 bg-text/[0.05] dark:bg-textDark/10;
 }
 
 .list-members-table {
@@ -451,11 +471,11 @@ input[type="checkbox"].toggle {
 }
 
 .upload-zone {
-    @apply flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-island border-2 border-dashed border-secondary px-5 py-6 text-center text-text transition-all ease-in-out select-none hover:bg-secondary/10 dark:border-secondaryDark dark:text-textDark dark:hover:bg-secondaryDark/10;
+    @apply flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-card border border-dashed border-line px-5 py-4 text-center text-subtext transition-colors ease-in-out select-none hover:border-secondary hover:bg-secondary/5 hover:text-secondary dark:text-subtextDark dark:hover:border-secondaryDark dark:hover:bg-secondaryDark/10 dark:hover:text-secondaryDark;
 }
 
 .board-card-create {
-    @apply flex h-min w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-button px-5 py-5 text-add-outline outline-1 outline-dashed outline-add-outline transition-all ease-in-out select-none hover:text-add-outline-hover hover:outline-add-outline-hover sm:w-72;
+    @apply flex h-min w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-card px-5 py-4 text-add-outline outline-1 outline-dashed outline-line transition-colors ease-in-out select-none hover:bg-secondary/5 hover:text-add-outline-hover hover:outline-add-outline-hover sm:w-72;
 }
 
 .edit-task-label {
@@ -594,4 +614,49 @@ input[type="checkbox"].toggle {
 
 .detail-tab {
     @apply cursor-pointer rounded-button px-3 py-1 text-xs font-medium select-none transition-all ease-in-out hover:bg-secondary/10 data-[active=True]:bg-secondary/20 data-[active=True]:text-secondary data-[active=True]:font-semibold dark:hover:bg-secondaryDark/10 dark:data-[active=True]:bg-secondaryDark/20 dark:data-[active=True]:text-secondaryDark;
+}
+
+/* Round, minimal checkbox */
+input[type="checkbox"].check {
+    -webkit-appearance: none;
+    appearance: none;
+    flex-shrink: 0;
+    height: 1.125rem;
+    width: 1.125rem;
+    cursor: pointer;
+    border-radius: 0.375rem;
+    border: 1.5px solid var(--color-subtext);
+    background-color: transparent;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 100%;
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.dark input[type="checkbox"].check {
+    border-color: var(--color-subtextDark);
+}
+
+input[type="checkbox"].check:hover {
+    border-color: var(--color-secondary);
+}
+
+input[type="checkbox"].check:checked {
+    background-color: var(--color-secondary);
+    border-color: var(--color-secondary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5'/%3E%3C/svg%3E");
+}
+
+.dark input[type="checkbox"].check:checked {
+    background-color: var(--color-secondaryDark);
+    border-color: var(--color-secondaryDark);
+}
+
+/* Role picker trigger (membership dialogs) */
+.role-select {
+    @apply inline-flex w-32 cursor-pointer flex-row items-center justify-between gap-2 rounded-lg border border-line bg-background px-3 py-1.5 text-sm text-text select-none hover:border-secondary dark:bg-bgDark dark:text-textDark dark:hover:border-secondaryDark;
+}
+
+.role-select-disabled {
+    @apply cursor-not-allowed opacity-60 hover:border-line dark:hover:border-line;
 }

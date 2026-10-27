@@ -4,7 +4,7 @@
 @inject NavigationManager _navigationManager
 @inject SearchService _searchService
 
-<nav id="nav-menu" class="relative z-10 bg-primary px-4 py-2 dark:bg-primaryDark">
+<nav id="nav-menu" class="relative z-10 border-b border-line bg-primary px-4 py-2 dark:bg-primaryDark">
     <!-- Desktop version -->
     <div class="hidden w-full flex-row justify-between self-center lg:flex">
         <div class="nav-links w-1/4">
@@ -62,23 +62,20 @@
                 </NavLink>
             }
             <div class="relative">
-                <button @onclick=ToggleMenu class="nav-link !px-button-y flex flex-row !space-x-8">
-                    <div class="flex flex-row items-center space-x-2">
-                        <div class="h-8 w-8 rounded-lg bg-secondary bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
-                        <div class="flex flex-col">
-                            <span class="subtext text-xs">@FirstName</span>
-                            <span class="text-xs uppercase">@LastName</span>
-                        </div>
+                <button @onclick=ToggleMenu class="nav-link !pl-1.5 !pr-2">
+                    <div class="flex flex-row items-center gap-2">
+                        <div class="h-7 w-7 rounded-full bg-secondary bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
+                        <span class="text-sm font-normal">@FirstName @LastName</span>
                     </div>
                     @if (_dropdownMenu)
                     {
-                        <span class="material-symbols-rounded g-icon self-center">
+                        <span class="material-symbols-rounded  self-center !text-lg text-subtext dark:text-subtextDark">
                             keyboard_arrow_up
                         </span>
                     }
                     else
                     {
-                        <span class="material-symbols-rounded g-icon self-center">
+                        <span class="material-symbols-rounded  self-center !text-lg text-subtext dark:text-subtextDark">
                             keyboard_arrow_down
                         </span>
                     }
@@ -176,24 +173,21 @@
         </div>
 
         <div class="relative">
-            <button @onclick=ToggleMenu class="nav-link !px-button-y flex flex-row !space-x-0 !sm:space-x-8">
-                <div class="flex flex-row items-center sm:space-x-2">
-                    <div class="h-8 w-8 rounded-lg bg-secondary bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
-                    <div class="hidden flex-col sm:flex">
-                        <span class="subtext text-xs">@FirstName</span>
-                        <span class="text-xs uppercase">@LastName</span>
-                    </div>
+            <button @onclick=ToggleMenu class="nav-link !pl-1.5 !pr-2">
+                <div class="flex flex-row items-center gap-2">
+                    <div class="h-7 w-7 rounded-full bg-secondary bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
+                    <span class="hidden text-sm font-normal sm:block">@FirstName @LastName</span>
                 </div>
                 <div class="hidden self-center sm:flex">
                     @if (_dropdownMenu)
                     {
-                        <span class="material-symbols-rounded self-center">
+                        <span class="material-symbols-rounded  self-center !text-lg text-subtext dark:text-subtextDark">
                             keyboard_arrow_up
                         </span>
                     }
                     else
                     {
-                        <span class="material-symbols-rounded self-center">
+                        <span class="material-symbols-rounded  self-center !text-lg text-subtext dark:text-subtextDark">
                             keyboard_arrow_down
                         </span>
                     }
