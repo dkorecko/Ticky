@@ -600,6 +600,79 @@ input[type="checkbox"].toggle {
     @apply !text-2xs;
 }
 
+/* Assignee tiles in the card filter. aria-pressed marks the selected ones. */
+.assignee-tile {
+    @apply flex min-w-0 cursor-pointer flex-row items-center gap-1.5 rounded-button bg-secondary/10 p-1 pr-2 text-left text-text select-none transition-all ease-in-out hover:bg-secondary/20 dark:bg-secondaryDark/15 dark:text-textDark dark:hover:bg-secondaryDark/25;
+}
+
+.assignee-tile[aria-pressed="true"] {
+    @apply bg-secondary text-primary hover:bg-secondary/90 dark:bg-secondaryDark dark:text-primaryDark dark:hover:bg-secondaryDark/90;
+}
+
+/* Secondary text in a tile (first name, "no assignee" icon). */
+.assignee-sub {
+    @apply text-subtext dark:text-subtextDark;
+}
+
+.assignee-tile[aria-pressed="true"] .assignee-sub {
+    color: inherit;
+    opacity: 0.8;
+}
+
+/* Board statistics panel */
+.stats-heading {
+    @apply text-2xs font-semibold tracking-wide text-subtext uppercase dark:text-subtextDark;
+}
+
+.stats-track {
+    @apply block overflow-hidden rounded-full bg-background dark:bg-bgDark;
+}
+
+.stats-fill {
+    @apply block h-full rounded-full transition-all duration-300;
+}
+
+.stat-tile {
+    @apply flex flex-col gap-0.5 rounded-button bg-background p-2.5 dark:bg-bgDark;
+}
+
+.stat-icon {
+    @apply mb-1 !text-lg leading-none text-subtext dark:text-subtextDark;
+}
+
+.stat-value {
+    @apply text-xl leading-tight font-semibold tabular-nums;
+}
+
+.stat-caption {
+    @apply text-2xs text-subtext dark:text-subtextDark;
+}
+
+.stat-alert {
+    @apply bg-danger/10 dark:bg-danger/15;
+}
+
+.stat-alert .stat-icon, .stat-alert .stat-value {
+    @apply text-danger;
+}
+
+/* Columns table: name | cards | time | chevron */
+.stats-grid {
+    @apply grid grid-cols-[minmax(0,1fr)_2.5rem_3.5rem_1rem] items-center gap-2;
+}
+
+.stats-row {
+    @apply w-full cursor-pointer rounded-md px-1.5 py-1 text-left text-xs transition-all ease-in-out hover:bg-dropdown-option;
+}
+
+.stats-chevron {
+    @apply !text-base leading-none text-subtext transition-transform dark:text-subtextDark;
+}
+
+.stats-row[aria-expanded="true"] .stats-chevron {
+    rotate: 180deg;
+}
+
 /* Reserve a gutter so the scrollbar never overlaps content, and keep it slim. */
 .modal-scroll {
     scrollbar-gutter: stable;
