@@ -71,7 +71,8 @@
                         }
                     </button>
                     <div class="@(_dropdownMenu ? "absolute" : "hidden") top-12 right-0">
-                        <div class="dropdown-box">
+                        @* Clicks on any item bubble up here, so picking an item also closes the menu. *@
+                        <div class="dropdown-box" @onclick="CloseMenu">
                             @if (IsAdmin())
                             {
                                 <a href="/boards/settings/@_board.Id" class="nav-link">
@@ -655,5 +656,10 @@
     private void ToggleMenu()
     {
         _dropdownMenu = !_dropdownMenu;
+    }
+
+    private void CloseMenu()
+    {
+        _dropdownMenu = false;
     }
 }
