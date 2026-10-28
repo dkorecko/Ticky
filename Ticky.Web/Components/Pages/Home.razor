@@ -23,15 +23,18 @@
                 On this home page you can create a new board/project or open an existing one.
             </p>
             <div class="flex flex-row space-x-2">
-                <a class="btn btn-purple flex !w-max" href=@($"{Constants.Mappings.BOARD_PATH}/{_user?.LastVisitedBoardId}")>
-                    <span class="material-symbols-rounded g-icon self-center">
-                        tab_recent
-                    </span>
-                    <span class="self-center">
-                        Recent board
-                    </span>
-                </a>
-                <button class="btn btn-yellow flex !w-max" @onclick="() => _createProjectModal?.Open()">
+                @if (_user?.LastVisitedBoardId is not null)
+                {
+                    <a class="btn btn-purple flex !w-max items-center gap-1.5" href=@($"{Constants.Mappings.BOARD_PATH}/{_user.LastVisitedBoardId}")>
+                        <span class="material-symbols-rounded g-icon self-center">
+                            tab_recent
+                        </span>
+                        <span class="self-center">
+                            Recent board
+                        </span>
+                    </a>
+                }
+                <button class="btn btn-yellow flex !w-max items-center gap-1.5" @onclick="() => _createProjectModal?.Open()">
                     <span class="material-symbols-rounded g-icon self-center">
                         add_ad
                     </span>

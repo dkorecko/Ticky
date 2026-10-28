@@ -29,176 +29,178 @@
     <Spinner/>
 } else
 {
-    <div class="relative">
-        <div class="island-title flex w-full flex-row justify-between">
-            <div class="flex flex-row items-center gap-4">
-                <div class="hidden h-10 w-10 rounded-lg bg-secondary sm:block">
-                    &nbsp;
+    <div class="flex h-full flex-col">
+        <div class="relative">
+            <div class="island-title flex w-full flex-row justify-between">
+                <div class="flex flex-row items-center gap-4">
+                    <div class="hidden h-10 w-10 rounded-lg bg-secondary sm:block">
+                        &nbsp;
+                    </div>
+                    <div class="flex flex-col space-y-1">
+                        <h5 class="w-max font-semibold">@_board.Name</h5>
+                        <p class="text-xs opacity-70">@_board.Project.Name</p>
+                    </div>
                 </div>
-                <div class="flex flex-col space-y-1">
-                    <h5 class="w-max font-semibold">@_board.Name</h5>
-                    <p class="text-xs opacity-70">@_board.Project.Name</p>
-                </div>
-            </div>
 
-            <div class="flex flex-row space-x-2 sm:hidden">
-                @{
-                    var i = 0;
-                }
-                <div class="flex flex-row">
-                    @foreach (var member in _members)
-                    {
-                        string id = $"avatar_{i}";
-                        <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
-                        i++;
+                <div class="flex flex-row space-x-2 sm:hidden">
+                    @{
+                        var i = 0;
                     }
-                </div>
-                <VerticalSeparator />
+                    <div class="flex flex-row">
+                        @foreach (var member in _members)
+                        {
+                            string id = $"avatar_{i}";
+                            <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
+                            i++;
+                        }
+                    </div>
+                    <VerticalSeparator />
 
-                <div class="relative flex self-center">
-                    <button @onclick=ToggleMenu class="btn-transparent btn flex self-center">
-                        @if (_dropdownMenu)
-                        {
-                            <span class="material-symbols-rounded g-icon self-center">
-                                close
-                            </span>
-                        }
-                        else
-                        {
-                            <span class="material-symbols-rounded g-icon self-center">
-                                menu
-                            </span>
-                        }
-                    </button>
-                    <div class="@(_dropdownMenu ? "absolute" : "hidden") top-12 right-0">
-                        @* Clicks on any item bubble up here, so picking an item also closes the menu. *@
-                        <div class="dropdown-box" @onclick="CloseMenu">
-                            @if (IsAdmin())
+                    <div class="relative flex self-center">
+                        <button @onclick=ToggleMenu class="btn-transparent btn flex self-center">
+                            @if (_dropdownMenu)
                             {
-                                <a href="/boards/settings/@_board.Id" class="nav-link">
-                                    <span class="material-symbols-rounded g-icon self-center">
-                                        settings
-                                    </span>
-                                    <span class="self-center">
-                                        Settings
-                                    </span>
-                                </a>
+                                <span class="material-symbols-rounded g-icon self-center">
+                                    close
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="material-symbols-rounded g-icon self-center">
+                                    menu
+                                </span>
+                            }
+                        </button>
+                        <div class="@(_dropdownMenu ? "absolute" : "hidden") top-12 right-0">
+                            @* Clicks on any item bubble up here, so picking an item also closes the menu. *@
+                            <div class="dropdown-box" @onclick="CloseMenu">
+                                @if (IsAdmin())
+                                {
+                                    <a href="/boards/settings/@_board.Id" class="nav-link">
+                                        <span class="material-symbols-rounded g-icon self-center">
+                                            settings
+                                        </span>
+                                        <span class="self-center">
+                                            Settings
+                                        </span>
+                                    </a>
 
-                                <button class="nav-link" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
-                                    <span class="material-symbols-rounded g-icon self-center">
-                                        add
+                                    <button class="nav-link" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
+                                        <span class="material-symbols-rounded g-icon self-center">
+                                            add
+                                        </span>
+                                        <span class="self-center">
+                                            Add member
+                                        </span>
+                                    </button>
+                                }
+                                @{
+                                    var filterIcon = "filter-icon";
+                                }
+
+                                <button class="nav-link" title="Filter cards" id=@filterIcon @onclick="() => _filterCardsModal?.Open(filterIcon)">
+                                    <span class="relative z-0 inline-block self-center">
+                                        <span class="material-symbols-rounded g-icon">
+                                            tune
+                                        </span>
+                                        @if (_filterModel.IsAnyFilterApplied())
+                                        {
+                                            <span class="absolute top-1 right-2 h-2 w-2 rounded-full bg-secondary dark:bg-secondaryDark"></span>
+                                        }
                                     </span>
                                     <span class="self-center">
-                                        Add member
+                                        Filter
                                     </span>
                                 </button>
-                            }
-                            @{
-                                var filterIcon = "filter-icon";
-                            }
 
-                            <button class="nav-link" title="Filter cards" id=@filterIcon @onclick="() => _filterCardsModal?.Open(filterIcon)">
-                                <span class="relative z-0 inline-block self-center">
-                                    <span class="material-symbols-rounded g-icon">
-                                        tune
+
+                                <button @onclick="SwitchStatsDisplay" title="Toggle statistics" class="nav-link">
+                                    <span class="material-symbols-rounded g-icon self-center">
+                                        finance
                                     </span>
-                                    @if (_filterModel.IsAnyFilterApplied())
-                                    {
-                                        <span class="absolute top-1 right-2 h-2 w-2 rounded-full bg-secondary dark:bg-secondaryDark"></span>
-                                    }
-                                </span>
-                                <span class="self-center">
-                                    Filter
-                                </span>
-                            </button>
+                                    <span class="self-center">
+                                        Statistics
+                                    </span>
+                                </button>
 
-
-                            <button @onclick="SwitchStatsDisplay" title="Toggle statistics" class="nav-link">
-                                <span class="material-symbols-rounded g-icon self-center">
-                                    finance
-                                </span>
-                                <span class="self-center">
-                                    Statistics
-                                </span>
-                            </button>
-
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="hidden flex-row space-x-1 sm:flex">
-                @{
-                    i = 0;
-                }
-                <div class="flex flex-row">
-                    @foreach (var member in _members)
+                <div class="hidden flex-row space-x-1 sm:flex">
+                    @{
+                        i = 0;
+                    }
+                    <div class="flex flex-row">
+                        @foreach (var member in _members)
+                        {
+                            string id = $"avatar_{i}";
+                            <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
+                            i++;
+                        }
+                    </div>
+                    @if (IsAdmin())
                     {
-                        string id = $"avatar_{i}";
-                        <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');" @onclick="() => MainLayout.UserInfoModal?.Open(id, member.Id)"></div>
-                        i++;
+                        <button class="add btn-transparent btn flex" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
+                            <span class="material-symbols-rounded g-icon self-center">
+                                add
+                            </span>
+                        </button>
+                    }
+                    <VerticalSeparator />
+
+                    <span class="relative z-0 inline-block self-center">
+                        <button title="Filter cards" id=@filterIcon @onclick="() => _filterCardsModal?.Open(filterIcon)" class="material-symbols-rounded g-icon  btn-transparent btn flex self-center">
+                            tune
+                        </button>
+                        @if (_filterModel.IsAnyFilterApplied())
+                        {
+                            <span class="absolute top-1 right-2 h-2 w-2 rounded-full bg-secondary dark:bg-secondaryDark"></span>
+                        }
+                    </span>
+
+                    <button @onclick="SwitchStatsDisplay" title="Toggle statistics" class="material-symbols-rounded g-icon btn-transparent btn flex self-center">
+                        finance
+                    </button>
+
+                    @if (IsAdmin())
+                    {
+                        <a href="/boards/settings/@_board.Id" title="Board settings" class="material-symbols-rounded g-icon btn-transparent btn flex self-center">
+                            settings
+                        </a>
                     }
                 </div>
-                @if (IsAdmin())
-                {
-                    <button class="add btn-transparent btn flex" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
-                        <span class="material-symbols-rounded g-icon self-center">
-                            add
-                        </span>
-                    </button>
-                }
-                <VerticalSeparator />
-
-                <span class="relative z-0 inline-block self-center">
-                    <button title="Filter cards" id=@filterIcon @onclick="() => _filterCardsModal?.Open(filterIcon)" class="material-symbols-rounded g-icon  btn-transparent btn flex self-center">
-                        tune
-                    </button>
-                    @if (_filterModel.IsAnyFilterApplied())
-                    {
-                        <span class="absolute top-1 right-2 h-2 w-2 rounded-full bg-secondary dark:bg-secondaryDark"></span>
-                    }
-                </span>
-
-                <button @onclick="SwitchStatsDisplay" title="Toggle statistics" class="material-symbols-rounded g-icon btn-transparent btn flex self-center">
-                    finance
-                </button>
-
-                @if (IsAdmin())
-                {
-                    <a href="/boards/settings/@_board.Id" title="Board settings" class="material-symbols-rounded g-icon btn-transparent btn flex self-center">
-                        settings
-                    </a>
-                }
             </div>
+            <FilterCardsModal @ref="_filterCardsModal" Model="_filterModel" SearchUpdated="LoadCardsAsync" BoardMembers="_members" BoardLabels="_labels" />
         </div>
-        <FilterCardsModal @ref="_filterCardsModal" Model="_filterModel" SearchUpdated="LoadCardsAsync" BoardMembers="_members" BoardLabels="_labels" />
-    </div>
 
-    <div class="h-board-content flex w-full flex-row">
-        @if (_board is not null)
-        {
-            <section id="board-section" class="w-full flex-row gap-2 overflow-x-auto pt-2 @(_preferences.ShowStats ? "hidden md:flex" : "flex")">
-                <SortableList Class="flex flex-row gap-2" Animation=@(_board.DisableSortingAnimations ? 0 : 200) Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
-                    <SortableItemTemplate>
-                        <ColumnView @key="column.Id" Column="column" Cards="_cards" Members="_members" Board="@_board" EditColumnModal="_editColumnModal" DeleteColumnModal="_deleteColumnModal" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" OnCardMoved=StateHasChanged AddingSetter=SetAdding IsAdmin="IsAdmin" AddingCardHere="(_adding == column.Id)" OnUpdate="HandleUpdate" />
-                    </SortableItemTemplate>
-                </SortableList>
-
-                @if (IsAdmin())
-                {
-                    <button class="btn btn-purple h-min !w-72 min-w-72 font-semibold" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id) + 1 : 0);" title="Add new column">
-                        New column
-                    </button>
-                }
-            </section>
-
-            if (_preferences.ShowStats)
+        <div class="flex min-h-0 w-full flex-1 flex-row">
+            @if (_board is not null)
             {
-                <div class="mt-2 flex w-screen border-background md:w-80 md:border-l-8 dark:border-bgDark">
-                    <BoardStats Board="_board" Cards="_cards" Members="_members" Filtered="_filterModel.IsAnyFilterApplied()" OnClose="SwitchStatsDisplay" />
-            </div>
-        }
-        }
+                <section id="board-section" class="w-full flex-row gap-2 overflow-x-auto pt-2 @(_preferences.ShowStats ? "hidden md:flex" : "flex")">
+                    <SortableList Class="flex flex-row gap-2" Animation=@(_board.DisableSortingAnimations ? 0 : 200) Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
+                        <SortableItemTemplate>
+                            <ColumnView @key="column.Id" Column="column" Cards="_cards" Members="_members" Board="@_board" EditColumnModal="_editColumnModal" DeleteColumnModal="_deleteColumnModal" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" OnCardMoved=StateHasChanged AddingSetter=SetAdding IsAdmin="IsAdmin" AddingCardHere="(_adding == column.Id)" OnUpdate="HandleUpdate" />
+                        </SortableItemTemplate>
+                    </SortableList>
+
+                    @if (IsAdmin())
+                    {
+                        <button class="btn btn-purple h-min !w-72 min-w-72 font-semibold" @onclick="() => _createColumnModal?.Open(_board.Id)" style="order: @(_board.Columns.Any() ? _board.Columns.Max(x => x.Id) + 1 : 0);" title="Add new column">
+                            New column
+                        </button>
+                    }
+                </section>
+
+                if (_preferences.ShowStats)
+                {
+                    <div class="mt-2 flex w-screen border-background md:w-80 md:border-l-8 dark:border-bgDark">
+                        <BoardStats Board="_board" Cards="_cards" Members="_members" Filtered="_filterModel.IsAnyFilterApplied()" OnClose="SwitchStatsDisplay" />
+                </div>
+            }
+            }
+        </div>
     </div>
 }
 

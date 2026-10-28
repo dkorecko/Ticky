@@ -8,7 +8,7 @@
     var columnCards = Cards.Where(x => x.ColumnId.Equals(Column.Id)).ToList();
     var cardsCount = columnCards.Count;
 }
-<div @key="Column.Id" id="@Column.Id" class="board-column max-h-visible-screen gap-1">
+<div @key="Column.Id" id="@Column.Id" class="board-column max-h-full gap-1">
     <div class="flex w-full flex-row items-center justify-between px-2 py-1 text-text dark:text-textDark">
         <div class="flex flex-row items-center gap-2">
             <h6 class="font-semibold">

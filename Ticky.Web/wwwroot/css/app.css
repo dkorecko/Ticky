@@ -36,7 +36,6 @@
     --color-blue-400: oklch(70.7% 0.165 254.624);
     --color-blue-500: oklch(62.3% 0.214 259.815);
     --color-blue-600: oklch(54.6% 0.245 262.881);
-    --color-blue-800: oklch(42.4% 0.199 265.638);
     --color-neutral-100: oklch(97% 0 0);
     --color-neutral-400: oklch(70.8% 0 0);
     --color-neutral-500: oklch(55.6% 0 0);
@@ -401,6 +400,9 @@
   .table {
     display: table;
   }
+  .\[field-sizing\:content\] {
+    field-sizing: content;
+  }
   .aspect-square {
     aspect-ratio: 1 / 1;
   }
@@ -427,6 +429,9 @@
   }
   .h-5 {
     height: calc(var(--spacing) * 5);
+  }
+  .h-6 {
+    height: calc(var(--spacing) * 6);
   }
   .h-7 {
     height: calc(var(--spacing) * 7);
@@ -473,6 +478,9 @@
   .max-h-\[80vh\] {
     max-height: 80vh;
   }
+  .max-h-full {
+    max-height: 100%;
+  }
   .min-h-0 {
     min-height: calc(var(--spacing) * 0);
   }
@@ -496,9 +504,6 @@
   }
   .\!w-max {
     width: max-content !important;
-  }
-  .w-1 {
-    width: calc(var(--spacing) * 1);
   }
   .w-1\/4 {
     width: calc(1/4 * 100%);
@@ -550,6 +555,9 @@
   }
   .w-min {
     width: min-content;
+  }
+  .w-px {
+    width: 1px;
   }
   .w-screen {
     width: 100vw;
@@ -784,11 +792,6 @@
       border-color: var(--color-line);
     }
   }
-  .divide-subtext {
-    :where(& > :not(:last-child)) {
-      border-color: var(--color-subtext);
-    }
-  }
   .self-center {
     align-self: center;
   }
@@ -851,10 +854,6 @@
     border-left-style: var(--tw-border-style);
     border-left-width: 2px;
   }
-  .border-l-\[1px\] {
-    border-left-style: var(--tw-border-style);
-    border-left-width: 1px;
-  }
   .border-dashed {
     --tw-border-style: dashed;
     border-style: dashed;
@@ -864,9 +863,6 @@
   }
   .border-line {
     border-color: var(--color-line);
-  }
-  .border-secondary {
-    border-color: var(--color-secondary);
   }
   .\!bg-background {
     background-color: var(--color-background) !important;
@@ -912,6 +908,9 @@
     @supports (color: color-mix(in lab, red, red)) {
       background-color: color-mix(in oklab, var(--color-green-500) 15%, transparent);
     }
+  }
+  .bg-line {
+    background-color: var(--color-line);
   }
   .bg-modal {
     background-color: var(--color-modal);
@@ -1152,9 +1151,6 @@
   }
   .pl-3 {
     padding-left: calc(var(--spacing) * 3);
-  }
-  .pl-4 {
-    padding-left: calc(var(--spacing) * 4);
   }
   .pl-6 {
     padding-left: calc(var(--spacing) * 6);
@@ -1540,13 +1536,6 @@
       }
     }
   }
-  .hover\:text-blue-800 {
-    &:hover {
-      @media (hover: hover) {
-        color: var(--color-blue-800);
-      }
-    }
-  }
   .hover\:text-red-button-hover {
     &:hover {
       @media (hover: hover) {
@@ -1694,6 +1683,16 @@
       padding: calc(var(--spacing) * 4);
     }
   }
+  .sm\:pl-4 {
+    @media (width >= 40rem) {
+      padding-left: calc(var(--spacing) * 4);
+    }
+  }
+  .sm\:whitespace-nowrap {
+    @media (width >= 40rem) {
+      white-space: nowrap;
+    }
+  }
   .md\:flex {
     @media (width >= 48rem) {
       display: flex;
@@ -1784,13 +1783,6 @@
   .dark\:hidden {
     &:where(.dark, .dark *) {
       display: none;
-    }
-  }
-  .dark\:divide-subtextDark {
-    &:where(.dark, .dark *) {
-      :where(& > :not(:last-child)) {
-        border-color: var(--color-subtextDark);
-      }
     }
   }
   .dark\:border-bgDark {
@@ -2250,8 +2242,15 @@ body {
   }
 }
 .full-screen {
-  height: 100vh;
+  display: flex;
   width: 100%;
+  flex-direction: column;
+  height: calc(var(--vvh, 1dvh) * 100);
+}
+@layer base {
+  hr {
+    border-color: var(--color-line);
+  }
 }
 button, a, .btn, .smooth-animation, .auth-link, .settings-menu-item {
   transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease;
@@ -3280,12 +3279,6 @@ input[type="checkbox"].toggle:checked:after {
     background-color: var(--color-primaryDark);
   }
 }
-.max-h-visible-screen {
-  max-height: calc(var(--vvh) * 100 - (var(--spacing) * 6) - (var(--spacing) * 2) * 6 - (var(--spacing) * 8) * 2 - 17px);
-}
-.h-board-content {
-  height: calc(var(--vvh) * 100 - (var(--spacing) * 6) * 4 - 1px);
-}
 .h-visible-screen {
   height: calc(var(--vvh) * 100);
 }
@@ -3739,12 +3732,17 @@ input[type="checkbox"].toggle:checked:after {
 .person-link {
   cursor: pointer;
   align-items: stretch;
-  border-radius: var(--radius-button);
-  background-color: var(--color-secondary);
+  border-radius: var(--radius-md);
+  background-color: color-mix(in srgb, oklch(0.5714 0.1438 289.17) 10%, transparent);
+  @supports (color: color-mix(in lab, red, red)) {
+    background-color: color-mix(in oklab, var(--color-secondary) 10%, transparent);
+  }
   padding-inline: calc(var(--spacing) * 1);
-  padding-bottom: calc(var(--spacing) * 0.5);
+  padding-block: 1px;
+  --tw-font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-medium);
   white-space: pre-wrap;
-  color: var(--color-primary);
+  color: var(--color-secondary);
   transition-property: all;
   transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
   transition-duration: var(--tw-duration, var(--default-transition-duration));
@@ -3752,21 +3750,27 @@ input[type="checkbox"].toggle:checked:after {
   transition-timing-function: var(--ease-in-out);
   &:hover {
     @media (hover: hover) {
-      background-color: color-mix(in srgb, oklch(0.5714 0.1438 289.17) 80%, transparent);
+      background-color: color-mix(in srgb, oklch(0.5714 0.1438 289.17) 20%, transparent);
       @supports (color: color-mix(in lab, red, red)) {
-        background-color: color-mix(in oklab, var(--color-secondary) 80%, transparent);
+        background-color: color-mix(in oklab, var(--color-secondary) 20%, transparent);
       }
     }
   }
   &:where(.dark, .dark *) {
-    background-color: var(--color-secondaryDark);
+    background-color: color-mix(in srgb, oklch(0.7007 0.137 290.64) 15%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-secondaryDark) 15%, transparent);
+    }
+  }
+  &:where(.dark, .dark *) {
+    color: var(--color-secondaryDark);
   }
   &:where(.dark, .dark *) {
     &:hover {
       @media (hover: hover) {
-        background-color: color-mix(in srgb, oklch(0.7007 0.137 290.64) 80%, transparent);
+        background-color: color-mix(in srgb, oklch(0.7007 0.137 290.64) 25%, transparent);
         @supports (color: color-mix(in lab, red, red)) {
-          background-color: color-mix(in oklab, var(--color-secondaryDark) 80%, transparent);
+          background-color: color-mix(in oklab, var(--color-secondaryDark) 25%, transparent);
         }
       }
     }

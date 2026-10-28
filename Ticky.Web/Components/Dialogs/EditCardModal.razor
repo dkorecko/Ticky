@@ -29,7 +29,7 @@
         <div class="modal-scroll h-[90vh] overflow-x-hidden overflow-y-auto" @ref="_scrollContainerRef">
             <div class="flex flex-col gap-3">
                 <div class="flex flex-row items-start justify-between gap-3">
-                    <textarea class="min-h-12 w-full resize-none px-2 py-2 text-2xl font-semibold transition-all ease-in-out" placeholder="Task name ..." @onchange="OnTextChanged">@_card.Name</textarea>
+                    <textarea class="min-h-12 w-full resize-none px-2 py-2 text-2xl font-semibold transition-all ease-in-out [field-sizing:content]" placeholder="Task name ..." @onchange="OnTextChanged">@_card.Name</textarea>
                     <i class="edit-icon fa fa-x mt-2 shrink-0 !text-lg" @onclick="async () => await Modal!.Close()" title="Close"></i>
                 </div>
                 <hr />
@@ -168,11 +168,11 @@
                         <div class="prop-value font-semibold">@_card.Column.Name</div>
                     </div>
                     <div class="prop-row !items-start !py-2">
-                        <div class="prop-label items-start pl-4">
+                        <div class="prop-label items-start sm:pl-4">
                             <span class="material-symbols-rounded mt-0.5">swap_horiz</span>
-                            <span class="flex flex-col gap-1">
-                                <span class="whitespace-nowrap">Change location</span>
-                                <span class="subtext whitespace-nowrap text-xs">Column in which card is</span>
+                            <span class="flex min-w-0 flex-col gap-1">
+                                <span class="sm:whitespace-nowrap">Change location</span>
+                                <span class="subtext text-xs sm:whitespace-nowrap">Column in which card is</span>
                             </span>
                         </div>
                         <div class="prop-value gap-3 pt-0.5">
@@ -285,7 +285,11 @@
                                 }
                             </div>
                         }
-                        else if (_subtasks.Any())
+                        else if (!_subtasks.Any())
+                        {
+                            <p class="subtext">No sub-tasks yet.</p>
+                        }
+                        else
                         {
                             <div class="flex flex-col gap-2">
                                 <SortableList Class="flex flex-col gap-0.5" Animation=@(_card.Column.Board.DisableSortingAnimations ? 0 : 200) Items="_subtasks.OrderBy(x => x.Index).ToList()" OnUpdate="OnSubtaskMoved" Handle=".drag-toggle">
@@ -341,7 +345,7 @@
                             <div class="flex flex-col gap-1">
                                 <div class="flex flex-row items-center gap-2">
                                     @{
-                                        var commentId = $"comment_id_{i}";
+                                        var commentId = $"comment_id_{j}";
                                     }
                                     @if(comment.CreatedBy is not null) 
                                     {
@@ -366,7 +370,7 @@
                 }
                 else if (_tab == 2)
                 {
-                    <div class="flex flex-col gap-1 border-l-2">
+                    <div class="flex flex-col gap-1 border-l-2 border-line">
                         @{
                             DateTime? lastDay = null;
                             i = 0;

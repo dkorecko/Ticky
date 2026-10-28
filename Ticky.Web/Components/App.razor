@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="@Assets["google-icons/material-symbol.css"]">
     <link href="Ticky.Web.styles.css" rel="stylesheet" />
     <script src="@Assets["js/main.js"]"></script>
+    @* Runs before first paint so a saved dark theme doesn't flash light on load. *@
+    <script src="js/darkTheme.js" type="text/javascript"></script>
     <script src="@Assets["js/sortable/Sortable.min.js"]"></script>
     <script type="module" src="../Components/Elements/Sortable/SortableList.razor.js"></script>
     <ImportMap />
@@ -30,7 +32,6 @@
     <script src="js/screenHeight.js" type="text/javascript"></script>
     <script src="js/downloadFile.js" type="text/javascript"></script>
     <script src="js/focusTrap.js" type="text/javascript"></script>
-    <script src="js/darkTheme.js" type="text/javascript"></script>
     <script src="js/confetti.browser.min.js" type="text/javascript"></script>
 </body>
 

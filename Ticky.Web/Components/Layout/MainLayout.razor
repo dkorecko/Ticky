@@ -9,7 +9,7 @@
     <CascadingValue Name="@Constants.CascadingParameters.MainLayout" Value="this">
         <div class="full-screen">
             <NavMenu/>
-            <main class="overflow-x-clip overflow-y-auto px-4 py-2">
+            <main class="min-h-0 flex-1 overflow-x-clip overflow-y-auto px-4 py-2">
                 @if(_user is null)
                 {
                     <Spinner/>

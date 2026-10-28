@@ -90,8 +90,18 @@ body {
     @apply bg-background dark:bg-bgDark text-text dark:text-textDark;
 }
 
+/* App shell: nav on top, <main> fills the rest and scrolls on its own, so the page itself never scrolls.
+   --vvh is the visible viewport height (set by screenHeight.js); fall back to dvh until it is set. */
 .full-screen {
-    @apply h-screen w-full;
+    @apply flex w-full flex-col;
+    height: calc(var(--vvh, 1dvh) * 100);
+}
+
+@layer base {
+    /* Plain <hr> separators use the subtle line colour instead of the text colour. */
+    hr {
+        border-color: var(--color-line);
+    }
 }
 
 button, a, .btn, .smooth-animation, .auth-link, .settings-menu-item {
@@ -414,14 +424,6 @@ input[type="checkbox"].toggle {
         @apply bg-primary dark:bg-primaryDark;
     }
 
-.max-h-visible-screen {
-    @apply max-h-[calc(var(--vvh)*100-(var(--spacing)*6)-(var(--spacing)*2)*6-(var(--spacing)*8)*2-17px)];
-}
-
-.h-board-content {
-    @apply h-[calc(var(--vvh)*100-(var(--spacing)*6)*4-1px)];
-}
-
 .h-visible-screen {
     @apply h-[calc(var(--vvh)*100)];
 }
@@ -507,7 +509,7 @@ input[type="checkbox"].toggle {
 }
 
 .person-link {
-    @apply cursor-pointer items-stretch rounded-button bg-secondary px-1 pb-0.5 whitespace-pre-wrap text-primary transition-all ease-in-out hover:bg-secondary/80 dark:bg-secondaryDark dark:hover:bg-secondaryDark/80;
+    @apply cursor-pointer items-stretch rounded-md bg-secondary/10 px-1 py-px font-medium whitespace-pre-wrap text-secondary transition-all ease-in-out hover:bg-secondary/20 dark:bg-secondaryDark/15 dark:text-secondaryDark dark:hover:bg-secondaryDark/25;
 }
 
 .link-muted {
