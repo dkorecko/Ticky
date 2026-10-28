@@ -621,6 +621,28 @@ input[type="checkbox"].toggle {
     opacity: 0.8;
 }
 
+/* Three-state label filter: Off / Include / Exclude.
+   Pill track with a sliding "knob" (the active option) whose text spells out the state. */
+.label-seg {
+    @apply inline-flex shrink-0 flex-row items-center gap-0.5 rounded-full bg-background p-0.5 dark:bg-bgDark;
+}
+
+.label-seg-opt {
+    @apply cursor-pointer rounded-full px-2.5 py-1 text-2xs font-semibold whitespace-nowrap text-subtext transition-all ease-in-out hover:text-text dark:text-subtextDark dark:hover:text-textDark;
+}
+
+.label-seg-opt.is-active {
+    @apply bg-primary text-text shadow-sm dark:bg-primaryDark dark:text-textDark;
+}
+
+.label-seg-opt--include.is-active {
+    @apply text-green-600 dark:text-green-400;
+}
+
+.label-seg-opt--exclude.is-active {
+    @apply text-red dark:text-redDark;
+}
+
 /* Board statistics panel */
 .stats-heading {
     @apply text-2xs font-semibold tracking-wide text-subtext uppercase dark:text-subtextDark;

@@ -72,15 +72,20 @@
                     }
                 }
             </div>
-            <div class="grid grid-cols-2 gap-x-6 gap-y-2">
+            <div class="flex flex-col gap-2">
                 @if (BoardLabels != null && BoardLabels.Any())
                 {
                     @foreach (var label in Model.ExpandLabelsSection ? BoardLabels : BoardLabels.Take(3))
                     {
-                        <label class="flex min-w-0 cursor-pointer flex-row items-center justify-between gap-3 select-none" title="Show only cards with this label">
+                        var state = GetLabelState(label.Id);
+                        <div class="flex min-w-0 flex-row items-center justify-between gap-3">
                             <span class="label min-w-0 truncate !text-sm !font-semibold" style="--lc: @label.BackgroundColor.R @label.BackgroundColor.G @label.BackgroundColor.B;">@label.Name</span>
-                            <input type="checkbox" class="toggle" checked="@Model.LabelIds.Contains(label.Id)" @onchange="() => ToggleLabelFilter(label.Id)" />
-                        </label>
+                            <div class="label-seg" role="group" aria-label="Filter by @label.Name">
+                                <button type="button" class="label-seg-opt @(state == LabelFilter.None ? "is-active" : "")" aria-pressed="@(state == LabelFilter.None)" @onclick="() => SetLabelFilter(label.Id, LabelFilter.None)" title="Don't filter by this label">Off</button>
+                                <button type="button" class="label-seg-opt label-seg-opt--include @(state == LabelFilter.Include ? "is-active" : "")" aria-pressed="@(state == LabelFilter.Include)" @onclick="() => SetLabelFilter(label.Id, LabelFilter.Include)" title="Show only cards with this label">Include</button>
+                                <button type="button" class="label-seg-opt label-seg-opt--exclude @(state == LabelFilter.Exclude ? "is-active" : "")" aria-pressed="@(state == LabelFilter.Exclude)" @onclick="() => SetLabelFilter(label.Id, LabelFilter.Exclude)" title="Hide cards with this label">Exclude</button>
+                            </div>
+                        </div>
                     }
                 }
                 else
@@ -107,10 +112,27 @@
     [Parameter]
     public required List<Label> BoardLabels { get; set; } = [];
 
-    private async Task ToggleLabelFilter(int labelId)
+    private enum LabelFilter { None, Include, Exclude }
+
+    private LabelFilter GetLabelState(int labelId)
     {
-        if (!Model.LabelIds.Remove(labelId))
+        if (Model.LabelIds.Contains(labelId))
+            return LabelFilter.Include;
+        if (Model.ExcludedLabelIds.Contains(labelId))
+            return LabelFilter.Exclude;
+        return LabelFilter.None;
+    }
+
+    private async Task SetLabelFilter(int labelId, LabelFilter state)
+    {
+        // A label can only be in one bucket at a time.
+        Model.LabelIds.Remove(labelId);
+        Model.ExcludedLabelIds.Remove(labelId);
+
+        if (state == LabelFilter.Include)
             Model.LabelIds.Add(labelId);
+        else if (state == LabelFilter.Exclude)
+            Model.ExcludedLabelIds.Add(labelId);
 
         await SearchUpdated.InvokeAsync();
     }

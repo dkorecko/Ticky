@@ -6,7 +6,11 @@ public class FilterCardsModel
 
     public HashSet<int> AssignedUserIds { get; set; } = [];
 
+    // Labels a card must have to be shown (match any).
     public HashSet<int> LabelIds { get; set; } = [];
+
+    // Labels a card must not have to be shown.
+    public HashSet<int> ExcludedLabelIds { get; set; } = [];
 
     public bool IncludeUnassigned { get; set; }
 
@@ -21,6 +25,7 @@ public class FilterCardsModel
         return !string.IsNullOrWhiteSpace(Text)
             || AssignedUserIds.Count > 0
             || LabelIds.Count > 0
+            || ExcludedLabelIds.Count > 0
             || IncludeUnassigned
             || ExcludeCompleted;
     }
@@ -30,6 +35,7 @@ public class FilterCardsModel
         Text = string.Empty;
         AssignedUserIds.Clear();
         LabelIds.Clear();
+        ExcludedLabelIds.Clear();
         IncludeUnassigned = false;
         ExcludeCompleted = false;
     }

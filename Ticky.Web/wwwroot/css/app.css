@@ -68,8 +68,6 @@
     --tracking-wide: 0.025em;
     --tracking-wider: 0.05em;
     --leading-tight: 1.25;
-    --radius-xs: 0.125rem;
-    --radius-sm: 0.25rem;
     --radius-md: 0.375rem;
     --radius-lg: 0.5rem;
     --radius-xl: 0.75rem;
@@ -105,12 +103,9 @@
     --spacing-button-x: 0.5rem;
     --color-line: oklch(0 0 0 / 0.08);
     --color-modal: var(--color-primary);
-    --color-search-bar: var(--color-background);
-    --color-tab-outline: var(--color-subtext);
     --color-card-data-points: var(--color-subtext);
     --color-add-outline: var(--color-subtext);
     --color-add-outline-hover: var(--color-secondary);
-    --color-typing-outline: var(--color-subtext);
     --color-icon: var(--color-subtext);
     --color-red-button: var(--color-red);
     --color-red-button-hover: color-mix(in srgb, oklch(0.6554 0.1889 23.93) 80%, transparent);
@@ -783,9 +778,6 @@
   .gap-x-3 {
     column-gap: calc(var(--spacing) * 3);
   }
-  .gap-x-6 {
-    column-gap: calc(var(--spacing) * 6);
-  }
   .space-x-1 {
     :where(& > :not(:last-child)) {
       --tw-space-x-reverse: 0;
@@ -816,9 +808,6 @@
   }
   .gap-y-1 {
     row-gap: calc(var(--spacing) * 1);
-  }
-  .gap-y-2 {
-    row-gap: calc(var(--spacing) * 2);
   }
   .divide-y {
     :where(& > :not(:last-child)) {
@@ -4235,6 +4224,74 @@ input[type="checkbox"].toggle:checked:after {
 .assignee-tile[aria-pressed="true"] .assignee-sub {
   color: inherit;
   opacity: 0.8;
+}
+.label-seg {
+  display: inline-flex;
+  flex-shrink: 0;
+  flex-direction: row;
+  align-items: center;
+  gap: calc(var(--spacing) * 0.5);
+  border-radius: calc(infinity * 1px);
+  background-color: var(--color-background);
+  padding: calc(var(--spacing) * 0.5);
+  &:where(.dark, .dark *) {
+    background-color: var(--color-bgDark);
+  }
+}
+.label-seg-opt {
+  cursor: pointer;
+  border-radius: calc(infinity * 1px);
+  padding-inline: calc(var(--spacing) * 2.5);
+  padding-block: calc(var(--spacing) * 1);
+  font-size: var(--text-2xs);
+  --tw-font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  color: var(--color-subtext);
+  transition-property: all;
+  transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+  transition-duration: var(--tw-duration, var(--default-transition-duration));
+  --tw-ease: var(--ease-in-out);
+  transition-timing-function: var(--ease-in-out);
+  &:hover {
+    @media (hover: hover) {
+      color: var(--color-text);
+    }
+  }
+  &:where(.dark, .dark *) {
+    color: var(--color-subtextDark);
+  }
+  &:where(.dark, .dark *) {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-textDark);
+      }
+    }
+  }
+}
+.label-seg-opt.is-active {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+  --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  &:where(.dark, .dark *) {
+    background-color: var(--color-primaryDark);
+  }
+  &:where(.dark, .dark *) {
+    color: var(--color-textDark);
+  }
+}
+.label-seg-opt--include.is-active {
+  color: var(--color-green-600);
+  &:where(.dark, .dark *) {
+    color: var(--color-green-400);
+  }
+}
+.label-seg-opt--exclude.is-active {
+  color: var(--color-red);
+  &:where(.dark, .dark *) {
+    color: var(--color-redDark);
+  }
 }
 .stats-heading {
   font-size: var(--text-2xs);

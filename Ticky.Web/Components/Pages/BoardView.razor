@@ -586,6 +586,9 @@
         if (_filterModel.LabelIds.Count > 0)
             queryableCards = queryableCards.Where(card => card.Labels.Any(x => _filterModel.LabelIds.Contains(x.Id)));
 
+        if (_filterModel.ExcludedLabelIds.Count > 0)
+            queryableCards = queryableCards.Where(card => !card.Labels.Any(x => _filterModel.ExcludedLabelIds.Contains(x.Id)));
+
         _cards = await queryableCards.ToListAsync();
 
         if (_isDisposed)
