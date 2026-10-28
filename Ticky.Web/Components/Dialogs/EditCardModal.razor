@@ -303,12 +303,42 @@
                     <hr />
                     <section class="flex flex-col gap-3">
                         <h5 class="text-card-heading font-semibold select-none">Attachments</h5>
-                        @if (_card.Attachments.Any())
+                        @{
+                            var imageAttachments = _card.Attachments.Where(AttachmentHelper.IsImage).ToList();
+                            var fileAttachments = _card.Attachments.Where(x => !AttachmentHelper.IsImage(x)).ToList();
+                        }
+
+                        @if (imageAttachments.Count > 0)
+                        {
+                            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                @foreach (var attachment in imageAttachments)
+                                {
+                                    <article @key="attachment.Id" class="group relative overflow-hidden rounded-lg border border-line transition-colors hover:border-secondary/40 dark:hover:border-secondaryDark/40 @(imageAttachments.Count == 1 ? "sm:col-span-2" : string.Empty)">
+                                        <button type="button" class="block w-full cursor-pointer overflow-hidden text-left" aria-label="Download @attachment.OriginalName" @onclick="() => DownloadAttachment(attachment)">
+                                            <img class="w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] @(imageAttachments.Count == 1 ? "max-h-96 min-h-56" : "h-44")"
+                                                 src="@GetAttachmentPreviewUrl(attachment)"
+                                                 alt="@attachment.OriginalName"
+                                                 loading="lazy" />
+                                            <span class="absolute inset-x-0 bottom-0 flex items-end bg-gradient-to-t from-black/70 via-black/25 to-transparent px-3 pt-10 pb-2 text-xs font-medium text-white">
+                                                <span class="truncate pr-8">@attachment.OriginalName</span>
+                                            </span>
+                                        </button>
+                                        <button type="button" class="material-symbols-rounded absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 !text-lg text-white backdrop-blur-sm transition hover:bg-red-button sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
+                                                title="Delete attachment"
+                                                aria-label="Delete @attachment.OriginalName"
+                                                @onclick="() => DeleteAttachment(attachment)"
+                                                @onclick:stopPropagation="true">delete</button>
+                                    </article>
+                                }
+                            </div>
+                        }
+
+                        @if (fileAttachments.Count > 0)
                         {
                             <div class="flex flex-col gap-1">
-                                @foreach (var attachment in _card.Attachments)
+                                @foreach (var attachment in fileAttachments)
                                 {
-                                    <div class="group flex cursor-pointer flex-row items-center gap-3 rounded-lg border border-line px-3 py-2 transition-colors select-none hover:border-secondary/40 hover:bg-secondary/5 dark:hover:border-secondaryDark/40 dark:hover:bg-secondaryDark/10"
+                                    <div @key="attachment.Id" class="group flex cursor-pointer flex-row items-center gap-3 rounded-lg border border-line px-3 py-2 transition-colors select-none hover:border-secondary/40 hover:bg-secondary/5 dark:hover:border-secondaryDark/40 dark:hover:bg-secondaryDark/10"
                                          @onclick="() => DownloadAttachment(attachment)" title="Download">
                                         <div class='@GetAttachmentTileClass(attachment) flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-2xs font-semibold tracking-wide'>@GetAttachmentExtension(attachment)</div>
                                         <div class="flex min-w-0 flex-1 flex-col">
@@ -321,6 +351,7 @@
                                 }
                             </div>
                         }
+
                         <label class="upload-zone" for="file-upload">
                             <span class="material-symbols-rounded !text-2xl" title="Upload attachment">upload_file</span>
                             <span class="text-sm">Upload attachment</span>
@@ -938,6 +969,11 @@
     private async Task DownloadAttachment(Attachment attachment)
     {
         await _js.InvokeVoidAsync("triggerFileDownload", attachment.OriginalName, $"{Constants.Mappings.ATTACHMENTS_DOWNLOAD_PATH}/{attachment.FileName}");
+    }
+
+    private static string GetAttachmentPreviewUrl(Attachment attachment)
+    {
+        return $"{Constants.Mappings.ATTACHMENTS_PREVIEW_PATH}/{Uri.EscapeDataString(attachment.FileName)}";
     }
 
     private async Task DeleteAttachment(Attachment attachment)

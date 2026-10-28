@@ -2,13 +2,17 @@
 
 public static class AttachmentHelper
 {
+    public static bool IsImage(Attachment attachment)
+    {
+        var extension = Path.GetExtension(attachment.OriginalName);
+        return Constants.Attachments.IMAGE_FILE_EXTENSIONS.Contains(extension);
+    }
+
     public static string GetFileTypeFromAttachment(Attachment attachment)
     {
         if (attachment.OriginalName.Contains(".doc"))
             return "DOC";
-        else if (
-            attachment.OriginalName.Contains(".jpg") || attachment.OriginalName.Contains(".png")
-        )
+        else if (IsImage(attachment))
             return "Image";
         else if (attachment.OriginalName.Contains(".pdf"))
             return "PDF";
