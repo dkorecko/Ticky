@@ -5,19 +5,44 @@
         <Spinner/>
     } else
     {
-        <div class="flex flex-col items-center gap-2 p-2">
-            <div class="avatar !h-10 !w-10" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_targetUser.ProfilePictureFileName');"></div>
-            <label class="font-semibold">@_targetUser.DisplayName</label>
-            <div class="flex flex-col items-center gap-1">
-                @foreach(var commonProjectMembership in _targetUser.ProjectMemberships.Where(x => _user.ProjectMemberships.Any(userMembership => userMembership.ProjectId.Equals(x.ProjectId))))
-                {
-                    <label class="text-sm"><i class="fa fa-building icon" title="Project membership"></i>@(commonProjectMembership.IsAdmin ? "Admin" : "Member") of project @commonProjectMembership.Project.Name</label>
-                }
-                @foreach (var commonBoardMembership in _targetUser.BoardMemberships.Where(x => _user.BoardMemberships.Any(userMembership => userMembership.BoardId.Equals(x.BoardId)) || _user.ProjectMemberships.Any(userMembership => userMembership.ProjectId.Equals(x.Board.ProjectId))))
-                {
-                    <label class="text-sm"><i class="fa fa-building icon" title="Board membership"></i>@(commonBoardMembership.IsAdmin ? "Admin" : "Member") of board @commonBoardMembership.Board.Name</label>
-                }
+        var sharedProjects = _targetUser.ProjectMemberships
+            .Where(x => _user.ProjectMemberships.Any(userMembership => userMembership.ProjectId.Equals(x.ProjectId)))
+            .ToList();
+        var sharedBoards = _targetUser.BoardMemberships
+            .Where(x => _user.BoardMemberships.Any(userMembership => userMembership.BoardId.Equals(x.BoardId)) || _user.ProjectMemberships.Any(userMembership => userMembership.ProjectId.Equals(x.Board.ProjectId)))
+            .ToList();
+        <div class="flex w-64 flex-col items-center gap-4 px-1 pb-1">
+            <div class="flex flex-col items-center gap-2">
+                <div class="avatar !h-16 !w-16 shadow-sm ring-4 ring-secondary/10 dark:ring-secondaryDark/15" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_targetUser.ProfilePictureFileName');"></div>
+                <div class="flex flex-col items-center gap-0.5 text-center">
+                    <span class="text-base font-semibold leading-tight text-text dark:text-textDark">@_targetUser.DisplayName</span>
+                    @if(!string.IsNullOrWhiteSpace(_targetUser.Email))
+                    {
+                        <span class="subtext flex items-center gap-1.5 px-2 text-xs">
+                            <i class="fa fa-envelope mt-px shrink-0 text-[0.7rem]"></i>
+                            <span class="break-all">@_targetUser.Email</span>
+                        </span>
+                    }
+                </div>
             </div>
+
+            @if(sharedProjects.Count > 0 || sharedBoards.Count > 0)
+            {
+                <div class="flex w-full flex-col gap-1.5">
+                    @foreach(var membership in sharedProjects)
+                    {
+                        @MembershipRow("fa-layer-group", membership.Project.Name, "Project", membership.IsAdmin)
+                    }
+                    @foreach(var membership in sharedBoards)
+                    {
+                        @MembershipRow("fa-table-columns", membership.Board.Name, "Board", membership.IsAdmin)
+                    }
+                </div>
+            }
+            else
+            {
+                <span class="subtext text-xs">No shared projects or boards</span>
+            }
         </div>
     }
 </ActionModal>
@@ -29,6 +54,23 @@
     private ActionModal? _modalRef;
 
     private User? _targetUser;
+
+    private RenderFragment MembershipRow(string icon, string name, string type, bool isAdmin) =>@<div class="flex w-full items-center gap-2.5 rounded-button bg-secondary/5 px-2 py-1.5 dark:bg-secondaryDark/10">
+        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary/15 text-secondary dark:bg-secondaryDark/20 dark:text-secondaryDark">
+            <i class="fa @icon text-xs"></i>
+        </span>
+        <div class="flex min-w-0 flex-col">
+            <span class="truncate text-sm font-medium leading-tight text-text dark:text-textDark" title="@name">@name</span>
+            <span class="subtext text-[0.6rem] font-semibold uppercase tracking-wide leading-tight">@type</span>
+        </div>
+        <span class="ml-auto flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold @(isAdmin ? "bg-secondary/15 text-secondary dark:bg-secondaryDark/20 dark:text-secondaryDark" : "bg-secondary/10 text-subtext dark:bg-secondaryDark/15 dark:text-subtextDark")">
+            @if(isAdmin)
+            {
+                <i class="fa fa-crown text-[0.55rem]"></i>
+            }
+            @(isAdmin ? "Admin" : "Member")
+        </span>
+    </div>;
 
     public async void Open(string elementId, int? targetUserId)
     {
