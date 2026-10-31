@@ -245,7 +245,7 @@
                                                 <span class="shrink-0 rounded-md bg-text/[0.06] px-1.5 py-0.5 text-2xs font-semibold text-subtext dark:bg-textDark/10 dark:text-subtextDark">@linkedCard.Column.Board.Code-@linkedCard.Number</span>
                                                 <div class="flex min-w-0 flex-1 flex-col">
                                                     <span class="truncate text-sm font-medium">@linkedCard.Name</span>
-                                                    <span class="truncate text-2xs subtext">@linkedCard.Column.Board.Project.Name · @linkedCard.Column.Board.Name</span>
+                                                    <span class="truncate text-2xs subtext">@linkedCard.Column.Board.Project.Name · @linkedCard.Column.Board.Name · @linkedCard.Column.Name</span>
                                                 </div>
                                                 <span class="material-symbols-rounded !text-lg text-subtext opacity-0 transition-opacity group-hover:opacity-100 dark:text-subtextDark">arrow_outward</span>
                                                 <button type="button" class="material-symbols-rounded icon-button !text-lg hover:!text-red-button" @onclick="() => DeleteLink(linkedCardLink)" @onclick:stopPropagation=true title="Remove link">link_off</button>
@@ -963,7 +963,16 @@
     private async Task OpenLinkedCard(Card linkedCard)
     {
         await Modal!.Close();
-        _navigationManager.NavigateTo($"/boards/{linkedCard.Column.BoardId}/{linkedCard.Id}");
+
+        // Same board: reopen in place, since navigating to an unchanged URL would not open anything.
+        if (_card is not null && _columns is not null && linkedCard.Column.BoardId == _card.Column.BoardId)
+        {
+            await Open(linkedCard.Id, _members, _columns);
+            return;
+        }
+
+        // Other board: full load so BoardView loads that board and runs its access check.
+        _navigationManager.NavigateTo($"/boards/{linkedCard.Column.BoardId}/{linkedCard.Id}", forceLoad: true);
     }
 
     private async Task DownloadAttachment(Attachment attachment)

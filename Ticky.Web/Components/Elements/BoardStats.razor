@@ -211,7 +211,10 @@
         _total = Cards.Count;
         _open = openCards.Count;
         _done = _total - _open;
-        _percentDone = _total == 0 ? 0 : (int)Math.Round(_done * 100.0 / _total);
+        // Only show 100% when everything is done, and 0% only when nothing is.
+        _percentDone = _total == 0 || _done == 0 ? 0
+            : _done == _total ? 100
+            : Math.Clamp((int)Math.Round(_done * 100.0 / _total), 1, 99);
 
         _overdue = openCards.Count(x => x.Deadline < now);
         _dueSoon = openCards.Count(x => x.Deadline >= now && x.Deadline <= now.AddDays(7));

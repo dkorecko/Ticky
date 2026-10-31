@@ -22,7 +22,7 @@
                 }
                 @foreach (var membership in _board.Memberships.OrderByDescending(x => x.IsAdmin).ThenBy(x => x.AddedAt))
                 {
-                    string avatarId = $"avatar_{i}";
+                    string avatarId = $"board_member_avatar_{i}";
                     bool isSelf = membership.UserId.Equals(_user.Id);
                     <div class="flex flex-row items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-text/[0.04] dark:hover:bg-textDark/[0.05]">
                         <div id="@avatarId" @onclick="() => _mainLayout.UserInfoModal?.Open(avatarId, membership.UserId)" class="avatar shrink-0 cursor-pointer" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@membership.User.ProfilePictureFileName');"></div>
@@ -50,7 +50,7 @@
                 }
                 @foreach (var membership in _project.Memberships.OrderByDescending(x => x.IsAdmin).ThenBy(x => x.AddedAt))
                 {
-                    string avatarId = $"avatar_{i}";
+                    string avatarId = $"project_member_avatar_{i}";
                     <div class="flex flex-row items-center gap-3 rounded-lg px-2 py-2 text-sm">
                         <div id="@avatarId" @onclick="() => _mainLayout.UserInfoModal?.Open(avatarId, membership.UserId)" class="avatar shrink-0 cursor-pointer" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@membership.User.ProfilePictureFileName');"></div>
                         <span class="min-w-0 flex-1 truncate font-medium">@membership.User.DisplayName @(membership.UserId.Equals(_user.Id) ? "(you)" : string.Empty)</span>

@@ -39,15 +39,18 @@
                 </button>
                 @foreach (var member in Model.ExpandAssignedUsersSection ? BoardMembers : BoardMembers.Take(2))
                 {
-                    var name = member.DisplayName ?? "";
+                    var name = (member.DisplayName ?? "").Trim();
                     var lastSpace = name.LastIndexOf(' ');
-                    var firstPart = lastSpace > 0 ? name[..lastSpace] : name;
-                    var lastPart = lastSpace > 0 ? name[(lastSpace + 1)..] : "";
+                    var firstPart = lastSpace > 0 ? name[..lastSpace] : "";
+                    var lastPart = lastSpace > 0 ? name[(lastSpace + 1)..] : name;
 
                     <button type="button" class="assignee-tile" aria-pressed='@(Model.AssignedUserIds.Contains(member.Id) ? "true" : "false")' title="@name" @onclick="() => ToggleUserFilter(member.Id)">
                         <span class="h-7 w-7 shrink-0 rounded-md bg-secondary/20 bg-cover bg-center dark:bg-secondaryDark/20" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"></span>
                         <span class="flex min-w-0 flex-col leading-tight">
-                            <span class="assignee-sub truncate text-2xs">@firstPart</span>
+                            @if (firstPart.Length > 0)
+                            {
+                                <span class="assignee-sub truncate text-2xs">@firstPart</span>
+                            }
                             <span class="truncate text-sm font-medium uppercase">@lastPart</span>
                         </span>
                     </button>
