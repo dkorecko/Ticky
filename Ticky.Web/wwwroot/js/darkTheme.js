@@ -1,18 +1,21 @@
-﻿let currentItem = localStorage.getItem('Ticky_Theme')
-let targetTheme = ''
+﻿const html = document.getElementById('html');
+const THEME_KEY = 'Ticky_Theme';
 
-if (currentItem !== null) {
-    targetTheme = currentItem
-} else {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        targetTheme = 'dark'
-    }
+let savedTheme = localStorage.getItem(THEME_KEY);
+
+if (!savedTheme) {
+    savedTheme = 'light';
+    localStorage.setItem(THEME_KEY, savedTheme);
 }
 
-document.querySelector('html').dataset.theme = targetTheme
+html.classList.add(savedTheme);
 
 function switchTheme() {
-    document.querySelector('html').dataset.theme = document.querySelector('html').dataset.theme === 'dark' ? '' : 'dark';
+    const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-    localStorage.setItem('Ticky_Theme', document.querySelector('html').dataset.theme);
+    html.classList.remove(currentTheme);
+    html.classList.add(newTheme);
+
+    localStorage.setItem(THEME_KEY, newTheme);
 }

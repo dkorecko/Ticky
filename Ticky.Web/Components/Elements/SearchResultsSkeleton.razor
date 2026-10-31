@@ -1,0 +1,22 @@
+<div class="flex w-full animate-pulse flex-col" aria-busy="true" aria-label="Loading results">
+    @for (var i = 0; i < Count; i++)
+    {
+        <div class="flex flex-col justify-between px-3 py-2">
+            <div class="flex h-4 flex-row items-center justify-between gap-3">
+                <div class="h-3 w-14 shrink-0 rounded bg-text/15 dark:bg-textDark/15"></div>
+                <div class="h-3 rounded bg-text/15 dark:bg-textDark/15" style="width: @(NameWidths[i % NameWidths.Length])%"></div>
+            </div>
+            <div class="flex h-4 items-center">
+                <div class="h-2 rounded bg-text/10 dark:bg-textDark/10" style="width: @(ProjectWidths[i % ProjectWidths.Length])%"></div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly int[] NameWidths = [45, 35, 55];
+    private static readonly int[] ProjectWidths = [60, 50, 70];
+
+    [Parameter]
+    public int Count { get; set; } = 3;
+}

@@ -1,0 +1,288 @@
+@* Statistics side panel on the board. Numbers are computed from the cards currently shown, so filters and snoozing apply. *@
+
+<section class="island-mini flex w-full flex-col overflow-y-auto">
+    <section class="flex w-full flex-row items-center justify-between px-2 py-4">
+        <div class="flex flex-row items-center gap-2">
+            <h5 class="font-semibold">Statistics</h5>
+            @if (Filtered)
+            {
+                <span class="rounded-md bg-secondary/15 px-1.5 py-0.5 text-2xs font-semibold text-secondary dark:bg-secondaryDark/20 dark:text-secondaryDark" title="Only cards that match your filter are counted">Filtered</span>
+            }
+        </div>
+        <a class="material-symbols-rounded g-icon cursor-pointer self-center" @onclick="() => OnClose.InvokeAsync()" title="Close statistics">close</a>
+    </section>
+    <HorizontalSeparator />
+
+    <div class="flex w-full flex-col gap-6 p-2">
+        <!-- Progress -->
+        <div class="flex flex-col gap-2">
+            <div class="flex flex-row items-end justify-between gap-2">
+                <span class="text-3xl leading-none font-semibold tabular-nums">@_percentDone%</span>
+                <span class="text-xs subtext">@_done of @_total @(_total == 1 ? "card" : "cards") done</span>
+            </div>
+            <div class="stats-track h-2">
+                <div class='stats-fill @(_total > 0 && _done == _total ? "bg-green-500" : "bg-secondary dark:bg-secondaryDark")' style="width: @(_percentDone)%"></div>
+            </div>
+            @if (_subtasksTotal > 0)
+            {
+                <div class="flex flex-row justify-between text-2xs subtext">
+                    <span>Subtasks</span>
+                    <span class="tabular-nums">@_subtasksDone of @_subtasksTotal done</span>
+                </div>
+            }
+        </div>
+
+        <!-- Key numbers -->
+        <div class="grid grid-cols-2 gap-2">
+            @Tile("pending_actions", _open, "Open")
+            @Tile("event_busy", _overdue, "Overdue", alert: _overdue > 0)
+            @Tile("event_upcoming", _dueSoon, "Due in 7 days")
+            @Tile("flag", _flagged, "Flagged", alert: _flagged > 0)
+            <div class="stat-tile col-span-2 !flex-row items-center justify-between">
+                <div class="flex flex-col gap-0.5">
+                    <span class="stat-value">@FormatDuration(_timeTracked)</span>
+                    <span class="stat-caption">Time tracked</span>
+                </div>
+                @if (_runningTimers > 0)
+                {
+                    <span class="flex flex-row items-center gap-1.5 text-2xs font-medium text-green-700 dark:text-green-400">
+                        <span class="h-2 w-2 animate-pulse rounded-full bg-green-500"></span>
+                        @_runningTimers running
+                    </span>
+                }
+                else
+                {
+                    <span class="material-symbols-rounded stat-icon !mb-0">schedule</span>
+                }
+            </div>
+        </div>
+
+        <!-- Columns -->
+        <div class="flex flex-col gap-1">
+            <div class="stats-heading stats-grid px-1.5">
+                <span>Columns</span>
+                <span class="text-right">Cards</span>
+                <span class="text-right">Time</span>
+            </div>
+            @foreach (var col in _columns)
+            {
+                var expanded = _expandedColumns.Contains(col.Column.Id);
+
+                <div class="flex flex-col">
+                    <button type="button" class="stats-row stats-grid" aria-expanded='@(expanded ? "true" : "false")' title="Time per person" @onclick="() => ToggleColumn(col.Column.Id)">
+                        <span class="flex min-w-0 flex-row items-center gap-1">
+                            <span class="truncate font-medium">@col.Column.Name</span>
+                            @if (col.Column.Finished)
+                            {
+                                <span class="material-symbols-rounded !text-sm leading-none text-green-600 dark:text-green-400" title="Cards here count as done">check_circle</span>
+                            }
+                        </span>
+                        <span class='text-right tabular-nums @(col.OverLimit ? "font-semibold text-danger" : "subtext")' title='@(col.Column.MaxCards > 0 ? $"Limit is {col.Column.MaxCards} cards" : null)'>
+                            @col.Count@(col.Column.MaxCards > 0 ? $"/{col.Column.MaxCards}" : "")
+                        </span>
+                        <span class="text-right tabular-nums">@FormatDuration(col.Time)</span>
+                        <span class="material-symbols-rounded stats-chevron">expand_more</span>
+                    </button>
+                    <div class="stats-track h-1">
+                        <div class="stats-fill bg-secondary/60 dark:bg-secondaryDark/60" style="width: @(col.Share)%"></div>
+                    </div>
+
+                    @if (expanded)
+                    {
+                        <div class="mx-1.5 mt-2 mb-1 flex flex-col gap-1.5 border-l-2 border-line pl-2">
+                            @if (col.PerUser.Count == 0)
+                            {
+                                <span class="text-2xs subtext">No time tracked</span>
+                            }
+                            @foreach (var entry in col.PerUser)
+                            {
+                                <div class="flex flex-row items-center gap-1.5 text-2xs">
+                                    <span class="h-4 w-4 shrink-0 rounded bg-secondary/20 bg-cover bg-center dark:bg-secondaryDark/20" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@entry.Picture');"></span>
+                                    <span class="min-w-0 flex-1 truncate">@entry.Name</span>
+                                    <span class="tabular-nums subtext">@FormatDuration(entry.Time)</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Workload -->
+        <div class="flex flex-col gap-2">
+            <div class="stats-heading">Open cards per person</div>
+            @if (_open == 0)
+            {
+                <span class="text-xs subtext">No open cards.</span>
+            }
+            else
+            {
+                var max = Math.Max(_unassignedOpen, _workload.Count > 0 ? _workload.Max(x => x.Count) : 0);
+
+                @foreach (var (user, count) in _workload)
+                {
+                    <div class="flex flex-row items-center gap-2 text-xs">
+                        <span class="h-5 w-5 shrink-0 rounded-md bg-secondary/20 bg-cover bg-center dark:bg-secondaryDark/20" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@user.ProfilePictureFileName');"></span>
+                        <span class="min-w-0 flex-1 truncate">@user.DisplayName</span>
+                        <span class="stats-track h-1.5 w-14 shrink-0"><span class="stats-fill bg-secondary dark:bg-secondaryDark" style="width: @(count * 100.0 / max)%"></span></span>
+                        <span class="w-5 text-right font-medium tabular-nums">@count</span>
+                    </div>
+                }
+                @if (_unassignedOpen > 0)
+                {
+                    <div class="flex flex-row items-center gap-2 text-xs">
+                        <span class="material-symbols-rounded !flex h-5 w-5 shrink-0 items-center justify-center !text-base leading-none text-subtext dark:text-subtextDark">person_off</span>
+                        <span class="min-w-0 flex-1 truncate subtext">Unassigned</span>
+                        <span class="stats-track h-1.5 w-14 shrink-0"><span class="stats-fill bg-subtext/60 dark:bg-subtextDark/60" style="width: @(_unassignedOpen * 100.0 / max)%"></span></span>
+                        <span class="w-5 text-right font-medium tabular-nums">@_unassignedOpen</span>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Priority -->
+        @if (_open > 0)
+        {
+            <div class="flex flex-col gap-2">
+                <div class="stats-heading">Open cards by priority</div>
+                <div class="flex h-2 w-full flex-row gap-0.5 overflow-hidden rounded-full">
+                    @foreach (var priority in _priorities.Where(x => x.Count > 0))
+                    {
+                        <div class="h-full @priority.Color" style="flex-grow: @priority.Count" title="@priority.Name: @priority.Count"></div>
+                    }
+                </div>
+                <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-2xs">
+                    @foreach (var priority in _priorities)
+                    {
+                        <div class='flex flex-row items-center gap-1.5 @(priority.Count == 0 ? "opacity-40" : "")'>
+                            <span class="h-2 w-2 shrink-0 rounded-full @priority.Color"></span>
+                            <span class="flex-1">@priority.Name</span>
+                            <span class="font-medium tabular-nums">@priority.Count</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public required Board Board { get; set; }
+
+    [Parameter, EditorRequired]
+    public required List<Card> Cards { get; set; }
+
+    [Parameter]
+    public List<User> Members { get; set; } = [];
+
+    [Parameter]
+    public bool Filtered { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private record ColumnStats(Column Column, int Count, double Share, TimeSpan Time, List<(string Name, string? Picture, TimeSpan Time)> PerUser)
+    {
+        public bool OverLimit => Column.MaxCards > 0 && Count > Column.MaxCards;
+    }
+
+    private record PriorityStats(string Name, string Color, int Count);
+
+    private readonly HashSet<int> _expandedColumns = [];
+
+    private int _total, _done, _open, _percentDone;
+    private int _overdue, _dueSoon, _flagged;
+    private int _subtasksDone, _subtasksTotal;
+    private int _runningTimers, _unassignedOpen;
+    private TimeSpan _timeTracked;
+    private List<ColumnStats> _columns = [];
+    private List<(User User, int Count)> _workload = [];
+    private List<PriorityStats> _priorities = [];
+
+    protected override void OnParametersSet()
+    {
+        var now = DateTime.Now;
+
+        // Use ColumnId (not card.Column) so cards that were just dragged to another column count correctly.
+        var finishedColumnIds = Board.Columns.Where(x => x.Finished).Select(x => x.Id).ToHashSet();
+        var openCards = Cards.Where(x => !finishedColumnIds.Contains(x.ColumnId)).ToList();
+
+        _total = Cards.Count;
+        _open = openCards.Count;
+        _done = _total - _open;
+        // Only show 100% when everything is done, and 0% only when nothing is.
+        _percentDone = _total == 0 || _done == 0 ? 0
+            : _done == _total ? 100
+            : Math.Clamp((int)Math.Round(_done * 100.0 / _total), 1, 99);
+
+        _overdue = openCards.Count(x => x.Deadline < now);
+        _dueSoon = openCards.Count(x => x.Deadline >= now && x.Deadline <= now.AddDays(7));
+        _flagged = openCards.Count(x => x.Flagged);
+
+        _subtasksTotal = Cards.Sum(x => x.Subtasks.Count);
+        _subtasksDone = Cards.Sum(x => x.Subtasks.Count(s => s.Completed));
+
+        var records = Cards.SelectMany(x => x.TimeRecords).ToList();
+        _timeTracked = SumTime(records);
+        _runningTimers = records.Count(x => x.EndedAt is null);
+
+        _columns = Board.Columns
+            .OrderBy(x => x.Index)
+            .Select(column =>
+            {
+                var cards = Cards.Where(x => x.ColumnId == column.Id).ToList();
+                var columnRecords = cards.SelectMany(x => x.TimeRecords).ToList();
+                var perUser = columnRecords
+                    .GroupBy(x => x.UserId)
+                    .Select(group =>
+                    {
+                        var user = Members.FirstOrDefault(m => m.Id == group.Key);
+                        return (user?.DisplayName ?? "Unknown", user?.ProfilePictureFileName, SumTime(group));
+                    })
+                    .OrderByDescending(x => x.Item3)
+                    .ToList();
+
+                return new ColumnStats(column, cards.Count, _total == 0 ? 0 : cards.Count * 100.0 / _total, SumTime(columnRecords), perUser);
+            })
+            .ToList();
+
+        _workload = openCards
+            .SelectMany(x => x.Assignees)
+            .GroupBy(x => x.Id)
+            .Select(group => (Members.FirstOrDefault(m => m.Id == group.Key) ?? group.First(), group.Count()))
+            .OrderByDescending(x => x.Item2)
+            .ThenBy(x => x.Item1.DisplayName)
+            .ToList();
+        _unassignedOpen = openCards.Count(x => x.Assignees.Count == 0);
+
+        _priorities =
+        [
+            new("Critical", "bg-red-600 dark:bg-red-500", openCards.Count(x => x.Priority == CardPriority.Critical)),
+            new("High", "bg-orange-500 dark:bg-orange-400", openCards.Count(x => x.Priority == CardPriority.High)),
+            new("Medium", "bg-tint dark:bg-tintDark", openCards.Count(x => x.Priority == CardPriority.Medium)),
+            new("Normal", "bg-sky-500 dark:bg-sky-400", openCards.Count(x => x.Priority == CardPriority.Normal)),
+        ];
+    }
+
+    private void ToggleColumn(int columnId)
+    {
+        if (!_expandedColumns.Remove(columnId))
+            _expandedColumns.Add(columnId);
+    }
+
+    private static TimeSpan SumTime(IEnumerable<TimeRecord> records) =>
+        TimeSpan.FromTicks(records.Sum(x => x.GetTotalTime().Ticks));
+
+    private static string FormatDuration(TimeSpan time) =>
+        time.TotalMinutes < 1 ? "0m" : time.ToElapsedString(cutOffSeconds: true);
+
+    private RenderFragment Tile(string icon, int value, string caption, bool alert = false) => __builder =>
+    {
+        <div class='stat-tile @(alert ? "stat-alert" : "")'>
+            <span class="material-symbols-rounded stat-icon">@icon</span>
+            <span class="stat-value">@value</span>
+            <span class="stat-caption">@caption</span>
+        </div>
+    };
+}

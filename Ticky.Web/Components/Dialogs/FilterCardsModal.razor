@@ -1,27 +1,23 @@
-@implements IDisposable
+﻿@implements IDisposable
 
-<ActionModal @ref=_modalRef Title="Filter cards">
-    <div class="form p-2">
+<ActionModal @ref=_modalRef Title="Filter cards" PositionClass="top-18 !right-0 w-full !max-w-md">
+    <div class="form">
         <div class="form-group">
-            <label for="text">Text, description or card code</label>
-            <input value="@Model.Text" id="text" class="form-control" @oninput="OnSearchChanged"/>
+            <label for="text" class="form-label-category">Text, description or card code</label>
+            <input value="@Model.Text" id="text" class="input-field" placeholder="Search cards ..." @oninput="OnSearchChanged"/>
         </div>
 
         <div class="form-group">
-            <div class="flex flex-row items-center gap-1 text-xs">
-                <label>Completion</label>
-            </div>
-            <div class="flex flex-col gap-1">
-                <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="ToggleExcludeCompleted">
-                    <span class="font-bold">Exclude completed cards</span>
-                    <i class='fa fa-check icon ml-auto @(Model.ExcludeCompleted ? string.Empty : "opacity-0")'></i>
-                </div>
+            <label class="form-label-category">Completion</label>
+            <div class="flex flex-row items-center space-x-2">
+                <span class="text-xs">Exclude completed cards</span>
+                <input type="checkbox" class="toggle" checked=@(Model.ExcludeCompleted) @onchange="ToggleExcludeCompleted">
             </div>
         </div>
 
         <div class="form-group">
             <div class="flex flex-row items-center gap-1 text-xs">
-                <label>Assigned users</label>
+                <label class="form-label-category">Assigned users</label>
 
                 @if (BoardMembers.Count > 2)
                 {
@@ -36,26 +32,35 @@
                     }
                 }
             </div>
-            <div class="flex flex-col gap-1">
-                <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="ToggleUnassignedFilter">
-                    <div class="avatar mr-auto"></div>
-                    <label class="cursor-pointer">No assignee</label>
-                    <i class='fa fa-check icon ml-auto @(Model.IncludeUnassigned ? string.Empty : "opacity-0")'></i>
-                </div>
+            <div class="grid grid-cols-2 gap-1.5 xs:grid-cols-3">
+                <button type="button" class="assignee-tile" aria-pressed='@(Model.IncludeUnassigned ? "true" : "false")' @onclick="ToggleUnassignedFilter">
+                    <span class="assignee-sub material-symbols-rounded !flex h-7 w-6 shrink-0 items-center justify-center !text-xl leading-none">person_off</span>
+                    <span class="truncate text-sm">No assignee</span>
+                </button>
                 @foreach (var member in Model.ExpandAssignedUsersSection ? BoardMembers : BoardMembers.Take(2))
                 {
-                    <div class="flex w-72 cursor-pointer flex-row items-center gap-5 rounded px-2 py-1 text-sm transition-all ease-in-out select-none hover:bg-dropdown-option" @onclick="() => ToggleUserFilter(member.Id)">
-                        <div class="avatar mr-auto" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"></div>
-                        <label class="cursor-pointer">@member.DisplayName</label>
-                        <i class='fa fa-check icon ml-auto @(Model.AssignedUserIds.Contains(member.Id) ? string.Empty : "opacity-0")'></i>
-                    </div>
+                    var name = (member.DisplayName ?? "").Trim();
+                    var lastSpace = name.LastIndexOf(' ');
+                    var firstPart = lastSpace > 0 ? name[..lastSpace] : "";
+                    var lastPart = lastSpace > 0 ? name[(lastSpace + 1)..] : name;
+
+                    <button type="button" class="assignee-tile" aria-pressed='@(Model.AssignedUserIds.Contains(member.Id) ? "true" : "false")' title="@name" @onclick="() => ToggleUserFilter(member.Id)">
+                        <span class="h-7 w-7 shrink-0 rounded-md bg-secondary/20 bg-cover bg-center dark:bg-secondaryDark/20" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.ProfilePictureFileName');"></span>
+                        <span class="flex min-w-0 flex-col leading-tight">
+                            @if (firstPart.Length > 0)
+                            {
+                                <span class="assignee-sub truncate text-2xs">@firstPart</span>
+                            }
+                            <span class="truncate text-sm font-medium uppercase">@lastPart</span>
+                        </span>
+                    </button>
                 }
             </div>
         </div>
 
         <div class="form-group">
             <div class="flex flex-row items-center gap-1 text-xs">
-                <label>Labels</label>
+                <label class="form-label-category">Labels</label>
 
                 @if (BoardLabels.Count > 3)
                 {
@@ -70,32 +75,30 @@
                     }
                 }
             </div>
-            <div class="flex flex-col gap-1">
+            <div class="flex flex-col gap-2">
                 @if (BoardLabels != null && BoardLabels.Any())
                 {
                     @foreach (var label in Model.ExpandLabelsSection ? BoardLabels : BoardLabels.Take(3))
                     {
-                        <div class="priority-selector-item cursor-pointer" @onclick="() => ToggleLabelFilter(label.Id)">
-                            <LabelView Label="label" />
-                            @if (Model.LabelIds.Contains(label.Id))
-                            {
-                                <i class="fa fa-check text-add-outline" title="Selected"></i>
-                            }
-                            else if (Model.ExcludedLabelIds.Contains(label.Id))
-                            {
-                                <i class="fa fa-xmark" title="Excluded"></i>
-                            }
+                        var state = GetLabelState(label.Id);
+                        <div class="flex min-w-0 flex-row items-center justify-between gap-3">
+                            <span class="label min-w-0 truncate !text-sm !font-semibold" style="--lc: @label.BackgroundColor.R @label.BackgroundColor.G @label.BackgroundColor.B;">@label.Name</span>
+                            <div class="label-seg" role="group" aria-label="Filter by @label.Name">
+                                <button type="button" class="label-seg-opt @(state == LabelFilter.None ? "is-active" : "")" aria-pressed="@(state == LabelFilter.None)" @onclick="() => SetLabelFilter(label.Id, LabelFilter.None)" title="Don't filter by this label">Off</button>
+                                <button type="button" class="label-seg-opt label-seg-opt--include @(state == LabelFilter.Include ? "is-active" : "")" aria-pressed="@(state == LabelFilter.Include)" @onclick="() => SetLabelFilter(label.Id, LabelFilter.Include)" title="Show only cards with this label">Include</button>
+                                <button type="button" class="label-seg-opt label-seg-opt--exclude @(state == LabelFilter.Exclude ? "is-active" : "")" aria-pressed="@(state == LabelFilter.Exclude)" @onclick="() => SetLabelFilter(label.Id, LabelFilter.Exclude)" title="Hide cards with this label">Exclude</button>
+                            </div>
                         </div>
                     }
                 }
                 else
                 {
-                    <div class="text-xs text-gray-500">No labels available.</div>
+                    <div class="text-xs subtext">No labels available.</div>
                 }
             </div>
         </div>
 
-        <button type="button" @onclick="ResetFilters">Reset filters</button>
+        <button type="button" class="btn btn-yellow font-semibold" @onclick="ResetFilters">Reset filters</button>
     </div>
 </ActionModal>
 
@@ -112,17 +115,27 @@
     [Parameter]
     public required List<Label> BoardLabels { get; set; } = [];
 
-    private async Task ToggleLabelFilter(int labelId)
+    private enum LabelFilter { None, Include, Exclude }
+
+    private LabelFilter GetLabelState(int labelId)
     {
         if (Model.LabelIds.Contains(labelId))
-        {
-            Model.LabelIds.Remove(labelId);
-            Model.ExcludedLabelIds.Add(labelId);
-        }
-        else if (Model.ExcludedLabelIds.Contains(labelId))
-            Model.ExcludedLabelIds.Remove(labelId);
-        else
+            return LabelFilter.Include;
+        if (Model.ExcludedLabelIds.Contains(labelId))
+            return LabelFilter.Exclude;
+        return LabelFilter.None;
+    }
+
+    private async Task SetLabelFilter(int labelId, LabelFilter state)
+    {
+        // A label can only be in one bucket at a time.
+        Model.LabelIds.Remove(labelId);
+        Model.ExcludedLabelIds.Remove(labelId);
+
+        if (state == LabelFilter.Include)
             Model.LabelIds.Add(labelId);
+        else if (state == LabelFilter.Exclude)
+            Model.ExcludedLabelIds.Add(labelId);
 
         await SearchUpdated.InvokeAsync();
     }

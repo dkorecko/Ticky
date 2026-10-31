@@ -1,6 +1,11 @@
 {
+  "scripts": {
+    "build:css": "tailwindcss -i ./app.css -o ./wwwroot/css/app.css --minify",
+    "watch:css": "tailwindcss -i ./app.css -o ./wwwroot/css/app.css --watch"
+  },
   "dependencies": {
-    "@tailwindcss/cli": "^4.1.8",
+    "@tailwindcss/cli": "^4.1.18",
+    "tailwind-scrollbar": "^4.0.2",
     "tailwindcss": "^4.1.7"
   }
 }

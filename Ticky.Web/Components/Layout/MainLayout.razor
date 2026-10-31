@@ -1,4 +1,4 @@
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject NavigationManager _navigationManager
 
@@ -7,10 +7,9 @@
 <CascadingValue Name="@Constants.CascadingParameters.CurrentAccount" Value="@_user">
     <Notifications @ref="_notifications" />
     <CascadingValue Name="@Constants.CascadingParameters.MainLayout" Value="this">
-        <div class="h-visible-screen">
+        <div class="full-screen">
             <NavMenu/>
-
-            <main class="overflow-x-clip overflow-y-auto">
+            <main class="min-h-0 flex-1 overflow-x-clip overflow-y-auto px-4 py-2">
                 @if(_user is null)
                 {
                     <Spinner/>
