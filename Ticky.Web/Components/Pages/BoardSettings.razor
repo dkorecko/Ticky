@@ -98,7 +98,7 @@
                         <p class="subtext">Export the board to a JSON file, currently only for debugging purposes.</p>
                     </div>
                     <div class="flex flex-col gap-2 py-5">
-                        <button disabled=@_isLoading class="btn btn-yellow" @onclick="ExportBoard">
+                        <button disabled=@_isLoading class="btn btn-yellow !w-max min-w-32 px-5" @onclick="ExportBoard">
                             @if(_isLoading) 
                             {
                                 <Spinner Small=true/>
