@@ -235,6 +235,10 @@ The project includes GitHub Actions workflows for CI/CD:
 - Automated builds and tests on pull requests
 - Docker image publishing to GitHub Container Registry (GHCR) on releases
 
+## 🤖 AI Statement
+
+Ticky was built by hand, long before AI coding tools were part of my workflow. These days I do use AI to help with development, but nothing gets merged without me reviewing every line of code myself. I'm a professional senior software engineer with 12 years of coding experience, and I hold all code in Ticky to the same standard, whoever (or whatever) wrote the first draft.
+
 ## 📝 Contributing
 
 Contributions are welcome! See the [CONTRIBUTING.md](CONTRIBUTING.md) file for details.
