@@ -599,16 +599,16 @@
         return ext.Length == 0 ? "FILE" : (ext.Length > 4 ? ext[..4] : ext);
     }
 
+    // Tint follows the same file type as the caption under the tile (images are listed separately).
     private static string GetAttachmentTileClass(Attachment attachment)
     {
-        return Path.GetExtension(attachment.OriginalName).TrimStart('.').ToLowerInvariant() switch
+        return AttachmentHelper.GetFileTypeFromAttachment(attachment) switch
         {
-            "pdf" => "bg-red-500/10 text-red-600 dark:bg-red-400/15 dark:text-red-300",
-            "doc" or "docx" or "odt" or "rtf" => "bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300",
-            "xls" or "xlsx" or "csv" or "ods" => "bg-green-500/10 text-green-600 dark:bg-green-400/15 dark:text-green-300",
-            "ppt" or "pptx" or "odp" => "bg-orange-500/10 text-orange-600 dark:bg-orange-400/15 dark:text-orange-300",
-            "png" or "jpg" or "jpeg" or "gif" or "webp" or "svg" or "bmp" => "bg-secondary/10 text-secondary dark:bg-secondaryDark/15 dark:text-secondaryDark",
-            "zip" or "rar" or "7z" or "tar" or "gz" => "bg-amber-500/10 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
+            "PDF" => "bg-red-500/10 text-red-600 dark:bg-red-400/15 dark:text-red-300",
+            "DOC" => "bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300",
+            "Excel" => "bg-green-500/10 text-green-600 dark:bg-green-400/15 dark:text-green-300",
+            "PowerPoint" => "bg-orange-500/10 text-orange-600 dark:bg-orange-400/15 dark:text-orange-300",
+            "Archive" => "bg-amber-500/10 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
             _ => "bg-text/[0.06] text-subtext dark:bg-textDark/10 dark:text-subtextDark",
         };
     }

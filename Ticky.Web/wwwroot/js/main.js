@@ -41,6 +41,15 @@ function positionDropdown(dropdownElement, left, top, width = null) {
                         dropdownElement.style.maxHeight = (availableHeight - OPEN_OFFSET) + 'px';
                     }
                 }
+            } else if (cssPositioned && document.documentElement.clientHeight > 0) {
+                // CSS decides where it opens, so only cap the height to keep the bottom on screen; the box scrolls.
+                dropdownElement.style.maxHeight = '';
+                const translateY = new DOMMatrixReadOnly(getComputedStyle(dropdownElement).transform).m42;
+                const top = dropdownElement.getBoundingClientRect().top - translateY;
+                const availableHeight = document.documentElement.clientHeight - top - OPEN_OFFSET;
+                if (dropdownElement.offsetHeight > availableHeight) {
+                    dropdownElement.style.maxHeight = Math.max(availableHeight, 160) + 'px';
+                }
             }
             dropdownElement.style.visibility = 'visible';
             void dropdownElement.offsetWidth;

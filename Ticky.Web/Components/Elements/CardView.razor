@@ -74,7 +74,7 @@
             </label>
         }
         @{
-            var trackedTime = new TimeSpan(Card.TimeRecords.Select(x => ((x.EndedAt ?? DateTime.Now) - x.StartedAt).Ticks).Sum()).ToElapsedString(true);
+            var trackedTime = Card.GetTotalTime().ToElapsedString(true);
         }
         @if (!string.IsNullOrWhiteSpace(trackedTime))
         {

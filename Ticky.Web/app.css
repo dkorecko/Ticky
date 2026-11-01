@@ -177,7 +177,7 @@ p, label {
 }
 
 .btn-transparent {
-    @apply hover:bg-secondary/20 dark:hover:bg-secondaryDark/20 text-secondary dark:text-secondary;
+    @apply hover:bg-secondary/20 dark:hover:bg-secondaryDark/20 text-secondary dark:text-secondaryDark;
 }
 
 .auth-bg {
@@ -748,6 +748,8 @@ input[type="checkbox"].check:checked {
 .dark input[type="checkbox"].check:checked {
     background-color: var(--color-secondaryDark);
     border-color: var(--color-secondaryDark);
+    /* Dark tick on the light purple: white only reaches about 2.8:1 contrast. #111117 is --color-bgDark. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23111117' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5'/%3E%3C/svg%3E");
 }
 
 /* Role picker trigger (membership dialogs) */

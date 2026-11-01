@@ -40,7 +40,7 @@
                                 <span class="whitespace-nowrap">@result.Column.Board.Code-@result.Number</span>
                                 <span class="truncate whitespace-nowrap">@result.Name</span>
                             </span>
-                            <span class="text-2xs font-light">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</span>
+                            <span class="text-2xs font-light break-words">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</span>
                         </button>
                     }
                 }
@@ -70,7 +70,7 @@
                 <button @onclick=ToggleMenu class="nav-link !pl-1.5 !pr-2">
                     <div class="flex flex-row items-center gap-2">
                         <div class="h-7 w-7 rounded-full bg-secondary bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
-                        <span class="text-sm font-normal whitespace-nowrap">@FirstName @LastName</span>
+                        <span class="text-sm font-normal whitespace-nowrap">@_user?.DisplayName</span>
                     </div>
                     @if (_dropdownMenu)
                     {
@@ -170,7 +170,7 @@
                                 <span class="whitespace-nowrap">@result.Column.Board.Code-@result.Number</span>
                                 <span class="truncate whitespace-nowrap">@result.Name</span>
                             </span>
-                            <span class="text-2xs font-light">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</span>
+                            <span class="text-2xs font-light break-words">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</span>
                         </button>
                     }
                 }
@@ -181,7 +181,7 @@
             <button @onclick=ToggleMenu class="nav-link !pl-1.5 !pr-2">
                 <div class="flex flex-row items-center gap-2">
                     <div class="h-7 w-7 shrink-0 rounded-full bg-secondary bg-cover dark:bg-secondaryDark" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_user?.ProfilePictureFileName');"></div>
-                    <span class="hidden text-sm font-normal whitespace-nowrap sm:block">@FirstName @LastName</span>
+                    <span class="hidden text-sm font-normal whitespace-nowrap sm:block">@_user?.DisplayName</span>
                 </div>
                 <div class="hidden self-center sm:flex">
                     @if (_dropdownMenu)
@@ -274,26 +274,6 @@
 @code {
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
-
-    private string FirstName
-    {
-        get
-        {
-            var name = _user?.DisplayName ?? string.Empty;
-            var lastSpace = name.LastIndexOf(' ');
-            return lastSpace > 0 ? name[..lastSpace] : name;
-        }
-    }
-
-    private string LastName
-    {
-        get
-        {
-            var name = _user?.DisplayName ?? string.Empty;
-            var lastSpace = name.LastIndexOf(' ');
-            return lastSpace > 0 ? name[(lastSpace + 1)..] : string.Empty;
-        }
-    }
 
     private Timer? _timer;
     private string? _searchTerm;
