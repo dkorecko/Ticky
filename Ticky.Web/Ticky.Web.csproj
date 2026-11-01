@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>70e04088-d9e4-4290-bf43-1907c0b90a4b</UserSecretsId>
+    <!-- Ships _framework/blazor.web.js. The SDK only turns this on when it sees .razor files at restore,
+         but the Dockerfile restores with just the .csproj files copied, so the script went missing. -->
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
   </PropertyGroup>
 
   <ItemGroup>
