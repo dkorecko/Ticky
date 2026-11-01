@@ -98,6 +98,16 @@ body {
 }
 
 @layer base {
+    /* Native scrollbars and form controls follow the app theme. Without this they stay light in
+       dark mode, e.g. a light scrollbar track down the board columns. */
+    html.light {
+        color-scheme: light;
+    }
+
+    html.dark {
+        color-scheme: dark;
+    }
+
     /* Plain <hr> separators use the subtle line colour instead of the text colour. */
     hr {
         border-color: var(--color-line);
