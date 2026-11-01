@@ -1,5 +1,8 @@
 <p align="center">
-    <img src="images/ticky_logo.png" width="300" title="Ticky logo">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="Ticky.Web/wwwroot/assets/ticky-dark.svg">
+        <img src="Ticky.Web/wwwroot/assets/ticky-light.svg" width="300" alt="Ticky logo" title="Ticky logo">
+    </picture>
 </p>
 
 # Ticky
