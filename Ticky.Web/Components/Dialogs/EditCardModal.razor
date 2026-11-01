@@ -137,7 +137,7 @@
 
                                 i++;
                             }
-                            <button type="button" @ref="_assigneesTrigger" class="chip-button" @onclick="() => _assigneesModal?.Open(_assigneesTrigger, _card, _members)" title="Edit assignees">Add members <i class="fa fa-plus"></i></button>
+                            <button type="button" @ref="_assigneesTrigger" class="chip-button" @onclick="() => _assigneesModal?.Open(_assigneesTrigger, _card, _members)" title="Edit assignees"><span class="sm:hidden">Add</span><span class="hidden sm:inline">Add members</span> <i class="fa fa-plus"></i></button>
                             @if (_card.Assignees.Any(x => x.Id.Equals(_user.Id)))
                             {
                                 <button type="button" class="chip-button" @onclick="Leave" title="Leave task">Leave <i class="fa-solid fa-user-minus"></i></button>
@@ -165,24 +165,15 @@
                 <div class="flex flex-col px-1">
                     <div class="prop-row">
                         <div class="prop-label"><span class="material-symbols-rounded">view_column</span>Current list</div>
-                        <div class="prop-value font-semibold">@_card.Column.Name</div>
-                    </div>
-                    <div class="prop-row !items-start !py-2">
-                        <div class="prop-label items-start sm:pl-4">
-                            <span class="material-symbols-rounded mt-0.5">swap_horiz</span>
-                            <span class="flex min-w-0 flex-col gap-1">
-                                <span class="sm:whitespace-nowrap">Change location</span>
-                                <span class="subtext text-xs sm:whitespace-nowrap">Column in which card is</span>
-                            </span>
-                        </div>
-                        <div class="prop-value gap-3 pt-0.5">
+                        <div class="prop-value !flex-nowrap">
+                            <span class="min-w-0 truncate font-semibold">@_card.Column.Name</span>
                             @if (_card.Column.Index != 0)
                             {
-                                <button type="button" class="chip-button" @onclick="MoveToPreviousList" title="Move to previous column"><i class="fa fa-chevron-left"></i> Previous</button>
+                                <button type="button" class="chip-button shrink-0" @onclick="MoveToPreviousList" title="Move to previous column" aria-label="Move to previous column"><i class="fa fa-chevron-left"></i></button>
                             }
                             @if (_lastColumnIndex != _card.Column.Index)
                             {
-                                <button type="button" class="chip-button" @onclick="MoveToNextList" title="Move to next column">Next <i class="fa fa-chevron-right"></i></button>
+                                <button type="button" class="chip-button shrink-0" @onclick="MoveToNextList" title="Move to next column" aria-label="Move to next column"><i class="fa fa-chevron-right"></i></button>
                             }
                         </div>
                     </div>
@@ -240,15 +231,17 @@
                                         @foreach (var linkedCardLink in group)
                                         {
                                             var linkedCard = linkedCardLink.CardTwo;
-                                            <div class="group flex cursor-pointer flex-row items-center gap-3 rounded-lg border border-line px-3 py-2 transition-colors hover:border-secondary/40 hover:bg-secondary/5 dark:hover:border-secondaryDark/40 dark:hover:bg-secondaryDark/10"
-                                                 @onclick="() => OpenLinkedCard(linkedCard)" title="Open card">
-                                                <span class="shrink-0 rounded-md bg-text/[0.06] px-1.5 py-0.5 text-2xs font-semibold text-subtext dark:bg-textDark/10 dark:text-subtextDark">@linkedCard.Column.Board.Code-@linkedCard.Number</span>
-                                                <div class="flex min-w-0 flex-1 flex-col">
-                                                    <span class="truncate text-sm font-medium">@linkedCard.Name</span>
-                                                    <span class="truncate text-2xs subtext">@linkedCard.Column.Board.Project.Name · @linkedCard.Column.Board.Name · @linkedCard.Column.Name</span>
-                                                </div>
-                                                <span class="material-symbols-rounded !text-lg text-subtext opacity-0 transition-opacity group-hover:opacity-100 dark:text-subtextDark">arrow_outward</span>
-                                                <button type="button" class="material-symbols-rounded icon-button !text-lg hover:!text-red-button" @onclick="() => DeleteLink(linkedCardLink)" @onclick:stopPropagation=true title="Remove link">link_off</button>
+                                            <div class="group flex flex-row items-center gap-3 rounded-lg border border-line pr-3 transition-colors focus-within:border-secondary/40 hover:border-secondary/40 hover:bg-secondary/5 dark:focus-within:border-secondaryDark/40 dark:hover:border-secondaryDark/40 dark:hover:bg-secondaryDark/10">
+                                                <button type="button" class="flex min-w-0 flex-1 cursor-pointer flex-row items-center gap-3 rounded-lg py-2 pl-3 text-left"
+                                                        @onclick="() => OpenLinkedCard(linkedCard)" title="Open card">
+                                                    <span class="shrink-0 rounded-md bg-text/[0.06] px-1.5 py-0.5 text-2xs font-semibold text-subtext dark:bg-textDark/10 dark:text-subtextDark">@linkedCard.Column.Board.Code-@linkedCard.Number</span>
+                                                    <span class="flex min-w-0 flex-1 flex-col">
+                                                        <span class="truncate text-sm font-medium">@linkedCard.Name</span>
+                                                        <span class="truncate text-2xs subtext">@linkedCard.Column.Board.Project.Name · @linkedCard.Column.Board.Name · @linkedCard.Column.Name</span>
+                                                    </span>
+                                                    <span class="material-symbols-rounded !text-lg text-subtext opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 dark:text-subtextDark">arrow_outward</span>
+                                                </button>
+                                                <button type="button" class="material-symbols-rounded icon-button !text-lg hover:!text-red-button" @onclick="() => DeleteLink(linkedCardLink)" title="Remove link">link_off</button>
                                             </div>
                                         }
                                     </div>

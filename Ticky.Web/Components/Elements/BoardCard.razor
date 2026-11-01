@@ -43,7 +43,7 @@
             @{
                 var lastVisit = Board.LastVisits.FirstOrDefault(x => x.UserId.Equals(_user.Id));
             }
-            <label class="subtext !text-xs">Last change</label>
+            <label class="subtext !text-xs">Last visited</label>
             <p class="text-secondary dark:text-secondaryDark">@(lastVisit is null ? "never" : lastVisit.VisitTime.ToElapsedString())</p>
         </div>
         <div class="flex flex-col">

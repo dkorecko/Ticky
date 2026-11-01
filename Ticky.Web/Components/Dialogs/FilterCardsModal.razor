@@ -9,10 +9,10 @@
 
         <div class="form-group">
             <label class="form-label-category">Completion</label>
-            <div class="flex flex-row items-center space-x-2">
+            <label class="flex w-max cursor-pointer flex-row items-center space-x-2">
                 <span class="text-xs">Exclude completed cards</span>
                 <input type="checkbox" class="toggle" checked=@(Model.ExcludeCompleted) @onchange="ToggleExcludeCompleted">
-            </div>
+            </label>
         </div>
 
         <div class="form-group">
@@ -82,7 +82,7 @@
                     {
                         var state = GetLabelState(label.Id);
                         <div class="flex min-w-0 flex-row items-center justify-between gap-3">
-                            <span class="label min-w-0 truncate !text-sm !font-semibold" style="--lc: @label.BackgroundColor.R @label.BackgroundColor.G @label.BackgroundColor.B;">@label.Name</span>
+                            <LabelView Label="label" Class="min-w-0 truncate !text-sm !font-semibold" />
                             <div class="label-seg" role="group" aria-label="Filter by @label.Name">
                                 <button type="button" class="label-seg-opt @(state == LabelFilter.None ? "is-active" : "")" aria-pressed="@(state == LabelFilter.None)" @onclick="() => SetLabelFilter(label.Id, LabelFilter.None)" title="Don't filter by this label">Off</button>
                                 <button type="button" class="label-seg-opt label-seg-opt--include @(state == LabelFilter.Include ? "is-active" : "")" aria-pressed="@(state == LabelFilter.Include)" @onclick="() => SetLabelFilter(label.Id, LabelFilter.Include)" title="Show only cards with this label">Include</button>

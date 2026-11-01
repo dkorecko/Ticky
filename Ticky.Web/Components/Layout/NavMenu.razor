@@ -5,6 +5,11 @@
 @inject SearchService _searchService
 
 <nav id="nav-menu" class="relative z-10 shrink-0 border-b border-line bg-primary px-4 py-2 dark:bg-primaryDark">
+    @if (_dropdownMenu)
+    {
+        @* Invisible layer under the open profile menu: clicking anywhere else closes it. *@
+        <div class="fixed inset-0" @onclick="CloseMenu"></div>
+    }
     <!-- Desktop version -->
     <div class="hidden w-full flex-row justify-between self-center lg:flex">
         <div class="nav-links w-1/4">
@@ -30,13 +35,13 @@
                 {
                     foreach (var result in _resultCards)
                     {
-                        <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-dropdown-option" @onclick='() => GoToCard(result.Column.BoardId, result.Id)'>
-                            <div class="flex flex-row justify-between gap-3">
-                                <label class="cursor-pointer whitespace-nowrap">@result.Column.Board.Code-@result.Number</label>
-                                <label class="cursor-pointer truncate whitespace-nowrap">@result.Name</label>
-                            </div>
-                            <label class="text-2xs cursor-pointer font-light">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</label>
-                        </div>
+                        <button type="button" class="flex w-full cursor-pointer flex-col justify-between px-3 py-2 text-left text-xs hover:bg-dropdown-option focus-visible:bg-dropdown-option" @onclick='() => GoToCard(result.Column.BoardId, result.Id)'>
+                            <span class="flex w-full flex-row justify-between gap-3">
+                                <span class="whitespace-nowrap">@result.Column.Board.Code-@result.Number</span>
+                                <span class="truncate whitespace-nowrap">@result.Name</span>
+                            </span>
+                            <span class="text-2xs font-light">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</span>
+                        </button>
                     }
                 }
             </div>
@@ -160,13 +165,13 @@
                 {
                     foreach (var result in _resultCards)
                     {
-                        <div class="flex cursor-pointer flex-col justify-between px-3 py-2 text-xs hover:bg-dropdown-option" @onclick='() => GoToCard(result.Column.BoardId, result.Id)'>
-                            <div class="flex flex-row justify-between gap-3">
-                                <label class="cursor-pointer whitespace-nowrap">@result.Column.Board.Code-@result.Number</label>
-                                <label class="cursor-pointer truncate whitespace-nowrap">@result.Name</label>
-                            </div>
-                            <label class="text-2xs cursor-pointer font-light">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</label>
-                        </div>
+                        <button type="button" class="flex w-full cursor-pointer flex-col justify-between px-3 py-2 text-left text-xs hover:bg-dropdown-option focus-visible:bg-dropdown-option" @onclick='() => GoToCard(result.Column.BoardId, result.Id)'>
+                            <span class="flex w-full flex-row justify-between gap-3">
+                                <span class="whitespace-nowrap">@result.Column.Board.Code-@result.Number</span>
+                                <span class="truncate whitespace-nowrap">@result.Name</span>
+                            </span>
+                            <span class="text-2xs font-light">Project @result.Column.Board.Project.Name — @result.Column.Board.Name</span>
+                        </button>
                     }
                 }
             </div>
@@ -370,6 +375,11 @@
     private void ToggleMenu()
     {
         _dropdownMenu = !_dropdownMenu;
+    }
+
+    private void CloseMenu()
+    {
+        _dropdownMenu = false;
     }
 
     private async Task SwitchTheme()

@@ -36,7 +36,7 @@
                                 <span class="material-symbols-rounded !text-lg" title="Change role">keyboard_arrow_down</span>
                             </div>
                         </Dropdown>
-                        <button type="button" @onclick="() => RemoveUser(membership.UserId)" class='material-symbols-rounded icon-button !text-lg hover:!text-red-button @(isSelf ? "disabled-icon" : string.Empty)' title="Remove member">delete</button>
+                        <button type="button" disabled="@isSelf" @onclick="() => RemoveUser(membership.UserId)" class='material-symbols-rounded icon-button !text-lg hover:!text-red-button @(isSelf ? "disabled-icon" : string.Empty)' title="Remove member">delete</button>
                     </div>
 
                     i++;

@@ -6,7 +6,7 @@
 @inherits NotifiableBase
 
 <div id="@Subtask.Id" class="group flex flex-row items-center gap-2 rounded-lg px-1.5 py-1 text-sm font-normal hover:bg-text/[0.04] dark:hover:bg-textDark/[0.05]">
-    <span class="material-symbols-rounded drag-toggle cursor-move !text-lg leading-none text-subtext opacity-0 transition-opacity group-hover:opacity-100 dark:text-subtextDark" title="Drag to reorder subtask">drag_indicator</span>
+    <span class="material-symbols-rounded drag-toggle cursor-move !text-lg leading-none text-subtext opacity-100 transition-opacity pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:group-focus-within:opacity-100 dark:text-subtextDark" title="Drag to reorder subtask">drag_indicator</span>
     <input id="subtask_checkbox_@Subtask.Id" class="check" type="checkbox" checked="@Subtask.Completed" @onchange="OnSubtaskStatusChanged" />
     <label class='min-w-0 flex-1 break-words @(Subtask.Completed ? "text-subtext line-through dark:text-subtextDark" : "")' for="subtask_checkbox_@Subtask.Id">@Subtask.Text</label>
 

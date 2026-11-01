@@ -1,21 +1,41 @@
 ﻿const html = document.getElementById('html');
 const THEME_KEY = 'Ticky_Theme';
+const systemDarkQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
-let savedTheme = localStorage.getItem(THEME_KEY);
+// Returns the theme the user picked, or null when they never picked one.
+// The previous theme switcher stored '' for light, so treat that as light too.
+function getSavedTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
 
-if (!savedTheme) {
-    savedTheme = 'light';
-    localStorage.setItem(THEME_KEY, savedTheme);
+    if (saved === 'dark')
+        return 'dark';
+
+    if (saved === 'light' || saved === '')
+        return 'light';
+
+    return null;
 }
 
-html.classList.add(savedTheme);
+function getSystemTheme() {
+    return systemDarkQuery && systemDarkQuery.matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+    html.classList.remove('light', 'dark');
+    html.classList.add(theme);
+}
+
+applyTheme(getSavedTheme() ?? getSystemTheme());
+
+// Without a saved choice, keep following the system setting when it changes.
+systemDarkQuery?.addEventListener('change', () => {
+    if (getSavedTheme() === null)
+        applyTheme(getSystemTheme());
+});
 
 function switchTheme() {
-    const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    const newTheme = html.classList.contains('dark') ? 'light' : 'dark';
 
-    html.classList.remove(currentTheme);
-    html.classList.add(newTheme);
-
+    applyTheme(newTheme);
     localStorage.setItem(THEME_KEY, newTheme);
 }

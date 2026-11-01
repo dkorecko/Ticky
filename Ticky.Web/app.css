@@ -437,7 +437,8 @@ input[type="checkbox"].toggle {
 }
 
 .priority, .label {
-    @apply text-2xs w-max cursor-pointer rounded-md px-2 py-0.5 font-medium;
+    /* 1px more padding on top: the font sits high in its line box, so equal padding looks off-centre. */
+    @apply text-2xs w-max cursor-pointer rounded-md px-2 pt-[3px] pb-px font-medium;
 }
 
 /* User labels: tinted background + readable text derived from the label's colour (--lc: "r g b"). */
@@ -579,7 +580,7 @@ input[type="checkbox"].toggle {
     @apply animate-pulse;
 }
 .prop-row {
-    @apply grid grid-cols-[8rem_1fr] sm:grid-cols-[11.5rem_1fr] items-center gap-x-3 py-1.5 text-sm;
+    @apply grid grid-cols-[7rem_1fr] sm:grid-cols-[11.5rem_1fr] items-center gap-x-3 py-1.5 text-sm;
 }
 
 .prop-label {
