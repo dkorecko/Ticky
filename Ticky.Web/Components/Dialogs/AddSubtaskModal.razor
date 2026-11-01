@@ -9,11 +9,11 @@
 
             <div class="form-group">
                 <Name For="() => _subtaskModel.Text" />
-                <InputText class="form-control" @bind-Value="_subtaskModel.Text" />
+                <InputText class="form-control" @bind-Value="_subtaskModel.Text" placeholder="What needs to be done?" />
                 <ValidationMessage For="() => _subtaskModel.Text" />
             </div>
 
-            <button type="submit">Add</button>
+            <button type="submit" class="btn btn-yellow">Add</button>
         </EditForm>
     }
 </ActionModal>

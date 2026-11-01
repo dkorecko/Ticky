@@ -6,8 +6,10 @@ public class FilterCardsModel
 
     public HashSet<int> AssignedUserIds { get; set; } = [];
 
+    // Labels a card must have to be shown (match any).
     public HashSet<int> LabelIds { get; set; } = [];
 
+    // Labels a card must not have to be shown.
     public HashSet<int> ExcludedLabelIds { get; set; } = [];
 
     public bool IncludeUnassigned { get; set; }

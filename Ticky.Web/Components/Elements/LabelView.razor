@@ -1,9 +1,12 @@
-<div class="label" 
-    style="background-color: rgba(@Label.BackgroundColor.R, @Label.BackgroundColor.G, @Label.BackgroundColor.B, @Label.BackgroundColor.A); color: rgba(@Label.TextColor.R, @Label.TextColor.G, @Label.TextColor.B, @Label.TextColor.A);">
+<div class="label @Class"
+    style="--lc: @Label.BackgroundColor.R @Label.BackgroundColor.G @Label.BackgroundColor.B; background-color: rgb(@Label.BackgroundColor.R @Label.BackgroundColor.G @Label.BackgroundColor.B); color: rgb(@Label.TextColor.R @Label.TextColor.G @Label.TextColor.B);">
     @Label.Name
 </div>
 
 @code {
     [Parameter]
     public required Label Label { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
 }

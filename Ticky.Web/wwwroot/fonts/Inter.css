@@ -1,0 +1,8 @@
+/* Inter variable (wght 100-900, opsz 14-32) */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url(Inter-Variable.ttf) format('truetype');
+}

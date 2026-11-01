@@ -5,9 +5,9 @@
     <EditForm class="form" EditContext="_editContext">
         <DataAnnotationsValidator/>
         
-        <div class="form-group">
+        <div class="form-section">
             <Name For="() => _project.Name"/>
-            <InputText class="form-control" @bind-Value="_project.Name" @ref="FocusElement" />
+            <InputText class="input-field" placeholder="Project name" @bind-Value="_project.Name" @ref="FocusElement" />
             <ValidationMessage For="() => _project.Name" />
         </div>
     </EditForm>

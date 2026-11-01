@@ -27,7 +27,7 @@
 
         <div class="form-group">
             <Name For="() => _model.Code" />
-            <InputText class="form-control" @bind-Value="_model.Code" />
+            <InputText class="form-control" @bind-Value="_model.Code" placeholder="e.g. TCK" />
             <ValidationMessage For="() => _model.Code" />
         </div>
 
@@ -79,7 +79,7 @@
                 var member = _model.ImportDto.Members[i];
                 <div class="form-group">
                     <label>@member.FullName (@member.Username)</label>
-                    <InputText class="form-control" @bind-Value="_model.MemberIdentifiers[i]" />
+                    <InputText class="form-control" @bind-Value="_model.MemberIdentifiers[i]" placeholder="E-mail address of the matching user" />
                 </div>
             }
         }
