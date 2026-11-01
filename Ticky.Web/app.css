@@ -442,6 +442,117 @@ input[type="checkbox"].toggle {
     @apply flex w-72 flex-col items-center space-y-2 rounded-card bg-text/[0.035] dark:bg-textDark/[0.04] p-1.5;
 }
 
+/*
+  Morphs the "New card" button into the create form and back.
+  The form starts as the purple button (with the button's label drawn by ::before),
+  then grows while its own contents fade in. Closing runs the same steps in reverse.
+  overflow: clip (not hidden) so focusing the textarea can't scroll the clipped content.
+*/
+.new-card-form {
+    --new-card-button: var(--color-secondary);
+    --new-card-button-text: var(--color-primary);
+    position: relative;
+    animation: new-card-expand 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .new-card-form {
+    --new-card-button: var(--color-secondaryDark);
+    --new-card-button-text: var(--color-primaryDark);
+}
+
+.new-card-form > * {
+    animation: new-card-content-in 0.24s ease-out both;
+}
+
+.new-card-form::before {
+    content: attr(data-button-label);
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--new-card-button-text);
+    pointer-events: none;
+    opacity: 0;
+    animation: new-card-label-out 0.24s ease-out;
+}
+
+/* Duration must match FORM_COLLAPSE_MS in ColumnView.razor. */
+.new-card-form.closing {
+    animation: new-card-collapse 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    pointer-events: none;
+}
+
+.new-card-form.closing > * {
+    animation: new-card-content-out 0.2s ease-in forwards;
+}
+
+.new-card-form.closing::before {
+    animation: new-card-label-in 0.2s ease-in forwards;
+}
+
+@keyframes new-card-expand {
+    from {
+        overflow: clip;
+        max-height: 2rem;
+        background-color: var(--new-card-button);
+        border-color: var(--new-card-button);
+        border-radius: var(--radius-button);
+    }
+    to {
+        overflow: clip;
+        max-height: 10rem;
+    }
+}
+
+@keyframes new-card-collapse {
+    from {
+        overflow: clip;
+        max-height: 10rem;
+    }
+    to {
+        overflow: clip;
+        max-height: 2rem;
+        background-color: var(--new-card-button);
+        border-color: var(--new-card-button);
+        border-radius: var(--radius-button);
+    }
+}
+
+@keyframes new-card-content-in {
+    0%, 35% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@keyframes new-card-content-out {
+    0% { opacity: 1; }
+    65%, 100% { opacity: 0; }
+}
+
+@keyframes new-card-label-out {
+    0% { opacity: 1; }
+    35%, 100% { opacity: 0; }
+}
+
+@keyframes new-card-label-in {
+    0%, 65% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .new-card-form,
+    .new-card-form > *,
+    .new-card-form::before,
+    .new-card-form.closing,
+    .new-card-form.closing > *,
+    .new-card-form.closing::before {
+        animation: none;
+    }
+}
+
 .task-card {
     @apply rounded-card p-3 flex w-full cursor-pointer flex-col space-y-2 border border-line bg-primary text-text select-none hover:border-secondary/40 dark:bg-primaryDark dark:text-textDark dark:hover:border-secondaryDark/40 data-[blocked=True]:border-red dark:data-[blocked=True]:border-redDark;
 }

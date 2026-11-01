@@ -54,7 +54,7 @@
 
     @if (!Column.Collapsed)
     {
-        <SortableList Id=@($"{COLUMN_PREFIX}{Column.Id}") Animation=@(Board.DisableSortingAnimations ? 0 : 200) Class="flex min-h-[1rem] w-full flex-col space-y-2 overflow-y-auto" Group="group" Items="columnCards.OrderBy(x => x.Index).ToList()" MaxItems=Column.MaxCards Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList" OnExceededLimit="OnExceededCardLimit">
+        <SortableList Id=@($"{COLUMN_PREFIX}{Column.Id}") Animation=@(Board.DisableSortingAnimations ? 0 : 200) Class="flex min-h-[1rem] w-full flex-col gap-2 overflow-y-auto" Group="group" Items="columnCards.OrderBy(x => x.Index).ToList()" MaxItems=Column.MaxCards Context="context" OnRemove="OnMovedFromColumn" OnUpdate="OnMovedWithinList" OnExceededLimit="OnExceededCardLimit">
             <SortableItemTemplate>
                 <CardView @key="context.Id" Card="@context" Column="Column" BoardCode="@Board.Code" EditCardModal="EditCardModal" DeleteCardModal="DeleteCardModal" Members="Members" OnCardUpdated="OnUpdate" Columns="Board.Columns" />
             </SortableItemTemplate>
@@ -64,7 +64,7 @@
         {
             <div data-active=@(AddingCardHere.ToString()) @onclick="() => StartAddingToColumn(Column.Id)"
                  class="select-none h-min w-full">
-                @if (!AddingCardHere)
+                @if (!AddingCardHere && !_closingForm)
                 {
                     <div class="btn btn-purple font-semibold" title="New card">
                         <span>New card</span>
@@ -72,7 +72,7 @@
                 }
                 else
                 {
-                    <div class="island-title flex flex-col space-y-2">
+                    <div class="island-title new-card-form flex flex-col space-y-2 @(_closingForm ? "closing" : string.Empty)" data-button-label="New card">
                         <div class="flex w-full flex-row items-center justify-between text-sm font-semibold">
                             <label>Create new card</label>
                             <a class="material-symbols-rounded g-icon self-center" @onclick="() => AddingSetter.InvokeAsync(-1)" @onclick:stopPropagation=true title="Cancel">
@@ -144,8 +144,39 @@
     public required EventCallback OnUpdate { get; set; }
 
     private const string COLUMN_PREFIX = "column_";
+    // Matches the new-card-collapse animation duration in app.css.
+    private const int FORM_COLLAPSE_MS = 200;
     private ElementReference? _textElement;
     private CreateCardModel _createTaskModel = new();
+    private bool _wasAddingCard;
+    private bool _closingForm;
+
+    protected override void OnParametersSet()
+    {
+        // When the form closes, keep it rendered briefly so it can animate back into the button.
+        if (_wasAddingCard && !AddingCardHere)
+        {
+            _closingForm = true;
+            _ = FinishClosingForm();
+        }
+        else if (AddingCardHere)
+        {
+            _closingForm = false;
+        }
+
+        _wasAddingCard = AddingCardHere;
+    }
+
+    private async Task FinishClosingForm()
+    {
+        await Task.Delay(FORM_COLLAPSE_MS);
+
+        if (AddingCardHere || !_closingForm)
+            return;
+
+        _closingForm = false;
+        await InvokeAsync(StateHasChanged);
+    }
 
     private int GetColumnIdFromString(string str)
         => Convert.ToInt32(str.Replace(COLUMN_PREFIX, string.Empty));
@@ -428,7 +459,7 @@
         if (_textElement is null)
             return;
 
-        await _textElement.Value.FocusAsync();
+        await _textElement.Value.FocusAsync(preventScroll: true);
     }
 
     private async Task AttemptCreateTaskSubmit(int columnId)

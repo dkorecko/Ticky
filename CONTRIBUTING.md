@@ -47,7 +47,7 @@ Please follow these steps for submitting a pull request:
 
 ### Prerequisites
 
-- .NET 9.0 SDK
+- .NET 10.0 SDK
 - MySQL Server 8.0+
 - IDE (Visual Studio, VS Code, etc.)
 
