@@ -2,9 +2,9 @@ using Devity.Mailing;
 using Devity.NETCore.MailKit.Infrastructure.Internal;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
-using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,12 +75,6 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 });
 
 builder.Services.AddSignalR();
-
-// For signalR
-builder.Services.AddResponseCompression(opts =>
-{
-    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/octet-stream"]);
-});
 
 Constants.FULLY_OFFLINE = builder.Configuration.GetValue("FULLY_OFFLINE", true);
 Constants.DISABLE_USER_SIGNUPS = builder.Configuration.GetValue("DISABLE_USER_SIGNUPS", false);
@@ -170,9 +164,6 @@ builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 var app = builder.Build();
 
-// For signalR
-app.UseResponseCompression();
-
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>()!;
@@ -190,14 +181,35 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
 }
 
+// Show the not-found page for unknown page URLs. Only page visits (which ask for HTML) get it;
+// images, scripts and API calls keep a plain 404, so they don't render the whole app.
+app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.Use(
+    (context, next) =>
+    {
+        var acceptsHtml = context.Request.Headers.Accept.Any(value =>
+            value?.Contains("text/html", StringComparison.OrdinalIgnoreCase) == true
+        );
+
+        if (!acceptsHtml || context.Request.Path.StartsWithSegments("/api"))
+            context.Features.Get<IStatusCodePagesFeature>()?.Enabled = false;
+
+        return next(context);
+    }
+);
+
 app.UseAntiforgery();
 
+// User uploads (e.g. avatars) are written to wwwroot/uploaded at runtime, so they aren't part of
+// the build-time asset manifest that MapStaticAssets serves.
 app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+// Serves build-time assets fingerprinted and pre-compressed, with long-lived caching.
+app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.MapRazorPages();
 app.MapHub<UpdateHub>(Constants.Hubs.UPDATE_HUB);

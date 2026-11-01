@@ -662,6 +662,84 @@ input[type="checkbox"].toggle {
     height: 100%;
 }
 
+/*
+  Reconnect dialog (Components/Layout/ReconnectModal.razor). Blazor sets a state class on the
+  dialog; each state shows its own parts. State rules mirror the .NET 10 template, but the hide
+  rules are scoped to the dialog's id so icon-font styles (display: inline-block) can't override them.
+*/
+#components-reconnect-modal .components-reconnect-first-attempt-visible,
+#components-reconnect-modal .components-reconnect-repeated-attempt-visible,
+#components-reconnect-modal .components-reconnect-failed-visible,
+#components-reconnect-modal .components-pause-visible,
+#components-reconnect-modal .components-resume-failed-visible,
+#components-reconnect-modal .components-rejoining-animation {
+    display: none;
+}
+
+#components-reconnect-modal.components-reconnect-show .components-reconnect-first-attempt-visible,
+#components-reconnect-modal.components-reconnect-show .components-rejoining-animation,
+#components-reconnect-modal.components-reconnect-paused .components-pause-visible,
+#components-reconnect-modal.components-reconnect-resume-failed .components-resume-failed-visible,
+#components-reconnect-modal.components-reconnect-retrying,
+#components-reconnect-modal.components-reconnect-retrying .components-reconnect-repeated-attempt-visible,
+#components-reconnect-modal.components-reconnect-retrying .components-rejoining-animation,
+#components-reconnect-modal.components-reconnect-failed,
+#components-reconnect-modal.components-reconnect-failed .components-reconnect-failed-visible {
+    display: block;
+}
+
+/* Blazor keeps the "show" class while retrying and once failed; show only the latest message. */
+#components-reconnect-modal.components-reconnect-retrying .components-reconnect-first-attempt-visible,
+#components-reconnect-modal.components-reconnect-failed .components-reconnect-first-attempt-visible,
+#components-reconnect-modal.components-reconnect-failed .components-reconnect-repeated-attempt-visible,
+#components-reconnect-modal.components-reconnect-failed .components-rejoining-animation {
+    display: none;
+}
+
+/* Fixed and centered even when Blazor shows it without opening it as a modal. */
+.reconnect-modal {
+    @apply fixed inset-0 z-50 m-auto h-fit w-[min(22rem,calc(100vw-2rem))] text-text shadow-2xl shadow-black/10 dark:text-textDark;
+}
+
+/* The short delay keeps quick blips from flashing the dialog. */
+.reconnect-modal[open] {
+    animation: reconnect-modal-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
+}
+
+.reconnect-modal::backdrop {
+    background-color: rgb(0 0 0 / 0.3);
+    backdrop-filter: blur(2px);
+    animation: reconnect-backdrop-in 0.3s ease 0.4s both;
+}
+
+.dark .reconnect-modal::backdrop {
+    background-color: rgb(0 0 0 / 0.6);
+}
+
+.reconnect-icon {
+    @apply text-4xl text-subtext dark:text-subtextDark;
+}
+
+@keyframes reconnect-modal-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+    }
+}
+
+@keyframes reconnect-backdrop-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reconnect-modal[open],
+    .reconnect-modal::backdrop {
+        animation-name: none;
+    }
+}
+
 .tooltip-wrapper {
     position: relative;
     display: inline-block;

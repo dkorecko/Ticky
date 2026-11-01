@@ -1,0 +1,16 @@
+@page "/not-found"
+@layout MainLayout
+
+@* Shown for unknown URLs, both on direct requests (via status code re-execution in Program.cs)
+   and on in-app navigation (via the router's NotFoundPage). *@
+
+<PageTitle>Not found - @Constants.APP_NAME</PageTitle>
+
+<div class="flex h-full w-full items-center justify-center">
+    <div class="island flex max-w-md flex-col items-center gap-4 text-center">
+        <span class="material-symbols-rounded text-5xl text-subtext dark:text-subtextDark" aria-hidden="true">explore_off</span>
+        <h2>Page not found</h2>
+        <p class="subtext">This page doesn't exist, or it may have been moved.</p>
+        <a href="/" class="btn btn-purple !w-max">Go home</a>
+    </div>
+</div>

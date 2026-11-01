@@ -1,0 +1,42 @@
+@*
+    Shown by Blazor when the connection to the server drops. Based on the .NET 10 template.
+    Blazor sets a state class on the dialog (components-reconnect-show / -retrying / -failed /
+    -paused / -resume-failed), and app.css shows the matching parts below.
+*@
+<script type="module" src="@Assets["Components/Layout/ReconnectModal.razor.js"]"></script>
+
+<dialog id="components-reconnect-modal" class="reconnect-modal island" data-nosnippet aria-live="polite">
+    <div class="flex flex-col items-center gap-3 text-center">
+        <div class="components-rejoining-animation element-spinner" aria-hidden="true"></div>
+        <span class="components-reconnect-failed-visible components-resume-failed-visible material-symbols-rounded reconnect-icon" aria-hidden="true">cloud_off</span>
+        <span class="components-pause-visible material-symbols-rounded reconnect-icon" aria-hidden="true">pause_circle</span>
+
+        <div class="components-reconnect-first-attempt-visible">
+            <h3>Reconnecting…</h3>
+            <p class="subtext mt-1">Lost the connection to the server. Getting you back.</p>
+        </div>
+        <div class="components-reconnect-repeated-attempt-visible">
+            <h3>Still reconnecting…</h3>
+            <p class="subtext mt-1">Trying again in <span id="components-seconds-to-next-attempt"></span> seconds.</p>
+        </div>
+        <div class="components-reconnect-failed-visible">
+            <h3>Couldn't reconnect</h3>
+            <p class="subtext mt-1">The server isn't reachable right now. Retry, or reload the page.</p>
+        </div>
+        <div class="components-pause-visible">
+            <h3>Session paused</h3>
+            <p class="subtext mt-1">The server paused your session. Resume to pick up where you left off.</p>
+        </div>
+        <div class="components-resume-failed-visible">
+            <h3>Couldn't resume</h3>
+            <p class="subtext mt-1">Your session couldn't be restored. Retry, or reload the page.</p>
+        </div>
+
+        <button id="components-reconnect-button" class="components-reconnect-failed-visible btn btn-purple mt-2">
+            Retry
+        </button>
+        <button id="components-resume-button" class="components-pause-visible components-resume-failed-visible btn btn-purple mt-2">
+            Resume
+        </button>
+    </div>
+</dialog>

@@ -474,8 +474,7 @@
             foreach (var oldColumnPosition in snapshot)
             {
                 var column = _board.Columns.FirstOrDefault(x => x.Id == oldColumnPosition.Id);
-                if (column is not null)
-                    column.Index = oldColumnPosition.Index;
+                column?.Index = oldColumnPosition.Index;
             }
 
             IndexHelper.FixIndices(_board.Columns);
