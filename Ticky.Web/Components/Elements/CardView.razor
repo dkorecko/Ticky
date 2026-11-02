@@ -51,7 +51,7 @@
         @if (Card.Deadline is not null)
         {
             DeadlineColor color = Column.Finished ? DeadlineColor.Green : (DateTime.Compare(Card.Deadline.Value, DateTime.Now) < 0 ? DeadlineColor.Red : (Card.Deadline.Value.Date == DateTime.Today.Date ? DeadlineColor.Yellow : DeadlineColor.Default));
-            <label data-coloring="@color" class="card-data-point data-[coloring=Green]:bg-lime-500 data-[coloring=Yellow]:bg-yellow-500 data-[coloring=Red]:bg-red">
+            <label data-coloring="@color" class="card-data-point">
                 <span class="material-symbols-rounded self-center" title="Deadline">
                     schedule
                 </span>

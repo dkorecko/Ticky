@@ -579,6 +579,19 @@ input[type="checkbox"].toggle {
     @apply flex cursor-pointer flex-row items-center justify-center gap-1 whitespace-nowrap text-xs rounded-md py-0.5 px-1.5 bg-text/[0.05] dark:bg-textDark/10;
 }
 
+/* Deadline chips. Defined here because utility classes can't override the background above. */
+.card-data-point[data-coloring=Red] {
+    @apply bg-red/15 text-red dark:bg-redDark/20 dark:text-redDark;
+}
+
+.card-data-point[data-coloring=Yellow] {
+    @apply bg-tint/25 text-amber-800 dark:bg-tintDark/20 dark:text-tintDark;
+}
+
+.card-data-point[data-coloring=Green] {
+    @apply bg-lime-500/15 text-lime-700 dark:bg-lime-400/15 dark:text-lime-300;
+}
+
 .list-members-table {
     @apply border-separate border-spacing-x-5 border-spacing-y-1;
 }

@@ -1,0 +1,206 @@
+﻿@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject CardService _cardService
+@implements IDisposable
+
+<section class="island flex min-w-0 flex-col gap-3 !py-5 @Class">
+    <div class="flex flex-row flex-wrap items-center justify-between gap-2">
+        <h5 class="font-semibold">Your work</h5>
+        <div class="flex flex-row gap-1 rounded-button border border-line p-0.5 text-sm">
+            <label data-active=@((!_showAll).ToString()) class="detail-tab" @onclick="() => _showAll = false">Due soon@(_dueCount > 0 ? $" ({_dueCount})" : string.Empty)</label>
+            <label data-active=@(_showAll.ToString()) class="detail-tab" @onclick="() => _showAll = true">Assigned@(_cards?.Count > 0 ? $" ({_cards.Count})" : string.Empty)</label>
+        </div>
+    </div>
+
+    @if (_cards is null || _timers is null)
+    {
+        <Spinner Small="true" />
+    }
+    else
+    {
+        @foreach (var timer in _timers)
+        {
+            var card = timer.Card;
+            <div class="flex flex-row items-center gap-2 rounded-button bg-secondary/10 py-1.5 pr-1.5 pl-3 text-sm text-secondary dark:bg-secondaryDark/15 dark:text-secondaryDark">
+                <span class="material-symbols-rounded !text-lg">timer_play</span>
+                <a class="min-w-0 flex-1 truncate font-medium" href="@CardLink(card)" title="Open card">Timer running · @card.Column.Board.Code-@card.Number @card.Name</a>
+                <span class="shrink-0 font-semibold tabular-nums">@((DateTime.Now - timer.StartedAt).ToElapsedString())</span>
+                <button type="button" class="chip-button shrink-0" @onclick="() => StopTimer(timer)" title="Stop timer"><span class="material-symbols-rounded">stop</span>Stop</button>
+            </div>
+        }
+
+        <div class="flex max-h-[22rem] flex-col overflow-y-auto">
+            @if (_showAll)
+            {
+                @if (_cards.Count == 0)
+                {
+                    <p class="subtext px-2 py-1 text-sm">No open cards are assigned to you.</p>
+                }
+                @foreach (var card in _cards)
+                {
+                    @CardRow(card)
+                }
+            }
+            else
+            {
+                var now = DateTime.Now;
+                var withDeadline = _cards.Where(x => x.Deadline.HasValue).ToList();
+                var overdue = withDeadline.Where(x => x.Deadline!.Value < now).ToList();
+                var today = withDeadline.Where(x => x.Deadline!.Value >= now && x.Deadline.Value.Date == now.Date).ToList();
+                var soon = withDeadline.Where(x => x.Deadline!.Value.Date > now.Date && x.Deadline.Value.Date <= now.Date.AddDays(DUE_SOON_DAYS)).ToList();
+
+                @if (overdue.Count + today.Count + soon.Count == 0)
+                {
+                    <p class="subtext px-2 py-1 text-sm">Nothing assigned to you is due in the next @DUE_SOON_DAYS days.</p>
+                }
+                @Group("Overdue", "text-red dark:text-redDark", overdue)
+                @Group("Today", "text-amber-700 dark:text-tintDark", today)
+                @Group($"Next {DUE_SOON_DAYS} days", "text-subtext dark:text-subtextDark", soon)
+            }
+        </div>
+
+        @if (!_showAll)
+        {
+            var later = _cards.Count - _dueCount;
+            @if (later > 0)
+            {
+                <button type="button" class="subtext self-start rounded-button px-2 text-xs hover:text-secondary dark:hover:text-secondaryDark" @onclick="() => _showAll = true">
+                    + @later more assigned with a later or no deadline
+                </button>
+            }
+        }
+    }
+</section>
+
+@code {
+    private const int DUE_SOON_DAYS = 7;
+
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public string Class { get; set; } = string.Empty;
+
+    private List<Card>? _cards;
+    private List<TimeRecord>? _timers;
+    private int _dueCount;
+    private bool _showAll;
+    private System.Timers.Timer? _ticker;
+
+    private RenderFragment Group(string title, string titleClass, List<Card> cards) => @<text>
+        @if (cards.Any())
+        {
+            <span class="mt-1 px-2 text-2xs font-medium tracking-wide uppercase @titleClass">@title</span>
+            @foreach (var card in cards)
+            {
+                @CardRow(card)
+            }
+        }
+    </text>;
+
+    private RenderFragment CardRow(Card card) => @<a href="@CardLink(card)" class="flex min-w-0 flex-row items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-secondary/5 dark:hover:bg-secondaryDark/10">
+        <PriorityLabel Priority="card.Priority" />
+        <span class="flex min-w-0 flex-1 flex-col">
+            <span class="truncate text-sm font-medium">@card.Name</span>
+            <span class="subtext truncate text-2xs">@card.Column.Board.Code-@card.Number · @card.Column.Board.Name · @card.Column.Name</span>
+        </span>
+        @if (card.Deadline is { } deadline)
+        {
+            <span data-coloring="@DeadlineColorFor(deadline)" class="card-data-point shrink-0">
+                <span class="material-symbols-rounded !text-sm">schedule</span>
+                @DeadlineText(deadline)
+            </span>
+        }
+    </a>;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+        var userId = _user.Id;
+
+        // Open cards assigned to the user, on boards they can still access. Snoozed cards are hidden like on the board.
+        _cards = await db.Cards
+            .Include(x => x.Column)
+                .ThenInclude(x => x.Board)
+            .Where(x => x.Assignees.Any(a => a.Id == userId)
+                && !x.Column.Finished
+                && !x.SnoozedUntil.HasValue
+                && (x.Column.Board.Memberships.Any(m => m.UserId == userId) || x.Column.Board.Project.Memberships.Any(m => m.UserId == userId)))
+            .AsNoTracking()
+            .ToListAsync();
+
+        _cards = _cards
+            .OrderBy(x => x.Deadline is null)
+            .ThenBy(x => x.Deadline)
+            .ThenByDescending(x => x.Priority)
+            .ToList();
+
+        var dueBy = DateTime.Today.AddDays(DUE_SOON_DAYS + 1);
+        _dueCount = _cards.Count(x => x.Deadline.HasValue && x.Deadline.Value < dueBy);
+
+        _timers = await db.TimeRecords
+            .Include(x => x.Card)
+                .ThenInclude(x => x.Column)
+                    .ThenInclude(x => x.Board)
+            .Where(x => x.UserId == userId && x.EndedAt == null)
+            .OrderBy(x => x.StartedAt)
+            .AsNoTracking()
+            .ToListAsync();
+
+        UpdateTicker();
+    }
+
+    // Keeps running timers counting up; only ticks while one is running.
+    private void UpdateTicker()
+    {
+        if (_timers?.Any() == true)
+        {
+            if (_ticker is not null)
+                return;
+
+            _ticker = new System.Timers.Timer(1000);
+            _ticker.Elapsed += async (_, _) => await InvokeAsync(StateHasChanged);
+            _ticker.Start();
+        }
+        else
+        {
+            _ticker?.Dispose();
+            _ticker = null;
+        }
+    }
+
+    private async Task StopTimer(TimeRecord timer)
+    {
+        await _cardService.EndTimerAsync(timer.CardId, timer.Id);
+        await LoadAsync();
+    }
+
+    private static string CardLink(Card card) =>
+        $"{Constants.Mappings.BOARD_PATH}/{card.Column.BoardId}/{card.Id}";
+
+    private static DeadlineColor DeadlineColorFor(DateTime deadline) =>
+        deadline < DateTime.Now ? DeadlineColor.Red
+        : deadline.Date == DateTime.Today ? DeadlineColor.Yellow
+        : DeadlineColor.Default;
+
+    private static string DeadlineText(DateTime deadline)
+    {
+        if (deadline.Date == DateTime.Today)
+            return deadline.ToString("HH:mm");
+
+        if (deadline > DateTime.Now && deadline.Date <= DateTime.Today.AddDays(DUE_SOON_DAYS))
+            return deadline.ToString("ddd HH:mm");
+
+        return deadline.ToString("MMM d");
+    }
+
+    public void Dispose() => _ticker?.Dispose();
+}
