@@ -801,11 +801,29 @@ input[type="checkbox"].toggle {
 }
 
 .chip-button {
-    @apply inline-flex cursor-pointer flex-row items-center gap-1 rounded-button bg-background px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-text transition-all ease-in-out hover:bg-secondary/20 dark:bg-bgDark dark:text-textDark dark:hover:bg-secondaryDark/20;
+    @apply inline-flex cursor-pointer flex-row items-center gap-1 rounded-button bg-background px-2 pt-[3px] pb-px text-xs font-semibold whitespace-nowrap text-text transition-all ease-in-out hover:bg-secondary/20 dark:bg-bgDark dark:text-textDark dark:hover:bg-secondaryDark/20;
 }
 
-.chip-button > i {
-    @apply !text-2xs;
+/*
+  Icon goes before the label. Inter sits high in its line box, so the label gets 1px more padding on top
+  (like .label), and the icon is lifted back 1px so its bottom lines up with the text baseline.
+*/
+.chip-button > .material-symbols-rounded {
+    @apply relative -top-px !text-sm leading-none;
+}
+
+/* A person shown as a pill (avatar + name), sized to match .chip-button. */
+.person-chip {
+    @apply inline-flex cursor-pointer flex-row items-center gap-1.5 rounded-button bg-background p-0.5 pr-2 text-xs font-semibold whitespace-nowrap text-text dark:bg-bgDark dark:text-textDark;
+}
+
+.person-chip > div {
+    @apply h-4 w-4 shrink-0 rounded-full bg-cover bg-center;
+}
+
+/* Same 1px nudge as .chip-button text, so names line up with neighbouring pills. */
+.person-chip > span {
+    @apply relative top-px;
 }
 
 /* Assignee tiles in the card filter. aria-pressed marks the selected ones. */

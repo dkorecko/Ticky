@@ -50,7 +50,7 @@
                                                 <i class="fa fa-trash-can cursor-pointer text-red-button transition-all ease-in-out hover:text-red-button-hover" @onclick="() => DeleteReminder(reminder)" title="Delete reminder"></i>
                                             </div>
                                         }
-                                        <button type="button" @ref="_addReminderTrigger" class="chip-button" @onclick="() => _addReminderModal?.Open(_addReminderTrigger, _card)" title="Add reminder">Add reminder <i class="fa fa-plus"></i></button>
+                                        <button type="button" @ref="_addReminderTrigger" class="chip-button" @onclick="() => _addReminderModal?.Open(_addReminderTrigger, _card)" title="Add reminder"><span class="material-symbols-rounded">add</span>Add reminder</button>
                                     }
                                     else
                                     {
@@ -67,7 +67,7 @@
                                     {
                                         <span class="font-semibold whitespace-nowrap">@_card.Deadline.Value.ToReadableStringWithTime()</span>
                                     }
-                                    <button type="button" @ref="_editDeadlineTrigger" class="chip-button" @onclick="() => _editDeadlineModal?.Open(_editDeadlineTrigger, _card)" title="Edit deadline">Edit <i class="fa fa-pencil"></i></button>
+                                    <button type="button" @ref="_editDeadlineTrigger" class="chip-button" @onclick="() => _editDeadlineModal?.Open(_editDeadlineTrigger, _card)" title="Edit deadline"><span class="material-symbols-rounded">edit</span>Edit</button>
                                     @if (_card.Deadline is not null)
                                     {
                                         <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="DeleteDeadline" title="Remove deadline"></i>
@@ -82,7 +82,7 @@
                                         <span class="font-semibold whitespace-nowrap">@_card.SnoozedUntil.Value.ToReadableStringWithTime()</span>
                                         <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="UnsnoozeCard" title="Remove snooze"></i>
                                     }
-                                    <button type="button" @ref="_snoozeTrigger" class="chip-button" @onclick="() => _snoozeCardModal?.Open(_snoozeTrigger, _card)" title="Snooze card">Snooze card <i class="fa fa-moon"></i></button>
+                                    <button type="button" @ref="_snoozeTrigger" class="chip-button" @onclick="() => _snoozeCardModal?.Open(_snoozeTrigger, _card)" title="Snooze card"><span class="material-symbols-rounded">bedtime</span>Snooze card</button>
                                 </div>
                             </div>
                             <div class="prop-row">
@@ -92,7 +92,7 @@
                                     {
                                         <span class="font-semibold">@_card.RepeatInfo.GetRepeatString()</span>
                                     }
-                                    <button type="button" @ref="_repeatTrigger" class="chip-button" @onclick="() => _repeatCardModal?.Open(_repeatTrigger, _card, _columns)" title="Edit repeat settings">Edit <i class="fa fa-repeat"></i></button>
+                                    <button type="button" @ref="_repeatTrigger" class="chip-button" @onclick="() => _repeatCardModal?.Open(_repeatTrigger, _card, _columns)" title="Edit repeat settings"><span class="material-symbols-rounded">edit</span>Edit</button>
                                     @if (_card.RepeatInfo is not null)
                                     {
                                         <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="RemoveRepeat" title="Remove repeat"></i>
@@ -134,21 +134,21 @@
                                     {
                                         var assigneeId = $"avatar_1_{i}";
 
-                                        <div id="@assigneeId" class="person-label cursor-pointer !rounded-button !bg-background dark:!bg-bgDark !p-0.5 !pr-2 !gap-1.5 [&>div]:!h-4 [&>div]:!w-4 text-text dark:text-textDark" @onclick="() => _mainLayout.UserInfoModal?.Open(assigneeId, assignee.Id)">
+                                        <div id="@assigneeId" class="person-chip" @onclick="() => _mainLayout.UserInfoModal?.Open(assigneeId, assignee.Id)">
                                             <div style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');"></div>
-                                            <label class="cursor-pointer font-semibold">@assignee.DisplayName</label>
+                                            <span>@assignee.DisplayName</span>
                                         </div>
 
                                         i++;
                                     }
-                                    <button type="button" @ref="_assigneesTrigger" class="chip-button" @onclick="() => _assigneesModal?.Open(_assigneesTrigger, _card, _members)" title="Edit assignees"><span class="sm:hidden">Add</span><span class="hidden sm:inline">Add members</span> <i class="fa fa-plus"></i></button>
+                                    <button type="button" @ref="_assigneesTrigger" class="chip-button" @onclick="() => _assigneesModal?.Open(_assigneesTrigger, _card, _members)" title="Edit assignees"><span class="material-symbols-rounded">edit</span><span class="sm:hidden">Edit</span><span class="hidden sm:inline">Edit members</span></button>
                                     @if (_card.Assignees.Any(x => x.Id.Equals(_user.Id)))
                                     {
-                                        <button type="button" class="chip-button" @onclick="Leave" title="Leave task">Leave <i class="fa-solid fa-user-minus"></i></button>
+                                        <button type="button" class="chip-button" @onclick="Leave" title="Leave task"><span class="material-symbols-rounded">person_remove</span>Leave</button>
                                     }
                                     else
                                     {
-                                        <button type="button" class="chip-button" @onclick="Join" title="Join task">Assign me <i class="fa-solid fa-user-plus"></i></button>
+                                        <button type="button" class="chip-button" @onclick="Join" title="Join task"><span class="material-symbols-rounded">person_add</span>Assign me</button>
                                     }
                                 </div>
                             </div>
@@ -158,9 +158,9 @@
                                     @{
                                         var createdById = "created_by";
                                     }
-                                    <div id=@createdById class="person-label cursor-pointer !rounded-button !bg-background dark:!bg-bgDark !p-0.5 !pr-2 !gap-1.5 [&>div]:!h-4 [&>div]:!w-4 text-text dark:text-textDark" @onclick="() => _mainLayout.UserInfoModal?.Open(createdById, _card.CreatedById)">
+                                    <div id=@createdById class="person-chip" @onclick="() => _mainLayout.UserInfoModal?.Open(createdById, _card.CreatedById)">
                                         <div style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_card.CreatedBy.ProfilePictureFileName');"></div>
-                                        <label class="cursor-pointer font-semibold">@_card.CreatedBy.DisplayName</label>
+                                        <span>@_card.CreatedBy.DisplayName</span>
                                     </div>
                                 </div>
                             </div>
@@ -173,11 +173,11 @@
                                     <span class="min-w-0 truncate font-semibold">@_card.Column.Name</span>
                                     @if (_card.Column.Index != 0)
                                     {
-                                        <button type="button" class="chip-button shrink-0" @onclick="MoveToPreviousList" title="Move to previous column" aria-label="Move to previous column"><i class="fa fa-chevron-left"></i></button>
+                                        <button type="button" class="chip-button shrink-0" @onclick="MoveToPreviousList" title="Move to previous column" aria-label="Move to previous column"><span class="material-symbols-rounded">chevron_left</span></button>
                                     }
                                     @if (_lastColumnIndex != _card.Column.Index)
                                     {
-                                        <button type="button" class="chip-button shrink-0" @onclick="MoveToNextList" title="Move to next column" aria-label="Move to next column"><i class="fa fa-chevron-right"></i></button>
+                                        <button type="button" class="chip-button shrink-0" @onclick="MoveToNextList" title="Move to next column" aria-label="Move to next column"><span class="material-symbols-rounded">chevron_right</span></button>
                                     }
                                 </div>
                             </div>
@@ -188,7 +188,7 @@
                                     {
                                         <LabelView Label="label"></LabelView>
                                     }
-                                    <button type="button" @ref="_labelDiv" class="chip-button" @onclick="() => _labelModal?.Open(_labelDiv, _card, _card.Column.Board.Labels)" title="Edit labels">Add labels <i class="fa fa-plus"></i></button>
+                                    <button type="button" @ref="_labelDiv" class="chip-button" @onclick="() => _labelModal?.Open(_labelDiv, _card, _card.Column.Board.Labels)" title="Edit labels"><span class="material-symbols-rounded">edit</span>Edit labels</button>
                                 </div>
                             </div>
                         </div>
@@ -222,7 +222,7 @@
                             <section class="flex flex-col gap-2">
                                 <div class="flex flex-row items-center gap-3">
                                     <h5 class="text-card-heading font-semibold select-none">Linked cards</h5>
-                                    <button type="button" id="linked_cards" class="chip-button ml-auto" @onclick='() => _searchModal?.Open()' title="Link cards"><span class="material-symbols-rounded !text-base">add_link</span> Link</button>
+                                    <button type="button" id="linked_cards" class="chip-button ml-auto" @onclick='() => _searchModal?.Open()' title="Link cards"><span class="material-symbols-rounded">add_link</span>Link</button>
                                 </div>
                                 @if (!_card.LinkedIssuesOne.Any())
                                 {
@@ -263,7 +263,7 @@
                                     {
                                         <span class="text-xs subtext">@_subtasks.Count(x => x.Completed)/@_subtasks.Count</span>
                                     }
-                                    <button type="button" @ref="_addSubtaskTrigger" class="chip-button ml-auto" @onclick="() => _addSubtaskModal?.Open(_addSubtaskTrigger, _card)" title="Add subtask"><span class="material-symbols-rounded !text-base">add</span> Add</button>
+                                    <button type="button" @ref="_addSubtaskTrigger" class="chip-button ml-auto" @onclick="() => _addSubtaskModal?.Open(_addSubtaskTrigger, _card)" title="Add subtask"><span class="material-symbols-rounded">add</span>Add</button>
                                 </div>
                                 @if (_subtasks is not null && _subtasks.Any())
                                 {
