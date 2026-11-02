@@ -4,6 +4,7 @@
 @inject IJSRuntime _js
 @inject NavigationManager _navigationManager
 @inject ILogger<EditCardModal> _logger
+@inject CardService _cardService
 
 <PriorityModal @ref=_priorityModal UpdateCard="UpdateCard" />
 <LabelModal @ref=_labelModal UpdateCard="UpdateCard" />
@@ -628,22 +629,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        card.Name = e.Value?.ToString() ?? string.Empty;
-        card.Activities.Add(new Activity
-        {
-            Text = "<b>changed</b> the title",
-            UserId = _user.Id,
-            CardId = card.Id,
-        });
-
-        await db.SaveChangesAsync();
-
+        await _cardService.RenameAsync(_card.Id, _user.Id, e.Value?.ToString() ?? string.Empty);
         await UpdateCard();
     }
 
@@ -657,26 +643,9 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        card.Description = e.Value?.ToString() ?? string.Empty;
-        card.Activities.Add(new Activity
-        {
-            Text = "<b>changed</b> the description",
-            UserId = _user.Id,
-            CardId = card.Id,
-        });
-
-        await db.SaveChangesAsync();
-
+        await _cardService.UpdateDescriptionAsync(_card.Id, _user.Id, e.Value?.ToString() ?? string.Empty);
         await UpdateCard();
     }
-
-
 
     private void UpdateTimer()
     {
@@ -719,27 +688,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        card.Comments.Add(new Comment
-            {
-                Text = _commentText,
-                CreatedAt = DateTime.Now,
-                CreatedById = _user.Id,
-                CardId = _card.Id
-            });
-        card.Activities.Add(new Activity
-            {
-                Text = "<b>posted</b> a comment",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-
-        await db.SaveChangesAsync();
+        await _cardService.AddCommentAsync(_card.Id, _user.Id, _commentText);
 
         _commentText = string.Empty;
         await UpdateCard();
@@ -751,21 +700,7 @@
             return;
 
         _ongoingTimer = TimeSpan.Zero;
-
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        card.TimeRecords.Add(new TimeRecord
-        {
-            UserId = _user.Id,
-            CardId = card.Id,
-            StartedAt = DateTime.Now
-        });
-
-        await db.SaveChangesAsync();
+        await _cardService.StartTimerAsync(_card.Id, _user.Id);
         await UpdateCard();
         UpdateTimer();
     }
@@ -775,25 +710,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        var targetRecord = card.TimeRecords.FirstOrDefault(x => x.Id.Equals(activeTimeRecord.Id));
-
-        if(targetRecord is null)
-            return;
-
-        targetRecord.EndedAt = DateTime.Now;
-
-        if((targetRecord.EndedAt.Value - targetRecord.StartedAt).TotalSeconds < 1)
-        {
-            db.TimeRecords.Remove(targetRecord);
-        }
-
-        await db.SaveChangesAsync();
+        await _cardService.EndTimerAsync(_card.Id, activeTimeRecord.Id);
         await UpdateCard();
         UpdateTimer();
     }
@@ -803,18 +720,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-
-        await db.TimeRecords.Where(x => x.Id.Equals(timeRecord.Id)).ExecuteDeleteAsync();
-
-        db.Activities.Add(new Activity
-        {
-            Text = $"<b>deleted</b> time record of <b>{(timeRecord.EndedAt!.Value - timeRecord.StartedAt).ToElapsedString()}</b>",
-            UserId = _user.Id,
-            CardId = _card.Id,
-        });
-
-        await db.SaveChangesAsync();
+        await _cardService.RemoveTimeRecordAsync(_card.Id, _user.Id, timeRecord.Id);
         await UpdateCard();
     }
 
@@ -823,30 +729,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        var targetColumn = await db.Columns
-            .Include(x => x.Cards)
-            .Where(x => x.BoardId.Equals(card.Column.BoardId))
-            .FirstOrDefaultAsync(x => x.Index.Equals(card.Column.Index - 1));
-
-        if (targetColumn is null)
-            return;
-
-        card.Column = targetColumn;
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>moved</b> the card to <b>{targetColumn.Name}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-
-        await db.SaveChangesAsync();
-
+        await _cardService.MoveToAdjacentColumnAsync(_card.Id, _user.Id, -1);
         await UpdateCard();
     }
 
@@ -855,27 +738,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        var targetUser = await db.Users.SingleOrDefaultAsync(x => x.Id.Equals(_user.Id));
-
-        if(targetUser is null)
-            return;
-
-        card.Assignees.Add(targetUser);
-        card.Activities.Add(new Activity
-        {
-            Text = $"<b>joined</b> the card",
-            UserId = _user.Id,
-            CardId = card.Id,
-        });
-
-        await db.SaveChangesAsync();
-
+        await _cardService.JoinAsync(_card.Id, _user.Id);
         await UpdateCard();
     }
 
@@ -884,27 +747,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        var targetUser = await db.Users.SingleOrDefaultAsync(x => x.Id.Equals(_user.Id));
-
-        if (targetUser is null)
-            return;
-
-        card.Assignees.Remove(targetUser);
-        card.Activities.Add(new Activity
-        {
-            Text = $"<b>left</b> the card",
-            UserId = _user.Id,
-            CardId = card.Id,
-        });
-
-        await db.SaveChangesAsync();
-
+        await _cardService.LeaveAsync(_card.Id, _user.Id);
         await UpdateCard();
     }
 
@@ -913,30 +756,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        var targetColumn = await db.Columns
-            .Include(x => x.Cards)
-            .Where(x => x.BoardId.Equals(card.Column.BoardId))
-            .FirstOrDefaultAsync(x => x.Index.Equals(card.Column.Index + 1));
-
-        if (targetColumn is null)
-            return;
-
-        card.Column = targetColumn;
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>moved</b> the card to <b>{targetColumn.Name}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-
-        await db.SaveChangesAsync();
-
+        await _cardService.MoveToAdjacentColumnAsync(_card.Id, _user.Id, 1);
         await UpdateCard();
     }
 
@@ -980,26 +800,11 @@
 
     private async Task DeleteAttachment(Attachment attachment)
     {
-        if(_card is null)
+        if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        card.Attachments.RemoveAll(x => x.Id.Equals(attachment.Id));
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>deleted</b> file named <b>{attachment.OriginalName}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-                });
-
+        await _cardService.RemoveAttachmentAsync(_card.Id, _user.Id, attachment.Id);
         _mainLayout.RunNotification(new Notification($"File {attachment.OriginalName} deleted successfully."));
-
-        await db.SaveChangesAsync();
         await UpdateCard();
     }
 
@@ -1008,21 +813,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        card.Reminders.RemoveAll(x => x.Id.Equals(reminder.Id));
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>deleted</b> the reminder at <b>{reminder.At.ToReadableStringWithTime()}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-
-        await db.SaveChangesAsync();
+        await _cardService.RemoveReminderAsync(_card.Id, _user.Id, reminder.Id);
         await UpdateCard();
     }
 
@@ -1031,21 +822,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        card.Deadline = null;
-        card.Activities.Add(new Activity
-            {
-                Text = "<b>deleted</b> the deadline",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-
-        await db.SaveChangesAsync();
+        await _cardService.RemoveDeadlineAsync(_card.Id, _user.Id);
         await UpdateCard();
     }
 
@@ -1127,48 +904,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var targetLink = await db.CardLinks
-            .Include(x => x.CardOne)
-                .ThenInclude(x => x.Activities)
-            .Include(x => x.CardOne)
-                .ThenInclude(x => x.Column)
-                    .ThenInclude(x => x.Board)
-            .Include(x => x.CardTwo)
-                .ThenInclude(x => x.Column)
-                    .ThenInclude(x => x.Board)
-            .Include(x => x.CardTwo)
-                .ThenInclude(x => x.Activities)
-            .FirstOrDefaultAsync(x => x.Id.Equals(link.Id));
-
-        if (targetLink is null)
-            return;
-
-        var oppositeCategory = Constants.LINK_TYPE_PAIRS.ContainsKey(targetLink.Category) ? Constants.LINK_TYPE_PAIRS[targetLink.Category] : Constants.LINK_TYPE_PAIRS.First(x => x.Value.Equals(targetLink.Category)).Key;
-        var oppositeTarget = await db.CardLinks.FirstOrDefaultAsync(x => x.CardTwoId.Equals(targetLink.CardOneId));
-
-        if (oppositeTarget is not null)
-        {
-            db.CardLinks.Remove(oppositeTarget);
-
-            targetLink.CardTwo.Activities.Add(new Activity
-                {
-                    Text = $"<b>deleted</b> a linked issue <b>{targetLink.CardOne.Column.Board.Code}-{targetLink.CardOne.Number}</b> with <b>{targetLink.Category}</b> relationship",
-                    UserId = _user.Id,
-                    CardId = targetLink.CardTwoId,
-                });
-        }
-
-        db.CardLinks.Remove(targetLink);
-
-        targetLink.CardOne.Activities.Add(new Activity
-            {
-                Text = $"<b>deleted</b> a linked issue <b>{targetLink.CardTwo.Column.Board.Code}-{targetLink.CardTwo.Number}</b> with <b>{targetLink.Category}</b> relationship",
-                UserId = _user.Id,
-                CardId = targetLink.CardOneId,
-            });
-
-        await db.SaveChangesAsync();
+        await _cardService.RemoveLinkAsync(link.Id, _user.Id);
         await UpdateCard();
     }
 
@@ -1190,12 +926,6 @@
         if (!Directory.Exists(folderPath))
             Directory.CreateDirectory(folderPath);
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
         foreach (var file in files)
         {
             if (file.Size > Constants.Limits.MAX_FILE_SIZE)
@@ -1204,45 +934,28 @@
                 continue;
             }
 
-            var cleanFileName = WebUtility.HtmlEncode(file.Name);
-
             try
             {
-                var extension = file.Name[(file.Name.LastIndexOf('.') + 1)..];
+                var trustedFileName = UploadHelper.CreateStoredFileName(folderPath, file.Name);
+                var path = Path.Combine(folderPath, trustedFileName);
 
-                string path;
-                string trustedFileName;
-                do
+                await using (FileStream fs = new(path, FileMode.Create))
                 {
-                    trustedFileName = Path.GetRandomFileName();
-                    trustedFileName = trustedFileName[..trustedFileName.LastIndexOf('.')] + $".{extension}";
+                    await file.OpenReadStream(Constants.Limits.MAX_FILE_SIZE).CopyToAsync(fs);
+                }
 
-                    path = Path.Combine(folderPath, trustedFileName);
-                } while (File.Exists(path));
-
-                await using FileStream fs = new(path, FileMode.Create);
-                await file.OpenReadStream(Constants.Limits.MAX_FILE_SIZE).CopyToAsync(fs);
-
-                card.Attachments.Add(new Attachment
+                // The card was deleted meanwhile: drop the orphaned file and stop.
+                if (!await _cardService.AddAttachmentAsync(_card.Id, _user.Id, trustedFileName, file.Name))
                 {
-                    CardId = _card.Id,
-                    FileName = trustedFileName,
-                    OriginalName = cleanFileName
-                });
-                card.Activities.Add(new Activity
-                    {
-                    Text = $"<b>uploaded</b> file named <b>{cleanFileName}</b>",
-                        UserId = _user.Id,
-                        CardId = card.Id,
-                });
+                    File.Delete(path);
+                    return;
+                }
 
-                await db.SaveChangesAsync();
-
-                _mainLayout.RunNotification(new Notification($"File {cleanFileName} uploaded successfully."));
+                _mainLayout.RunNotification(new Notification($"File {file.Name} uploaded successfully."));
             }
             catch
             {
-                _mainLayout.RunNotification(new Notification($"File upload error while uploading {cleanFileName}.", NotificationType.Fail));
+                _mainLayout.RunNotification(new Notification($"File upload error while uploading {file.Name}.", NotificationType.Fail));
                 continue;
             }
         }
@@ -1276,35 +989,6 @@
             .FirstOrDefaultAsync(x => x.Id.Equals(id));
 
         if(card is not null)
-            _lastColumnIndex = await db.Columns.Where(x => x.BoardId.Equals(card.Column.BoardId)).Select(x => x.Index).MaxAsync();
-
-        return card;
-    }
-
-    private async Task<Card?> GetCard(DataContext db, int id)
-    {
-        var card = await db.Cards
-            .Include(x => x.Column)
-                .ThenInclude(x => x.Board)
-                    .ThenInclude(x => x.Labels)
-            .Include(x => x.CreatedBy)
-            .Include(x => x.Comments)
-                .ThenInclude(x => x.CreatedBy)
-            .Include(x => x.Assignees)
-            .Include(x => x.Attachments)
-            .Include(x => x.Activities)
-            .Include(x => x.Reminders)
-            .Include(x => x.Labels)
-            .Include(x => x.TimeRecords)
-                .ThenInclude(x => x.User)
-            .Include(x => x.LinkedIssuesOne)
-                .ThenInclude(x => x.CardTwo)
-                    .ThenInclude(x => x.Column)
-                        .ThenInclude(x => x.Board)
-                            .ThenInclude(x => x.Project)
-            .FirstOrDefaultAsync(x => x.Id.Equals(id));
-
-        if (card is not null)
             _lastColumnIndex = await db.Columns.Where(x => x.BoardId.Equals(card.Column.BoardId)).Select(x => x.Index).MaxAsync();
 
         return card;
@@ -1361,21 +1045,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        card.SnoozedUntil = null;
-        card.Activities.Add(new Activity
-        {
-            Text = $"<b>unsnoozed</b> this card",
-            UserId = _user.Id,
-            CardId = card.Id,
-        });
-
-        await db.SaveChangesAsync();
+        await _cardService.UnsnoozeAsync(_card.Id, _user.Id);
         await UpdateCard();
     }
 
@@ -1384,21 +1054,7 @@
         if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await GetCard(db, _card.Id);
-
-        if (card is null)
-            return;
-
-        card.RepeatInfo = null;
-        card.Activities.Add(new Activity
-        {
-            Text = $"<b>turned repeating off</b> for this card",
-            UserId = _user.Id,
-            CardId = card.Id,
-        });
-
-        await db.SaveChangesAsync();
+        await _cardService.RemoveRepeatAsync(_card.Id, _user.Id);
         await UpdateCard();
     }
 }

@@ -8,14 +8,17 @@ namespace Ticky.Web.Controllers;
 public class AttachmentsController : ControllerBase
 {
     private readonly IDbContextFactory<DataContext> _dbContextFactory;
+    private readonly CardService _cardService;
     private readonly ILogger<AttachmentsController> _logger;
 
     public AttachmentsController(
         IDbContextFactory<DataContext> dbContextFactory,
+        CardService cardService,
         ILogger<AttachmentsController> logger
     )
     {
         _dbContextFactory = dbContextFactory;
+        _cardService = cardService;
         _logger = logger;
     }
 
@@ -49,6 +52,7 @@ public class AttachmentsController : ControllerBase
                 return NotFound();
 
             var contentType = "application/octet-stream";
+            Response.Headers.XContentTypeOptions = "nosniff";
             return PhysicalFile(absolutePath, contentType, attachment.OriginalName);
         }
         catch (Exception ex)
@@ -95,6 +99,7 @@ public class AttachmentsController : ControllerBase
             if (!contentTypeProvider.TryGetContentType(attachment.OriginalName, out var contentType))
                 return NotFound();
 
+            Response.Headers.XContentTypeOptions = "nosniff";
             return PhysicalFile(absolutePath, contentType, enableRangeProcessing: true);
         }
         catch (Exception ex)
@@ -117,6 +122,13 @@ public class AttachmentsController : ControllerBase
         if (file.Length > Constants.Limits.MAX_FILE_SIZE)
             return BadRequest("File too large");
 
+        if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId) || userId == 0)
+            return Unauthorized();
+
+        // Same response as a missing card, so the endpoint doesn't reveal which card ids exist.
+        if (!await _cardService.CanAccessCardAsync(cardId, userId))
+            return NotFound();
+
         var folderPath = Constants.SAVE_UPLOADED_FILES_PATH;
 
         if (!Directory.Exists(folderPath))
@@ -124,71 +136,19 @@ public class AttachmentsController : ControllerBase
 
         try
         {
-            var extension = Path.GetExtension(file.FileName);
-
-            if (string.IsNullOrWhiteSpace(extension))
-            {
-                extension = file.FileName.Contains('.')
-                    ? file.FileName[(file.FileName.LastIndexOf('.') + 1)..]
-                    : "bin";
-                if (!extension.StartsWith('.'))
-                    extension = "." + extension;
-            }
-
-            string trustedFileName;
-            string path;
-            do
-            {
-                trustedFileName = Path.GetRandomFileName();
-                trustedFileName = trustedFileName[..trustedFileName.LastIndexOf('.')] + extension;
-                path = Path.Combine(folderPath, trustedFileName);
-            } while (System.IO.File.Exists(path));
+            var trustedFileName = UploadHelper.CreateStoredFileName(folderPath, file.FileName);
+            var path = Path.Combine(folderPath, trustedFileName);
 
             await using (var fs = new FileStream(path, FileMode.Create))
             {
                 await file.CopyToAsync(fs);
             }
 
-            using var db = _dbContextFactory.CreateDbContext();
-
-            var card = await db
-                .Cards.Include(x => x.Activities)
-                .Include(x => x.Attachments)
-                .FirstOrDefaultAsync(x => x.Id == cardId);
-
-            if (card is null)
-                return NotFound();
-
-            var attachment = new Attachment
+            if (!await _cardService.AddAttachmentAsync(cardId, userId, trustedFileName, file.FileName))
             {
-                CardId = cardId,
-                FileName = trustedFileName,
-                OriginalName = file.FileName
-            };
-
-            card.Attachments.Add(attachment);
-
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-            int userId = 0;
-
-            if (!string.IsNullOrWhiteSpace(userIdClaim))
-                int.TryParse(userIdClaim, out userId);
-
-            if (userId == 0)
-                return Unauthorized();
-
-            var safeFileName = WebUtility.HtmlEncode(file.FileName);
-
-            card.Activities.Add(
-                new Activity
-                {
-                    Text = $"<b>uploaded</b> file named <b>{safeFileName}</b>",
-                    UserId = userId,
-                    CardId = cardId
-                }
-            );
-
-            await db.SaveChangesAsync();
+                System.IO.File.Delete(path);
+                return NotFound();
+            }
 
             return Ok(new { success = true });
         }

@@ -90,6 +90,24 @@ namespace Ticky.Base
             };
         }
 
+        public static class Avatars
+        {
+            /// <summary>
+            /// The only image types accepted as profile pictures, with their content types. Avatars are served
+            /// publicly as static files, so anything else (e.g. .html or .svg) is neither saved nor served.
+            /// </summary>
+            public static readonly Dictionary<string, string> CONTENT_TYPES =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                { ".png", "image/png" },
+                { ".jpg", "image/jpeg" },
+                { ".jpeg", "image/jpeg" },
+                { ".gif", "image/gif" },
+                { ".webp", "image/webp" },
+                { Attachments.AVIF_FILE_EXTENSION, Attachments.AVIF_CONTENT_TYPE }
+            };
+        }
+
         public static class Mappings
         {
             public const string LOGIN_PATH = "/auth/login";
@@ -98,6 +116,8 @@ namespace Ticky.Base
             public const string ATTACHMENTS_API_PATH = "/api/attachments";
             public const string ATTACHMENTS_DOWNLOAD_PATH = ATTACHMENTS_API_PATH + "/download";
             public const string ATTACHMENTS_PREVIEW_PATH = ATTACHMENTS_API_PATH + "/preview";
+            public const string UPLOADED_PATH = "/uploaded";
+            public const string UPLOADED_IMAGES_PATH = UPLOADED_PATH + "/images";
         }
 
         public static class Policies
@@ -124,10 +144,8 @@ namespace Ticky.Base
         public static readonly string SAVE_UPLOADED_PATH = $"wwwroot/uploaded";
         public static readonly string SAVE_UPLOADED_IMAGES_PATH = $"{SAVE_UPLOADED_PATH}/images";
         public static readonly string SAVE_UPLOADED_FILES_PATH = $"{SAVE_UPLOADED_PATH}/files";
-        public static readonly string ACCESS_UPLOADED_PATH = $"./uploaded";
-        public static readonly string ACCESS_UPLOADED_IMAGES_PATH =
-            $"{ACCESS_UPLOADED_PATH}/images";
-        public static readonly string ACCESS_UPLOADED_FILES_PATH = $"{ACCESS_UPLOADED_PATH}/files";
+        public static readonly string ACCESS_UPLOADED_PATH = $".{Mappings.UPLOADED_PATH}";
+        public static readonly string ACCESS_UPLOADED_IMAGES_PATH = $".{Mappings.UPLOADED_IMAGES_PATH}";
 
         public const string REPEATED_KEY = "is repeated by";
 

@@ -1,4 +1,4 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject CardService _cardService
 
 <ActionModal @ref=_modalRef Title="Add reminder">
     @if(_card is null) {
@@ -43,39 +43,14 @@
         StateHasChanged();
     }
 
-    public async Task AddReminder() 
+    public async Task AddReminder()
     {
-        if(_card is null)
-            return;
-
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards
-            .Include(x => x.Reminders)
-            .Include(x => x.Activities)
-            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
-
-        if(card is null)
+        if (_card is null)
             return;
 
         var time = DateTime.ParseExact(_reminderModel.Time, "HH:mm", null);
+        await _cardService.AddReminderAsync(_card.Id, _user.Id, new DateTime(_reminderModel.At.Year, _reminderModel.At.Month, _reminderModel.At.Day, time.Hour, time.Minute, 0));
 
-        var newReminder = new Reminder
-            {
-                CardId = card.Id,
-                At = new DateTime(_reminderModel.At.Year, _reminderModel.At.Month, _reminderModel.At.Day, time.Hour, time.Minute, 0)
-            };
-
-        card.Reminders.Add(newReminder);
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>added</b> a reminder for <b>{newReminder.At.ToReadableStringWithTime()}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-
-        await db.SaveChangesAsync();
-
-        _card = card;
         StateHasChanged();
         await UpdateCard.InvokeAsync();
         _modalRef?.Close();

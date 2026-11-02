@@ -6,10 +6,12 @@ namespace Ticky.Internal.Services;
 public class TrelloImportService
 {
     private readonly IDbContextFactory<DataContext> _dbContextFactory;
+    private readonly ILogger<TrelloImportService> _logger;
 
-    public TrelloImportService(IDbContextFactory<DataContext> dbContextFactory)
+    public TrelloImportService(IDbContextFactory<DataContext> dbContextFactory, ILogger<TrelloImportService> logger)
     {
         _dbContextFactory = dbContextFactory;
+        _logger = logger;
     }
 
     public async Task ImportTrelloBoardAsync(
@@ -25,19 +27,25 @@ public class TrelloImportService
 
         if (importModel.MemberIdentifiers is not null && importModel.MemberIdentifiers.Length != 0)
         {
+            var users = await db.Users
+                .Where(u => importModel.MemberIdentifiers.Contains(u.Email) || importModel.MemberIdentifiers.Contains(u.DisplayName))
+                .ToListAsync();
+
             for (int i = 0; i < importModel.MemberIdentifiers.Length; i++)
             {
                 var identifier = importModel.MemberIdentifiers[i];
                 var trelloId = importDto.Members[i].Id;
 
-                var user = await db.Users.FirstOrDefaultAsync(x =>
-                    identifier.Equals(x.Email) || identifier.Equals(x.DisplayName)
+                var user = users.FirstOrDefault(x =>
+                    // Match the database's case-insensitive collation used by the query above.
+                    identifier.Equals(x.Email, StringComparison.OrdinalIgnoreCase)
+                    || identifier.Equals(x.DisplayName, StringComparison.OrdinalIgnoreCase)
                 );
 
                 if (user is null)
                     continue;
 
-                trelloIdToUser.Add(trelloId, user);
+                trelloIdToUser.TryAdd(trelloId, user);
             }
         }
 
@@ -199,93 +207,46 @@ public class TrelloImportService
         }
     }
 
+    private static readonly Dictionary<string, (Color textColor, Color backgroundColor)> _labelColors = new()
+    {
+        { "purple", (Color.FromArgb(53, 44, 99), Color.FromArgb(159, 143, 239)) },
+        { "purple_dark", (Color.White, Color.FromArgb(110, 93, 198)) },
+        { "purple_light", (Color.FromArgb(53, 44, 99), Color.FromArgb(223, 216, 253)) },
+        { "red", (Color.FromArgb(93, 31, 26), Color.FromArgb(248, 113, 104)) },
+        { "red_dark", (Color.White, Color.FromArgb(201, 55, 44)) },
+        { "red_light", (Color.FromArgb(93, 31, 26), Color.FromArgb(255, 213, 210)) },
+        { "orange", (Color.FromArgb(112, 46, 0), Color.FromArgb(254, 163, 98)) },
+        { "orange_dark", (Color.White, Color.FromArgb(194, 81, 0)) },
+        { "orange_light", (Color.FromArgb(112, 46, 0), Color.FromArgb(254, 222, 200)) },
+        { "yellow", (Color.FromArgb(83, 63, 4), Color.FromArgb(245, 205, 71)) },
+        { "yellow_dark", (Color.White, Color.FromArgb(148, 111, 0)) },
+        { "yellow_light", (Color.FromArgb(83, 63, 4), Color.FromArgb(248, 230, 160)) },
+        { "green", (Color.FromArgb(22, 75, 53), Color.FromArgb(75, 206, 151)) },
+        { "green_dark", (Color.White, Color.FromArgb(31, 132, 90)) },
+        { "green_light", (Color.FromArgb(22, 75, 53), Color.FromArgb(186, 243, 219)) },
+        { "blue", (Color.FromArgb(9, 50, 108), Color.FromArgb(87, 157, 255)) },
+        { "blue_dark", (Color.White, Color.FromArgb(12, 102, 228)) },
+        { "blue_light", (Color.FromArgb(9, 50, 108), Color.FromArgb(204, 224, 255)) },
+        { "sky", (Color.FromArgb(22, 69, 85), Color.FromArgb(108, 195, 224)) },
+        { "sky_dark", (Color.White, Color.FromArgb(34, 125, 155)) },
+        { "sky_light", (Color.FromArgb(22, 69, 85), Color.FromArgb(198, 237, 251)) },
+        { "lime", (Color.FromArgb(55, 71, 31), Color.FromArgb(148, 199, 72)) },
+        { "lime_dark", (Color.White, Color.FromArgb(91, 127, 36)) },
+        { "lime_light", (Color.FromArgb(55, 71, 31), Color.FromArgb(211, 241, 167)) },
+        { "pink", (Color.FromArgb(80, 37, 63), Color.FromArgb(231, 116, 187)) },
+        { "pink_dark", (Color.White, Color.FromArgb(174, 71, 135)) },
+        { "pink_light", (Color.FromArgb(80, 37, 63), Color.FromArgb(253, 208, 236)) },
+        { "black", (Color.FromArgb(9, 30, 66), Color.FromArgb(133, 144, 162)) },
+        { "black_dark", (Color.White, Color.FromArgb(98, 111, 134)) },
+        { "black_light", (Color.FromArgb(9, 30, 66), Color.FromArgb(220, 223, 228)) }
+    };
+
     private (Color textColor, Color backgroundColor) GetLabelColorsFromName(string colorName)
     {
-        switch (colorName)
-        {
-            case "purple":
-                return (Color.FromArgb(53, 44, 99), Color.FromArgb(159, 143, 239));
+        if (_labelColors.TryGetValue(colorName, out var colors))
+            return colors;
 
-            case "purple_dark":
-                return (Color.White, Color.FromArgb(110, 93, 198));
-            case "purple_light":
-                return (Color.FromArgb(53, 44, 99), Color.FromArgb(223, 216, 253));
-
-            case "red":
-                return (Color.FromArgb(93, 31, 26), Color.FromArgb(248, 113, 104));
-
-            case "red_dark":
-                return (Color.White, Color.FromArgb(201, 55, 44));
-            case "red_light":
-                return (Color.FromArgb(93, 31, 26), Color.FromArgb(255, 213, 210));
-
-            case "orange":
-                return (Color.FromArgb(112, 46, 0), Color.FromArgb(254, 163, 98));
-
-            case "orange_dark":
-                return (Color.White, Color.FromArgb(194, 81, 0));
-            case "orange_light":
-                return (Color.FromArgb(112, 46, 0), Color.FromArgb(254, 222, 200));
-
-            case "yellow":
-                return (Color.FromArgb(83, 63, 4), Color.FromArgb(245, 205, 71));
-
-            case "yellow_dark":
-                return (Color.White, Color.FromArgb(148, 111, 0));
-            case "yellow_light":
-                return (Color.FromArgb(83, 63, 4), Color.FromArgb(248, 230, 160));
-
-            case "green":
-                return (Color.FromArgb(22, 75, 53), Color.FromArgb(75, 206, 151));
-
-            case "green_dark":
-                return (Color.White, Color.FromArgb(31, 132, 90));
-            case "green_light":
-                return (Color.FromArgb(22, 75, 53), Color.FromArgb(186, 243, 219));
-
-            case "blue":
-                return (Color.FromArgb(9, 50, 108), Color.FromArgb(87, 157, 255));
-
-            case "blue_dark":
-                return (Color.White, Color.FromArgb(12, 102, 228));
-            case "blue_light":
-                return (Color.FromArgb(9, 50, 108), Color.FromArgb(204, 224, 255));
-
-            case "sky":
-                return (Color.FromArgb(22, 69, 85), Color.FromArgb(108, 195, 224));
-
-            case "sky_dark":
-                return (Color.White, Color.FromArgb(34, 125, 155));
-            case "sky_light":
-                return (Color.FromArgb(22, 69, 85), Color.FromArgb(198, 237, 251));
-
-            case "lime":
-                return (Color.FromArgb(55, 71, 31), Color.FromArgb(148, 199, 72));
-
-            case "lime_dark":
-                return (Color.White, Color.FromArgb(91, 127, 36));
-            case "lime_light":
-                return (Color.FromArgb(55, 71, 31), Color.FromArgb(211, 241, 167));
-
-            case "pink":
-                return (Color.FromArgb(80, 37, 63), Color.FromArgb(231, 116, 187));
-
-            case "pink_dark":
-                return (Color.White, Color.FromArgb(174, 71, 135));
-            case "pink_light":
-                return (Color.FromArgb(80, 37, 63), Color.FromArgb(253, 208, 236));
-
-            case "black":
-                return (Color.FromArgb(9, 30, 66), Color.FromArgb(133, 144, 162));
-
-            case "black_dark":
-                return (Color.White, Color.FromArgb(98, 111, 134));
-            case "black_light":
-                return (Color.FromArgb(9, 30, 66), Color.FromArgb(220, 223, 228));
-        }
-
-        throw new Exception(
-            "Unknown color. Please open a GitHub issue and include the application logs."
-        );
+        _logger.LogWarning("Unknown Trello color: {ColorName}", colorName);
+        return (Color.Black, Color.White);
     }
 }

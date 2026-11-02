@@ -8,6 +8,9 @@
     <!-- Ships _framework/blazor.web.js. The SDK only turns this on when it sees .razor files at restore,
          but the Dockerfile restores with just the .csproj files copied, so the script went missing. -->
     <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
+    <!-- User uploads are runtime data served by UseStaticFiles, not build assets. Keeping them out of the
+         project also stops dotnet watch from crashing whenever a file gets uploaded. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);wwwroot\uploaded\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

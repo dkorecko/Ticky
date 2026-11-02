@@ -1,4 +1,4 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject CardService _cardService
 
 <ActionModal @ref=_modalRef Title="Add subtask">
     @if(_card is null) {
@@ -38,36 +38,13 @@
         _modalRef?.Open(triggerElement);
     }
 
-    public async Task AddSubtask() 
+    public async Task AddSubtask()
     {
-        if(_card is null || _modalRef is null)
+        if (_card is null || _modalRef is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards
-            .Include(x => x.Subtasks)
-            .Include(x => x.Activities)
-            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
+        await _cardService.AddSubtaskAsync(_card.Id, _user.Id, _subtaskModel.Text);
 
-        if(card is null)
-            return;
-
-        card.Subtasks.Add(new Subtask
-        {
-            CardId = card.Id,
-            Text = _subtaskModel.Text,
-            Index = IndexHelper.GetNextIndex(card.Subtasks)
-            });
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>added</b> subtask <b>{_subtaskModel.Text}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-
-        await db.SaveChangesAsync();
-
-        _card = card;
         _subtaskModel = new();
         await UpdateCard.InvokeAsync();
         await _modalRef.TrapFocus();

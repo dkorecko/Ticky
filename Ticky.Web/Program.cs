@@ -118,6 +118,7 @@ if (Constants.SMTP_ENABLED)
 }
 
 builder.Services.AddScoped<CodeService>();
+builder.Services.AddScoped<CardService>();
 builder.Services.AddDevityMailing<EmailService>(mailKitOptions!);
 builder.Services.AddScoped<AvatarService>();
 builder.Services.AddScoped<CardNumberingService>();
@@ -200,9 +201,49 @@ app.Use(
 
 app.UseAntiforgery();
 
-// User uploads (e.g. avatars) are written to wwwroot/uploaded at runtime, so they aren't part of
-// the build-time asset manifest that MapStaticAssets serves.
-app.UseStaticFiles();
+// Avatars are written to wwwroot/uploaded/images at runtime, so they aren't part of the build-time asset
+// manifest that MapStaticAssets serves. Only that folder is public: card attachments in uploaded/files are
+// served by AttachmentsController, which forces a download or only previews images.
+// This uses its own file provider because in development MapStaticAssets wraps the web root one and
+// warns about every file missing from the manifest.
+var avatarsPath = Path.GetFullPath(Constants.SAVE_UPLOADED_IMAGES_PATH);
+Directory.CreateDirectory(avatarsPath);
+
+// Nothing else in wwwroot/uploaded may be served directly: not attachments, and not avatars of any type other
+// than the allowed images (an .html or .svg avatar would run as a page on this domain). In development
+// MapStaticAssets would otherwise serve any web root file, so block these explicitly in every environment.
+app.Use(
+    (context, next) =>
+    {
+        var path = context.Request.Path;
+        var isAllowedAvatar =
+            path.StartsWithSegments(Constants.Mappings.UPLOADED_IMAGES_PATH)
+            && Constants.Avatars.CONTENT_TYPES.ContainsKey(Path.GetExtension(path.Value ?? string.Empty));
+
+        if (path.StartsWithSegments(Constants.Mappings.UPLOADED_PATH) && !isAllowedAvatar)
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return Task.CompletedTask;
+        }
+
+        // Set here rather than in UseStaticFiles: in development the static assets endpoint serves these instead.
+        if (isAllowedAvatar)
+            context.Response.Headers.XContentTypeOptions = "nosniff";
+
+        return next(context);
+    }
+);
+
+app.UseStaticFiles(
+    new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(avatarsPath),
+        RequestPath = Constants.Mappings.UPLOADED_IMAGES_PATH,
+        ContentTypeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider(
+            new Dictionary<string, string>(Constants.Avatars.CONTENT_TYPES, StringComparer.OrdinalIgnoreCase)
+        ),
+    }
+);
 
 app.UseAuthentication();
 app.UseAuthorization();

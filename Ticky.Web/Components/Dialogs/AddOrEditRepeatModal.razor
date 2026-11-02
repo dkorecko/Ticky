@@ -1,4 +1,4 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject CardService _cardService
 
 <ActionModal @ref=_modalRef Title="Repeat card [BETA]">
     @if(_card is null || _columns is null) 
@@ -149,24 +149,15 @@
         StateHasChanged();
     }
 
-    public async Task OnValidSubmit() 
+    public async Task OnValidSubmit()
     {
-        if(_card is null)
-            return;
-
-        using var db = _dbContextFactory.CreateDbContext();
-
-        var card = await db.Cards
-            .Include(x => x.Activities)
-            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
-
-        if(card is null)
+        if (_card is null)
             return;
 
         var time = DateTime.ParseExact(_repeatModel.Time, "HH:mm", null);
         var timeOnly = TimeOnly.FromDateTime(time);
 
-        card.RepeatInfo = new()
+        await _cardService.SetRepeatAsync(_card.Id, _user.Id, new()
         {
             Type = _repeatModel.Type,
             LastRepeat = _repeatModel.StartDate.ToDateTime(timeOnly),
@@ -175,18 +166,8 @@
             Selected = _repeatModel.GetRelevantSelectedValue(),
             CardPlacement = _repeatModel.CardPlacement,
             TargetColumnId = _repeatModel.TargetColumnId
-        };
-
-        card.Activities.Add(new Activity
-        {
-            Text = $"<b>set up card repeat</b> for this card for <b>{card.RepeatInfo.Type.GetDisplayName()}</b>",
-            UserId = _user.Id,
-            CardId = card.Id,
         });
 
-        await db.SaveChangesAsync();
-
-        _card = card;
         StateHasChanged();
         await UpdateCard.InvokeAsync();
         _modalRef?.Close();

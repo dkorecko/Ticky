@@ -1,4 +1,4 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject CardService _cardService
 
 <ActionModal @ref=_modalRef Title="Snooze card">
     @if(_card is null) {
@@ -47,32 +47,14 @@
         StateHasChanged();
     }
 
-    public async Task SnoozeCard() 
+    public async Task SnoozeCard()
     {
-        if(_card is null)
-            return;
-
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards
-            .Include(x => x.Activities)
-            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
-
-        if(card is null)
+        if (_card is null)
             return;
 
         var time = DateTime.ParseExact(_snoozeCardModel.Time, "HH:mm", null);
+        await _cardService.SnoozeAsync(_card.Id, _user.Id, new DateTime(_snoozeCardModel.At.Year, _snoozeCardModel.At.Month, _snoozeCardModel.At.Day, time.Hour, time.Minute, 0));
 
-        card.SnoozedUntil = new DateTime(_snoozeCardModel.At.Year, _snoozeCardModel.At.Month, _snoozeCardModel.At.Day, time.Hour, time.Minute, 0);
-        card.Activities.Add(new Activity
-        {
-            Text = $"<b>snoozed</b> this card until <b>{card.SnoozedUntil.Value.ToReadableStringWithTime()}</b>",
-            UserId = _user.Id,
-            CardId = card.Id,
-        });
-
-        await db.SaveChangesAsync();
-
-        _card = card;
         StateHasChanged();
         await UpdateCard.InvokeAsync();
         _modalRef?.Close();

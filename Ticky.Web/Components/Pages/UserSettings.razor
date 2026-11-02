@@ -141,7 +141,7 @@
 
             <div class="flex flex-row gap-4">
                 <label class="btn btn-yellow max-w-44" for="file-upload">Upload</label>
-                <InputFile class="hidden" id="file-upload" OnChange="OnFileChanged" />
+                <InputFile class="hidden" id="file-upload" OnChange="OnFileChanged" accept="@string.Join(',', Constants.Avatars.CONTENT_TYPES.Keys)" />
                 <button class="btn btn-red max-w-44" @onclick="RestoreToOriginal">Reset</button>
             </div>
         </div>
@@ -322,9 +322,11 @@
         ArgumentNullException.ThrowIfNull(_user);
         _isLoading = true;
 
-        if (!e.File.ContentType.Contains("image"))
+        // The browser-reported content type can be faked, so the stored extension is what decides how the file is served.
+        if (!e.File.ContentType.Contains("image")
+            || !Constants.Avatars.CONTENT_TYPES.ContainsKey(UploadHelper.GetSafeExtension(e.File.Name)))
         {
-            ShowUploadError("The file must be an image.");
+            ShowUploadError("The file must be a PNG, JPG, GIF, WebP or AVIF image.");
             return;
         }
 
@@ -342,17 +344,8 @@
             if (!Directory.Exists(folderPath))
                 Directory.CreateDirectory(folderPath);
 
-            var extension = _uploadedFile.Name[(_uploadedFile.Name.LastIndexOf('.') + 1)..];
-
-            string path;
-            string trustedFileName;
-            do
-            {
-                trustedFileName = Path.GetRandomFileName();
-                trustedFileName = trustedFileName[..trustedFileName.LastIndexOf('.')] + $".{extension}";
-
-                path = Path.Combine(folderPath, trustedFileName);
-            } while (File.Exists(path));
+            var trustedFileName = UploadHelper.CreateStoredFileName(folderPath, _uploadedFile.Name);
+            var path = Path.Combine(folderPath, trustedFileName);
 
             await using FileStream fs = new(path, FileMode.Create);
             await e.File.OpenReadStream(Constants.Limits.MAX_IMAGE_SIZE).CopyToAsync(fs);

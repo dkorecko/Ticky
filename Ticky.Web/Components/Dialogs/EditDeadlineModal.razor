@@ -1,4 +1,4 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject CardService _cardService
 
 <ActionModal @ref=_modalRef Title="Set deadline">
     @if(_card is null) {
@@ -47,33 +47,14 @@
         StateHasChanged();
     }
 
-    public async Task SetDeadline() 
+    public async Task SetDeadline()
     {
-        if(_card is null)
-            return;
-
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards
-            .Include(x => x.Activities)
-            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
-
-        if(card is null)
+        if (_card is null)
             return;
 
         var time = DateTime.ParseExact(_deadlineModel.Time, "HH:mm", null);
+        await _cardService.SetDeadlineAsync(_card.Id, _user.Id, new DateTime(_deadlineModel.At.Year, _deadlineModel.At.Month, _deadlineModel.At.Day, time.Hour, time.Minute, 0));
 
-        card.Deadline = new DateTime(_deadlineModel.At.Year, _deadlineModel.At.Month, _deadlineModel.At.Day, time.Hour, time.Minute, 0);
-        card.DeadlineProcessed = false;
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>set</b> the deadline for <b>{card.Deadline.Value.ToReadableStringWithTime()}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-
-        await db.SaveChangesAsync();
-
-        _card = card;
         StateHasChanged();
         await UpdateCard.InvokeAsync();
         _modalRef?.Close();

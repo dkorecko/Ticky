@@ -1,4 +1,4 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject CardService _cardService
 
 <ActionModal @ref=_modalRef Title="Priority">
     @if(_card is null) {
@@ -50,31 +50,18 @@
 
     public void Open(ElementReference? triggerElement, Card card) {
         _card = card;
+        StateHasChanged();
         _modalRef?.Open(triggerElement);
     }
 
-    public async Task OnChangeTo(CardPriority priority) {
-        if(_card is null)
+    public async Task OnChangeTo(CardPriority priority)
+    {
+        if (_card is null || _card.Priority == priority)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards
-            .Include(x => x.Activities)
-            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
+        await _cardService.SetPriorityAsync(_card.Id, _user.Id, priority);
 
-        if(card is null || card.Priority.Equals(priority))
-            return;
-
-        card.Priority = priority;
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>changed</b> the priority to <b>{priority}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-        await db.SaveChangesAsync();
-
-        _card = card;
+        _card.Priority = priority;
         await UpdateCard.InvokeAsync();
     }
 }

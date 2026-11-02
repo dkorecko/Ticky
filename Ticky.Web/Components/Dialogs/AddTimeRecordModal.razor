@@ -1,4 +1,4 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject CardService _cardService
 
 <ActionModal @ref=_modalRef Title="Add time record">
     @if(_card is null) {
@@ -39,41 +39,13 @@
         StateHasChanged();
     }
 
-    public async Task AddTimeRecord() 
+    public async Task AddTimeRecord()
     {
-        if(_card is null)
+        if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
+        await _cardService.AddTimeRecordAsync(_card.Id, _user.Id, _timeRecordModel.Time.ConvertToTimeSpan());
 
-        var card = await db.Cards
-            .Include(x => x.TimeRecords)
-            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
-
-        if(card is null)
-            return;
-
-        var timeSpan = _timeRecordModel.Time.ConvertToTimeSpan();
-
-        var timeRecord = new TimeRecord
-            {
-                CardId = card.Id,
-                UserId = _user.Id,
-                StartedAt = DateTime.Now.Subtract(timeSpan),
-                EndedAt = DateTime.Now
-            };
-
-        card.TimeRecords.Add(timeRecord);
-        card.Activities.Add(new Activity
-            {
-                Text = $"<b>added</b> a time record for <b>{(timeRecord.EndedAt.Value-timeRecord.StartedAt).ToElapsedString()}</b>",
-                UserId = _user.Id,
-                CardId = card.Id,
-            });
-
-        await db.SaveChangesAsync();
-
-        _card = card;
         StateHasChanged();
         await UpdateCard.InvokeAsync();
         _modalRef?.Close();

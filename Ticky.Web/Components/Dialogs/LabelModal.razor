@@ -1,4 +1,4 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject CardService _cardService
 
 <ActionModal @ref=_modalRef Title="Labels">
     @if(_card is null || _labels is null) {
@@ -42,53 +42,21 @@
     public void Open(ElementReference? triggerElement, Card card, List<Label> labels) {
         _card = card;
         _labels = labels;
+        StateHasChanged();
         _modalRef?.Open(triggerElement);
     }
 
     public async Task OnSelect(Label label)
     {
-        if(_card is null)
+        if (_card is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards
-            .Include(x => x.Activities)
-            .Include(x => x.Labels)
-            .Include(x => x.Column)
-                .ThenInclude(x => x.Board)
-                    .ThenInclude(x => x.Labels)
-            .FirstOrDefaultAsync(x => x.Id.Equals(_card.Id));
+        var labels = await _cardService.ToggleLabelAsync(_card.Id, _user.Id, label.Id);
 
-        if(card is null)
+        if (labels is null)
             return;
 
-        if(card.Labels.Any(x => x.Id.Equals(label.Id)))
-        {
-            card.Labels.RemoveAll(x => x.Id.Equals(label.Id));
-            card.Activities.Add(new Activity
-                {
-                    Text = $"<b>removed</b> label <b>{label.Name}</b>",
-                    UserId = _user.Id,
-                    CardId = card.Id,
-                });
-        } else {
-            var targetLabel = await db.Labels.FirstOrDefaultAsync(x => x.Id.Equals(label.Id));
-
-            if(targetLabel is null)
-                return;
-
-            card.Labels.Add(targetLabel);
-            card.Activities.Add(new Activity
-                {
-                    Text = $"<b>added</b> label <b>{label.Name}</b>",
-                    UserId = _user.Id,
-                    CardId = card.Id,
-                });
-        }
-
-        await db.SaveChangesAsync();
-
-        _card = card;
+        _card.Labels = labels;
         await UpdateCard.InvokeAsync();
     }
 }

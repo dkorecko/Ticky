@@ -9,27 +9,27 @@ namespace Ticky.Internal.Services
             _httpClient = httpClient;
         }
 
+        /// <summary>
+        /// Generates a default avatar showing the user's initials and returns its file name.
+        /// The name is only sent to the avatar generator; the file itself gets a random name, since display names
+        /// are chosen freely at sign-up and may contain characters like "../", "#" or "?" (unused files are
+        /// removed by CleanupHostedService).
+        /// </summary>
         public async Task<string> FetchAvatarAsync(string name)
         {
-            if (!Directory.Exists(Constants.SAVE_UPLOADED_PATH))
-                Directory.CreateDirectory(Constants.SAVE_UPLOADED_PATH);
+            var folderPath = Constants.SAVE_UPLOADED_IMAGES_PATH;
+            Directory.CreateDirectory(folderPath);
 
-            if (!Directory.Exists(Constants.SAVE_UPLOADED_IMAGES_PATH))
-                Directory.CreateDirectory(Constants.SAVE_UPLOADED_IMAGES_PATH);
-
-            var fileName = name + ".png";
-            var targetFilePath = $"{Constants.SAVE_UPLOADED_IMAGES_PATH}/{fileName}";
-
-            if (File.Exists(targetFilePath))
-                return fileName;
+            var fileName = UploadHelper.CreateStoredFileName(folderPath, "avatar.png");
+            var targetFilePath = Path.Combine(folderPath, fileName);
 
             if (!Constants.FULLY_OFFLINE)
             {
-                var stream = await _httpClient.GetStreamAsync(
+                await using var stream = await _httpClient.GetStreamAsync(
                     $"https://ui-avatars.com/api/?background=random&name={Uri.EscapeDataString(name)}"
                 );
-                using var fs = File.Create(targetFilePath);
-                stream.CopyTo(fs);
+                await using var fs = File.Create(targetFilePath);
+                await stream.CopyToAsync(fs);
             }
             else
             {
@@ -38,6 +38,7 @@ namespace Ticky.Internal.Services
                     targetFilePath
                 );
             }
+
             return fileName;
         }
     }

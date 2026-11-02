@@ -1,4 +1,4 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject CardService _cardService
 
 <ActionModal @ref=_modalRef Title="Edit subtask">
     @if(_subtask is null) {
@@ -41,29 +41,13 @@
         _modalRef?.Open(triggerElementId);
     }
 
-    public async Task EditSubtask() 
+    public async Task EditSubtask()
     {
-        if(_subtask is null)
+        if (_subtask is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var subtask = await db.Subtasks
-            .Include(x => x.Card)
-                .ThenInclude(x => x.Activities)
-            .FirstOrDefaultAsync(x => x.Id.Equals(_subtask.Id));
+        await _cardService.EditSubtaskAsync(_subtask.Id, _user.Id, _subtaskModel.Text);
 
-        if(subtask is null)
-            return;
-
-        subtask.Card.Activities.Add(new Activity
-            {
-                Text = $"<b>edited</b> subtask <b>{subtask.Text}</b> to <b>{_subtaskModel.Text}</b>",
-                UserId = _user.Id,
-                CardId = subtask.CardId,
-            });
-        subtask.Text = _subtaskModel.Text;
-
-        await db.SaveChangesAsync();
         await UpdateCard.InvokeAsync();
         _modalRef?.Close();
     }

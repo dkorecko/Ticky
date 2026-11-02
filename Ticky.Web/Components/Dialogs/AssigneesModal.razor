@@ -1,4 +1,4 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject CardService _cardService
 
 <ActionModal @ref=_modalRef Title="Assignees">
     @if(_assignable is null) 
@@ -39,96 +39,24 @@
         _modalRef?.Open(triggerElement);
     }
 
-    public async Task SwitchMember(User member) 
+    public async Task SwitchMember(User member)
     {
-        if(_assignable is null)
+        if (_assignable is null)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-
-        if (_assignable is Card card)
+        var assignees = _assignable switch
         {
-            var targetCard = await db.Cards
-                .Include(x => x.Assignees)
-                .Include(x => x.Activities)
-                .FirstOrDefaultAsync(x => x.Id.Equals(card.Id));
+            Card card => await _cardService.ToggleAssigneeAsync(card.Id, _user.Id, member.Id),
+            Subtask subtask => await _cardService.ToggleSubtaskAssigneeAsync(subtask.Id, _user.Id, member.Id),
+            _ => null
+        };
 
-            if (targetCard is null)
-                return;
+        if (assignees is null)
+            return;
 
-            var targetUser = await db.Users.FirstOrDefaultAsync(x => x.Id.Equals(member.Id));
-
-            if (targetUser is null)
-                return;
-
-            if (targetCard.Assignees.Contains(targetUser)) 
-            {
-                targetCard.Assignees.Remove(targetUser);
-                targetCard.Activities.Add(new Activity
-                {
-                    Text = $"<b>removed</b> the user <b>{targetUser.DisplayName}</b> from the assignees",
-                    UserId = _user.Id,
-                    CardId = targetCard.Id,
-                });
-            }
-            else 
-            {
-                targetCard.Assignees.Add(targetUser);
-                targetCard.Activities.Add(new Activity
-                {
-                    Text = $"<b>added</b> the user <b>{targetUser.DisplayName}</b> as an assignee",
-                    UserId = _user.Id,
-                    CardId = targetCard.Id,
-                });
-            }
-
-            await db.SaveChangesAsync();
-
-            _assignable = targetCard;
-            StateHasChanged();
-            await UpdateCard.InvokeAsync();
-        } else if (_assignable is Subtask subtask)
-        {
-            var targetSubtask = await db.Subtasks
-                .Include(x => x.Assignees)
-                .Include(x => x.Card)
-                    .ThenInclude(x => x.Activities)
-                .FirstOrDefaultAsync(x => x.Id.Equals(subtask.Id));
-
-            if (targetSubtask is null)
-                return;
-
-            var targetUser = await db.Users.FirstOrDefaultAsync(x => x.Id.Equals(member.Id));
-
-            if (targetUser is null)
-                return;
-
-            if (targetSubtask.Assignees.Contains(targetUser)) 
-            {
-                targetSubtask.Assignees.Remove(targetUser);
-                targetSubtask.Card.Activities.Add(new Activity
-                {
-                    Text = $"<b>removed</b> the user <b>{targetUser.DisplayName}</b> from the subtask assignees",
-                    UserId = _user.Id,
-                    CardId = targetSubtask.CardId,
-                });
-            }
-            else 
-            {
-                targetSubtask.Assignees.Add(targetUser);
-                targetSubtask.Card.Activities.Add(new Activity
-                {
-                    Text = $"<b>added</b> the user <b>{targetUser.DisplayName}</b> as a subtask assignee",
-                    UserId = _user.Id,
-                    CardId = targetSubtask.CardId,
-                });
-            }
-
-            await db.SaveChangesAsync();
-
-            _assignable = targetSubtask;
-            StateHasChanged();
-            await UpdateCard.InvokeAsync();
-        }
+        _assignable.Assignees.Clear();
+        _assignable.Assignees.AddRange(assignees);
+        StateHasChanged();
+        await UpdateCard.InvokeAsync();
     }
 }
