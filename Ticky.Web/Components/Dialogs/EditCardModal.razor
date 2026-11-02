@@ -34,452 +34,459 @@
                     <i class="edit-icon fa fa-x mt-2 shrink-0 !text-lg" @onclick="async () => await Modal!.Close()" title="Close"></i>
                 </div>
                 <hr />
-                <div class="flex flex-col px-1">
-                    <div class="prop-row">
-                        <div class="prop-label"><span class="material-symbols-rounded">notifications</span>Reminder</div>
-                        <div class="prop-value">
-                            @if (Constants.SMTP_ENABLED)
+                <div class="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-x-8">
+                    @* Properties sit in a sticky sidebar on wide screens, above the tabs on narrow ones. *@
+                    <aside class="card-props flex flex-col gap-3 lg:sticky lg:top-0 lg:order-2">
+                        <div class="flex flex-col px-1">
+                            <div class="prop-row">
+                                <div class="prop-label"><span class="material-symbols-rounded">notifications</span>Reminder</div>
+                                <div class="prop-value">
+                                    @if (Constants.SMTP_ENABLED)
+                                    {
+                                        @foreach (var reminder in _card.Reminders.OrderBy(x => x.At))
+                                        {
+                                            <div class="card-label">
+                                                <label class="whitespace-nowrap">@reminder.At.ToReadableStringWithTime()</label>
+                                                <i class="fa fa-trash-can cursor-pointer text-red-button transition-all ease-in-out hover:text-red-button-hover" @onclick="() => DeleteReminder(reminder)" title="Delete reminder"></i>
+                                            </div>
+                                        }
+                                        <button type="button" @ref="_addReminderTrigger" class="chip-button" @onclick="() => _addReminderModal?.Open(_addReminderTrigger, _card)" title="Add reminder">Add reminder <i class="fa fa-plus"></i></button>
+                                    }
+                                    else
+                                    {
+                                        <Tooltip Text="Reminders cannot be used without SMTP">
+                                            <DisabledBadge />
+                                        </Tooltip>
+                                    }
+                                </div>
+                            </div>
+                            <div class="prop-row">
+                                <div class="prop-label"><span class="material-symbols-rounded">event</span>Deadline</div>
+                                <div class="prop-value">
+                                    @if (_card.Deadline is not null)
+                                    {
+                                        <span class="font-semibold whitespace-nowrap">@_card.Deadline.Value.ToReadableStringWithTime()</span>
+                                    }
+                                    <button type="button" @ref="_editDeadlineTrigger" class="chip-button" @onclick="() => _editDeadlineModal?.Open(_editDeadlineTrigger, _card)" title="Edit deadline">Edit <i class="fa fa-pencil"></i></button>
+                                    @if (_card.Deadline is not null)
+                                    {
+                                        <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="DeleteDeadline" title="Remove deadline"></i>
+                                    }
+                                </div>
+                            </div>
+                            <div class="prop-row">
+                                <div class="prop-label"><span class="material-symbols-rounded">snooze</span>Snooze</div>
+                                <div class="prop-value">
+                                    @if (_card.SnoozedUntil.HasValue)
+                                    {
+                                        <span class="font-semibold whitespace-nowrap">@_card.SnoozedUntil.Value.ToReadableStringWithTime()</span>
+                                        <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="UnsnoozeCard" title="Remove snooze"></i>
+                                    }
+                                    <button type="button" @ref="_snoozeTrigger" class="chip-button" @onclick="() => _snoozeCardModal?.Open(_snoozeTrigger, _card)" title="Snooze card">Snooze card <i class="fa fa-moon"></i></button>
+                                </div>
+                            </div>
+                            <div class="prop-row">
+                                <div class="prop-label"><span class="material-symbols-rounded">repeat</span>Repeat <span class="text-2xs">BETA</span></div>
+                                <div class="prop-value">
+                                    @if (_card.RepeatInfo is not null)
+                                    {
+                                        <span class="font-semibold">@_card.RepeatInfo.GetRepeatString()</span>
+                                    }
+                                    <button type="button" @ref="_repeatTrigger" class="chip-button" @onclick="() => _repeatCardModal?.Open(_repeatTrigger, _card, _columns)" title="Edit repeat settings">Edit <i class="fa fa-repeat"></i></button>
+                                    @if (_card.RepeatInfo is not null)
+                                    {
+                                        <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="RemoveRepeat" title="Remove repeat"></i>
+                                    }
+                                </div>
+                            </div>
+                            @if (_card.RepeatInfo is not null)
                             {
-                                @foreach (var reminder in _card.Reminders.OrderBy(x => x.At))
+                                <div class="prop-row !pt-0">
+                                    <div class="prop-label pl-6"><span class="material-symbols-rounded">keyboard_double_arrow_right</span>Next</div>
+                                    <div class="prop-value font-semibold">@_card.CalculateNextRepeat(DateTime.Now).ToReadableStringWithTime()</div>
+                                </div>
+                            }
+                        </div>
+                        <hr />
+                        <div class="flex flex-col px-1">
+                            <div class="prop-row">
+                                <div class="prop-label"><span class="material-symbols-rounded">tag</span>ID</div>
+                                <div class="prop-value font-semibold">
+                                    @(_card.Column.Board.Code)-@_card.Number
+                                    <i class="fa fa-link edit-icon" title="Copy to clipboard the deep link to this specific card" @onclick="CopyDeepLink"></i>
+                                </div>
+                            </div>
+                            <div class="prop-row">
+                                <div class="prop-label"><span class="material-symbols-rounded">flag</span>Priority</div>
+                                <div class="prop-value">
+                                    <div @ref="_priorityDiv" @onclick="() => _priorityModal?.Open(_priorityDiv, _card)">
+                                        <PriorityLabel Priority="_card.Priority" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="prop-row">
+                                <div class="prop-label"><span class="material-symbols-rounded">group</span>Assignees</div>
+                                <div class="prop-value">
+                                    @{
+                                        var i = 0;
+                                    }
+                                    @foreach (var assignee in _card.Assignees.OrderBy(x => x.DisplayName))
+                                    {
+                                        var assigneeId = $"avatar_1_{i}";
+
+                                        <div id="@assigneeId" class="person-label cursor-pointer !rounded-button !bg-background dark:!bg-bgDark !p-0.5 !pr-2 !gap-1.5 [&>div]:!h-4 [&>div]:!w-4 text-text dark:text-textDark" @onclick="() => _mainLayout.UserInfoModal?.Open(assigneeId, assignee.Id)">
+                                            <div style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');"></div>
+                                            <label class="cursor-pointer font-semibold">@assignee.DisplayName</label>
+                                        </div>
+
+                                        i++;
+                                    }
+                                    <button type="button" @ref="_assigneesTrigger" class="chip-button" @onclick="() => _assigneesModal?.Open(_assigneesTrigger, _card, _members)" title="Edit assignees"><span class="sm:hidden">Add</span><span class="hidden sm:inline">Add members</span> <i class="fa fa-plus"></i></button>
+                                    @if (_card.Assignees.Any(x => x.Id.Equals(_user.Id)))
+                                    {
+                                        <button type="button" class="chip-button" @onclick="Leave" title="Leave task">Leave <i class="fa-solid fa-user-minus"></i></button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="chip-button" @onclick="Join" title="Join task">Assign me <i class="fa-solid fa-user-plus"></i></button>
+                                    }
+                                </div>
+                            </div>
+                            <div class="prop-row">
+                                <div class="prop-label"><span class="material-symbols-rounded">person</span>Created by</div>
+                                <div class="prop-value">
+                                    @{
+                                        var createdById = "created_by";
+                                    }
+                                    <div id=@createdById class="person-label cursor-pointer !rounded-button !bg-background dark:!bg-bgDark !p-0.5 !pr-2 !gap-1.5 [&>div]:!h-4 [&>div]:!w-4 text-text dark:text-textDark" @onclick="() => _mainLayout.UserInfoModal?.Open(createdById, _card.CreatedById)">
+                                        <div style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_card.CreatedBy.ProfilePictureFileName');"></div>
+                                        <label class="cursor-pointer font-semibold">@_card.CreatedBy.DisplayName</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                        <div class="flex flex-col px-1">
+                            <div class="prop-row">
+                                <div class="prop-label"><span class="material-symbols-rounded">view_column</span>Current list</div>
+                                <div class="prop-value !flex-nowrap">
+                                    <span class="min-w-0 truncate font-semibold">@_card.Column.Name</span>
+                                    @if (_card.Column.Index != 0)
+                                    {
+                                        <button type="button" class="chip-button shrink-0" @onclick="MoveToPreviousList" title="Move to previous column" aria-label="Move to previous column"><i class="fa fa-chevron-left"></i></button>
+                                    }
+                                    @if (_lastColumnIndex != _card.Column.Index)
+                                    {
+                                        <button type="button" class="chip-button shrink-0" @onclick="MoveToNextList" title="Move to next column" aria-label="Move to next column"><i class="fa fa-chevron-right"></i></button>
+                                    }
+                                </div>
+                            </div>
+                            <div class="prop-row">
+                                <div class="prop-label"><span class="material-symbols-rounded">label</span>Labels</div>
+                                <div class="prop-value">
+                                    @foreach (var label in _card.Labels)
+                                    {
+                                        <LabelView Label="label"></LabelView>
+                                    }
+                                    <button type="button" @ref="_labelDiv" class="chip-button" @onclick="() => _labelModal?.Open(_labelDiv, _card, _card.Column.Board.Labels)" title="Edit labels">Add labels <i class="fa fa-plus"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                    <hr class="lg:hidden" />
+                    <div class="flex min-w-0 flex-col gap-3 lg:order-1">
+                        <div class="flex flex-row gap-1 rounded-button border border-line p-0.5 text-sm ">
+                            <label data-active=@((_tab == 0).ToString()) class="detail-tab" @onclick="() => _tab = 0">
+                                <label class="hidden cursor-pointer sm:block">Description</label>
+                                <i class="fa fa-circle-info sm:!hidden" title="Description"></i>
+                            </label>
+                            <label data-active=@((_tab == 1).ToString()) class="detail-tab" @onclick="() => _tab = 1">
+                                <label class="hidden cursor-pointer sm:block">Comments</label>
+                                <i class="fa fa-comments sm:!hidden" title="Comments"></i>
+                            </label>
+                            <label data-active=@((_tab == 2).ToString()) class="detail-tab" @onclick="() => _tab = 2">
+                                <label class="hidden cursor-pointer sm:block">Activity</label>
+                                <i class="fa fa-rotate-right sm:!hidden" title="Activity"></i>
+                            </label>
+                            <label data-active=@((_tab == 3).ToString()) class="detail-tab whitespace-nowrap" @onclick="() => _tab = 3">
+                                <label class="hidden cursor-pointer sm:block">Time tracking</label>
+                                <i class="fa fa-clock sm:!hidden" title="Time tracking"></i>
+                            </label>
+                        </div>
+                        @if (_tab == 0)
+                        {
+                            <textarea @onchange="OnDescriptionChanged"
+                                class="input-field h-32 resize-none"
+                                placeholder="Describe the task ...">@_card.Description</textarea>
+                            <hr />
+                            <section class="flex flex-col gap-2">
+                                <div class="flex flex-row items-center gap-3">
+                                    <h5 class="text-card-heading font-semibold select-none">Linked cards</h5>
+                                    <button type="button" id="linked_cards" class="chip-button ml-auto" @onclick='() => _searchModal?.Open()' title="Link cards"><span class="material-symbols-rounded !text-base">add_link</span> Link</button>
+                                </div>
+                                @if (!_card.LinkedIssuesOne.Any())
                                 {
-                                    <div class="card-label">
-                                        <label class="whitespace-nowrap">@reminder.At.ToReadableStringWithTime()</label>
-                                        <i class="fa fa-trash-can cursor-pointer text-red-button transition-all ease-in-out hover:text-red-button-hover" @onclick="() => DeleteReminder(reminder)" title="Delete reminder"></i>
+                                    <p class="subtext">No linked cards yet.</p>
+                                }
+                                <div class="flex flex-col gap-3">
+                                    @foreach (var group in _card.LinkedIssuesOne.GroupBy(x => x.Category))
+                                    {
+                                        <div class="flex min-w-0 flex-col gap-1">
+                                            <span class="px-1 text-2xs font-medium tracking-wide text-subtext uppercase dark:text-subtextDark">@group.Key</span>
+                                            <div class="flex flex-col gap-1">
+                                                @foreach (var linkedCardLink in group)
+                                                {
+                                                    var linkedCard = linkedCardLink.CardTwo;
+                                                    <div class="group flex flex-row items-center gap-3 rounded-lg border border-line pr-3 transition-colors focus-within:border-secondary/40 hover:border-secondary/40 hover:bg-secondary/5 dark:focus-within:border-secondaryDark/40 dark:hover:border-secondaryDark/40 dark:hover:bg-secondaryDark/10">
+                                                        <button type="button" class="flex min-w-0 flex-1 cursor-pointer flex-row items-center gap-3 rounded-lg py-2 pl-3 text-left"
+                                                                @onclick="() => OpenLinkedCard(linkedCard)" title="Open card">
+                                                            <span class="shrink-0 rounded-md bg-text/[0.06] px-1.5 py-0.5 text-2xs font-semibold text-subtext dark:bg-textDark/10 dark:text-subtextDark">@linkedCard.Column.Board.Code-@linkedCard.Number</span>
+                                                            <span class="flex min-w-0 flex-1 flex-col">
+                                                                <span class="truncate text-sm font-medium">@linkedCard.Name</span>
+                                                                <span class="truncate text-2xs subtext">@linkedCard.Column.Board.Project.Name · @linkedCard.Column.Board.Name · @linkedCard.Column.Name</span>
+                                                            </span>
+                                                            <span class="material-symbols-rounded !text-lg text-subtext opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 dark:text-subtextDark">arrow_outward</span>
+                                                        </button>
+                                                        <button type="button" class="material-symbols-rounded icon-button !text-lg hover:!text-red-button" @onclick="() => DeleteLink(linkedCardLink)" title="Remove link">link_off</button>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </section>
+                            <hr />
+                            <section class="flex flex-col gap-2">
+                                <div class="flex flex-row items-center gap-3">
+                                    <h5 class="text-card-heading font-semibold select-none">Sub-tasks</h5>
+                                    @if (_subtasks is not null && _subtasks.Any())
+                                    {
+                                        <span class="text-xs subtext">@_subtasks.Count(x => x.Completed)/@_subtasks.Count</span>
+                                    }
+                                    <button type="button" @ref="_addSubtaskTrigger" class="chip-button ml-auto" @onclick="() => _addSubtaskModal?.Open(_addSubtaskTrigger, _card)" title="Add subtask"><span class="material-symbols-rounded !text-base">add</span> Add</button>
+                                </div>
+                                @if (_subtasks is not null && _subtasks.Any())
+                                {
+                                    double percentage = Math.Round((_subtasks.Count(x => x.Completed) / (double)_subtasks.Count) * 100);
+                                    <div class='h-1.5 w-full overflow-hidden rounded-full transition-colors duration-300 @(percentage >= 100 ? "bg-green-500/15" : "bg-secondary/15 dark:bg-secondaryDark/20")' title="@percentage% complete">
+                                        <div class='h-full rounded-full transition-all duration-300 @(percentage >= 100 ? "bg-green-500" : "bg-secondary dark:bg-secondaryDark")' style="width: @(percentage)%"></div>
                                     </div>
                                 }
-                                <button type="button" @ref="_addReminderTrigger" class="chip-button" @onclick="() => _addReminderModal?.Open(_addReminderTrigger, _card)" title="Add reminder">Add reminder <i class="fa fa-plus"></i></button>
-                            }
-                            else
-                            {
-                                <Tooltip Text="Reminders cannot be used without SMTP">
-                                    <DisabledBadge />
-                                </Tooltip>
-                            }
-                        </div>
-                    </div>
-                    <div class="prop-row">
-                        <div class="prop-label"><span class="material-symbols-rounded">event</span>Deadline</div>
-                        <div class="prop-value">
-                            @if (_card.Deadline is not null)
-                            {
-                                <span class="font-semibold whitespace-nowrap">@_card.Deadline.Value.ToReadableStringWithTime()</span>
-                            }
-                            <button type="button" @ref="_editDeadlineTrigger" class="chip-button" @onclick="() => _editDeadlineModal?.Open(_editDeadlineTrigger, _card)" title="Edit deadline">Edit <i class="fa fa-pencil"></i></button>
-                            @if (_card.Deadline is not null)
-                            {
-                                <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="DeleteDeadline" title="Remove deadline"></i>
-                            }
-                        </div>
-                    </div>
-                    <div class="prop-row">
-                        <div class="prop-label"><span class="material-symbols-rounded">snooze</span>Snooze</div>
-                        <div class="prop-value">
-                            @if (_card.SnoozedUntil.HasValue)
-                            {
-                                <span class="font-semibold whitespace-nowrap">@_card.SnoozedUntil.Value.ToReadableStringWithTime()</span>
-                                <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="UnsnoozeCard" title="Remove snooze"></i>
-                            }
-                            <button type="button" @ref="_snoozeTrigger" class="chip-button" @onclick="() => _snoozeCardModal?.Open(_snoozeTrigger, _card)" title="Snooze card">Snooze card <i class="fa fa-moon"></i></button>
-                        </div>
-                    </div>
-                    <div class="prop-row">
-                        <div class="prop-label"><span class="material-symbols-rounded">repeat</span>Repeat <span class="text-2xs">BETA</span></div>
-                        <div class="prop-value">
-                            @if (_card.RepeatInfo is not null)
-                            {
-                                <span class="font-semibold">@_card.RepeatInfo.GetRepeatString()</span>
-                            }
-                            <button type="button" @ref="_repeatTrigger" class="chip-button" @onclick="() => _repeatCardModal?.Open(_repeatTrigger, _card, _columns)" title="Edit repeat settings">Edit <i class="fa fa-repeat"></i></button>
-                            @if (_card.RepeatInfo is not null)
-                            {
-                                <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="RemoveRepeat" title="Remove repeat"></i>
-                            }
-                        </div>
-                    </div>
-                    @if (_card.RepeatInfo is not null)
-                    {
-                        <div class="prop-row !pt-0">
-                            <div class="prop-label pl-6"><span class="material-symbols-rounded">keyboard_double_arrow_right</span>Next</div>
-                            <div class="prop-value font-semibold">@_card.CalculateNextRepeat(DateTime.Now).ToReadableStringWithTime()</div>
-                        </div>
-                    }
-                </div>
-                <hr />
-                <div class="flex flex-col px-1">
-                    <div class="prop-row">
-                        <div class="prop-label"><span class="material-symbols-rounded">tag</span>ID</div>
-                        <div class="prop-value font-semibold">
-                            @(_card.Column.Board.Code)-@_card.Number
-                            <i class="fa fa-link edit-icon" title="Copy to clipboard the deep link to this specific card" @onclick="CopyDeepLink"></i>
-                        </div>
-                    </div>
-                    <div class="prop-row">
-                        <div class="prop-label"><span class="material-symbols-rounded">flag</span>Priority</div>
-                        <div class="prop-value">
-                            <div @ref="_priorityDiv" @onclick="() => _priorityModal?.Open(_priorityDiv, _card)">
-                                <PriorityLabel Priority="_card.Priority" />
-                            </div>
-                        </div>
-                    </div>
-                    <div class="prop-row">
-                        <div class="prop-label"><span class="material-symbols-rounded">group</span>Assignees</div>
-                        <div class="prop-value">
-                            @{
-                                var i = 0;
-                            }
-                            @foreach (var assignee in _card.Assignees.OrderBy(x => x.DisplayName))
-                            {
-                                var assigneeId = $"avatar_1_{i}";
-
-                                <div id="@assigneeId" class="person-label cursor-pointer !rounded-button !bg-background dark:!bg-bgDark !p-0.5 !pr-2 !gap-1.5 [&>div]:!h-4 [&>div]:!w-4 text-text dark:text-textDark" @onclick="() => _mainLayout.UserInfoModal?.Open(assigneeId, assignee.Id)">
-                                    <div style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');"></div>
-                                    <label class="cursor-pointer font-semibold">@assignee.DisplayName</label>
-                                </div>
-
-                                i++;
-                            }
-                            <button type="button" @ref="_assigneesTrigger" class="chip-button" @onclick="() => _assigneesModal?.Open(_assigneesTrigger, _card, _members)" title="Edit assignees"><span class="sm:hidden">Add</span><span class="hidden sm:inline">Add members</span> <i class="fa fa-plus"></i></button>
-                            @if (_card.Assignees.Any(x => x.Id.Equals(_user.Id)))
-                            {
-                                <button type="button" class="chip-button" @onclick="Leave" title="Leave task">Leave <i class="fa-solid fa-user-minus"></i></button>
-                            }
-                            else
-                            {
-                                <button type="button" class="chip-button" @onclick="Join" title="Join task">Assign me <i class="fa-solid fa-user-plus"></i></button>
-                            }
-                        </div>
-                    </div>
-                    <div class="prop-row">
-                        <div class="prop-label"><span class="material-symbols-rounded">person</span>Created by</div>
-                        <div class="prop-value">
-                            @{
-                                var createdById = "created_by";
-                            }
-                            <div id=@createdById class="person-label cursor-pointer !rounded-button !bg-background dark:!bg-bgDark !p-0.5 !pr-2 !gap-1.5 [&>div]:!h-4 [&>div]:!w-4 text-text dark:text-textDark" @onclick="() => _mainLayout.UserInfoModal?.Open(createdById, _card.CreatedById)">
-                                <div style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_card.CreatedBy.ProfilePictureFileName');"></div>
-                                <label class="cursor-pointer font-semibold">@_card.CreatedBy.DisplayName</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <hr />
-                <div class="flex flex-col px-1">
-                    <div class="prop-row">
-                        <div class="prop-label"><span class="material-symbols-rounded">view_column</span>Current list</div>
-                        <div class="prop-value !flex-nowrap">
-                            <span class="min-w-0 truncate font-semibold">@_card.Column.Name</span>
-                            @if (_card.Column.Index != 0)
-                            {
-                                <button type="button" class="chip-button shrink-0" @onclick="MoveToPreviousList" title="Move to previous column" aria-label="Move to previous column"><i class="fa fa-chevron-left"></i></button>
-                            }
-                            @if (_lastColumnIndex != _card.Column.Index)
-                            {
-                                <button type="button" class="chip-button shrink-0" @onclick="MoveToNextList" title="Move to next column" aria-label="Move to next column"><i class="fa fa-chevron-right"></i></button>
-                            }
-                        </div>
-                    </div>
-                    <div class="prop-row">
-                        <div class="prop-label"><span class="material-symbols-rounded">label</span>Labels</div>
-                        <div class="prop-value">
-                            @foreach (var label in _card.Labels)
-                            {
-                                <LabelView Label="label"></LabelView>
-                            }
-                            <button type="button" @ref="_labelDiv" class="chip-button" @onclick="() => _labelModal?.Open(_labelDiv, _card, _card.Column.Board.Labels)" title="Edit labels">Add labels <i class="fa fa-plus"></i></button>
-                        </div>
-                    </div>
-                </div>
-                <hr />
-                <div class="flex flex-row gap-1 rounded-button border border-line p-0.5 text-sm ">
-                    <label data-active=@((_tab == 0).ToString()) class="detail-tab" @onclick="() => _tab = 0">
-                        <label class="hidden cursor-pointer sm:block">Description</label>
-                        <i class="fa fa-circle-info sm:!hidden" title="Description"></i>
-                    </label>
-                    <label data-active=@((_tab == 1).ToString()) class="detail-tab" @onclick="() => _tab = 1">
-                        <label class="hidden cursor-pointer sm:block">Comments</label>
-                        <i class="fa fa-comments sm:!hidden" title="Comments"></i>
-                    </label>
-                    <label data-active=@((_tab == 2).ToString()) class="detail-tab" @onclick="() => _tab = 2">
-                        <label class="hidden cursor-pointer sm:block">Activity</label>
-                        <i class="fa fa-rotate-right sm:!hidden" title="Activity"></i>
-                    </label>
-                    <label data-active=@((_tab == 3).ToString()) class="detail-tab whitespace-nowrap" @onclick="() => _tab = 3">
-                        <label class="hidden cursor-pointer sm:block">Time tracking</label>
-                        <i class="fa fa-clock sm:!hidden" title="Time tracking"></i>
-                    </label>
-                </div>
-                @if (_tab == 0)
-                {
-                    <textarea @onchange="OnDescriptionChanged"
-                        class="input-field h-32 resize-none"
-                        placeholder="Describe the task ...">@_card.Description</textarea>
-                    <hr />
-                    <section class="flex flex-col gap-2">
-                        <div class="flex flex-row items-center gap-3">
-                            <h5 class="text-card-heading font-semibold select-none">Linked cards</h5>
-                            <button type="button" id="linked_cards" class="chip-button ml-auto" @onclick='() => _searchModal?.Open()' title="Link cards"><span class="material-symbols-rounded !text-base">add_link</span> Link</button>
-                        </div>
-                        @if (!_card.LinkedIssuesOne.Any())
-                        {
-                            <p class="subtext">No linked cards yet.</p>
-                        }
-                        <div class="flex flex-col gap-3">
-                            @foreach (var group in _card.LinkedIssuesOne.GroupBy(x => x.Category))
-                            {
-                                <div class="flex min-w-0 flex-col gap-1">
-                                    <span class="px-1 text-2xs font-medium tracking-wide text-subtext uppercase dark:text-subtextDark">@group.Key</span>
-                                    <div class="flex flex-col gap-1">
-                                        @foreach (var linkedCardLink in group)
+                                @if (_subtasks is null)
+                                {
+                                    <div class="flex flex-col gap-2 pl-3">
+                                        @for (int s = 0; s < 6; s++)
                                         {
-                                            var linkedCard = linkedCardLink.CardTwo;
-                                            <div class="group flex flex-row items-center gap-3 rounded-lg border border-line pr-3 transition-colors focus-within:border-secondary/40 hover:border-secondary/40 hover:bg-secondary/5 dark:focus-within:border-secondaryDark/40 dark:hover:border-secondaryDark/40 dark:hover:bg-secondaryDark/10">
-                                                <button type="button" class="flex min-w-0 flex-1 cursor-pointer flex-row items-center gap-3 rounded-lg py-2 pl-3 text-left"
-                                                        @onclick="() => OpenLinkedCard(linkedCard)" title="Open card">
-                                                    <span class="shrink-0 rounded-md bg-text/[0.06] px-1.5 py-0.5 text-2xs font-semibold text-subtext dark:bg-textDark/10 dark:text-subtextDark">@linkedCard.Column.Board.Code-@linkedCard.Number</span>
-                                                    <span class="flex min-w-0 flex-1 flex-col">
-                                                        <span class="truncate text-sm font-medium">@linkedCard.Name</span>
-                                                        <span class="truncate text-2xs subtext">@linkedCard.Column.Board.Project.Name · @linkedCard.Column.Board.Name · @linkedCard.Column.Name</span>
-                                                    </span>
-                                                    <span class="material-symbols-rounded !text-lg text-subtext opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 dark:text-subtextDark">arrow_outward</span>
-                                                </button>
-                                                <button type="button" class="material-symbols-rounded icon-button !text-lg hover:!text-red-button" @onclick="() => DeleteLink(linkedCardLink)" title="Remove link">link_off</button>
+                                            <div class="flex flex-row items-center gap-2">
+                                                <div class="h-4 w-4 animate-pulse rounded bg-background dark:bg-bgDark"></div>
+                                                <div class="h-4 w-full animate-pulse rounded bg-background dark:bg-bgDark"></div>
                                             </div>
                                         }
                                     </div>
-                                </div>
-                            }
-                        </div>
-                    </section>
-                    <hr />
-                    <section class="flex flex-col gap-2">
-                        <div class="flex flex-row items-center gap-3">
-                            <h5 class="text-card-heading font-semibold select-none">Sub-tasks</h5>
-                            @if (_subtasks is not null && _subtasks.Any())
-                            {
-                                <span class="text-xs subtext">@_subtasks.Count(x => x.Completed)/@_subtasks.Count</span>
-                            }
-                            <button type="button" @ref="_addSubtaskTrigger" class="chip-button ml-auto" @onclick="() => _addSubtaskModal?.Open(_addSubtaskTrigger, _card)" title="Add subtask"><span class="material-symbols-rounded !text-base">add</span> Add</button>
-                        </div>
-                        @if (_subtasks is not null && _subtasks.Any())
-                        {
-                            double percentage = Math.Round((_subtasks.Count(x => x.Completed) / (double)_subtasks.Count) * 100);
-                            <div class='h-1.5 w-full overflow-hidden rounded-full transition-colors duration-300 @(percentage >= 100 ? "bg-green-500/15" : "bg-secondary/15 dark:bg-secondaryDark/20")' title="@percentage% complete">
-                                <div class='h-full rounded-full transition-all duration-300 @(percentage >= 100 ? "bg-green-500" : "bg-secondary dark:bg-secondaryDark")' style="width: @(percentage)%"></div>
-                            </div>
-                        }
-                        @if (_subtasks is null)
-                        {
-                            <div class="flex flex-col gap-2 pl-3">
-                                @for (int s = 0; s < 6; s++)
+                                }
+                                else if (!_subtasks.Any())
                                 {
-                                    <div class="flex flex-row items-center gap-2">
-                                        <div class="h-4 w-4 animate-pulse rounded bg-background dark:bg-bgDark"></div>
-                                        <div class="h-4 w-full animate-pulse rounded bg-background dark:bg-bgDark"></div>
+                                    <p class="subtext">No sub-tasks yet.</p>
+                                }
+                                else
+                                {
+                                    <div class="flex flex-col gap-2">
+                                        <SortableList Class="flex flex-col gap-0.5" Animation=@(_card.Column.Board.DisableSortingAnimations ? 0 : 200) Items="_subtasks.OrderBy(x => x.Index).ToList()" OnUpdate="OnSubtaskMoved" Handle=".drag-toggle">
+                                            <SortableItemTemplate>
+                                                <SubtaskView @key="context.Id" Subtask="context" AssigneesModal="_assigneesModal" EditSubtaskModal="_editSubtaskModal" Members="_members" UpdateCard="UpdateCard" />
+                                            </SortableItemTemplate>
+                                        </SortableList>
                                     </div>
                                 }
-                            </div>
-                        }
-                        else if (!_subtasks.Any())
-                        {
-                            <p class="subtext">No sub-tasks yet.</p>
-                        }
-                        else
-                        {
-                            <div class="flex flex-col gap-2">
-                                <SortableList Class="flex flex-col gap-0.5" Animation=@(_card.Column.Board.DisableSortingAnimations ? 0 : 200) Items="_subtasks.OrderBy(x => x.Index).ToList()" OnUpdate="OnSubtaskMoved" Handle=".drag-toggle">
-                                    <SortableItemTemplate>
-                                        <SubtaskView @key="context.Id" Subtask="context" AssigneesModal="_assigneesModal" EditSubtaskModal="_editSubtaskModal" Members="_members" UpdateCard="UpdateCard" />
-                                    </SortableItemTemplate>
-                                </SortableList>
-                            </div>
-                        }
-                    </section>
-                    <hr />
-                    <section class="flex flex-col gap-3">
-                        <h5 class="text-card-heading font-semibold select-none">Attachments</h5>
-                        @{
-                            var imageAttachments = _card.Attachments.Where(AttachmentHelper.IsImage).ToList();
-                            var fileAttachments = _card.Attachments.Where(x => !AttachmentHelper.IsImage(x)).ToList();
-                        }
-
-                        @if (imageAttachments.Count > 0)
-                        {
-                            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                @foreach (var attachment in imageAttachments)
-                                {
-                                    <article @key="attachment.Id" class="group relative overflow-hidden rounded-lg border border-line transition-colors hover:border-secondary/40 dark:hover:border-secondaryDark/40 @(imageAttachments.Count == 1 ? "sm:col-span-2" : string.Empty)">
-                                        <button type="button" class="block w-full cursor-pointer overflow-hidden text-left" aria-label="Download @attachment.OriginalName" @onclick="() => DownloadAttachment(attachment)">
-                                            <img class="w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] @(imageAttachments.Count == 1 ? "max-h-96 min-h-56" : "h-44")"
-                                                 src="@GetAttachmentPreviewUrl(attachment)"
-                                                 alt="@attachment.OriginalName"
-                                                 loading="lazy" />
-                                            <span class="absolute inset-x-0 bottom-0 flex items-end bg-gradient-to-t from-black/70 via-black/25 to-transparent px-3 pt-10 pb-2 text-xs font-medium text-white">
-                                                <span class="truncate pr-8">@attachment.OriginalName</span>
-                                            </span>
-                                        </button>
-                                        <button type="button" class="material-symbols-rounded absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 !text-lg text-white backdrop-blur-sm transition hover:bg-red-button sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
-                                                title="Delete attachment"
-                                                aria-label="Delete @attachment.OriginalName"
-                                                @onclick="() => DeleteAttachment(attachment)"
-                                                @onclick:stopPropagation="true">delete</button>
-                                    </article>
+                            </section>
+                            <hr />
+                            <section class="flex flex-col gap-3">
+                                <h5 class="text-card-heading font-semibold select-none">Attachments</h5>
+                                @{
+                                    var imageAttachments = _card.Attachments.Where(AttachmentHelper.IsImage).ToList();
+                                    var fileAttachments = _card.Attachments.Where(x => !AttachmentHelper.IsImage(x)).ToList();
                                 }
-                            </div>
-                        }
 
-                        @if (fileAttachments.Count > 0)
-                        {
-                            <div class="flex flex-col gap-1">
-                                @foreach (var attachment in fileAttachments)
+                                @if (imageAttachments.Count > 0)
                                 {
-                                    <div @key="attachment.Id" class="group flex cursor-pointer flex-row items-center gap-3 rounded-lg border border-line px-3 py-2 transition-colors select-none hover:border-secondary/40 hover:bg-secondary/5 dark:hover:border-secondaryDark/40 dark:hover:bg-secondaryDark/10"
-                                         @onclick="() => DownloadAttachment(attachment)" title="Download">
-                                        <div class='@GetAttachmentTileClass(attachment) flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-2xs font-semibold tracking-wide'>@GetAttachmentExtension(attachment)</div>
-                                        <div class="flex min-w-0 flex-1 flex-col">
-                                            <span class="truncate text-sm font-medium">@attachment.OriginalName</span>
-                                            <span class="subtext text-2xs">@AttachmentHelper.GetFileTypeFromAttachment(attachment)</span>
-                                        </div>
-                                        <span class="material-symbols-rounded !text-lg text-subtext opacity-0 transition-opacity group-hover:opacity-100 dark:text-subtextDark">download</span>
-                                        <button type="button" class="material-symbols-rounded icon-button !text-lg hover:!text-red-button" @onclick="() => DeleteAttachment(attachment)" @onclick:stopPropagation=true title="Delete attachment">delete</button>
+                                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                        @foreach (var attachment in imageAttachments)
+                                        {
+                                            <article @key="attachment.Id" class="group relative overflow-hidden rounded-lg border border-line transition-colors hover:border-secondary/40 dark:hover:border-secondaryDark/40 @(imageAttachments.Count == 1 ? "sm:col-span-2" : string.Empty)">
+                                                <button type="button" class="block w-full cursor-pointer overflow-hidden text-left" aria-label="Download @attachment.OriginalName" @onclick="() => DownloadAttachment(attachment)">
+                                                    <img class="w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] @(imageAttachments.Count == 1 ? "max-h-96 min-h-56" : "h-44")"
+                                                         src="@GetAttachmentPreviewUrl(attachment)"
+                                                         alt="@attachment.OriginalName"
+                                                         loading="lazy" />
+                                                    <span class="absolute inset-x-0 bottom-0 flex items-end bg-gradient-to-t from-black/70 via-black/25 to-transparent px-3 pt-10 pb-2 text-xs font-medium text-white">
+                                                        <span class="truncate pr-8">@attachment.OriginalName</span>
+                                                    </span>
+                                                </button>
+                                                <button type="button" class="material-symbols-rounded absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 !text-lg text-white backdrop-blur-sm transition hover:bg-red-button sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
+                                                        title="Delete attachment"
+                                                        aria-label="Delete @attachment.OriginalName"
+                                                        @onclick="() => DeleteAttachment(attachment)"
+                                                        @onclick:stopPropagation="true">delete</button>
+                                            </article>
+                                        }
                                     </div>
                                 }
-                            </div>
-                        }
 
-                        <label class="upload-zone" for="file-upload">
-                            <span class="material-symbols-rounded !text-2xl" title="Upload attachment">upload_file</span>
-                            <span class="text-sm">Upload attachment</span>
-                            <InputFile class="hidden" multiple id="file-upload" OnChange="OnFileChanged"/>
-                        </label>
-                    </section>
-                }
-                else if (_tab == 1)
-                {
-                    <textarea class="input-field h-24 resize-none" 
-                        @oninput="OnCommentTextChanged" value="@_commentText"
-                        placeholder="Say what's on your mind ..."></textarea>
-                    <div class="flex flex-row justify-end">
-                        <button class="btn btn-yellow !w-max px-4" @onclick="PostComment">Submit</button>
-                    </div>
-                    <hr />
-                    @if (_card.Comments.Any())
-                    {
-                        int j = 0;
-                        @foreach (var comment in _card.Comments.OrderByDescending(x => x.CreatedAt))
-                        {
-                            <div class="flex flex-col gap-1">
-                                <div class="flex flex-row items-center gap-2">
-                                    @{
-                                        var commentId = $"comment_id_{j}";
-                                    }
-                                    @if(comment.CreatedBy is not null) 
-                                    {
-                                        <div id=@commentId class="avatar" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@comment.CreatedBy.ProfilePictureFileName');"
-                                             @onclick="() => _mainLayout.UserInfoModal?.Open(commentId, comment.CreatedById)"></div>
-                                    } else {
-                                        <div id=@commentId class="avatar" style="background-image: url('./images/question_mark_avatar.png');"></div>
-                                    }
-                                    <label id=@commentId class="cursor-pointer text-sm font-medium" @onclick="() => _mainLayout.UserInfoModal?.Open(commentId, comment.CreatedById)">@(comment.CreatedBy?.DisplayName ?? "Deleted User")</label>
-                                    <label class="text-xs subtext">@TimeHelper.ToElapsedString(comment.CreatedAt)</label>
-                                </div>
-                                <label class="text-sm font-normal break-normal break-words">@comment.Text</label>
-                            </div>
+                                @if (fileAttachments.Count > 0)
+                                {
+                                    <div class="flex flex-col gap-1">
+                                        @foreach (var attachment in fileAttachments)
+                                        {
+                                            <div @key="attachment.Id" class="group flex cursor-pointer flex-row items-center gap-3 rounded-lg border border-line px-3 py-2 transition-colors select-none hover:border-secondary/40 hover:bg-secondary/5 dark:hover:border-secondaryDark/40 dark:hover:bg-secondaryDark/10"
+                                                 @onclick="() => DownloadAttachment(attachment)" title="Download">
+                                                <div class='@GetAttachmentTileClass(attachment) flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-2xs font-semibold tracking-wide'>@GetAttachmentExtension(attachment)</div>
+                                                <div class="flex min-w-0 flex-1 flex-col">
+                                                    <span class="truncate text-sm font-medium">@attachment.OriginalName</span>
+                                                    <span class="subtext text-2xs">@AttachmentHelper.GetFileTypeFromAttachment(attachment)</span>
+                                                </div>
+                                                <span class="material-symbols-rounded !text-lg text-subtext opacity-0 transition-opacity group-hover:opacity-100 dark:text-subtextDark">download</span>
+                                                <button type="button" class="material-symbols-rounded icon-button !text-lg hover:!text-red-button" @onclick="() => DeleteAttachment(attachment)" @onclick:stopPropagation=true title="Delete attachment">delete</button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
 
-                            j++;
-                        }
-                    }
-                    else
-                    {
-                        <label class="text-sm font-normal">There are no comments here yet.</label>
-                    }
-                }
-                else if (_tab == 2)
-                {
-                    <div class="flex flex-col gap-1 border-l-2 border-line">
-                        @{
-                            DateTime? lastDay = null;
-                            i = 0;
-                            var onlyFirstDates = _card.Activities.OrderBy(x => x.CreatedAt).GroupBy(x => x.CreatedAt.Date).Select(x => x.OrderBy(y => y.CreatedAt.Date).First()).Select(x => x.CreatedAt).ToList();
-
-                            onlyFirstDates.RemoveAll(x => x.Date.Equals(_card.CreatedAt.Date));
-                            onlyFirstDates.Add(_card.CreatedAt);
-                        }
-                        @foreach (var activity in _card.Activities.OrderByDescending(x => x.CreatedAt))
-                        {
-                            var activityId = $"activity_id_{i}";
-
-                            <div class="flex flex-row items-center justify-between py-2 text-xs">
-                                <div class='bg-add-outline ml-[-5px] h-2 max-w-2 min-w-2 rounded-full @(onlyFirstDates.Any(x => DateTime.Compare(activity.CreatedAt, x) == 0) ? string.Empty : "opacity-0")'></div>
-                                <label class="text-add-outline ml-3 whitespace-nowrap capitalize">@activity.CreatedAt.ToShortString()</label>
-                                <label class="ml-6"><label class="person-link" id="@activityId"
-                                    @onclick="() => _mainLayout.UserInfoModal?.Open(activityId, activity.UserId)">
-                                    @@@activity.User.DisplayName</label> @((MarkupString) activity.Text).
+                                <label class="upload-zone" for="file-upload">
+                                    <span class="material-symbols-rounded !text-2xl" title="Upload attachment">upload_file</span>
+                                    <span class="text-sm">Upload attachment</span>
+                                    <InputFile class="hidden" multiple id="file-upload" OnChange="OnFileChanged"/>
                                 </label>
-                                <label class="text-add-outline ml-auto whitespace-nowrap">@activity.CreatedAt.ToElapsedString()</label>
-                            </div>
-
-                            lastDay = DateTime.Now;
-                            i++;
+                            </section>
                         }
-
-                        @{
-                            var finalActivityId = $"activity_id_{i}";
-                        }
-                        <div class="flex flex-row items-center justify-between py-2 text-xs">
-                            <div class="bg-add-outline ml-[-5px] h-2 w-2 rounded-full"></div>
-                            <label class="text-add-outline ml-3 whitespace-nowrap capitalize">@_card.CreatedAt.ToShortString()</label>
-                            <label class="ml-6"><label class="person-link" id="@finalActivityId"
-                                @onclick="() => _mainLayout.UserInfoModal?.Open(finalActivityId, _card.CreatedById)">
-                                @@@_card.CreatedBy.DisplayName</label> <b>created</b> this card.
-                            </label>
-                            <label class="text-add-outline ml-auto whitespace-nowrap">@_card.CreatedAt.ToElapsedString()</label>
-                        </div>
-                    </div>
-                }
-                else if (_tab == 3)
-                {
-                    <div class="flex w-full flex-col gap-3 text-sm select-none">
-                        <div class="flex flex-row items-center justify-start gap-1">
-                            <div class="flex flex-row items-center gap-2">
-                                <label>Total time:</label> <div class="rounded-button bg-background px-2 py-0.5 font-semibold dark:bg-bgDark">@(new TimeSpan(_card.TimeRecords.Select(x => ((x.EndedAt ?? DateTime.Now) - x.StartedAt).Ticks).Sum()).ToElapsedString())</div>
-                            </div>
-                            @{
-                                var ongoingTimer = _card.TimeRecords.Where(x => x.UserId.Equals(_user.Id) && x.EndedAt == null).FirstOrDefault();
-                                var timeRecordCreateId = "time_record_create";
-                            }
-                            <div class="ml-auto flex flex-row items-center gap-2">
-                                <button class="btn btn-purple !w-max px-3" id=@timeRecordCreateId @onclick="() => _addTimeRecordModal?.Open(timeRecordCreateId, _card)">Add time</button>
-                                @if (ongoingTimer is null)
-                                {
-                                    <button class='btn btn-yellow !w-max px-3' @onclick="StartTimer">Start timer</button>
-                                } else {
-                                    <button class='btn btn-red !w-max px-3' @onclick="() => EndTimer(ongoingTimer)">@_ongoingTimer.ToElapsedString()</button>
-                                }
-                            </div>
-                        </div>
-                        @foreach(var timeRecord in _card.TimeRecords.Where(x => x.EndedAt != null).OrderByDescending(x => x.EndedAt)) 
+                        else if (_tab == 1)
                         {
-                            string userTimeRecordId = $"user_time_record_{timeRecord.Id}";
-                            string timeRecordId = $"time_record_{timeRecord.Id}";
-
-                            <div class="flex flex-row items-center justify-start gap-3">
-                                <div id="@userTimeRecordId" class="avatar" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@timeRecord.User.ProfilePictureFileName');"
-                                    @onclick="() => _mainLayout.UserInfoModal?.Open(userTimeRecordId, timeRecord.UserId)"></div>
-                                <div class="flex w-full flex-row items-center justify-between">
-                                    <div class="flex flex-col items-start justify-center">
-                                        <label>@timeRecord.User.DisplayName</label>
-                                        <label class="font-semibold">@((timeRecord.EndedAt!.Value - timeRecord.StartedAt).ToElapsedString())</label>
+                            <textarea class="input-field h-24 resize-none" 
+                                @oninput="OnCommentTextChanged" value="@_commentText"
+                                placeholder="Say what's on your mind ..."></textarea>
+                            <div class="flex flex-row justify-end">
+                                <button class="btn btn-yellow !w-max px-4" @onclick="PostComment">Submit</button>
+                            </div>
+                            <hr />
+                            @if (_card.Comments.Any())
+                            {
+                                int j = 0;
+                                @foreach (var comment in _card.Comments.OrderByDescending(x => x.CreatedAt))
+                                {
+                                    <div class="flex flex-col gap-1">
+                                        <div class="flex flex-row items-center gap-2">
+                                            @{
+                                                var commentId = $"comment_id_{j}";
+                                            }
+                                            @if(comment.CreatedBy is not null) 
+                                            {
+                                                <div id=@commentId class="avatar" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@comment.CreatedBy.ProfilePictureFileName');"
+                                                     @onclick="() => _mainLayout.UserInfoModal?.Open(commentId, comment.CreatedById)"></div>
+                                            } else {
+                                                <div id=@commentId class="avatar" style="background-image: url('./images/question_mark_avatar.png');"></div>
+                                            }
+                                            <label id=@commentId class="cursor-pointer text-sm font-medium" @onclick="() => _mainLayout.UserInfoModal?.Open(commentId, comment.CreatedById)">@(comment.CreatedBy?.DisplayName ?? "Deleted User")</label>
+                                            <label class="text-xs subtext">@TimeHelper.ToElapsedString(comment.CreatedAt)</label>
+                                        </div>
+                                        <label class="text-sm font-normal break-normal break-words">@comment.Text</label>
                                     </div>
 
-                                    <div class="flex flex-row items-center">
-                                        <i id="@timeRecordId" class="fa fa-pencil edit-icon" @onclick="() => _editTimeRecordModal?.Open(timeRecordId, timeRecord)" title="Edit time record"></i>
-                                        <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="() => DeleteTimeRecord(timeRecord)" title="Delete time record"></i>
+                                    j++;
+                                }
+                            }
+                            else
+                            {
+                                <label class="text-sm font-normal">There are no comments here yet.</label>
+                            }
+                        }
+                        else if (_tab == 2)
+                        {
+                            <div class="flex flex-col gap-1 border-l-2 border-line">
+                                @{
+                                    DateTime? lastDay = null;
+                                    i = 0;
+                                    var onlyFirstDates = _card.Activities.OrderBy(x => x.CreatedAt).GroupBy(x => x.CreatedAt.Date).Select(x => x.OrderBy(y => y.CreatedAt.Date).First()).Select(x => x.CreatedAt).ToList();
+
+                                    onlyFirstDates.RemoveAll(x => x.Date.Equals(_card.CreatedAt.Date));
+                                    onlyFirstDates.Add(_card.CreatedAt);
+                                }
+                                @foreach (var activity in _card.Activities.OrderByDescending(x => x.CreatedAt))
+                                {
+                                    var activityId = $"activity_id_{i}";
+
+                                    <div class="flex flex-row items-center justify-between py-2 text-xs">
+                                        <div class='bg-add-outline ml-[-5px] h-2 max-w-2 min-w-2 rounded-full @(onlyFirstDates.Any(x => DateTime.Compare(activity.CreatedAt, x) == 0) ? string.Empty : "opacity-0")'></div>
+                                        <label class="text-add-outline ml-3 whitespace-nowrap capitalize">@activity.CreatedAt.ToShortString()</label>
+                                        <label class="ml-6"><label class="person-link" id="@activityId"
+                                            @onclick="() => _mainLayout.UserInfoModal?.Open(activityId, activity.UserId)">
+                                            @@@activity.User.DisplayName</label> @((MarkupString) activity.Text).
+                                        </label>
+                                        <label class="text-add-outline ml-auto whitespace-nowrap">@activity.CreatedAt.ToElapsedString()</label>
                                     </div>
+
+                                    lastDay = DateTime.Now;
+                                    i++;
+                                }
+
+                                @{
+                                    var finalActivityId = $"activity_id_{i}";
+                                }
+                                <div class="flex flex-row items-center justify-between py-2 text-xs">
+                                    <div class="bg-add-outline ml-[-5px] h-2 w-2 rounded-full"></div>
+                                    <label class="text-add-outline ml-3 whitespace-nowrap capitalize">@_card.CreatedAt.ToShortString()</label>
+                                    <label class="ml-6"><label class="person-link" id="@finalActivityId"
+                                        @onclick="() => _mainLayout.UserInfoModal?.Open(finalActivityId, _card.CreatedById)">
+                                        @@@_card.CreatedBy.DisplayName</label> <b>created</b> this card.
+                                    </label>
+                                    <label class="text-add-outline ml-auto whitespace-nowrap">@_card.CreatedAt.ToElapsedString()</label>
                                 </div>
                             </div>
                         }
+                        else if (_tab == 3)
+                        {
+                            <div class="flex w-full flex-col gap-3 text-sm select-none">
+                                <div class="flex flex-row items-center justify-start gap-1">
+                                    <div class="flex flex-row items-center gap-2">
+                                        <label>Total time:</label> <div class="rounded-button bg-background px-2 py-0.5 font-semibold dark:bg-bgDark">@(new TimeSpan(_card.TimeRecords.Select(x => ((x.EndedAt ?? DateTime.Now) - x.StartedAt).Ticks).Sum()).ToElapsedString())</div>
+                                    </div>
+                                    @{
+                                        var ongoingTimer = _card.TimeRecords.Where(x => x.UserId.Equals(_user.Id) && x.EndedAt == null).FirstOrDefault();
+                                        var timeRecordCreateId = "time_record_create";
+                                    }
+                                    <div class="ml-auto flex flex-row items-center gap-2">
+                                        <button class="btn btn-purple !w-max px-3" id=@timeRecordCreateId @onclick="() => _addTimeRecordModal?.Open(timeRecordCreateId, _card)">Add time</button>
+                                        @if (ongoingTimer is null)
+                                        {
+                                            <button class='btn btn-yellow !w-max px-3' @onclick="StartTimer">Start timer</button>
+                                        } else {
+                                            <button class='btn btn-red !w-max px-3' @onclick="() => EndTimer(ongoingTimer)">@_ongoingTimer.ToElapsedString()</button>
+                                        }
+                                    </div>
+                                </div>
+                                @foreach(var timeRecord in _card.TimeRecords.Where(x => x.EndedAt != null).OrderByDescending(x => x.EndedAt)) 
+                                {
+                                    string userTimeRecordId = $"user_time_record_{timeRecord.Id}";
+                                    string timeRecordId = $"time_record_{timeRecord.Id}";
+
+                                    <div class="flex flex-row items-center justify-start gap-3">
+                                        <div id="@userTimeRecordId" class="avatar" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@timeRecord.User.ProfilePictureFileName');"
+                                            @onclick="() => _mainLayout.UserInfoModal?.Open(userTimeRecordId, timeRecord.UserId)"></div>
+                                        <div class="flex w-full flex-row items-center justify-between">
+                                            <div class="flex flex-col items-start justify-center">
+                                                <label>@timeRecord.User.DisplayName</label>
+                                                <label class="font-semibold">@((timeRecord.EndedAt!.Value - timeRecord.StartedAt).ToElapsedString())</label>
+                                            </div>
+
+                                            <div class="flex flex-row items-center">
+                                                <i id="@timeRecordId" class="fa fa-pencil edit-icon" @onclick="() => _editTimeRecordModal?.Open(timeRecordId, timeRecord)" title="Edit time record"></i>
+                                                <i class="fa fa-trash-can edit-icon !text-red-button hover:!text-red-button-hover" @onclick="() => DeleteTimeRecord(timeRecord)" title="Delete time record"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
-                }
+                </div>
             </div>
         </div>
     }

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 @config "./tailwind.config.js";
 /* Load plugin here */
 @plugin "tailwind-scrollbar";
@@ -438,8 +438,9 @@ input[type="checkbox"].toggle {
     @apply h-[calc(var(--vvh)*100)];
 }
 
+/* Columns grow to share wide screens, up to 28rem each (BoardView caps the row to match). */
 .board-column {
-    @apply flex w-72 flex-col items-center space-y-2 rounded-card bg-text/[0.035] dark:bg-textDark/[0.04] p-1.5;
+    @apply flex min-w-72 max-w-[28rem] flex-1 basis-72 flex-col items-center space-y-2 rounded-card bg-text/[0.035] dark:bg-textDark/[0.04] p-1.5;
 }
 
 /*
@@ -780,6 +781,11 @@ input[type="checkbox"].toggle {
 }
 .prop-row {
     @apply grid grid-cols-[7rem_1fr] sm:grid-cols-[11.5rem_1fr] items-center gap-x-3 py-1.5 text-sm;
+}
+
+/* Narrower labels when the properties sit in the card modal's sidebar on wide screens. */
+.card-props .prop-row {
+    @apply lg:grid-cols-[7.5rem_1fr];
 }
 
 .prop-label {
