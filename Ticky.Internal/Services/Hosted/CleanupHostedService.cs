@@ -25,7 +25,15 @@ public class CleanupHostedService(IServiceScopeFactory serviceScopeFactory)
 
         foreach (var code in codesForDeletion)
         {
-            if (code.User is not null && !code.User.EmailConfirmed)
+            // Only an expired sign-up code means the account was abandoned. Other codes, like a forgotten password
+            // one, can belong to accounts that never confirmed an e-mail but are in use, and an account without an
+            // e-mail can't be waiting for one to be confirmed.
+            if (
+                code.CodePurpose == CodePurpose.NewAccount
+                && code.User is not null
+                && !code.User.EmailConfirmed
+                && code.User.Email is not null
+            )
             {
                 db.Users.Remove(code.User);
                 deletedAccounts++;

@@ -18,15 +18,18 @@ public static class UploadHelper
         return extension;
     }
 
-    /// <summary>Picks a random file name that is not used yet in the folder, with a safe version of the original extension.</summary>
-    public static string CreateStoredFileName(string folderPath, string originalName)
+    /// <summary>
+    /// Picks a random file name that is not used yet in the folder, with a safe version of the original extension and
+    /// an optional fixed prefix.
+    /// </summary>
+    public static string CreateStoredFileName(string folderPath, string originalName, string prefix = "")
     {
         var extension = GetSafeExtension(originalName);
         string fileName;
 
         do
         {
-            fileName = Path.GetFileNameWithoutExtension(Path.GetRandomFileName()) + extension;
+            fileName = prefix + Path.GetFileNameWithoutExtension(Path.GetRandomFileName()) + extension;
         } while (File.Exists(Path.Combine(folderPath, fileName)));
 
         return fileName;

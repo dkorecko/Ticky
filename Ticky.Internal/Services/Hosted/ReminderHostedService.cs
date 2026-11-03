@@ -26,12 +26,12 @@ public class ReminderHostedService(IServiceScopeFactory serviceScopeFactory)
 
         foreach (var reminder in onTimeReminders)
         {
-            var recipients = new HashSet<string>();
-
-            foreach (var assignee in reminder.Card.Assignees)
-                recipients.Add(assignee.Email!);
-
-            recipients.Add(reminder.Card.CreatedBy.Email!);
+            // Accounts without an e-mail address can't get reminders.
+            var recipients = reminder
+                .Card.Assignees.Append(reminder.Card.CreatedBy)
+                .Select(x => x.Email)
+                .OfType<string>()
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             foreach (var email in recipients)
             {
@@ -70,16 +70,13 @@ public class ReminderHostedService(IServiceScopeFactory serviceScopeFactory)
 
         foreach (var card in cardsAtDeadline)
         {
-            var recipients = new HashSet<string>();
-
-            foreach (var assignee in card.Assignees)
-            {
-                if (assignee.AutomaticDeadlineReminder)
-                    recipients.Add(assignee.Email!);
-            }
-
-            if (card.CreatedBy.AutomaticDeadlineReminder)
-                recipients.Add(card.CreatedBy.Email!);
+            // Accounts without an e-mail address can't get reminders.
+            var recipients = card
+                .Assignees.Append(card.CreatedBy)
+                .Where(x => x.AutomaticDeadlineReminder)
+                .Select(x => x.Email)
+                .OfType<string>()
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             foreach (var email in recipients)
             {

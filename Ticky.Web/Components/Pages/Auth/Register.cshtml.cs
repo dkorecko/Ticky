@@ -35,6 +35,9 @@ public class RegisterModel : PageModel
     {
         if (ModelState.IsValid)
         {
+            Input.DisplayName = Input.DisplayName.Trim();
+            Input.Email = Input.Email.Trim();
+
             var identity = new User
             {
                 DisplayName = Input.DisplayName,
@@ -86,6 +89,10 @@ public class RegisterModel : PageModel
         [RegularExpression(
             "^[A-z1-9\\sá-žÁ-Ž-]*$",
             ErrorMessage = "The name must not use any special characters."
+        )]
+        [StringLength(
+            Constants.Limits.MAX_DISPLAY_NAME_LENGTH,
+            ErrorMessage = "The name can be at most {1} characters long."
         )]
         [Display(Name = "Name to represent you", Prompt = "John Doe")]
         public string DisplayName { get; set; } = string.Empty;

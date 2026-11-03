@@ -49,12 +49,10 @@
 
             if (authState.User?.Identity?.IsAuthenticated == true)
             {
-                using var db = _dbContextFactory.CreateDbContext();
-                _user = await db.Users
-                    .AsNoTracking()
-                    .Include(x => x.ProjectMemberships)
-                    .Include(x => x.BoardMemberships)
-                    .SingleOrDefaultAsync(x => x.Email != null && x.Email.Equals(authState.User.Identity.Name));
+                // By ID, which never changes: the name in the sign-in cookie is the e-mail it was made with.
+                _user = int.TryParse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId)
+                    ? await LoadUserAsync(userId)
+                    : null;
 
                 if (_user is not null) 
                 {
@@ -88,18 +86,24 @@
         _notifications?.RunNotification(notification);
     }
 
-    public async Task UpdateRecentBoard()
+    /// <summary>Reloads the signed-in user, so every page shows changes made to the account since.</summary>
+    public async Task RefreshUserAsync()
     {
         if(_user is null)
             return;
 
+        _user = await LoadUserAsync(_user.Id) ?? _user;
+
+        StateHasChanged();
+    }
+
+    private async Task<User?> LoadUserAsync(int userId)
+    {
         using var db = _dbContextFactory.CreateDbContext();
-        _user = await db.Users
+        return await db.Users
             .AsNoTracking()
             .Include(x => x.ProjectMemberships)
             .Include(x => x.BoardMemberships)
-            .FirstOrDefaultAsync(x => x.Id.Equals(_user.Id));
-
-        StateHasChanged();
+            .FirstOrDefaultAsync(x => x.Id == userId);
     }
 }

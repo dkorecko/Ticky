@@ -11,14 +11,18 @@ public class LoginModel : PageModel
     public InputModel Input { get; set; } = new();
     public string ReturnUrl { get; set; } = string.Empty;
 
+    /// <summary>The user was signed out because their password changed.</summary>
+    public bool PasswordChanged { get; set; }
+
     public LoginModel(SignInManager<User> signInManager)
     {
         _signInManager = signInManager;
     }
 
-    public IActionResult OnGet(string? returnUrl = null)
+    public IActionResult OnGet(string? returnUrl = null, bool passwordChanged = false)
     {
         ReturnUrl = returnUrl ?? Url.Content("~/");
+        PasswordChanged = passwordChanged;
         return Page();
     }
 
@@ -26,8 +30,9 @@ public class LoginModel : PageModel
     {
         if (ModelState.IsValid)
         {
+            // Keyboards and autofill like to add a space, which would make the address not match.
             var result = await _signInManager.PasswordSignInAsync(
-                Input.Email,
+                Input.Email.Trim(),
                 Input.Password,
                 true,
                 lockoutOnFailure: false

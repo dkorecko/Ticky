@@ -70,6 +70,10 @@ namespace Ticky.Base
             public const long MAX_JSON_SIZE = MAX_FILE_SIZE;
             public const int MAX_FILES = 20;
             public const int DEBOUNCE_TIME_IN_MS = 1000;
+            public const int MAX_DISPLAY_NAME_LENGTH = 64;
+
+            /// <summary>Identity stores e-mails and user names in columns of this length.</summary>
+            public const int MAX_EMAIL_LENGTH = 256;
         }
 
         public static class Attachments

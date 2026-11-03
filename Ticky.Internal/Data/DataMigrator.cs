@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Identity;
+
 namespace Ticky.Internal.Data;
 
 public class DataMigrator
@@ -29,9 +31,14 @@ public class DataMigrator
                     .SetProperty(c => c.OrderRule, OrderRule.Migrated)
             );
 
-        await LegacyActivityConverter.ConvertAsync(
+        var logger = serviceProvider.GetRequiredService<ILogger<DataMigrator>>();
+
+        await LegacyActivityConverter.ConvertAsync(dataContext, logger);
+
+        await UserNameEmailSync.RunAsync(
             dataContext,
-            serviceProvider.GetRequiredService<ILogger<DataMigrator>>()
+            serviceProvider.GetRequiredService<UserManager<User>>(),
+            logger
         );
     }
 }

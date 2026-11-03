@@ -3,10 +3,9 @@
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ILogger<UserSettings> _logger
 @inject AvatarService _avatarService
-@inject UserManager<User> _userManager
+@inject UserAccountService _userAccountService
 @inject NavigationManager _navigationManager
 @inherits NotifiableBase
-@implements IDisposable
 
 <PageTitle>Settings - @Constants.APP_NAME</PageTitle>
 
@@ -33,6 +32,33 @@
         </div>
 
         <HorizontalSeparator/>
+
+        <div class="settings-section">
+            <div class="setting-description">
+                <label class="font-semibold opacity-90" for="settings-display-name">Display name</label>
+                <label class="w-4/5 max-w-2xl opacity-70" for="settings-display-name">
+                    The name other people see next to your cards, comments and activity.
+                </label>
+            </div>
+
+            <EditForm class="form col-span-3 w-full max-w-sm md:col-span-1 lg:col-span-2" EditContext="_nameContext" OnValidSubmit="SaveDisplayName">
+                <DataAnnotationsValidator />
+
+                <div class="form-group">
+                    <InputText id="settings-display-name" class="input-field" autocomplete="name" @bind-Value="_nameModel.DisplayName" placeholder="John Doe" />
+                    <ValidationMessage For="() => _nameModel.DisplayName" />
+                </div>
+
+                @if (_nameError is not null)
+                {
+                    <p class="validation-message">@_nameError</p>
+                }
+
+                <button class="btn btn-purple max-w-sm" type="submit" disabled="@_isSaving">Save name</button>
+            </EditForm>
+        </div>
+
+        <HorizontalSeparator />
 
         <div class="settings-section">
             <div class="setting-description">
@@ -146,63 +172,133 @@
             </div>
         </div>
     }
-    else if (_tab == 3)
+    else if (_tab == 3 && MustSetCredentials)
     {
+        @* Keeps the user here until the credentials are set. Signing out stays possible. *@
         <NavigationLock ConfirmExternalNavigation=true OnBeforeInternalNavigation="OnBeforeInternalNavigation" />
 
         <div class="setting-description">
             <h6 class="font-semibold">Credentials</h6>
-            @if (_user.NeedsNewCredentials)
-            {
-                <label class="warning">This account is either using default credentials or they have been set up by the administrator, therefore they must be changed before going any further.</label>
-            }
-            else
-            {
-                <p class="text-sm opacity-70">Here you can change your credentials.</p>
-            }
+            <label class="warning">This account is either using default credentials or they have been set up by the administrator, therefore they must be changed before going any further.</label>
         </div>
 
         <HorizontalSeparator />
 
-        <EditForm class="form max-w-sm" EditContext="_credentialsContext" OnValidSubmit="OnCredentialsValidSubmit">
-
+        <EditForm class="form max-w-sm" EditContext="_requiredContext" OnValidSubmit="SetRequiredCredentials">
             <DataAnnotationsValidator />
 
             <div class="form-group">
-                <Name For="() => _credentialsModel.OldEmailAddress" />
-                <InputText class="input-field" @bind-Value="_credentialsModel.OldEmailAddress" disabled />
-                <ValidationMessage For="() => _credentialsModel.OldEmailAddress" />
+                <Name For="() => _requiredModel.Email" />
+                <InputText type="email" class="input-field" autocomplete="username" autocapitalize="off" spellcheck="false" @bind-Value="_requiredModel.Email" placeholder="sample@email.com" />
+                <ValidationMessage For="() => _requiredModel.Email" />
+                <p class="subtext ml-1 text-xs">You sign in with this address. Keep it or change it now.</p>
             </div>
 
             <div class="form-group">
-                <Name For="() => _credentialsModel.NewEmailAddress" />
-                <InputText class="input-field" @bind-Value="_credentialsModel.NewEmailAddress" placeholder="sample@email.com" autofocus />
-                <ValidationMessage For="() => _credentialsModel.NewEmailAddress" />
+                <Name For="() => _requiredModel.NewPassword" />
+                <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_requiredModel.NewPassword" placeholder="New password" autofocus />
+                <ValidationMessage For="() => _requiredModel.NewPassword" />
             </div>
 
-            @if (!_user.NeedsNewCredentials)
+            <div class="form-group">
+                <Name For="() => _requiredModel.ConfirmNewPassword" />
+                <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_requiredModel.ConfirmNewPassword" placeholder="Repeat new password" />
+                <ValidationMessage For="() => _requiredModel.ConfirmNewPassword" />
+            </div>
+
+            @if (_requiredError is not null)
             {
-                <div class="form-group">
-                    <Name For="() => _credentialsModel.OldPassword" />
-                    <InputText type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_credentialsModel.OldPassword" placeholder="Current password" />
-                    <ValidationMessage For="() => _credentialsModel.OldPassword" />
-                </div>
+                <p class="validation-message">@_requiredError</p>
             }
 
-            <div class="form-group">
-                <Name For="() => _credentialsModel.NewPassword" />
-                <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_credentialsModel.NewPassword" placeholder="New password" />
-                <ValidationMessage For="() => _credentialsModel.NewPassword" />
-            </div>
+            <p class="subtext text-sm">Afterwards, you sign in again with your new credentials.</p>
 
-            <div class="form-group">
-                <Name For="() => _credentialsModel.RepeatPassword" />
-                <InputText type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" class="input-field" @bind-Value="_credentialsModel.RepeatPassword" placeholder="Repeat new password" />
-                <ValidationMessage For="() => _credentialsModel.RepeatPassword" />
-            </div>
-
-            <button class="btn btn-purple max-w-sm" type="submit">Save</button>
+            <button class="btn btn-purple max-w-sm" type="submit" disabled="@_isSaving">Save and continue</button>
         </EditForm>
+    }
+    else if (_tab == 3)
+    {
+        <div class="setting-description">
+            <h6 class="font-semibold">Credentials</h6>
+            <p class="text-sm opacity-70">Change the email address you sign in with, or your password. Both ask for your current password.</p>
+        </div>
+
+        <HorizontalSeparator />
+
+        <div class="settings-section">
+            <div class="setting-description">
+                <label class="font-semibold opacity-90">Email address</label>
+                <label class="w-4/5 max-w-2xl break-words opacity-70">
+                    You sign in with <b>@_user.Email</b>. You stay signed in after changing it.
+                </label>
+            </div>
+
+            <EditForm class="form col-span-3 w-full max-w-sm md:col-span-1 lg:col-span-2" EditContext="_emailContext" OnValidSubmit="ChangeEmail">
+                <DataAnnotationsValidator />
+
+                <div class="form-group">
+                    <Name For="() => _emailModel.NewEmail" />
+                    <InputText type="email" class="input-field" autocomplete="email" autocapitalize="off" spellcheck="false" @bind-Value="_emailModel.NewEmail" placeholder="sample@email.com" />
+                    <ValidationMessage For="() => _emailModel.NewEmail" />
+                </div>
+
+                <div class="form-group">
+                    <Name For="() => _emailModel.CurrentPassword" />
+                    <InputText type="password" class="input-field" autocomplete="current-password" autocapitalize="off" spellcheck="false" @bind-Value="_emailModel.CurrentPassword" placeholder="Current password" />
+                    <ValidationMessage For="() => _emailModel.CurrentPassword" />
+                </div>
+
+                @if (_emailError is not null)
+                {
+                    <p class="validation-message">@_emailError</p>
+                }
+
+                <button class="btn btn-purple max-w-sm" type="submit" disabled="@_isSaving">Change email</button>
+            </EditForm>
+        </div>
+
+        <HorizontalSeparator />
+
+        <div class="settings-section">
+            <div class="setting-description">
+                <label class="font-semibold opacity-90">Password</label>
+                <label class="w-4/5 max-w-2xl opacity-70">
+                    Changing it signs you out everywhere, including here. Then you sign in with the new password.
+                </label>
+            </div>
+
+            <EditForm class="form col-span-3 w-full max-w-sm md:col-span-1 lg:col-span-2" EditContext="_passwordContext" OnValidSubmit="ChangePassword">
+                <DataAnnotationsValidator />
+
+                @* Lets password managers tell which account the new password belongs to. *@
+                <input type="email" autocomplete="username" value="@_user.Email" hidden readonly />
+
+                <div class="form-group">
+                    <Name For="() => _passwordModel.CurrentPassword" />
+                    <InputText type="password" class="input-field" autocomplete="current-password" autocapitalize="off" spellcheck="false" @bind-Value="_passwordModel.CurrentPassword" placeholder="Current password" />
+                    <ValidationMessage For="() => _passwordModel.CurrentPassword" />
+                </div>
+
+                <div class="form-group">
+                    <Name For="() => _passwordModel.NewPassword" />
+                    <InputText type="password" class="input-field" autocomplete="new-password" autocapitalize="off" spellcheck="false" @bind-Value="_passwordModel.NewPassword" placeholder="New password" />
+                    <ValidationMessage For="() => _passwordModel.NewPassword" />
+                </div>
+
+                <div class="form-group">
+                    <Name For="() => _passwordModel.ConfirmNewPassword" />
+                    <InputText type="password" class="input-field" autocomplete="new-password" autocapitalize="off" spellcheck="false" @bind-Value="_passwordModel.ConfirmNewPassword" placeholder="Repeat new password" />
+                    <ValidationMessage For="() => _passwordModel.ConfirmNewPassword" />
+                </div>
+
+                @if (_passwordError is not null)
+                {
+                    <p class="validation-message">@_passwordError</p>
+                }
+
+                <button class="btn btn-purple max-w-sm" type="submit" disabled="@_isSaving">Change password</button>
+            </EditForm>
+        </div>
     }
 </div>
 
@@ -210,60 +306,240 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User? _user { get; set; }
 
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
     [Parameter]
     public int? Tab { get; set; }
 
     private int _tab = 1;
+    private int? _appliedTab;
 
     private IBrowserFile? _uploadedFile;
 
     private bool _isLoading;
-    private CredentialsModel _credentialsModel = new();
-    private EditContext? _credentialsContext;
-    private ValidationMessageStore? _credentialsMessageStore;
+    private bool _isSaving;
+
+    /// <summary>Set once the required credentials are saved, so the page lets the user go while signing them out.</summary>
+    private bool _credentialsSet;
+
+    private DisplayNameModel _nameModel = new();
+    private EditContext _nameContext = default!;
+    private ValidationMessageStore _nameErrors = default!;
+    private string? _nameError;
+
+    private EmailChangeModel _emailModel = new();
+    private EditContext _emailContext = default!;
+    private ValidationMessageStore _emailErrors = default!;
+    private string? _emailError;
+
+    private PasswordChangeModel _passwordModel = new();
+    private EditContext _passwordContext = default!;
+    private ValidationMessageStore _passwordErrors = default!;
+    private string? _passwordError;
+
+    private RequiredCredentialsModel _requiredModel = new();
+    private EditContext _requiredContext = default!;
+    private ValidationMessageStore _requiredErrors = default!;
+    private string? _requiredError;
+
+    private bool MustSetCredentials => _user?.NeedsNewCredentials == true && !_credentialsSet;
+
+    protected override void OnInitialized()
+    {
+        // MainLayout only shows pages once the signed-in user is loaded.
+        ArgumentNullException.ThrowIfNull(_user);
+
+        ResetNameForm(_user.DisplayName);
+        ResetEmailForm();
+        ResetPasswordForm();
+
+        _requiredModel = new() { Email = _user.Email ?? string.Empty };
+        _requiredContext = new EditContext(_requiredModel);
+        _requiredErrors = _requiredContext.CreateServerErrorStore();
+    }
 
     protected override void OnParametersSet()
     {
-        _credentialsContext = new EditContext(_credentialsModel);
-
-        if(!Tab.HasValue)
-            return;
-
-        GoToTab(Tab.Value);
-    }
-
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if(!firstRender)
-            return;
-
-        ArgumentNullException.ThrowIfNull(_user);
-
-        _credentialsModel = new()
+        if (MustSetCredentials)
         {
-            OldEmailAddress = _user.Email!,
-            NewEmailAddress = _user.NeedsNewCredentials ? string.Empty : _user.Email!
-        };
-        _credentialsContext = new EditContext(_credentialsModel);
-        _credentialsContext.OnValidationRequested += HandleValidationRequested;
-        _credentialsMessageStore = new(_credentialsContext);
-        StateHasChanged();
-    }
+            _tab = 3;
+            return;
+        }
 
-    private void GoToTab(int tabNumber) 
-    {
-        ArgumentNullException.ThrowIfNull(_user);
-
-        if (tabNumber == _tab)
+        // Only when the address changes: this also runs whenever the signed-in user is reloaded.
+        if (Tab == _appliedTab)
             return;
 
-        if (_user.NeedsNewCredentials && tabNumber != 3) 
+        _appliedTab = Tab;
+
+        if (Tab.HasValue)
+            _tab = Math.Clamp(Tab.Value, 1, 3);
+    }
+
+    private void GoToTab(int tabNumber)
+    {
+        if (MustSetCredentials && tabNumber != 3)
         {
             OnAttemptedLeaveWhenDisallowed();
             return;
         }
 
         _tab = Math.Clamp(tabNumber, 1, 3);
+    }
+
+    private void ResetNameForm(string displayName)
+    {
+        _nameModel = new() { DisplayName = displayName };
+        _nameContext = new EditContext(_nameModel);
+        _nameErrors = _nameContext.CreateServerErrorStore();
+    }
+
+    private void ResetEmailForm()
+    {
+        _emailModel = new();
+        _emailContext = new EditContext(_emailModel);
+        _emailErrors = _emailContext.CreateServerErrorStore();
+    }
+
+    private void ResetPasswordForm()
+    {
+        _passwordModel = new();
+        _passwordContext = new EditContext(_passwordModel);
+        _passwordErrors = _passwordContext.CreateServerErrorStore();
+    }
+
+    private async Task SaveDisplayName()
+    {
+        if (_user is null || _isSaving)
+            return;
+
+        _nameError = null;
+        _isSaving = true;
+
+        try
+        {
+            var result = await _userAccountService.ChangeDisplayNameAsync(_user.Id, _nameModel.DisplayName);
+
+            if (!result.Succeeded)
+            {
+                _nameError = result.ShowOn(_nameContext, _nameErrors,
+                    (UserAccountField.DisplayName, nameof(DisplayNameModel.DisplayName)));
+                return;
+            }
+
+            ResetNameForm(_nameModel.DisplayName.Trim());
+
+            if (!result.DisplayNameChanged)
+                return;
+
+            await MainLayout.RefreshUserAsync();
+            MainLayout.RunNotification(new("Your name was changed."));
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task ChangeEmail()
+    {
+        if (_user is null || _isSaving)
+            return;
+
+        _emailError = null;
+        _isSaving = true;
+
+        try
+        {
+            var result = await _userAccountService.ChangeEmailAsync(_user.Id, _emailModel.CurrentPassword, _emailModel.NewEmail);
+
+            if (!result.Succeeded)
+            {
+                _emailError = result.ShowOn(_emailContext, _emailErrors,
+                    (UserAccountField.Email, nameof(EmailChangeModel.NewEmail)),
+                    (UserAccountField.CurrentPassword, nameof(EmailChangeModel.CurrentPassword)));
+                return;
+            }
+
+            ResetEmailForm();
+            await MainLayout.RefreshUserAsync();
+            MainLayout.RunNotification(new("Your email address was changed. Use it the next time you sign in."));
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        if (_user is null || _isSaving)
+            return;
+
+        _passwordError = null;
+        _isSaving = true;
+
+        try
+        {
+            var result = await _userAccountService.ChangePasswordAsync(_user.Id, _passwordModel.CurrentPassword, _passwordModel.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                _passwordError = result.ShowOn(_passwordContext, _passwordErrors,
+                    (UserAccountField.CurrentPassword, nameof(PasswordChangeModel.CurrentPassword)),
+                    (UserAccountField.NewPassword, nameof(PasswordChangeModel.NewPassword)));
+                return;
+            }
+
+            SignInAgain();
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task SetRequiredCredentials()
+    {
+        if (_user is null || _isSaving || AuthenticationStateTask is null)
+            return;
+
+        _requiredError = null;
+        _isSaving = true;
+
+        try
+        {
+            var session = (await AuthenticationStateTask).User;
+            var result = await _userAccountService.SetRequiredCredentialsAsync(_user.Id, session, _requiredModel.Email, _requiredModel.NewPassword);
+
+            if (result.Succeeded || result.SignInRequired)
+            {
+                SignInAgain();
+                return;
+            }
+
+            _requiredError = result.ShowOn(_requiredContext, _requiredErrors,
+                (UserAccountField.Email, nameof(RequiredCredentialsModel.Email)),
+                (UserAccountField.NewPassword, nameof(RequiredCredentialsModel.NewPassword)));
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    /// <summary>
+    /// Signs the user out and sends them to sign in again. A new password renews the security stamp, so the sign-in
+    /// cookie of this browser stops being valid too; Identity would otherwise sign them out at some point within half
+    /// an hour.
+    /// </summary>
+    private void SignInAgain()
+    {
+        // Removes the navigation lock first, so the browser doesn't ask whether to leave the page.
+        _credentialsSet = true;
+        StateHasChanged();
+        _navigationManager.NavigateTo($"{Constants.Mappings.LOGOUT_PATH}?passwordChanged=true", forceLoad: true);
     }
 
     private async void OnSettingChanged(ChangeEventArgs e, Expression<Func<User, bool>> setter)
@@ -296,7 +572,7 @@
         StateHasChanged();
     }
 
-    public async Task RestoreToOriginal() 
+    public async Task RestoreToOriginal()
     {
         ArgumentNullException.ThrowIfNull(_user);
 
@@ -310,9 +586,7 @@
 
         user.ProfilePictureFileName = avatarPath;
         await db.SaveChangesAsync();
-        _user = user;
-
-        StateHasChanged();
+        await MainLayout.RefreshUserAsync();
 
         MainLayout.RunNotification(new Notification("Profile picture was reset to the default one."));
     }
@@ -360,9 +634,9 @@
             }
 
             user.ProfilePictureFileName = trustedFileName;
-            _user.ProfilePictureFileName = user.ProfilePictureFileName;
 
             await db.SaveChangesAsync();
+            await MainLayout.RefreshUserAsync();
 
             MainLayout.RunNotification(new Notification("Profile picture was changed."));
             _isLoading = false;
@@ -378,9 +652,10 @@
 
     private void OnBeforeInternalNavigation(LocationChangingContext context)
     {
-        ArgumentNullException.ThrowIfNull(_user);
+        if (!MustSetCredentials)
+            return;
 
-        if(!_user.NeedsNewCredentials)
+        if (("/" + _navigationManager.ToBaseRelativePath(context.TargetLocation)).StartsWith(Constants.Mappings.LOGOUT_PATH, StringComparison.OrdinalIgnoreCase))
             return;
 
         context.PreventNavigation();
@@ -390,112 +665,5 @@
     private void OnAttemptedLeaveWhenDisallowed()
     {
         MainLayout.RunNotification(new("You can't leave this page until you have changed your credentials.", NotificationType.Fail));
-    }
-
-    private async void HandleValidationRequested(object? sender,
-        ValidationRequestedEventArgs args)
-    {
-        ArgumentNullException.ThrowIfNull(_user);
-
-        _credentialsMessageStore?.Clear();
-
-        if (!_user.NeedsNewCredentials)
-        {
-            if(!(await _userManager.CheckPasswordAsync(_user, _credentialsModel.OldPassword)))
-                _credentialsMessageStore?.Add(() => _credentialsModel.OldPassword, "The old password you provided is incorrect. If you don't remember it, please reach out to an administrator to get it reset.");
-        } else
-        {
-            if(string.IsNullOrWhiteSpace(_credentialsModel.NewPassword))
-                _credentialsMessageStore?.Add(() => _credentialsModel.NewPassword, "A new password must be provided.");
-
-        }
-    }
-
-    private async Task OnCredentialsValidSubmit()
-    {
-        ArgumentNullException.ThrowIfNull(_user);
-
-        var targetUser = await _userManager.FindByIdAsync(_user.Id.ToString());
-
-        ArgumentNullException.ThrowIfNull(targetUser);
-
-        if (!_credentialsModel.NewEmailAddress.Equals(_user.Email))
-        {
-            try
-            {
-                var result = await _userManager.SetUserNameAsync(targetUser, _credentialsModel.NewEmailAddress);
-
-                if (!result.Succeeded)
-                {
-                    foreach (var error in result.Errors)
-                        _credentialsMessageStore?.Add(() => _credentialsModel.NewEmailAddress, error.Description);
-
-                    _credentialsContext?.NotifyValidationStateChanged();
-                    return;
-                }
-
-                result = await _userManager.ChangeEmailAsync(targetUser, _credentialsModel.NewEmailAddress, await _userManager.GenerateChangeEmailTokenAsync(targetUser, _credentialsModel.NewEmailAddress));
-
-                if (!result.Succeeded)
-                {
-                    foreach (var error in result.Errors)
-                        _credentialsMessageStore?.Add(() => _credentialsModel.NewEmailAddress, error.Description);
-
-                    _credentialsContext?.NotifyValidationStateChanged();
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to change e-mail.");
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(_credentialsModel.NewPassword))
-        {
-            try
-            {
-                var result = await _userManager.ResetPasswordAsync(targetUser, await _userManager.GeneratePasswordResetTokenAsync(targetUser), _credentialsModel.NewPassword);
-
-                if (!result.Succeeded)
-                {
-                    foreach (var error in result.Errors)
-                        _credentialsMessageStore?.Add(() => _credentialsModel.NewPassword, error.Description);
-
-                    _credentialsContext?.NotifyValidationStateChanged();
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to change password.");
-            }
-
-        }
-
-        using var db = _dbContextFactory.CreateDbContext();
-
-        await db.Users.Where(x => x.Id.Equals(targetUser.Id)).ExecuteUpdateAsync(x => x.SetProperty(y => y.NeedsNewCredentials, false));
-
-        targetUser.NeedsNewCredentials = false;
-        bool neededNewCredentials = _user.NeedsNewCredentials;
-        _user = targetUser;
-
-        if (neededNewCredentials) 
-        {
-            MainLayout.RunNotification(new("Your credentials have been successfully set."));
-            _navigationManager.NavigateTo("/");
-        }
-        else
-            MainLayout.RunNotification(new("User updated successfully."));
-    }
-
-
-    public void Dispose()
-    {
-        if (_credentialsContext is not null)
-        {
-            _credentialsContext.OnValidationRequested -= HandleValidationRequested;
-        }
     }
 }

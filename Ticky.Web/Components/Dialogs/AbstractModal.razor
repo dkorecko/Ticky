@@ -5,7 +5,10 @@
 
     protected Modal? Modal;
 
-    public virtual async void Open()
+    public virtual async void Open() => await ShowAsync();
+
+    /// <summary>Shows the modal and focuses <see cref="FocusElement"/>. Unlike <see cref="Open"/>, it can be awaited.</summary>
+    protected async Task ShowAsync()
     {
         if (Modal is null)
             return;

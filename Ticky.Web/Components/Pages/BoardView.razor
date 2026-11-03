@@ -376,7 +376,7 @@
         if(CardId.HasValue)
             _editCardModal?.Open(CardId.Value, _members, _board.Columns);
 
-        await MainLayout.UpdateRecentBoard();
+        await MainLayout.RefreshUserAsync();
     }
 
     private async Task HandleConnectionAsync()

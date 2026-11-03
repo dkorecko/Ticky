@@ -4,6 +4,12 @@
 <div class="auth-items-group">
     <h1>Hey, there 👋</h1>
     <p class="subtext">Use your credentials to log in</p>
+    @if (Model.PasswordChanged)
+    {
+        <p class="rounded-island border border-secondary/40 bg-secondary/10 px-4 py-3 text-sm dark:border-secondaryDark/40 dark:bg-secondaryDark/10" role="status">
+            Your password was changed. Please sign in again.
+        </p>
+    }
 </div>
 @using (Html.BeginForm(FormMethod.Post, true, new { @class = "auth-form" }))
 {

@@ -3,13 +3,16 @@
 @inject SignInManager<User> SignInManager
 
 @functions {
-    public async Task<IActionResult> OnGet()
+    /// <param name="passwordChanged">Tells the sign-in page to explain why the user was signed out.</param>
+    public async Task<IActionResult> OnGet(bool passwordChanged = false)
     {
         if (SignInManager.IsSignedIn(User))
         {
             await SignInManager.SignOutAsync();
         }
 
-        return LocalRedirect(Constants.Mappings.LOGIN_PATH);
+        return LocalRedirect(
+            passwordChanged ? $"{Constants.Mappings.LOGIN_PATH}?passwordChanged=true" : Constants.Mappings.LOGIN_PATH
+        );
     }
 }

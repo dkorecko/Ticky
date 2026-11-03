@@ -29,7 +29,8 @@ public class AvatarServiceTest
         var savedPath = Path.Combine(folder, fileName);
         _createdFiles.Add(savedPath);
 
-        Assert.That(fileName, Does.Match(@"^[a-z0-9]{8}\.png$"));
+        Assert.That(fileName, Does.Match(@"^generated-[a-z0-9]{8}\.png$"));
+        Assert.That(AvatarService.IsGenerated(fileName), Is.True);
         Assert.That(File.ReadAllBytes(savedPath), Is.EqualTo(PNG_BYTES));
         Assert.That(File.Exists(escapeTarget), Is.False);
         Assert.That(handler.RequestedUrl, Does.Contain("name=..%2F..%2Fescape"));
