@@ -418,7 +418,7 @@
                                         <label class="text-add-outline ml-3 whitespace-nowrap capitalize">@activity.CreatedAt.ToShortString()</label>
                                         <label class="ml-6"><label class="person-link" id="@activityId"
                                             @onclick="() => _mainLayout.UserInfoModal?.Open(activityId, activity.UserId)">
-                                            @@@activity.User.DisplayName</label> @((MarkupString) activity.Text).
+                                            @@@activity.User.DisplayName</label> @((MarkupString) activity.ToHtml()).
                                         </label>
                                         <label class="text-add-outline ml-auto whitespace-nowrap">@activity.CreatedAt.ToElapsedString()</label>
                                     </div>

@@ -1,0 +1,87 @@
+@* Open cards per day, with an ideal line running from the peak down to zero today. *@
+
+@if (Points.Count > 0)
+{
+    // A single day still gets drawn as a flat line.
+    List<int> values = Points.Count == 1 ? [Points[0].Open, Points[0].Open] : Points.Select(x => x.Open).ToList();
+    var peak = Math.Max(1, values.Max());
+    var line = BurndownHelper.ToSvgPoints(values, CHART_WIDTH, CHART_HEIGHT, peak);
+    var ideal = BurndownHelper.ToSvgPoints([peak, 0], CHART_WIDTH, CHART_HEIGHT, peak);
+    var yTicks = new[] { peak, (int)Math.Round(peak / 2.0), 0 }.Distinct().ToList();
+
+    <div class="flex flex-col gap-2">
+        <div class="flex flex-row gap-2">
+            <div class="relative h-56 w-8 shrink-0 text-2xs subtext tabular-nums">
+                @foreach (var tick in yTicks)
+                {
+                    <span class="absolute right-0 translate-y-1/2 leading-none" style="bottom: @Percent(tick, peak)%">@tick</span>
+                }
+            </div>
+            <div class="relative h-56 min-w-0 flex-1">
+                <svg viewBox="0 0 @CHART_WIDTH @CHART_HEIGHT" preserveAspectRatio="none" class="absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
+                    @foreach (var tick in yTicks)
+                    {
+                        var y = Fmt(CHART_HEIGHT - tick * (double)CHART_HEIGHT / peak);
+                        <line x1="0" y1="@y" x2="@CHART_WIDTH" y2="@y" vector-effect="non-scaling-stroke" class="stroke-line" />
+                    }
+                    <polygon points="0,@CHART_HEIGHT @line @CHART_WIDTH,@CHART_HEIGHT" class="fill-secondary/15 dark:fill-secondaryDark/20" />
+                    <polyline points="@ideal" fill="none" stroke-width="1.5" stroke-dasharray="5 4" vector-effect="non-scaling-stroke" class="stroke-subtext dark:stroke-subtextDark" />
+                    <polyline points="@line" fill="none" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="stroke-secondary dark:stroke-secondaryDark" />
+                </svg>
+                <span class="absolute h-2 w-2 translate-x-1/2 translate-y-1/2 rounded-full bg-secondary dark:bg-secondaryDark" style="right: 0; bottom: @Percent(values[^1], peak)%"></span>
+                <div class="absolute inset-0 flex flex-row">
+                    @foreach (var point in Points)
+                    {
+                        <div class="flex-1 rounded-sm hover:bg-secondary/10 dark:hover:bg-secondaryDark/15" title="@point.Date.ToString("ddd, MMM d, yyyy"): @point.Open open"></div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="relative ml-10 h-4 text-2xs subtext tabular-nums">
+            @foreach (var (tick, index, position) in XTicks())
+            {
+                @* Phones only have room for the first, middle and last date. *@
+                <span class='absolute whitespace-nowrap @(position == 0 ? "" : position == 100 ? "-translate-x-full" : "-translate-x-1/2") @(tick % 2 == 1 && position is > 0 and < 100 ? "max-sm:hidden" : "")' style="left: @Fmt(position)%">@Points[index].Date.ToString(DateFormat)</span>
+            }
+        </div>
+        <div class="ml-10 flex flex-row gap-4 text-2xs subtext">
+            <span class="flex flex-row items-center gap-1.5">
+                <span class="w-5 border-t-2 border-secondary dark:border-secondaryDark"></span>
+                Open cards
+            </span>
+            <span class="flex flex-row items-center gap-1.5">
+                <span class="w-5 border-t-2 border-dashed border-subtext dark:border-subtextDark"></span>
+                Ideal
+            </span>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<(DateTime Date, int Open)> Points { get; set; }
+
+    private const int CHART_WIDTH = 100;
+    private const int CHART_HEIGHT = 100;
+    private const int X_TICKS = 5;
+
+    private string DateFormat =>
+        Points.Count > 1 && (Points[^1].Date - Points[0].Date).TotalDays > 365 ? "MMM yyyy" : "MMM d";
+
+    // Up to five evenly spread days, with their position along the axis in percent.
+    private IEnumerable<(int Tick, int Index, double Position)> XTicks()
+    {
+        if (Points.Count == 1)
+            return [(0, 0, 0)];
+
+        var last = Points.Count - 1;
+        return Enumerable.Range(0, X_TICKS)
+            .Select(tick => (Tick: tick, Index: (int)Math.Round(tick * last / (double)(X_TICKS - 1))))
+            .DistinctBy(x => x.Index)
+            .Select(x => (x.Tick, x.Index, x.Index * 100.0 / last));
+    }
+
+    private static string Percent(int value, int peak) => Fmt(value * 100.0 / peak);
+
+    private static string Fmt(double value) => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+}

@@ -136,6 +136,8 @@ namespace Ticky.Internal.Data
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            ConfigureActivities(modelBuilder);
+
             modelBuilder
                 .Entity<Card>()
                 .HasMany(x => x.Subtasks)
@@ -224,6 +226,42 @@ namespace Ticky.Internal.Data
                 .WithOne(x => x.User)
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        }
+
+        /// <summary>Every concrete <see cref="Activity"/> subclass, i.e. one per <see cref="ActivityType"/>.</summary>
+        public static IReadOnlyList<Type> ActivityClasses { get; } =
+            typeof(Activity).Assembly.GetTypes().Where(x => x.IsSubclassOf(typeof(Activity)) && !x.IsAbstract).ToList();
+
+        private static void ConfigureActivities(ModelBuilder modelBuilder)
+        {
+            var discriminator = modelBuilder.Entity<Activity>().HasDiscriminator(x => x.ActivityType);
+
+            // Each subclass sets its own type in its constructor, so that is the single place the mapping is defined.
+            foreach (var type in ActivityClasses)
+            {
+                modelBuilder.Entity(type);
+                discriminator.HasValue(type, ((Activity)Activator.CreateInstance(type)!).ActivityType);
+            }
+
+            modelBuilder.Entity<Activity>().HasIndex(x => new { x.ActivityType, x.CreatedAt });
+
+            modelBuilder
+                .Entity<CardMovedActivity>()
+                .HasOne(x => x.FromColumn)
+                .WithMany()
+                .HasForeignKey(x => x.FromColumnId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder
+                .Entity<CardMovedActivity>()
+                .HasOne(x => x.ToColumn)
+                .WithMany()
+                .HasForeignKey(x => x.ToColumnId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Stored as ticks: MySQL's time type stops at 838 hours, which a forgotten timer can exceed.
+            modelBuilder.Entity<TimeRecordActivity>().Property(x => x.Duration).HasConversion<long?>();
+            modelBuilder.Entity<TimeRecordChangedActivity>().Property(x => x.OldDuration).HasConversion<long?>();
         }
     }
 }

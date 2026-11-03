@@ -1,6 +1,7 @@
 ﻿@inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
 @inject CardNumberingService _cardNumberingService
+@inject CardService _cardService
 @inject ILogger<ColumnView> _logger
 @inherits NotifiableBase
 
@@ -336,49 +337,9 @@
 
         try
         {
-            using var db = _dbContextFactory.CreateDbContext();
-
-            var targetColumns = await db.Columns
-                .Where(x => x.Id.Equals(oldColumnId) || x.Id.Equals(newColumnId))
-                .Include(x => x.Cards)
-                .ToListAsync();
-
-            var dbOldColumn = targetColumns.First(x => x.Id.Equals(oldColumnId));
-            var dbNewColumn = targetColumns.First(x => x.Id.Equals(newColumnId));
-
-            if (dbNewColumn.MaxCards != 0 && dbNewColumn.Cards.Count + 1 > dbNewColumn.MaxCards)
-            {
+            if (!await _cardService.MoveToColumnAsync(movedCardId, User.Id, newColumnId, targetCardId))
                 throw new IndexOutOfRangeException("Target column is full.");
-            }
 
-            var dbMovedCard = dbOldColumn.Cards.OrderBy(x => x.Index).First(x => x.Id.Equals(movedCardId));
-            dbOldColumn.Cards.Remove(dbMovedCard);
-            IndexHelper.FixIndices(dbOldColumn.Cards);
-
-            int dbTargetIndex = dbNewColumn.Cards.Any() ? dbNewColumn.Cards.Max(x => x.Index) + 1 : 0;
-
-            if (targetCardId is not null)
-            {
-                var dbTargetCard = dbNewColumn.Cards.FirstOrDefault(x => x.Id.Equals(targetCardId));
-
-                if (dbTargetCard is not null)
-                {
-                    dbTargetIndex = dbTargetCard.Index;
-                    foreach (var card in dbNewColumn.Cards.OrderByDescending(x => x.Index))
-                    {
-                        if (card.Index >= dbTargetCard.Index)
-                            card.Index++;
-                    }
-                }
-            }
-
-            dbNewColumn.Cards.Add(dbMovedCard);
-            dbMovedCard.Index = dbTargetIndex;
-            dbMovedCard.ColumnId = newColumnId;
-
-            IndexHelper.FixIndices(dbNewColumn.Cards);
-
-            await db.SaveChangesAsync();
             await OnUpdate.InvokeAsync();
         }
         catch (Exception ex)

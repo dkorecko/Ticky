@@ -34,6 +34,8 @@ public class RepeatHostedService(IServiceScopeFactory serviceScopeFactory) : Abs
             .AsSplitQuery()
             .ToListAsync();
 
+        var createdActivities = new List<(RepeatCardCreatedActivity Activity, Card NewCard)>();
+
         foreach (var card in populatedPendingRepeatCards)
         {
             card.RepeatInfo!.LastRepeat = DateTime.Now;
@@ -105,10 +107,11 @@ public class RepeatHostedService(IServiceScopeFactory serviceScopeFactory) : Abs
             var identifier = $"{card.Column.Board.Code}-{card.Number}";
 
             newCard.Activities.Add(
-                new()
+                new RepeatedFromActivity
                 {
                     CardId = newCard.Id,
-                    Text = $"<b>was repeated</b> from card <b>{identifier}</b>",
+                    RelatedCardId = card.Id,
+                    RelatedCardCode = identifier,
                     UserId = card.CreatedById
                 }
             );
@@ -162,32 +165,47 @@ public class RepeatHostedService(IServiceScopeFactory serviceScopeFactory) : Abs
             );
 
             var newIdentifier = $"{card.Column.Board.Code}-{newCard.Number}";
-            card.Activities.Add(
-                new()
-                {
-                    CardId = card.Id,
-                    Text = $"<b>created</b> repeat card <b>{newIdentifier}</b>",
-                    UserId = card.CreatedById
-                }
-            );
+            // The new card's id only exists after saving; it is filled in below.
+            var createdActivity = new RepeatCardCreatedActivity
+            {
+                CardId = card.Id,
+                RelatedCardCode = newIdentifier,
+                UserId = card.CreatedById
+            };
+            card.Activities.Add(createdActivity);
+            createdActivities.Add((createdActivity, newCard));
 
-            targetColumn.Cards.Add(newCard);
-
-            if (card.RepeatInfo.CardPlacement.Equals(CardPlacement.Top))
-                targetColumn.Cards.ForEach(x => x.Index++);
-            else if (
-                card.RepeatInfo.CardPlacement.Equals(CardPlacement.Bottom)
-                && targetColumn.Cards.Count != 0
-            )
-                newCard.Index = targetColumn.Cards.Max(x => x.Index) + 1;
-            else
-                throw new Exception("Unsupported card placement type");
+            PlaceNewCard(targetColumn.Cards, newCard, card.RepeatInfo.CardPlacement);
         }
 
         if (populatedPendingRepeatCards.Count != 0)
         {
             await db.SaveChangesAsync();
+
+            foreach (var (activity, newCard) in createdActivities)
+                activity.RelatedCardId = newCard.Id;
+
+            await db.SaveChangesAsync();
             logger.LogInformation("{Count} cards have been repeated.", populatedPendingRepeatCards.Count);
         }
+    }
+
+    /// <summary>Adds a repeated card to the top or bottom of a column's cards.</summary>
+    public static void PlaceNewCard(List<Card> columnCards, Card newCard, CardPlacement placement)
+    {
+        switch (placement)
+        {
+            case CardPlacement.Top:
+                columnCards.ForEach(x => x.Index++);
+                newCard.Index = 0;
+                break;
+            case CardPlacement.Bottom:
+                newCard.Index = columnCards.Count == 0 ? 0 : columnCards.Max(x => x.Index) + 1;
+                break;
+            default:
+                throw new Exception("Unsupported card placement type");
+        }
+
+        columnCards.Add(newCard);
     }
 }

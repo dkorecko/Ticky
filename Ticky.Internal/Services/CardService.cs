@@ -1,4 +1,3 @@
-using System.Net;
 using Ticky.Base.Converters;
 using Ticky.Base.Entities.Owned;
 using Ticky.Internal.Helpers;
@@ -10,7 +9,7 @@ namespace Ticky.Internal.Services;
 /// Each method loads only what it changes and does nothing if the card or item no longer exists.
 /// </summary>
 /// <remarks>
-/// Activity text is rendered as HTML, so every user-entered value placed in it must go through <see cref="Html"/>.
+/// Activities store what happened as data; the text is built when shown (see <see cref="ActivityFormatter"/>).
 /// </remarks>
 public class CardService
 {
@@ -40,10 +39,10 @@ public class CardService
     #region Card fields
 
     public Task RenameAsync(int cardId, int userId, string name) =>
-        UpdateAsync(cardId, userId, "<b>changed</b> the title", card => card.Name = name);
+        UpdateAsync(cardId, userId, card => new TitleChangedActivity { OldTitle = card.Name, NewTitle = name }, card => card.Name = name);
 
     public Task UpdateDescriptionAsync(int cardId, int userId, string description) =>
-        UpdateAsync(cardId, userId, "<b>changed</b> the description", card => card.Description = description);
+        UpdateAsync(cardId, userId, _ => new DescriptionChangedActivity(), card => card.Description = description);
 
     public async Task SetPriorityAsync(int cardId, int userId, CardPriority priority)
     {
@@ -54,7 +53,7 @@ public class CardService
             return;
 
         card.Priority = priority;
-        AddActivity(db, cardId, userId, $"<b>changed</b> the priority to <b>{priority}</b>");
+        Log(db, cardId, userId, new PriorityChangedActivity { Priority = priority });
 
         await db.SaveChangesAsync();
     }
@@ -63,7 +62,7 @@ public class CardService
         UpdateAsync(
             cardId,
             userId,
-            $"<b>set</b> the deadline for <b>{deadline.ToReadableStringWithTime()}</b>",
+            _ => new DeadlineSetActivity { Deadline = deadline },
             card =>
             {
                 card.Deadline = deadline;
@@ -72,29 +71,29 @@ public class CardService
         );
 
     public Task RemoveDeadlineAsync(int cardId, int userId) =>
-        UpdateAsync(cardId, userId, "<b>deleted</b> the deadline", card => card.Deadline = null);
+        UpdateAsync(cardId, userId, _ => new DeadlineRemovedActivity(), card => card.Deadline = null);
 
     public Task SnoozeAsync(int cardId, int userId, DateTime until) =>
         UpdateAsync(
             cardId,
             userId,
-            $"<b>snoozed</b> this card until <b>{until.ToReadableStringWithTime()}</b>",
+            _ => new SnoozedActivity { Until = until },
             card => card.SnoozedUntil = until
         );
 
     public Task UnsnoozeAsync(int cardId, int userId) =>
-        UpdateAsync(cardId, userId, "<b>unsnoozed</b> this card", card => card.SnoozedUntil = null);
+        UpdateAsync(cardId, userId, _ => new UnsnoozedActivity(), card => card.SnoozedUntil = null);
 
     public Task SetRepeatAsync(int cardId, int userId, RepeatInfo repeatInfo) =>
         UpdateAsync(
             cardId,
             userId,
-            $"<b>set up card repeat</b> for this card for <b>{repeatInfo.Type.GetDisplayName()}</b>",
+            _ => new RepeatSetActivity { RepeatType = repeatInfo.Type },
             card => card.RepeatInfo = repeatInfo
         );
 
     public Task RemoveRepeatAsync(int cardId, int userId) =>
-        UpdateAsync(cardId, userId, "<b>turned repeating off</b> for this card", card => card.RepeatInfo = null);
+        UpdateAsync(cardId, userId, _ => new RepeatDisabledActivity(), card => card.RepeatInfo = null);
 
     /// <summary>Moves the card to the column next to its current one. Use -1 for the previous column, +1 for the next.</summary>
     public async Task MoveToAdjacentColumnAsync(int cardId, int userId, int offset)
@@ -112,10 +111,54 @@ public class CardService
         if (targetColumn is null)
             return;
 
+        Log(db, cardId, userId, Moved(card.Column, targetColumn));
         card.Column = targetColumn;
-        AddActivity(db, cardId, userId, $"<b>moved</b> the card to <b>{Html(targetColumn.Name)}</b>");
 
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Moves the card to another column on the same board, placing it before <paramref name="beforeCardId"/> or at the end.
+    /// </summary>
+    /// <returns>False if the card or column no longer exists, or the column is full.</returns>
+    public async Task<bool> MoveToColumnAsync(int cardId, int userId, int targetColumnId, int? beforeCardId)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await db.Cards.Include(x => x.Column.Cards).FirstOrDefaultAsync(x => x.Id == cardId);
+        var targetColumn = await db.Columns.Include(x => x.Cards).FirstOrDefaultAsync(x => x.Id == targetColumnId);
+
+        if (card is null || targetColumn is null || targetColumn.BoardId != card.Column.BoardId)
+            return false;
+
+        if (targetColumn.Id == card.ColumnId)
+            return true;
+
+        if (targetColumn.MaxCards != 0 && targetColumn.Cards.Count + 1 > targetColumn.MaxCards)
+            return false;
+
+        var oldColumn = card.Column;
+        oldColumn.Cards.Remove(card);
+        oldColumn.Cards.FixIndices();
+
+        var targetIndex = targetColumn.Cards.Count != 0 ? targetColumn.Cards.Max(x => x.Index) + 1 : 0;
+        var beforeCard = targetColumn.Cards.FirstOrDefault(x => x.Id == beforeCardId);
+
+        if (beforeCard is not null)
+        {
+            targetIndex = beforeCard.Index;
+
+            foreach (var other in targetColumn.Cards.Where(x => x.Index >= beforeCard.Index))
+                other.Index++;
+        }
+
+        Log(db, cardId, userId, Moved(oldColumn, targetColumn));
+        targetColumn.Cards.Add(card);
+        card.Column = targetColumn;
+        card.Index = targetIndex;
+        targetColumn.Cards.FixIndices();
+
+        await db.SaveChangesAsync();
+        return true;
     }
 
     /// <summary>Adds the label to the card, or removes it if the card already has it.</summary>
@@ -131,12 +174,12 @@ public class CardService
 
         if (card.Labels.Remove(label))
         {
-            AddActivity(db, cardId, userId, $"<b>removed</b> label <b>{Html(label.Name)}</b>");
+            Log(db, cardId, userId, new LabelRemovedActivity { LabelId = label.Id, LabelName = label.Name });
         }
         else
         {
             card.Labels.Add(label);
-            AddActivity(db, cardId, userId, $"<b>added</b> label <b>{Html(label.Name)}</b>");
+            Log(db, cardId, userId, new LabelAddedActivity { LabelId = label.Id, LabelName = label.Name });
         }
 
         await db.SaveChangesAsync();
@@ -161,7 +204,7 @@ public class CardService
             return;
 
         card.Assignees.Add(user);
-        AddActivity(db, cardId, userId, "<b>joined</b> the card");
+        Log(db, cardId, userId, new AssigneeAddedActivity { AssigneeId = user.Id, AssigneeName = user.DisplayName });
 
         await db.SaveChangesAsync();
     }
@@ -176,7 +219,7 @@ public class CardService
             return;
 
         card.Assignees.Remove(assignee);
-        AddActivity(db, cardId, userId, "<b>left</b> the card");
+        Log(db, cardId, userId, new AssigneeRemovedActivity { AssigneeId = assignee.Id, AssigneeName = assignee.DisplayName });
 
         await db.SaveChangesAsync();
     }
@@ -194,12 +237,12 @@ public class CardService
 
         if (card.Assignees.Remove(member))
         {
-            AddActivity(db, cardId, userId, $"<b>removed</b> the user <b>{Html(member.DisplayName)}</b> from the assignees");
+            Log(db, cardId, userId, new AssigneeRemovedActivity { AssigneeId = member.Id, AssigneeName = member.DisplayName });
         }
         else
         {
             card.Assignees.Add(member);
-            AddActivity(db, cardId, userId, $"<b>added</b> the user <b>{Html(member.DisplayName)}</b> as an assignee");
+            Log(db, cardId, userId, new AssigneeAddedActivity { AssigneeId = member.Id, AssigneeName = member.DisplayName });
         }
 
         await db.SaveChangesAsync();
@@ -226,7 +269,7 @@ public class CardService
             CreatedById = userId,
             CardId = cardId,
         });
-        AddActivity(db, cardId, userId, "<b>posted</b> a comment");
+        Log(db, cardId, userId, new CommentPostedActivity());
 
         await db.SaveChangesAsync();
     }
@@ -250,7 +293,7 @@ public class CardService
             Text = text,
             Index = subtasks.GetNextIndex(),
         });
-        AddActivity(db, cardId, userId, $"<b>added</b> subtask <b>{Html(text)}</b>");
+        Log(db, cardId, userId, new SubtaskAddedActivity { SubtaskText = text });
 
         await db.SaveChangesAsync();
     }
@@ -263,7 +306,7 @@ public class CardService
         if (subtask is null)
             return;
 
-        AddActivity(db, subtask.CardId, userId, $"<b>edited</b> subtask <b>{Html(subtask.Text)}</b> to <b>{Html(text)}</b>");
+        Log(db, subtask.CardId, userId, new SubtaskEditedActivity { OldSubtaskText = subtask.Text, SubtaskText = text });
         subtask.Text = text;
 
         await db.SaveChangesAsync();
@@ -278,12 +321,7 @@ public class CardService
             return;
 
         subtask.Completed = completed;
-        AddActivity(
-            db,
-            subtask.CardId,
-            userId,
-            $"<b>marked</b> the subtask <b>{Html(subtask.Text)}</b> as <b>{(completed ? "completed" : "to be done")}</b>"
-        );
+        Log(db, subtask.CardId, userId, new SubtaskCompletionChangedActivity { SubtaskText = subtask.Text, Completed = completed });
 
         await db.SaveChangesAsync();
     }
@@ -297,7 +335,7 @@ public class CardService
             return;
 
         db.Subtasks.Remove(subtask);
-        AddActivity(db, subtask.CardId, userId, $"<b>deleted</b> subtask <b>{Html(subtask.Text)}</b>");
+        Log(db, subtask.CardId, userId, new SubtaskDeletedActivity { SubtaskText = subtask.Text });
 
         var remaining = await db.Subtasks.Where(x => x.CardId == subtask.CardId && x.Id != subtaskId).ToListAsync();
         remaining.FixIndices();
@@ -318,12 +356,12 @@ public class CardService
 
         if (subtask.Assignees.Remove(member))
         {
-            AddActivity(db, subtask.CardId, userId, $"<b>removed</b> the user <b>{Html(member.DisplayName)}</b> from the subtask assignees");
+            Log(db, subtask.CardId, userId, new SubtaskAssigneeRemovedActivity { AssigneeId = member.Id, AssigneeName = member.DisplayName, SubtaskText = subtask.Text });
         }
         else
         {
             subtask.Assignees.Add(member);
-            AddActivity(db, subtask.CardId, userId, $"<b>added</b> the user <b>{Html(member.DisplayName)}</b> as a subtask assignee");
+            Log(db, subtask.CardId, userId, new SubtaskAssigneeAddedActivity { AssigneeId = member.Id, AssigneeName = member.DisplayName, SubtaskText = subtask.Text });
         }
 
         await db.SaveChangesAsync();
@@ -342,7 +380,7 @@ public class CardService
             return;
 
         db.Reminders.Add(new Reminder { CardId = cardId, At = at });
-        AddActivity(db, cardId, userId, $"<b>added</b> a reminder for <b>{at.ToReadableStringWithTime()}</b>");
+        Log(db, cardId, userId, new ReminderAddedActivity { At = at });
 
         await db.SaveChangesAsync();
     }
@@ -356,7 +394,7 @@ public class CardService
             return;
 
         db.Reminders.Remove(reminder);
-        AddActivity(db, cardId, userId, $"<b>deleted</b> the reminder at <b>{reminder.At.ToReadableStringWithTime()}</b>");
+        Log(db, cardId, userId, new ReminderRemovedActivity { At = reminder.At });
 
         await db.SaveChangesAsync();
     }
@@ -380,7 +418,7 @@ public class CardService
             FileName = fileName,
             OriginalName = originalName,
         });
-        AddActivity(db, cardId, userId, $"<b>uploaded</b> file named <b>{Html(originalName)}</b>");
+        Log(db, cardId, userId, new AttachmentUploadedActivity { FileName = originalName });
 
         await db.SaveChangesAsync();
         return true;
@@ -395,7 +433,7 @@ public class CardService
             return;
 
         db.Attachments.Remove(attachment);
-        AddActivity(db, cardId, userId, $"<b>deleted</b> file named <b>{Html(attachment.OriginalName)}</b>");
+        Log(db, cardId, userId, new AttachmentDeletedActivity { FileName = attachment.OriginalName });
 
         await db.SaveChangesAsync();
     }
@@ -455,7 +493,7 @@ public class CardService
             StartedAt = now - duration,
             EndedAt = now,
         });
-        AddActivity(db, cardId, userId, $"<b>added</b> a time record for <b>{duration.ToElapsedString()}</b>");
+        Log(db, cardId, userId, new TimeRecordAddedActivity { Duration = duration });
 
         await db.SaveChangesAsync();
     }
@@ -475,12 +513,7 @@ public class CardService
         record.EndedAt = now;
         record.StartedAt = now - duration;
 
-        AddActivity(
-            db,
-            record.CardId,
-            userId,
-            $"<b>changed</b> the time record from <b>{oldDuration.ConvertToString()}</b> to <b>{duration.ConvertToString()}</b>"
-        );
+        Log(db, record.CardId, userId, new TimeRecordChangedActivity { OldDuration = oldDuration, Duration = duration });
 
         await db.SaveChangesAsync();
     }
@@ -496,7 +529,7 @@ public class CardService
         var duration = (record.EndedAt ?? DateTime.Now) - record.StartedAt;
 
         db.TimeRecords.Remove(record);
-        AddActivity(db, cardId, userId, $"<b>deleted</b> time record of <b>{duration.ToElapsedString()}</b>");
+        Log(db, cardId, userId, new TimeRecordDeletedActivity { Duration = duration });
 
         await db.SaveChangesAsync();
     }
@@ -533,8 +566,8 @@ public class CardService
         db.CardLinks.Add(new CardLink { CardOneId = cardId, CardTwoId = targetCardId, Category = category });
         db.CardLinks.Add(new CardLink { CardOneId = targetCardId, CardTwoId = cardId, Category = oppositeCategory });
 
-        AddActivity(db, cardId, userId, LinkActivityText("added", targetCard, category));
-        AddActivity(db, targetCardId, userId, LinkActivityText("added", card, oppositeCategory));
+        Log(db, cardId, userId, Link(new LinkAddedActivity(), targetCard, category));
+        Log(db, targetCardId, userId, Link(new LinkAddedActivity(), card, oppositeCategory));
 
         await db.SaveChangesAsync();
         return null;
@@ -557,12 +590,12 @@ public class CardService
         );
 
         db.CardLinks.Remove(link);
-        AddActivity(db, link.CardOneId, userId, LinkActivityText("deleted", link.CardTwo, link.Category));
+        Log(db, link.CardOneId, userId, Link(new LinkRemovedActivity(), link.CardTwo, link.Category));
 
         if (reverseLink is not null)
         {
             db.CardLinks.Remove(reverseLink);
-            AddActivity(db, link.CardTwoId, userId, LinkActivityText("deleted", link.CardOne, reverseLink.Category));
+            Log(db, link.CardTwoId, userId, Link(new LinkRemovedActivity(), link.CardOne, reverseLink.Category));
         }
 
         await db.SaveChangesAsync();
@@ -577,12 +610,18 @@ public class CardService
         return reverse.Key;
     }
 
-    private static string LinkActivityText(string verb, Card linkedCard, string category) =>
-        $"<b>{verb}</b> a linked issue <b>{Html(linkedCard.Column.Board.Code)}-{linkedCard.Number}</b> with <b>{Html(category)}</b> relationship";
+    private static LinkActivity Link(LinkActivity activity, Card linkedCard, string category)
+    {
+        activity.RelatedCardId = linkedCard.Id;
+        activity.RelatedCardCode = $"{linkedCard.Column.Board.Code}-{linkedCard.Number}";
+        activity.Category = category;
+        return activity;
+    }
 
     #endregion
 
-    private async Task UpdateAsync(int cardId, int userId, string activityText, Action<Card> change)
+    /// <summary>Changes a field on the card and logs it. The activity is created before the change, so it can see the old value.</summary>
+    private async Task UpdateAsync(int cardId, int userId, Func<Card, Activity> activity, Action<Card> change)
     {
         using var db = _dbContextFactory.CreateDbContext();
         var card = await db.Cards.FirstOrDefaultAsync(x => x.Id == cardId);
@@ -590,20 +629,27 @@ public class CardService
         if (card is null)
             return;
 
+        var entry = activity(card);
         change(card);
-        AddActivity(db, cardId, userId, activityText);
+        Log(db, cardId, userId, entry);
 
         await db.SaveChangesAsync();
     }
 
-    private static void AddActivity(DataContext db, int cardId, int userId, string text) =>
-        db.Activities.Add(new Activity
-        {
-            Text = text,
-            UserId = userId,
-            CardId = cardId,
-        });
+    private static void Log(DataContext db, int cardId, int userId, Activity activity)
+    {
+        activity.CardId = cardId;
+        activity.UserId = userId;
+        db.Activities.Add(activity);
+    }
 
-    /// <summary>Escapes a user-entered value for use inside activity text.</summary>
-    private static string Html(string value) => WebUtility.HtmlEncode(value);
+    private static CardMovedActivity Moved(Column from, Column to) =>
+        new()
+        {
+            FromColumnId = from.Id,
+            FromColumnName = from.Name,
+            ToColumnId = to.Id,
+            ToColumnName = to.Name,
+            ToColumnFinished = to.Finished,
+        };
 }

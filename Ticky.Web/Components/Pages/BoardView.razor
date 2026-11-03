@@ -123,6 +123,15 @@
                                     </span>
                                 </button>
 
+                                <a href="/boards/@_board.Id/activity" title="Board activity" class="nav-link">
+                                    <span class="material-symbols-rounded g-icon self-center">
+                                        history
+                                    </span>
+                                    <span class="self-center">
+                                        Activity
+                                    </span>
+                                </a>
+
                             </div>
                         </div>
                     </div>
@@ -163,6 +172,10 @@
                     <button @onclick="SwitchStatsDisplay" title="Toggle statistics" class="material-symbols-rounded g-icon btn-transparent btn flex self-center">
                         finance
                     </button>
+
+                    <a href="/boards/@_board.Id/activity" title="Board activity" class="material-symbols-rounded g-icon btn-transparent btn flex self-center">
+                        history
+                    </a>
 
                     @if (IsAdmin())
                     {

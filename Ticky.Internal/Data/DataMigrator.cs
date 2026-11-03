@@ -28,5 +28,10 @@ public class DataMigrator
                 s.SetProperty(c => c.NewCardPlacement, CardPlacement.Bottom)
                     .SetProperty(c => c.OrderRule, OrderRule.Migrated)
             );
+
+        await LegacyActivityConverter.ConvertAsync(
+            dataContext,
+            serviceProvider.GetRequiredService<ILogger<DataMigrator>>()
+        );
     }
 }

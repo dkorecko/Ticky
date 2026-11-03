@@ -3,3 +3,4 @@ global using Ticky.Base.Entities;
 global using Ticky.Base.Entities.Owned;
 global using Ticky.Base.Enums;
 global using Ticky.Internal.Services;
+global using Ticky.Internal.Helpers;

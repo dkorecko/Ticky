@@ -17,7 +17,7 @@ namespace Ticky.Internal.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "9.0.22")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -226,15 +226,18 @@ namespace Ticky.Internal.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("ActivityType")
+                        .HasColumnType("int");
+
                     b.Property<int>("CardId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.Property<string>("LegacyText")
+                        .HasColumnType("longtext")
+                        .HasColumnName("Text");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -245,7 +248,13 @@ namespace Ticky.Internal.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("ActivityType", "CreatedAt");
+
                     b.ToTable("Activities");
+
+                    b.HasDiscriminator<int>("ActivityType");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Ticky.Base.Entities.Attachment", b =>
@@ -859,6 +868,466 @@ namespace Ticky.Internal.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Ticky.Base.Entities.AssigneeAddedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<int?>("AssigneeId")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("int")
+                        .HasColumnName("TargetId");
+
+                    b.Property<string>("AssigneeName")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.HasDiscriminator().HasValue(5);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.AssigneeRemovedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<int?>("AssigneeId")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("int")
+                        .HasColumnName("TargetId");
+
+                    b.Property<string>("AssigneeName")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.HasDiscriminator().HasValue(6);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.AttachmentDeletedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<string>("FileName")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.HasDiscriminator().HasValue(21);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.AttachmentUploadedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<string>("FileName")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.HasDiscriminator().HasValue(20);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.CardMovedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<int?>("FromColumnId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FromColumnName")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool?>("ToColumnFinished")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int?>("ToColumnId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ToColumnName")
+                        .HasColumnType("longtext");
+
+                    b.HasIndex("FromColumnId");
+
+                    b.HasIndex("ToColumnId");
+
+                    b.HasDiscriminator().HasValue(1);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.CommentPostedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.HasDiscriminator().HasValue(4);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.DeadlineRemovedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.HasDiscriminator().HasValue(13);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.DeadlineSetActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<DateTime?>("Deadline")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("At");
+
+                    b.HasDiscriminator().HasValue(12);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.DescriptionChangedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.HasDiscriminator().HasValue(3);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.GenericActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.HasDiscriminator().HasValue(0);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.LabelAddedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<int?>("LabelId")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("int")
+                        .HasColumnName("TargetId");
+
+                    b.Property<string>("LabelName")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.HasDiscriminator().HasValue(9);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.LabelRemovedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<int?>("LabelId")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("int")
+                        .HasColumnName("TargetId");
+
+                    b.Property<string>("LabelName")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.HasDiscriminator().HasValue(10);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.LinkAddedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<string>("Category")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Category");
+
+                    b.Property<string>("RelatedCardCode")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.Property<int?>("RelatedCardId")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("int")
+                        .HasColumnName("TargetId");
+
+                    b.HasDiscriminator().HasValue(25);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.LinkRemovedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<string>("Category")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Category");
+
+                    b.Property<string>("RelatedCardCode")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.Property<int?>("RelatedCardId")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("int")
+                        .HasColumnName("TargetId");
+
+                    b.HasDiscriminator().HasValue(26);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.PriorityChangedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<int?>("Priority")
+                        .HasColumnType("int")
+                        .HasColumnName("Priority");
+
+                    b.HasDiscriminator().HasValue(11);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.ReminderAddedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<DateTime?>("At")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("At");
+
+                    b.HasDiscriminator().HasValue(14);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.ReminderRemovedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<DateTime?>("At")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("At");
+
+                    b.HasDiscriminator().HasValue(15);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.RepeatCardCreatedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<string>("RelatedCardCode")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.Property<int?>("RelatedCardId")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("int")
+                        .HasColumnName("TargetId");
+
+                    b.HasDiscriminator().HasValue(32);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.RepeatDisabledActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.HasDiscriminator().HasValue(30);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.RepeatSetActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<int?>("RepeatType")
+                        .HasColumnType("int")
+                        .HasColumnName("RepeatType");
+
+                    b.HasDiscriminator().HasValue(29);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.RepeatedFromActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<string>("RelatedCardCode")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.Property<int?>("RelatedCardId")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("int")
+                        .HasColumnName("TargetId");
+
+                    b.HasDiscriminator().HasValue(31);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.SnoozedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<DateTime?>("Until")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("At");
+
+                    b.HasDiscriminator().HasValue(27);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.SubtaskAddedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<string>("SubtaskText")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("SubtaskText");
+
+                    b.HasDiscriminator().HasValue(16);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.SubtaskAssigneeAddedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<int?>("AssigneeId")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("int")
+                        .HasColumnName("TargetId");
+
+                    b.Property<string>("AssigneeName")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.Property<string>("SubtaskText")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("SubtaskText");
+
+                    b.HasDiscriminator().HasValue(7);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.SubtaskAssigneeRemovedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<int?>("AssigneeId")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("int")
+                        .HasColumnName("TargetId");
+
+                    b.Property<string>("AssigneeName")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.Property<string>("SubtaskText")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("SubtaskText");
+
+                    b.HasDiscriminator().HasValue(8);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.SubtaskCompletionChangedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<bool?>("Completed")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("Completed");
+
+                    b.Property<string>("SubtaskText")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("SubtaskText");
+
+                    b.HasDiscriminator().HasValue(18);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.SubtaskDeletedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<string>("SubtaskText")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("SubtaskText");
+
+                    b.HasDiscriminator().HasValue(19);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.SubtaskEditedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<string>("OldSubtaskText")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("OldName");
+
+                    b.Property<string>("SubtaskText")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("SubtaskText");
+
+                    b.HasDiscriminator().HasValue(17);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.TimeRecordActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<long?>("Duration")
+                        .HasColumnType("bigint")
+                        .HasColumnName("Duration");
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.TitleChangedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.Property<string>("NewTitle")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Name");
+
+                    b.Property<string>("OldTitle")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("longtext")
+                        .HasColumnName("OldName");
+
+                    b.HasDiscriminator().HasValue(2);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.UnsnoozedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.Activity");
+
+                    b.HasDiscriminator().HasValue(28);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.TimeRecordAddedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.TimeRecordActivity");
+
+                    b.HasDiscriminator().HasValue(22);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.TimeRecordChangedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.TimeRecordActivity");
+
+                    b.Property<long?>("OldDuration")
+                        .HasColumnType("bigint")
+                        .HasColumnName("OldDuration");
+
+                    b.HasDiscriminator().HasValue(23);
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.TimeRecordDeletedActivity", b =>
+                {
+                    b.HasBaseType("Ticky.Base.Entities.TimeRecordActivity");
+
+                    b.HasDiscriminator().HasValue(24);
+                });
+
             modelBuilder.Entity("CardLabel", b =>
                 {
                     b.HasOne("Ticky.Base.Entities.Label", null)
@@ -1237,6 +1706,23 @@ namespace Ticky.Internal.Migrations
                     b.Navigation("Card");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Ticky.Base.Entities.CardMovedActivity", b =>
+                {
+                    b.HasOne("Ticky.Base.Entities.Column", "FromColumn")
+                        .WithMany()
+                        .HasForeignKey("FromColumnId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Ticky.Base.Entities.Column", "ToColumn")
+                        .WithMany()
+                        .HasForeignKey("ToColumnId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("FromColumn");
+
+                    b.Navigation("ToColumn");
                 });
 
             modelBuilder.Entity("Ticky.Base.Entities.Board", b =>

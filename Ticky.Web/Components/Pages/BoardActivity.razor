@@ -1,0 +1,185 @@
+@page "/boards/{Id:int}/activity"
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject NavigationManager _navigationManager
+
+<PageTitle>Activity - @(_board is null ? "" : $"{_board.Name} - ")@Constants.APP_NAME</PageTitle>
+
+<div class="island flex flex-col space-y-6">
+    <div class="flex flex-col gap-2">
+        <a class="link-muted flex w-max flex-row items-center text-sm hover:text-secondary dark:hover:text-secondaryDark" href="/boards/@Id" title="Back to board">
+            <span class="material-symbols-rounded g-icon self-center">chevron_left</span>
+            Back to board
+        </a>
+        <div class="flex flex-col gap-1">
+            <h2>Activity</h2>
+            <p class="subtext">How @(_board?.Name ?? "this board") is progressing and everything that happened on its cards.</p>
+        </div>
+    </div>
+
+    @if (_burndown.Count > 0)
+    {
+        <section class="flex flex-col gap-4">
+            <div class="flex flex-row flex-wrap items-end justify-between gap-3">
+                <h4 class="font-semibold">Burndown</h4>
+                <div class="flex flex-row gap-5 text-sm">
+                    <span class="subtext">Total <span class="font-semibold text-text dark:text-textDark tabular-nums">@_totalCards</span></span>
+                    <span class="subtext">Open <span class="font-semibold text-secondary dark:text-secondaryDark tabular-nums">@_openCards</span></span>
+                    <span class="subtext">Done <span class="font-semibold text-text dark:text-textDark tabular-nums">@(_totalCards - _openCards)</span></span>
+                </div>
+            </div>
+            <BurndownChart Points="_burndown" />
+        </section>
+    }
+
+    <div class="flex flex-col gap-2">
+        <div class="flex flex-row flex-wrap items-end justify-between gap-3">
+            <h4 class="font-semibold">History</h4>
+            <select class="form-control !w-auto" title="Show only one kind of activity" @onchange="OnFilterChanged">
+                <option value="" selected="@(_filter is null)">All activity</option>
+                @foreach (var type in Enum.GetValues<ActivityType>().Where(x => x != ActivityType.Generic).OrderBy(x => x.GetDisplayName()))
+                {
+                    <option value="@type" selected="@(_filter == type)">@type.GetDisplayName()</option>
+                }
+                <option value="@ActivityType.Generic" selected="@(_filter == ActivityType.Generic)">@ActivityType.Generic.GetDisplayName()</option>
+            </select>
+        </div>
+    </div>
+
+    @if (_board is null || _entries is null)
+    {
+        <Spinner />
+    }
+    else if (_entries.Count == 0)
+    {
+        <p class="subtext py-6 text-center text-sm">
+            @(_filter is null ? "Nothing has happened on this board yet." : "No activity of this kind yet.")
+        </p>
+    }
+    else
+    {
+        <section class="flex flex-col gap-4">
+            @foreach (var day in _entries.GroupBy(x => x.CreatedAt.Date))
+            {
+                <div class="flex flex-col gap-1">
+                    <div class="stats-heading px-1">@DayLabel(day.Key)</div>
+                    <div class="flex flex-col divide-y divide-line rounded-card border border-line">
+                        @foreach (var entry in day)
+                        {
+                            <div class="flex flex-row items-center gap-3 px-3 py-2.5 text-sm">
+                                <span class="avatar-mini shrink-0" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@entry.UserPicture');" title="@entry.UserName"></span>
+                                <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+                                    <span class="min-w-0">
+                                        <span class="font-medium">@entry.UserName</span>
+                                        @((MarkupString)entry.Html)
+                                    </span>
+                                    <a href="/boards/@Id/@entry.CardId" class="link-muted w-max max-w-full truncate text-xs hover:text-secondary dark:hover:text-secondaryDark" title="Open card">
+                                        <span class="font-medium">@_board.Code-@entry.CardNumber</span>
+                                        @entry.CardName
+                                    </a>
+                                </div>
+                                <span class="subtext shrink-0 text-xs whitespace-nowrap" title="@entry.CreatedAt.ToShortString()">@entry.CreatedAt.ToElapsedString()</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (_hasMore)
+            {
+                <button class="btn btn-light w-max self-center" @onclick="LoadMoreAsync">Load more</button>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private const int PAGE_SIZE = 50;
+
+    private record Entry(int CardId, int CardNumber, string CardName, string Html, string UserName, string? UserPicture, DateTime CreatedAt);
+
+    private Board? _board;
+    private List<Entry>? _entries;
+    private ActivityType? _filter;
+    private int _limit = PAGE_SIZE;
+    private bool _hasMore;
+    private List<(DateTime Date, int Open)> _burndown = [];
+    private int _totalCards, _openCards;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var board = await db.Boards
+            .AsNoTracking()
+            .Include(x => x.Memberships)
+            .Include(x => x.Project).ThenInclude(x => x.Memberships)
+            .FirstOrDefaultAsync(x => x.Id == Id);
+
+        if (board is null || !board.VerifyAccess(_user))
+        {
+            _navigationManager.NavigateTo("/");
+            return;
+        }
+
+        _board = board;
+        _filter = null;
+        _limit = PAGE_SIZE;
+
+        // The chart covers the board's whole life, from its first card until today.
+        var timelines = await BurndownHelper.LoadTimelinesAsync(db, Id);
+        _totalCards = timelines.Count;
+        _openCards = timelines.Count(x => !x.DoneNow);
+        _burndown = timelines.Count == 0 ? [] : BurndownHelper.GetOpenPerDay(timelines, timelines.Min(x => x.CreatedAt), DateTime.Today);
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+        var query = db.Activities.Where(x => x.Card.Column.BoardId == Id);
+
+        if (_filter is not null)
+            query = query.Where(x => x.ActivityType == _filter);
+
+        // One extra row tells whether there is more to load.
+        var activities = await query
+            .AsNoTracking()
+            .Include(x => x.Card)
+            .Include(x => x.User)
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
+            .Take(_limit + 1)
+            .ToListAsync();
+
+        _hasMore = activities.Count > _limit;
+        _entries = activities
+            .Take(_limit)
+            .Select(x => new Entry(x.CardId, x.Card.Number, x.Card.Name, x.ToHtml(), x.User.DisplayName, x.User.ProfilePictureFileName, x.CreatedAt))
+            .ToList();
+    }
+
+    private async Task OnFilterChanged(ChangeEventArgs e)
+    {
+        _filter = Enum.TryParse<ActivityType>(e.Value?.ToString(), out var type) ? type : null;
+        _limit = PAGE_SIZE;
+        await LoadAsync();
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        _limit += PAGE_SIZE;
+        await LoadAsync();
+    }
+
+    private static string DayLabel(DateTime day) =>
+        day == DateTime.Today ? "Today"
+        : day == DateTime.Today.AddDays(-1) ? "Yesterday"
+        : day.ToString(day.Year == DateTime.Today.Year ? "dddd, MMMM d" : "MMMM d, yyyy");
+}

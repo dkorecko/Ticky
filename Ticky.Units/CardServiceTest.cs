@@ -104,15 +104,107 @@ public class CardServiceTest
     }
 
     [Test]
-    public async Task ActivityText_EscapesUserInput()
+    public async Task Activity_StoresRawValueAndEscapesWhenShown()
     {
         await _service.AddSubtaskAsync(_cardId, _boardMemberId, "<img src=x onerror=alert(1)>");
 
         using var db = _factory.CreateDbContext();
-        var activity = await db.Activities.SingleAsync(x => x.CardId == _cardId);
+        var activity = (SubtaskAddedActivity)await db.Activities.SingleAsync(x => x.CardId == _cardId);
 
-        Assert.That(activity.Text, Does.Not.Contain("<img"));
-        Assert.That(activity.Text, Does.Contain("&lt;img src=x onerror=alert(1)&gt;"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(activity.ActivityType, Is.EqualTo(ActivityType.SubtaskAdded));
+            Assert.That(activity.LegacyText, Is.Null);
+            Assert.That(activity.SubtaskText, Is.EqualTo("<img src=x onerror=alert(1)>"));
+            Assert.That(activity.ToHtml(), Is.EqualTo("<b>added</b> subtask <b>&lt;img src=x onerror=alert(1)&gt;</b>"));
+        });
+    }
+
+    [Test]
+    public async Task Rename_KeepsOldAndNewTitle()
+    {
+        await _service.RenameAsync(_cardId, _boardMemberId, "Renamed");
+
+        using var db = _factory.CreateDbContext();
+        var activity = (TitleChangedActivity)await db.Activities.SingleAsync(x => x.CardId == _cardId);
+
+        Assert.That(activity.ToHtml(), Is.EqualTo("<b>changed</b> the title from <b>Card 1</b> to <b>Renamed</b>"));
+    }
+
+    [Test]
+    public async Task Join_IsShownAsJoining()
+    {
+        await _service.JoinAsync(_cardId, _boardMemberId);
+
+        using var db = _factory.CreateDbContext();
+        var activity = (AssigneeAddedActivity)await db.Activities.SingleAsync(x => x.CardId == _cardId);
+
+        Assert.That(activity.AssigneeName, Is.EqualTo("Board member"));
+        Assert.That(activity.ToHtml(), Is.EqualTo("<b>joined</b> the card"));
+    }
+
+    private async Task<int> AddColumnAsync(string name, bool finished, int maxCards = 0)
+    {
+        using var db = _factory.CreateDbContext();
+        var boardId = (await db.Cards.Include(x => x.Column).SingleAsync(x => x.Id == _cardId)).Column.BoardId;
+        var column = new Column { Name = name, BoardId = boardId, Index = 1, Finished = finished, MaxCards = maxCards };
+        db.Columns.Add(column);
+        await db.SaveChangesAsync();
+        return column.Id;
+    }
+
+    [Test]
+    public async Task MoveToColumn_RecordsTypedMoveWithColumnSnapshot()
+    {
+        var doneId = await AddColumnAsync("Done & dusted", finished: true);
+
+        Assert.That(await _service.MoveToColumnAsync(_cardId, _boardMemberId, doneId, null), Is.True);
+
+        using var db = _factory.CreateDbContext();
+        var activity = (CardMovedActivity)await db.Activities.SingleAsync(x => x.CardId == _cardId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(activity.ActivityType, Is.EqualTo(ActivityType.CardMoved));
+            Assert.That(activity.FromColumnName, Is.EqualTo("To do"));
+            Assert.That(activity.ToColumnId, Is.EqualTo(doneId));
+            Assert.That(activity.ToColumnName, Is.EqualTo("Done & dusted"));
+            Assert.That(activity.ToColumnFinished, Is.True);
+            Assert.That(activity.ToHtml(), Is.EqualTo("<b>moved</b> the card from <b>To do</b> to <b>Done &amp; dusted</b>"));
+        });
+    }
+
+    [Test]
+    public async Task MoveToColumn_PlacesBeforeTargetCardAndFixesIndices()
+    {
+        var doneId = await AddColumnAsync("Done", finished: true);
+
+        await _service.MoveToColumnAsync(_cardId, _boardMemberId, doneId, null);
+        await _service.MoveToColumnAsync(_otherCardId, _boardMemberId, doneId, _cardId);
+
+        using var db = _factory.CreateDbContext();
+        var cards = await db.Cards.ToDictionaryAsync(x => x.Id);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(cards[_otherCardId].ColumnId, Is.EqualTo(doneId));
+            Assert.That(cards[_otherCardId].Index, Is.EqualTo(0));
+            Assert.That(cards[_cardId].Index, Is.EqualTo(1));
+            Assert.That(cards[_thirdCardId].Index, Is.EqualTo(0));
+        });
+    }
+
+    [Test]
+    public async Task MoveToColumn_FullColumn_ReturnsFalseAndChangesNothing()
+    {
+        var doneId = await AddColumnAsync("Done", finished: true, maxCards: 1);
+        await _service.MoveToColumnAsync(_cardId, _boardMemberId, doneId, null);
+
+        Assert.That(await _service.MoveToColumnAsync(_otherCardId, _boardMemberId, doneId, null), Is.False);
+
+        using var db = _factory.CreateDbContext();
+        Assert.That((await db.Cards.SingleAsync(x => x.Id == _otherCardId)).ColumnId, Is.Not.EqualTo(doneId));
+        Assert.That(await db.Activities.CountAsync(x => x.CardId == _otherCardId), Is.Zero);
     }
 
     private class TestDbContextFactory(DbContextOptions<DataContext> options) : IDbContextFactory<DataContext>
