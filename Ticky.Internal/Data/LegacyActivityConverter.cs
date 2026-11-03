@@ -169,11 +169,30 @@ public static partial class LegacyActivityConverter
 
         activity.LegacyText = null;
 
-        if (WebUtility.HtmlDecode(activity.ToHtml()) == WebUtility.HtmlDecode(text))
+        if (ReadsTheSame(activity, text))
             return true;
 
         activity.LegacyText = text;
         return false;
+    }
+
+    private static bool ReadsTheSame(Activity activity, string text)
+    {
+        static bool Same(string html, string text) => WebUtility.HtmlDecode(html) == WebUtility.HtmlDecode(text);
+
+        if (Same(activity.ToHtml(), text))
+            return true;
+
+        // People who added or removed themselves from the members dialog got "added the user <own name>". It now
+        // reads "joined" / "left the card", which says the same, so compare with the wording for someone else.
+        Activity? asSomeoneElse = activity switch
+        {
+            AssigneeAddedActivity { IsSelf: true } x => new AssigneeAddedActivity { AssigneeName = x.AssigneeName },
+            AssigneeRemovedActivity { IsSelf: true } x => new AssigneeRemovedActivity { AssigneeName = x.AssigneeName },
+            _ => null
+        };
+
+        return asSomeoneElse is not null && Same(asSomeoneElse.ToHtml(), text);
     }
 
     /// <summary>Fills the activity's data from its old text. False if the text does not have the expected shape.</summary>

@@ -255,6 +255,23 @@ public class ActivityTest
     }
 
     [Test]
+    public async Task Convert_AddedOrRemovedThemselvesByName_ReadsAsJoinedOrLeft()
+    {
+        // Ann used the members dialog on herself, which named her instead of saying "joined" / "left".
+        var activities = await ConvertAsync(
+            "<b>added</b> the user <b>Ann</b> as an assignee",
+            "<b>removed</b> the user <b>Ann</b> from the assignees"
+        );
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(activities.Select(x => x.LegacyText), Is.All.Null);
+            Assert.That(activities.Cast<AssigneeActivity>().Select(x => x.AssigneeId), Is.All.EqualTo(_annId));
+            Assert.That(activities.Select(x => x.ToHtml()), Is.EqualTo(new[] { "<b>joined</b> the card", "<b>left</b> the card" }));
+        });
+    }
+
+    [Test]
     public async Task Convert_NameThatBrokeTheMarkup_KeepsText()
     {
         // Before names were escaped, this label name ended its own bold tag and would be read as just "a".
