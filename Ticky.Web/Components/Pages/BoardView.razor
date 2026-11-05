@@ -645,25 +645,7 @@
         }
     }
 
-    private bool IsAdmin()
-    {
-        if(_board is null)
-            return false;
-
-        var boardMembership = _board.Memberships.FirstOrDefault(x => x.UserId.Equals(_user.Id));
-
-        if(boardMembership is null)
-        {
-            var projectMembership = _board.Project.Memberships.FirstOrDefault(x => x.UserId.Equals(_user.Id));
-
-            if(projectMembership is null)
-                return false;
-
-            return projectMembership.IsAdmin;
-        }
-
-        return boardMembership.IsAdmin;
-    }
+    private bool IsAdmin() => _board is not null && _board.IsAdmin(_user);
 
     private async Task OnTaskEdited()
     {

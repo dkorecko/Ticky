@@ -38,6 +38,9 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
+    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+    private MainLayout _mainLayout { get; set; } = default!;
+
     [Parameter]
     public EventCallback OnSubmit { get; set; }
 
@@ -107,6 +110,14 @@
             return;
 
         using var db = _dbContextFactory.CreateDbContext();
+
+        if (!await db.IsBoardAdminAsync(_board.Id, _user))
+        {
+            _mainLayout.RunNotification(new("Only board admins can manage labels.", NotificationType.Fail));
+            Modal?.Close();
+            return;
+        }
+
         var board = await db.Boards
             .Include(x => x.Labels)
             .FirstOrDefaultAsync(x => x.Id.Equals(_board.Id));

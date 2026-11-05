@@ -10,7 +10,7 @@
 <AddLabelModal @ref="_addLabelModal" OnSubmit="() => RunNotification(typeof(Label), OperationType.Added)" />
 <EditLabelModal @ref="_editLabelModal" OnSubmit="() => RunNotification(typeof(Label), OperationType.Edited)" />
 <EditCardModal @ref="_editCardModal" OnSubmit="HandleUpdate" />
-<DeleteConfirmationDialog T="Label" @ref="_deleteLabelModal" OnConfirmed="HandleUpdate"/>
+<DeleteConfirmationDialog T="Label" @ref="_deleteLabelModal" DeleteHandler="DeleteLabelAsync" OnConfirmed="HandleUpdate"/>
 <DeleteConfirmationDialog T="Card" @ref="_deleteCardModal" OnConfirmed="HandleUpdate" />
 
 @if (_board is not null)
@@ -172,7 +172,8 @@
         await HandleUpdate();
     }
 
-    private async Task LoadBoard()
+    /// <summary>Loads the board, or sends the user away and returns false if they are not an admin of it.</summary>
+    private async Task<bool> LoadBoard()
     {
         using var db = _dbContextFactory.CreateDbContext();
 
@@ -188,9 +189,18 @@
 
         if (board is null || !board.VerifyAccess(_user))
         {
+            _board = null;
             MainLayout.RunNotification(new("This board either does not exist or you do not have access.", NotificationType.Fail));
             _navigationManager.NavigateTo("/");
-            return;
+            return false;
+        }
+
+        if (!board.IsAdmin(_user))
+        {
+            _board = null;
+            MainLayout.RunNotification(new("Only board admins can open the board settings.", NotificationType.Fail));
+            _navigationManager.NavigateTo($"/boards/{Id}");
+            return false;
         }
 
         _members = [];
@@ -202,24 +212,16 @@
             _members.AddRange(board.Project.Memberships.Select(x => x.User));
 
         _members = _members.DistinctBy(x => x.Id).ToList();
-
-        _members = [];
-
-        if (board.Memberships.Any())
-            _members.AddRange(board.Memberships.Select(x => x.User));
-
-        if (board.Project.Memberships.Any())
-            _members.AddRange(board.Project.Memberships.Select(x => x.User));
-
-        _members = _members.DistinctBy(x => x.Id).ToList();
         _board = board;
+        return true;
     }
 
     protected override async Task HandleUpdate()
     {
         using var db = _dbContextFactory.CreateDbContext();
 
-        await LoadBoard();
+        if (!await LoadBoard())
+            return;
 
         if (_tab == 2)
             _labels = await db.Labels
@@ -267,6 +269,9 @@
 
         using var db = _dbContextFactory.CreateDbContext();
 
+        if (!await CheckAdminAsync(db))
+            return;
+
         var board = await db.Boards.FirstOrDefaultAsync(x => x.Id.Equals(_board.Id));
 
         if (board is null)
@@ -281,12 +286,40 @@
         await RunNotification(typeof(BoardSettings), OperationType.Edited);
     }
 
+    /// <summary>
+    /// Re-checks the admin role before a change, in case it was taken away after the page loaded. If it was, tells the
+    /// user and sends them back to the board.
+    /// </summary>
+    private async Task<bool> CheckAdminAsync(DataContext db)
+    {
+        if (await db.IsBoardAdminAsync(Id, _user))
+            return true;
+
+        MainLayout.RunNotification(new("Only board admins can change the board settings.", NotificationType.Fail));
+        _navigationManager.NavigateTo($"/boards/{Id}");
+        return false;
+    }
+
+    private async Task<bool> DeleteLabelAsync(Label label)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        if (!await CheckAdminAsync(db))
+            return false;
+
+        await db.Labels.Where(x => x.Id.Equals(label.Id) && x.BoardId.Equals(Id)).ExecuteDeleteAsync();
+        return true;
+    }
+
     private async Task ExportBoard()
     {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        if (!await CheckAdminAsync(db))
+            return;
+
         _isLoading = true;
         StateHasChanged();
-
-        using var db = _dbContextFactory.CreateDbContext();
 
         var board = await db.Boards
             .AsNoTracking()
