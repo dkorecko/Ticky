@@ -1,6 +1,7 @@
 ﻿@inject IJSRuntime _js
 
-<div @ref="_element" data-css-positioned="@(!string.IsNullOrEmpty(PositionClass) ? "true" : "false")" class="dropdown dropdown-animate island-mini absolute z-20 hidden max-w-sm @PositionClass overflow-y-auto">
+@* Modals placed by CSS (PositionClass) stay put; the rest open as a sheet along the bottom of the screen on phones (see main.js). *@
+<div @ref="_element" data-css-positioned="@(_cssPositioned ? "true" : "false")" data-sheet="@(_cssPositioned ? "false" : "true")" class="dropdown dropdown-animate island-mini absolute z-20 hidden max-w-sm @PositionClass overflow-y-auto">
 	<section class="flex w-full flex-row items-center justify-between px-2 py-4">
 		<h5 class="font-semibold">@Title</h5>
 		<a class="material-symbols-rounded g-icon self-center" @onclick="Close" title="Cancel">
@@ -12,6 +13,8 @@
 		@ChildContent
 	</div>
 </div>
+@* Dims the page behind the sheet. Tapping it counts as a tap outside, which closes the modal. *@
+<div class="sheet-backdrop" aria-hidden="true"></div>
 
 @code {
 	[Parameter]
@@ -22,6 +25,8 @@
 
 	[Parameter]
 	public string PositionClass { get; set; } = string.Empty;
+
+	private bool _cssPositioned => !string.IsNullOrEmpty(PositionClass);
 
 	private ElementReference? _element;
 	private string? _elementId;
