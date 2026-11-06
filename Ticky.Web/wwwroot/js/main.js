@@ -29,6 +29,10 @@ function positionDropdown(dropdownElement, left, top, width = null) {
 
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
+            // Closed again before these frames ran (e.g. a quick tap outside): leave it closed.
+            if (openDropdown !== dropdownElement)
+                return;
+
             if (sheet) {
                 placeSheet(dropdownElement);
                 followViewportWithSheet(dropdownElement);

@@ -423,7 +423,8 @@ input[type="color"] {
     background-color: rgb(0 0 0 / 0.6);
 }
 
-.dropdown-sheet.dropdown-animate-in + .sheet-backdrop {
+/* :not(.hidden) so a hidden sheet can never leave the backdrop up, blocking the page. */
+.dropdown-sheet.dropdown-animate-in:not(.hidden) + .sheet-backdrop {
     opacity: 1;
     visibility: visible;
     transition-duration: 0.2s;
