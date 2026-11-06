@@ -379,6 +379,57 @@ input[type="color"] {
     opacity: 1;
 }
 
+/*
+  Action modals on phones: a full-width sheet along the bottom of the screen that slides up.
+  main.js sets its top and height limit so it stays above the on-screen keyboard.
+  The open transition runs longer than the close; closeDropdowns hides the element after 100ms.
+*/
+.dropdown.dropdown-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: none;
+    border-bottom-width: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    overscroll-behavior: contain;
+    transform: translateY(100%);
+    @apply shadow-2xl shadow-black/20;
+}
+
+.dropdown.dropdown-sheet.dropdown-animate-in {
+    transform: translateY(0);
+    transition-duration: 0.2s;
+}
+
+/* Sits right after its action modal in the markup, and only shows while that modal is open as a sheet. */
+.sheet-backdrop {
+    display: none;
+}
+
+.dropdown-sheet + .sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    background-color: rgb(0 0 0 / 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.1s ease, visibility 0.1s;
+}
+
+.dark .dropdown-sheet + .sheet-backdrop {
+    background-color: rgb(0 0 0 / 0.6);
+}
+
+/* :not(.hidden) so a hidden sheet can never leave the backdrop up, blocking the page. */
+.dropdown-sheet.dropdown-animate-in:not(.hidden) + .sheet-backdrop {
+    opacity: 1;
+    visibility: visible;
+    transition-duration: 0.2s;
+}
+
 .board-card {
     @apply bg-primary dark:bg-primaryDark rounded-island p-island-x flex flex-col space-y-4 cursor-pointer border border-line hover:border-secondary/50 dark:hover:border-secondaryDark/50;
 }

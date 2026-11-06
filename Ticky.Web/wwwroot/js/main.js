@@ -1,46 +1,72 @@
 ﻿const OPEN_OFFSET = 8;
+// Below Tailwind's `sm` breakpoint, dropdowns marked data-sheet open as a sheet along the bottom of the screen.
+const SHEET_MAX_SCREEN_WIDTH = 640;
+// Space a sheet leaves above itself, so the page behind stays in sight.
+const SHEET_TOP_GAP = 48;
 
 function positionDropdown(dropdownElement, left, top, width = null) {
     const cssPositioned = dropdownElement.dataset.cssPositioned === 'true';
+    const sheet = dropdownElement.dataset.sheet === 'true' && document.documentElement.clientWidth < SHEET_MAX_SCREEN_WIDTH;
 
+    dropdownElement.classList.toggle('dropdown-sheet', sheet);
     dropdownElement.classList.remove('hidden');
     dropdownElement.style.visibility = 'hidden';
     if (width !== null) {
         dropdownElement.style.width = width + 'px';
     }
 
-    if (!cssPositioned) {
-        dropdownElement.style.left = left + 'px';
-        dropdownElement.style.top = top + 'px';
+    if (sheet) {
+        dropdownElement.style.left = '';
+        dropdownElement.style.maxWidth = '';
+    } else if (!cssPositioned) {
+        // Measure it at the top left first. Placed near the right edge, it would be squeezed into the space left there
+        // and keep that narrow width after being moved back on screen.
+        dropdownElement.style.left = '0px';
+        dropdownElement.style.top = '0px';
+        dropdownElement.style.maxWidth = '';
+        dropdownElement.style.maxHeight = '';
     }
 
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            if (!cssPositioned && document.documentElement.clientWidth > 0 && document.documentElement.clientHeight > 0) {
-                // Use layout size/position, not getBoundingClientRect, so the entry animation's translate doesn't skew the math.
-                const curLeft = parseFloat(dropdownElement.style.left) || 0;
-                const curTop = parseFloat(dropdownElement.style.top) || 0;
-                const width = dropdownElement.offsetWidth;
-                const height = dropdownElement.offsetHeight;
-                const availableWidth = document.documentElement.clientWidth - OPEN_OFFSET;
-                const availableHeight = document.documentElement.clientHeight - OPEN_OFFSET;
+            // Closed again before these frames ran (e.g. a quick tap outside): leave it closed.
+            if (openDropdown !== dropdownElement)
+                return;
 
-                if (curLeft + width > availableWidth) {
-                    if (availableWidth - OPEN_OFFSET > width) {
-                        dropdownElement.style.left = (availableWidth - width) + 'px';
-                    } else {
-                        dropdownElement.style.left = OPEN_OFFSET + 'px';
-                        dropdownElement.style.maxWidth = (availableWidth - OPEN_OFFSET) + 'px';
+            if (sheet) {
+                placeSheet(dropdownElement);
+                followViewportWithSheet(dropdownElement);
+            } else if (!cssPositioned) {
+                let x = left;
+                let y = top;
+
+                if (document.documentElement.clientWidth > 0 && document.documentElement.clientHeight > 0) {
+                    // Use layout size, not getBoundingClientRect, so the entry animation's translate doesn't skew the math.
+                    const width = dropdownElement.offsetWidth;
+                    const height = dropdownElement.offsetHeight;
+                    const availableWidth = document.documentElement.clientWidth - OPEN_OFFSET;
+                    const availableHeight = document.documentElement.clientHeight - OPEN_OFFSET;
+
+                    if (x + width > availableWidth) {
+                        if (availableWidth - OPEN_OFFSET > width) {
+                            x = availableWidth - width;
+                        } else {
+                            x = OPEN_OFFSET;
+                            dropdownElement.style.maxWidth = (availableWidth - OPEN_OFFSET) + 'px';
+                        }
+                    }
+                    if (y + height > availableHeight) {
+                        if (availableHeight - OPEN_OFFSET > height) {
+                            y = availableHeight - height;
+                        } else {
+                            y = OPEN_OFFSET;
+                            dropdownElement.style.maxHeight = (availableHeight - OPEN_OFFSET) + 'px';
+                        }
                     }
                 }
-                if (curTop + height > availableHeight) {
-                    if (availableHeight - OPEN_OFFSET > height) {
-                        dropdownElement.style.top = (availableHeight - height) + 'px';
-                    } else {
-                        dropdownElement.style.top = OPEN_OFFSET + 'px';
-                        dropdownElement.style.maxHeight = (availableHeight - OPEN_OFFSET) + 'px';
-                    }
-                }
+
+                dropdownElement.style.left = x + 'px';
+                dropdownElement.style.top = y + 'px';
             } else if (cssPositioned && document.documentElement.clientHeight > 0) {
                 // CSS decides where it opens, so only cap the height to keep the bottom on screen; the box scrolls.
                 dropdownElement.style.maxHeight = '';
@@ -56,6 +82,43 @@ function positionDropdown(dropdownElement, left, top, width = null) {
             dropdownElement.classList.add('dropdown-animate-in');
         });
     });
+}
+
+// Puts the sheet's bottom edge on the bottom of the visible screen, so it sits just above the on-screen keyboard.
+function placeSheet(sheetElement) {
+    const viewport = window.visualViewport;
+    const viewTop = viewport ? viewport.offsetTop : 0;
+    const viewHeight = viewport ? viewport.height : document.documentElement.clientHeight;
+
+    // Never taller than the visible area, or its top (with the close button) would end up off screen.
+    sheetElement.style.maxHeight = Math.min(viewHeight, Math.max(viewHeight - SHEET_TOP_GAP, 160)) + 'px';
+    sheetElement.style.top = (viewTop + viewHeight - sheetElement.offsetHeight) + 'px';
+}
+
+let stopFollowingViewport = null;
+
+// While a sheet is open, keep it in place when the keyboard opens or closes and when its content changes size.
+function followViewportWithSheet(sheetElement) {
+    stopFollowingViewportWithSheet();
+
+    const place = () => placeSheet(sheetElement);
+    const resizeObserver = new ResizeObserver(place);
+    resizeObserver.observe(sheetElement, { box: 'border-box' });
+    window.visualViewport?.addEventListener('resize', place);
+    window.visualViewport?.addEventListener('scroll', place);
+
+    stopFollowingViewport = () => {
+        resizeObserver.disconnect();
+        window.visualViewport?.removeEventListener('resize', place);
+        window.visualViewport?.removeEventListener('scroll', place);
+    };
+}
+
+function stopFollowingViewportWithSheet() {
+    if (stopFollowingViewport) {
+        stopFollowingViewport();
+        stopFollowingViewport = null;
+    }
 }
 
 let openDropdown = null
@@ -113,6 +176,7 @@ function closeDropdowns() {
     //console.log('closing dropdown')
 
     let targetDropdown = openDropdown
+    stopFollowingViewportWithSheet()
     isPreviousDropdownClosingAnimComplete = false
     targetDropdown.classList.remove('dropdown-animate-in')
 
