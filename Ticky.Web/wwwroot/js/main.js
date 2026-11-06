@@ -90,7 +90,8 @@ function placeSheet(sheetElement) {
     const viewTop = viewport ? viewport.offsetTop : 0;
     const viewHeight = viewport ? viewport.height : document.documentElement.clientHeight;
 
-    sheetElement.style.maxHeight = Math.max(viewHeight - SHEET_TOP_GAP, 160) + 'px';
+    // Never taller than the visible area, or its top (with the close button) would end up off screen.
+    sheetElement.style.maxHeight = Math.min(viewHeight, Math.max(viewHeight - SHEET_TOP_GAP, 160)) + 'px';
     sheetElement.style.top = (viewTop + viewHeight - sheetElement.offsetHeight) + 'px';
 }
 
