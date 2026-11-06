@@ -23,4 +23,19 @@ public class Board : AbstractDbEntity, IDeletable
     public bool VerifyAccess(User user) =>
         Memberships.Any(x => x.UserId.Equals(user.Id))
         || Project.Memberships.Any(x => x.UserId.Equals(user.Id));
+
+    /// <summary>
+    /// Whether the user may manage the board (settings, labels, columns, members). A board membership decides when
+    /// there is one; otherwise the project membership does. Needs <see cref="Memberships"/> and the project's
+    /// memberships loaded.
+    /// </summary>
+    public bool IsAdmin(User user)
+    {
+        var boardMembership = Memberships.FirstOrDefault(x => x.UserId.Equals(user.Id));
+
+        if (boardMembership is not null)
+            return boardMembership.IsAdmin;
+
+        return Project.Memberships.FirstOrDefault(x => x.UserId.Equals(user.Id))?.IsAdmin ?? false;
+    }
 }
