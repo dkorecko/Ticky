@@ -14,10 +14,71 @@ namespace Ticky.Internal.Services;
 public class CardService
 {
     private readonly IDbContextFactory<DataContext> _dbContextFactory;
+    private readonly CardNumberingService _cardNumberingService;
 
-    public CardService(IDbContextFactory<DataContext> dbContextFactory)
+    public CardService(
+        IDbContextFactory<DataContext> dbContextFactory,
+        CardNumberingService cardNumberingService
+    )
     {
         _dbContextFactory = dbContextFactory;
+        _cardNumberingService = cardNumberingService;
+    }
+
+    /// <summary>
+    /// Creates a new card at the bottom of <paramref name="columnId"/>. Returns null if the column
+    /// doesn't exist or the user can't access its board. No activity log entry — matches the UI's
+    /// behaviour, which doesn't log card creation either.
+    /// </summary>
+    public async Task<Card?> CreateCardAsync(int columnId, int userId, string name)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var column = await db.Columns
+            .Include(x => x.Cards)
+            .Include(x => x.Board)
+                .ThenInclude(b => b.Memberships)
+            .Include(x => x.Board)
+                .ThenInclude(b => b.Project)
+                    .ThenInclude(p => p.Memberships)
+            .FirstOrDefaultAsync(x => x.Id == columnId);
+
+        if (column is null)
+            return null;
+
+        var hasAccess = column.Board.Memberships.Any(m => m.UserId == userId)
+            || column.Board.Project.Memberships.Any(m => m.UserId == userId);
+
+        if (!hasAccess)
+            return null;
+
+        int newIndex;
+
+        if (column.NewCardPlacement == CardPlacement.Top)
+        {
+            foreach (var existing in column.Cards)
+                existing.Index++;
+            newIndex = 0;
+        }
+        else
+        {
+            newIndex = IndexHelper.GetNextIndex(column.Cards);
+        }
+
+        var card = new Card
+        {
+            Name = name,
+            ColumnId = columnId,
+            Index = newIndex,
+            CreatedAt = DateTime.Now,
+            Number = await _cardNumberingService.GetNextNumberAsync(column.BoardId),
+            CreatedById = userId,
+        };
+
+        column.Cards.Add(card);
+        await db.SaveChangesAsync();
+
+        return card;
     }
 
     /// <summary>

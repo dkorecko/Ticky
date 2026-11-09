@@ -176,7 +176,13 @@ builder.Services.AddAuthorization(options =>
     );
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    // Serialize enums as names ("High") rather than ints (2) — a stable contract for API callers.
+    options.JsonSerializerOptions.Converters.Add(
+        new System.Text.Json.Serialization.JsonStringEnumConverter()
+    );
+});
 
 #if !DEBUG
 // NOTE: In production, the application is expected to run behind a reverse proxy (e.g., Nginx, Traefik) that terminates HTTPS.
