@@ -127,11 +127,26 @@ namespace Ticky.Base
         public static class Policies
         {
             public const string RequireAdmin = "RequireAdmin";
+
+            /// <summary>Accepts either the Identity cookie or a bearer API token. API controllers use this.</summary>
+            public const string ApiCallerAuthenticated = "ApiCallerAuthenticated";
         }
 
         public static class Roles
         {
             public const string Admin = "Admin";
+        }
+
+        public static class Api
+        {
+            /// <summary>Authentication scheme name for bearer API tokens (stacked alongside Identity's cookie).</summary>
+            public const string TokenScheme = "ApiToken";
+
+            /// <summary>Token plaintext prefix. Lets humans and server logs spot a Ticky API token at a glance.</summary>
+            public const string TokenPrefix = "tky_";
+
+            /// <summary>Random-bytes length behind the prefix. 32 bytes = 256 bits of entropy.</summary>
+            public const int TokenRandomBytes = 32;
         }
 
         public static class StorageKeys

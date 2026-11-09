@@ -1,10 +1,12 @@
 using Devity.Mailing;
 using Devity.NETCore.MailKit.Infrastructure.Internal;
 using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
+using Ticky.Web.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -119,6 +121,7 @@ if (Constants.SMTP_ENABLED)
 
 builder.Services.AddScoped<CodeService>();
 builder.Services.AddScoped<CardService>();
+builder.Services.AddScoped<ApiTokenService>();
 builder.Services.AddDevityMailing<EmailService>(mailKitOptions!);
 builder.Services.AddScoped<AvatarService>();
 builder.Services.AddScoped<UserAccountService>();
@@ -148,11 +151,28 @@ builder
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 
+// Register the bearer scheme alongside Identity's cookie. AddIdentity already set the cookie
+// as default; this just adds an extra scheme that API controllers opt into via policy.
+builder
+    .Services.AddAuthentication()
+    .AddScheme<ApiTokenAuthenticationOptions, ApiTokenAuthenticationHandler>(
+        Constants.Api.TokenScheme,
+        _ => { }
+    );
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(
         Constants.Policies.RequireAdmin,
         policy => policy.RequireClaim(ClaimTypes.Role, Constants.Roles.Admin).Build()
+    );
+
+    // Accepts either the signed-in browser user or a presented API token.
+    options.AddPolicy(
+        Constants.Policies.ApiCallerAuthenticated,
+        policy => policy
+            .AddAuthenticationSchemes(Constants.Api.TokenScheme, IdentityConstants.ApplicationScheme)
+            .RequireAuthenticatedUser()
     );
 });
 

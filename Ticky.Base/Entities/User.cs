@@ -30,6 +30,8 @@ public class User : IdentityUser<int>, IDbEntry, IDeletable
 
     public virtual List<Subtask> Subtasks { get; set; } = [];
 
+    public virtual List<ApiToken> ApiTokens { get; set; } = [];
+
     public required string DisplayName { get; set; }
 
     public bool InstantDelete { get; set; }

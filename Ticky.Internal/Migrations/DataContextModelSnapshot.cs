@@ -257,6 +257,46 @@ namespace Ticky.Internal.Migrations
                     b.UseTphMappingStrategy();
                 });
 
+            modelBuilder.Entity("Ticky.Base.Entities.ApiToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ApiTokens");
+                });
+
             modelBuilder.Entity("Ticky.Base.Entities.Attachment", b =>
                 {
                     b.Property<int>("Id")
@@ -1443,6 +1483,17 @@ namespace Ticky.Internal.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Ticky.Base.Entities.ApiToken", b =>
+                {
+                    b.HasOne("Ticky.Base.Entities.User", "User")
+                        .WithMany("ApiTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Ticky.Base.Entities.Attachment", b =>
                 {
                     b.HasOne("Ticky.Base.Entities.Card", "Card")
@@ -1772,6 +1823,8 @@ namespace Ticky.Internal.Migrations
             modelBuilder.Entity("Ticky.Base.Entities.User", b =>
                 {
                     b.Navigation("Activities");
+
+                    b.Navigation("ApiTokens");
 
                     b.Navigation("BoardMemberships");
 

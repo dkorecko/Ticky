@@ -299,6 +299,22 @@
                 <button class="btn btn-purple max-w-sm" type="submit" disabled="@_isSaving">Change password</button>
             </EditForm>
         </div>
+
+        <HorizontalSeparator />
+
+        <div class="settings-section">
+            <div class="setting-description">
+                <label class="font-semibold opacity-90">API tokens</label>
+                <label class="w-4/5 max-w-2xl opacity-70">
+                    Long-lived bearer tokens for programmatic access to Ticky. Mint, list and revoke them on a dedicated page.
+                </label>
+            </div>
+
+            <a class="btn btn-purple flex max-w-sm !w-max items-center gap-1.5 col-span-3 md:col-span-1 lg:col-span-2" href="/settings/api-tokens">
+                <span class="material-symbols-rounded g-icon self-center">key</span>
+                <span class="self-center">Manage API tokens</span>
+            </a>
+        </div>
     }
 </div>
 
