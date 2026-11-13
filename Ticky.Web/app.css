@@ -489,9 +489,78 @@ input[type="checkbox"].toggle {
     @apply h-[calc(var(--vvh)*100)];
 }
 
-/* Columns grow to share wide screens, up to 28rem each (BoardView caps the row to match). */
+/*
+  Card size, a per-user setting (data-card-size on #board-section).
+  Columns grow to share wide screens between --column-min and --column-max each (BoardView caps the row to match).
+  Default keeps the card's own styles; the other sizes scale the card's text, spacing and avatars.
+*/
+#board-section {
+    --column-min: 18rem;
+    --column-max: 28rem;
+}
+
+#board-section[data-card-size=Compact] {
+    --column-min: 15rem;
+    --column-max: 22rem;
+}
+
+#board-section[data-card-size=Large] {
+    --column-min: 21rem;
+    --column-max: 36rem;
+}
+
 .board-column {
-    @apply flex min-w-72 max-w-[28rem] flex-1 basis-72 flex-col items-center space-y-2 rounded-card bg-text/[0.035] dark:bg-textDark/[0.04] p-1.5;
+    @apply flex flex-1 flex-col items-center space-y-2 rounded-card bg-text/[0.035] dark:bg-textDark/[0.04] p-1.5;
+    min-width: var(--column-min, 18rem);
+    max-width: var(--column-max, 28rem);
+    flex-basis: var(--column-min, 18rem);
+    /* Long unbroken words (pasted links, ...) wrap anywhere, so they can't stretch the column past its width. */
+    overflow-wrap: anywhere;
+}
+
+/* Labels are sized to their text elsewhere; in a column a long one wraps within it instead. */
+.board-column :is(.label, .priority) {
+    @apply w-auto max-w-full;
+}
+
+#board-section[data-card-size=Compact] .task-card {
+    @apply p-2 space-y-1.5;
+}
+
+#board-section[data-card-size=Compact] .task-card h5 {
+    font-size: 0.9rem !important;
+}
+
+#board-section[data-card-size=Compact] .task-card .card-data-point {
+    font-size: 0.65rem;
+}
+
+#board-section[data-card-size=Compact] .task-card :is(.priority, .label) {
+    font-size: 0.6rem;
+}
+
+#board-section[data-card-size=Compact] .task-card .avatar-mini {
+    @apply h-5 min-h-5 w-5 min-w-5;
+}
+
+#board-section[data-card-size=Large] .task-card {
+    @apply p-4 space-y-3;
+}
+
+#board-section[data-card-size=Large] .task-card h5 {
+    font-size: 1.35rem !important;
+}
+
+#board-section[data-card-size=Large] .task-card .card-data-point {
+    font-size: 0.8125rem;
+}
+
+#board-section[data-card-size=Large] .task-card :is(.priority, .label) {
+    font-size: 0.75rem;
+}
+
+#board-section[data-card-size=Large] .task-card .avatar-mini {
+    @apply h-8 min-h-8 w-8 min-w-8;
 }
 
 /*

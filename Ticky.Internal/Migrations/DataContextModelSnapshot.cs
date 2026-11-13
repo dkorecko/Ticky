@@ -787,6 +787,9 @@ namespace Ticky.Internal.Migrations
                     b.Property<bool>("AutomaticDeadlineReminder")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<int>("CardSize")
+                        .HasColumnType("int");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("longtext");

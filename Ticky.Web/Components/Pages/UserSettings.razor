@@ -113,6 +113,30 @@
 
             <input type="checkbox" class="toggle" checked=@_user.AutomaticAssign @onchange="(e) => OnSettingChanged(e, x => x.AutomaticAssign)">
         </div>
+
+        <HorizontalSeparator />
+
+        <div class="settings-section">
+            <div class="setting-description">
+                <label class="font-semibold opacity-90">Card size</label>
+                <label class="w-4/5 max-w-2xl opacity-70">
+                    How large columns and cards are on boards. Compact fits more on the screen, large is easier to read.
+                    It only changes how boards look for you.
+                </label>
+            </div>
+
+            <div class="flex h-min w-max flex-row gap-1 rounded-button border border-line p-0.5" role="radiogroup" aria-label="Card size">
+                @* Sorted again: GetValues orders by the unsigned value, which puts Compact (-1) last. *@
+                @foreach (var size in Enum.GetValues<CardSize>().Order())
+                {
+                    <button type="button" role="radio" aria-checked="@((_user.CardSize == size).ToString().ToLowerInvariant())"
+                            data-active="@((_user.CardSize == size).ToString())" class="detail-tab"
+                            @onclick="() => SetCardSize(size)">
+                        @size
+                    </button>
+                }
+            </div>
+        </div>
     }
     else if (_tab == 2)
     {
@@ -562,6 +586,28 @@
 
         await db.SaveChangesAsync();
 
+        await RunNotification(typeof(UserSettings), OperationType.Edited);
+    }
+
+    private async Task SetCardSize(CardSize size)
+    {
+        ArgumentNullException.ThrowIfNull(_user);
+
+        if (_user.CardSize == size)
+            return;
+
+        using var db = _dbContextFactory.CreateDbContext();
+
+        var user = await db.Users.FirstOrDefaultAsync(x => x.Id.Equals(_user.Id));
+
+        if (user is null)
+            return;
+
+        user.CardSize = size;
+        await db.SaveChangesAsync();
+
+        // Boards read the size from the signed-in user, so reload it for them to pick the change up.
+        await MainLayout.RefreshUserAsync();
         await RunNotification(typeof(UserSettings), OperationType.Edited);
     }
 

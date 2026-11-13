@@ -40,6 +40,8 @@ public class User : IdentityUser<int>, IDbEntry, IDeletable
 
     public bool AutomaticAssign { get; set; }
 
+    public CardSize CardSize { get; set; }
+
     public string? ProfilePictureFileName { get; set; }
 
     public int? LastVisitedBoardId { get; set; }
