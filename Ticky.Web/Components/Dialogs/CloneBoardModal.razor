@@ -15,6 +15,10 @@
 				}
 			</InputSelect>
 			<ValidationMessage For="() => _model.TargetProjectId" />
+			@if (_projects.Count == 0)
+			{
+				<p class="subtext">You don't administer any project, so there's nowhere to clone this board to.</p>
+			}
 		</div>
 
 		<div class="form-group">
@@ -47,15 +51,16 @@
 
 		using var db = _dbContextFactory.CreateDbContext();
 
+		// Only projects the user may add boards to, as with creating a board.
 		_projects = await db.Projects
-			.Include(x => x.Memberships)
 			.AsNoTracking()
-			.Where(x => x.Memberships.Any(m => m.UserId.Equals(_user.Id)))
+			.Where(Project.AdministeredBy(_user.Id))
+			.OrderBy(x => x.Name)
 			.ToListAsync();
 
 		_model = new CloneBoardModel
 		{
-			TargetProjectId = sourceBoard.ProjectId,
+			TargetProjectId = _projects.Any(x => x.Id == sourceBoard.ProjectId) ? sourceBoard.ProjectId : null,
 			Code = sourceBoard.Code,
 		};
 		_editContext = new(_model);
@@ -82,6 +87,21 @@
 		try
 		{
 			using var db = _dbContextFactory.CreateDbContext();
+
+			// Only admins see the option, but the role may have changed since the dialog opened.
+			if (!await db.IsBoardAdminAsync(_sourceBoard.Id, _user))
+			{
+				_mainLayout.RunNotification(new("Only board admins can clone the board.", NotificationType.Fail));
+				await Modal.Close();
+				return;
+			}
+
+			// The list only offers projects the user administers, but the submitted id comes from the browser.
+			if (!await db.Projects.Where(x => x.Id == _model.TargetProjectId).AnyAsync(Project.AdministeredBy(_user.Id)))
+			{
+				_mainLayout.RunNotification(new("You can only clone into projects you administer.", NotificationType.Fail));
+				return;
+			}
 
 			var board = await db.Boards
 				.Include(x => x.Columns)
