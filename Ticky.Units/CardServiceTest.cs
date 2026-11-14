@@ -26,7 +26,7 @@ public class CardServiceTest
         _factory = new TestDbContextFactory(
             new DbContextOptionsBuilder<DataContext>().UseSqlite(_connection).Options
         );
-        _service = new CardService(_factory);
+        _service = new CardService(_factory, new CardNumberingService(_factory));
 
         using var db = _factory.CreateDbContext();
         db.Database.EnsureCreated();

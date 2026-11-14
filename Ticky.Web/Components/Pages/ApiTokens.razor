@@ -1,0 +1,192 @@
+@page "/settings/api-tokens"
+@inject ApiTokenService _apiTokenService
+@inject IJSRuntime _js
+@inherits NotifiableBase
+
+<PageTitle>API tokens - @Constants.APP_NAME</PageTitle>
+
+<div class="island flex flex-col space-y-6">
+    <h2>API tokens</h2>
+
+    <div class="setting-description">
+        <p class="text-sm opacity-80">
+            Mint a long-lived bearer token for programmatic access to Ticky's API — for example to let an agent read and update your boards. Each token carries your identity one-for-one: it can do whatever you can do. Keep tokens somewhere safe; Ticky stores only a hash of the token's value, so a lost token must be revoked and re-minted.
+        </p>
+        <p class="text-sm opacity-60">
+            Send on each request as <code>Authorization: Bearer &lt;token&gt;</code>.
+        </p>
+    </div>
+
+    <HorizontalSeparator/>
+
+    <div class="settings-section">
+        <div class="setting-description">
+            <label class="font-semibold opacity-90" for="new-token-name">Mint a new token</label>
+            <label class="w-4/5 max-w-2xl opacity-70" for="new-token-name">
+                A short label so you can tell this token apart from the others later. Only visible to you.
+            </label>
+        </div>
+
+        <EditForm class="form col-span-3 w-full max-w-sm md:col-span-1 lg:col-span-2" Model="_mintModel" OnValidSubmit="MintAsync">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <InputText id="new-token-name" class="input-field" @bind-Value="_mintModel.Name" placeholder="openclaw-grouper" maxlength="80" />
+                <ValidationMessage For="() => _mintModel.Name" />
+            </div>
+
+            <button class="btn btn-purple max-w-sm" type="submit" disabled="@_isMinting">Mint token</button>
+        </EditForm>
+    </div>
+
+    @if (_lastMintedPlaintext is not null)
+    {
+        <div class="rounded-lg border border-secondary/40 bg-secondary/10 p-4 dark:border-secondaryDark/40 dark:bg-secondaryDark/10">
+            <div class="mb-2 flex items-center justify-between gap-3">
+                <strong>Copy this token now — it won't be shown again.</strong>
+                <button type="button" class="btn btn-transparent btn-sm" @onclick="DismissMint">
+                    <span class="material-symbols-rounded g-icon self-center">close</span>
+                </button>
+            </div>
+            <div class="flex flex-row items-center gap-2">
+                <code class="flex-1 overflow-x-auto rounded bg-background/60 px-3 py-2 font-mono text-sm">@_lastMintedPlaintext</code>
+                <button type="button" class="btn btn-purple" @onclick="CopyLastMinted">Copy</button>
+            </div>
+        </div>
+    }
+
+    <HorizontalSeparator/>
+
+    <div class="settings-section">
+        <div class="setting-description">
+            <h6 class="font-semibold">Existing tokens</h6>
+            <p class="w-4/5 max-w-2xl opacity-70 text-sm">
+                Revoking a token invalidates it immediately for every caller. There's no undo — mint a new one if you need access again.
+            </p>
+        </div>
+
+        <div class="col-span-3 w-full md:col-span-2 lg:col-span-3">
+            @if (_tokens is null)
+            {
+                <Spinner/>
+            }
+            else if (!_tokens.Any())
+            {
+                <p class="text-sm opacity-60">No tokens yet.</p>
+            }
+            else
+            {
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-line">
+                            <th class="text-left font-semibold py-2">Name</th>
+                            <th class="text-left font-semibold py-2">Created</th>
+                            <th class="text-left font-semibold py-2">Last used</th>
+                            <th class="text-left font-semibold py-2">Status</th>
+                            <th class="py-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var token in _tokens)
+                        {
+                            <tr class="border-b border-line/40">
+                                <td class="py-2 pr-4">@token.Name</td>
+                                <td class="py-2 pr-4 opacity-70">@token.CreatedAt.ToShortString()</td>
+                                <td class="py-2 pr-4 opacity-70">@(token.LastUsedAt?.ToShortString() ?? "—")</td>
+                                <td class="py-2 pr-4">
+                                    @if (token.RevokedAt is not null)
+                                    {
+                                        <span class="opacity-60">revoked @token.RevokedAt.Value.ToShortString()</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-secondary dark:text-secondaryDark">active</span>
+                                    }
+                                </td>
+                                <td class="py-2 text-right">
+                                    @if (token.RevokedAt is null)
+                                    {
+                                        <button type="button" class="btn btn-transparent btn-sm" @onclick="() => RevokeAsync(token.Id)" title="Revoke token">
+                                            <span class="material-symbols-rounded g-icon">block</span>
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    private class MintModel
+    {
+        [Required(AllowEmptyStrings = false, ErrorMessage = "A name is required.")]
+        [MaxLength(80)]
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private MintModel _mintModel = new();
+    private List<ApiToken>? _tokens;
+    private string? _lastMintedPlaintext;
+    private bool _isMinting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTokensAsync();
+    }
+
+    private async Task LoadTokensAsync()
+    {
+        _tokens = await _apiTokenService.ListAsync(_user.Id);
+    }
+
+    private async Task MintAsync()
+    {
+        if (_isMinting)
+            return;
+
+        _isMinting = true;
+
+        try
+        {
+            var result = await _apiTokenService.MintAsync(_user.Id, _mintModel.Name.Trim());
+            _lastMintedPlaintext = result.Plaintext;
+            _mintModel = new();
+            await LoadTokensAsync();
+            MainLayout.RunNotification(new Notification("Token minted. Copy it before leaving this page."));
+        }
+        finally
+        {
+            _isMinting = false;
+        }
+    }
+
+    private async Task RevokeAsync(int tokenId)
+    {
+        if (await _apiTokenService.RevokeAsync(_user.Id, tokenId))
+        {
+            await LoadTokensAsync();
+            MainLayout.RunNotification(new Notification("Token revoked."));
+        }
+    }
+
+    private void DismissMint()
+    {
+        _lastMintedPlaintext = null;
+    }
+
+    private async Task CopyLastMinted()
+    {
+        if (_lastMintedPlaintext is null)
+            return;
+
+        await _js.InvokeVoidAsync("navigator.clipboard.writeText", _lastMintedPlaintext);
+        MainLayout.RunNotification(new Notification("Copied to clipboard."));
+    }
+}

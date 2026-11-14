@@ -25,6 +25,7 @@ namespace Ticky.Internal.Data
         public DbSet<LastVisit> LastVisits { get; set; } = default!;
         public DbSet<CardLink> CardLinks { get; set; } = default!;
         public DbSet<Favorite> Favorites { get; set; } = default!;
+        public DbSet<ApiToken> ApiTokens { get; set; } = default!;
         public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = default!;
 
         public DataContext(DbContextOptions<DataContext> options)
@@ -226,6 +227,16 @@ namespace Ticky.Internal.Data
                 .WithOne(x => x.User)
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder
+                .Entity<User>()
+                .HasMany(x => x.ApiTokens)
+                .WithOne(x => x.User)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Lookup path on every API request — unique because collisions would be ambiguous.
+            modelBuilder.Entity<ApiToken>().HasIndex(x => x.TokenHash).IsUnique();
         }
 
         /// <summary>Every concrete <see cref="Activity"/> subclass, i.e. one per <see cref="ActivityType"/>.</summary>
