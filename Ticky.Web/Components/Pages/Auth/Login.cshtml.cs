@@ -1,11 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace Ticky.Web.Pages.Auth;
 
 public class LoginModel : PageModel
 {
     private readonly SignInManager<User> _signInManager;
+    private readonly int _lockoutMinutes;
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -17,9 +19,10 @@ public class LoginModel : PageModel
     /// <summary>The page that confirms the e-mail address, set when the sign-up of the account isn't finished.</summary>
     public string? ConfirmMailUrl { get; set; }
 
-    public LoginModel(SignInManager<User> signInManager)
+    public LoginModel(SignInManager<User> signInManager, IOptions<IdentityOptions> identityOptions)
     {
         _signInManager = signInManager;
+        _lockoutMinutes = (int)Math.Ceiling(identityOptions.Value.Lockout.DefaultLockoutTimeSpan.TotalMinutes);
     }
 
     public IActionResult OnGet(string? returnUrl = null, bool passwordChanged = false)
@@ -38,11 +41,16 @@ public class LoginModel : PageModel
                 Input.Email.Trim(),
                 Input.Password,
                 true,
-                lockoutOnFailure: false
+                lockoutOnFailure: true
             );
 
             if (result.Succeeded)
                 return LocalRedirect(returnUrl ?? Url.Content("~/"));
+            else if (result.IsLockedOut)
+                ModelState.AddModelError(
+                    $"{nameof(Input)}.{nameof(Input.Email)}",
+                    $"Too many failed sign-in attempts. Please try again in {_lockoutMinutes} minutes."
+                );
             else if (result.IsNotAllowed)
             {
                 // Only reached with the right password, see SignUpAwareSignInManager.

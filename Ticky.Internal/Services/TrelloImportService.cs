@@ -14,6 +14,7 @@ public class TrelloImportService
         _logger = logger;
     }
 
+    /// <exception cref="UnauthorizedAccessException">The user does not administer the project.</exception>
     public async Task ImportTrelloBoardAsync(
         ImportModel importModel,
         int projectId,
@@ -21,6 +22,11 @@ public class TrelloImportService
     )
     {
         using var db = _dbContextFactory.CreateDbContext();
+
+        // Only project admins add boards to a project; the role may have changed since the dialog opened.
+        if (!await db.IsProjectAdminAsync(projectId, currentUserId))
+            throw new UnauthorizedAccessException("Only project admins can import boards into the project.");
+
         var importDto = importModel.ImportDto!;
 
         Dictionary<string, User> trelloIdToUser = new();

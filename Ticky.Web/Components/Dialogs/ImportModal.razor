@@ -124,6 +124,12 @@
         {
             await _trelloImportService.ImportTrelloBoardAsync(_model, _projectId, _user.Id);
         }
+        catch (UnauthorizedAccessException)
+        {
+            _mainLayout.RunNotification(new("Only project admins can import boards into the project.", NotificationType.Fail));
+            await Modal.Close();
+            return;
+        }
         catch (Exception ex)
         {
             _logger.LogError($"Import failed, error: {ex}");

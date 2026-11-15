@@ -121,6 +121,9 @@
 
         using var db = _dbContextFactory.CreateDbContext();
 
+        if (!await CheckAdminAsync(db))
+            return;
+
         var board = await db.Boards
             .Include(x => x.Memberships)
                 .ThenInclude(x => x.User)
@@ -166,7 +169,12 @@
 
         using var db = _dbContextFactory.CreateDbContext();
 
-        var targetMembership = await db.BoardMemberships.FirstOrDefaultAsync(x => x.Id.Equals(membershipId));
+        if (!await CheckAdminAsync(db))
+            return;
+
+        // Only a membership of this board may be changed.
+        var targetMembership = await db.BoardMemberships
+            .FirstOrDefaultAsync(x => x.Id.Equals(membershipId) && x.BoardId.Equals(_board.Id));
 
         if (targetMembership is null)
             return;
@@ -184,6 +192,9 @@
             return;
 
         using var db = _dbContextFactory.CreateDbContext();
+
+        if (!await CheckAdminAsync(db))
+            return;
 
         var board = await db.Boards
             .Include(x => x.Memberships)
@@ -203,5 +214,22 @@
 
         _board = board;
         await OnSubmit.InvokeAsync();
+    }
+
+    /// <summary>
+    /// Re-checks the admin role before a change, in case it was taken away after the dialog opened. If it was, tells
+    /// the user and closes the dialog.
+    /// </summary>
+    private async Task<bool> CheckAdminAsync(DataContext db)
+    {
+        if (_board is not null && await db.IsBoardAdminAsync(_board.Id, _user))
+            return true;
+
+        _mainLayout.RunNotification(new Notification("Only board admins can manage the board's members.", NotificationType.Fail));
+
+        if (Modal is not null)
+            await Modal.Close();
+
+        return false;
     }
 }

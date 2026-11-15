@@ -21,6 +21,14 @@ public static class BoardAccessHelper
         return board is not null && board.IsAdmin(user);
     }
 
+    /// <summary>
+    /// Whether the user is an admin of the project (see <see cref="Project.AdministeredBy"/>), read from the database
+    /// rather than from a project loaded earlier, since the role may have changed since then. False if the project does
+    /// not exist.
+    /// </summary>
+    public static Task<bool> IsProjectAdminAsync(this DataContext db, int projectId, int userId) =>
+        db.Projects.Where(x => x.Id == projectId).AnyAsync(Project.AdministeredBy(userId));
+
     /// <summary>Only the boards the user may open (see <see cref="Board.AccessibleBy"/>).</summary>
     public static IQueryable<Board> AccessibleBy(this IQueryable<Board> boards, int userId) =>
         boards.Where(Board.AccessibleBy(userId));
@@ -32,6 +40,29 @@ public static class BoardAccessHelper
     /// <summary>Only the cards on boards the user may open.</summary>
     public static IQueryable<Card> AccessibleBy(this IQueryable<Card> cards, int userId) =>
         cards.Where(OnBoard<Card>(card => card.Column.Board, userId));
+
+    /// <summary>Only the subtasks of cards on boards the user may open.</summary>
+    public static IQueryable<Subtask> AccessibleBy(this IQueryable<Subtask> subtasks, int userId) =>
+        subtasks.Where(OnBoard<Subtask>(subtask => subtask.Card.Column.Board, userId));
+
+    /// <summary>Only the time records of cards on boards the user may open.</summary>
+    public static IQueryable<TimeRecord> AccessibleBy(this IQueryable<TimeRecord> timeRecords, int userId) =>
+        timeRecords.Where(OnBoard<TimeRecord>(record => record.Card.Column.Board, userId));
+
+    /// <summary>Only the reminders of cards on boards the user may open.</summary>
+    public static IQueryable<Reminder> AccessibleBy(this IQueryable<Reminder> reminders, int userId) =>
+        reminders.Where(OnBoard<Reminder>(reminder => reminder.Card.Column.Board, userId));
+
+    /// <summary>Only the attachments of cards on boards the user may open.</summary>
+    public static IQueryable<Attachment> AccessibleBy(this IQueryable<Attachment> attachments, int userId) =>
+        attachments.Where(OnBoard<Attachment>(attachment => attachment.Card.Column.Board, userId));
+
+    /// <summary>
+    /// Only the links whose first card is on a board the user may open. A link is stored once per direction, so this
+    /// is the card the user sees the link on.
+    /// </summary>
+    public static IQueryable<CardLink> AccessibleBy(this IQueryable<CardLink> links, int userId) =>
+        links.Where(OnBoard<CardLink>(link => link.CardOne.Column.Board, userId));
 
     /// <summary>
     /// <see cref="Board.AccessibleBy"/> applied to the board that <paramref name="board"/> leads to, so the rule is
