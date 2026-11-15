@@ -121,6 +121,7 @@ if (Constants.SMTP_ENABLED)
     }
 }
 
+builder.Services.AddSingleton<CodeAttemptTracker>();
 builder.Services.AddScoped<CodeService>();
 builder.Services.AddScoped<CardService>();
 builder.Services.AddScoped<ApiTokenService>();

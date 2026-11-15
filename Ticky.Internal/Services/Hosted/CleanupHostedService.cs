@@ -15,11 +15,10 @@ public class CleanupHostedService(IServiceScopeFactory serviceScopeFactory)
         using var scope = ServiceScopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<DataContext>()!;
 
+        var expiredBefore = DateTime.Now - CodeService.Lifetime;
         var codesForDeletion = await db
             .Codes.Include(x => x.User)
-            .Where(x =>
-                DateTime.Now.AddHours(-1) > x.CreatedAt || (x.User != null && x.User.EmailConfirmed)
-            )
+            .Where(x => expiredBefore > x.CreatedAt || (x.User != null && x.User.EmailConfirmed))
             .ToListAsync();
         int deletedAccounts = 0;
 

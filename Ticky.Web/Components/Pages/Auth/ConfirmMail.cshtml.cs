@@ -3,14 +3,20 @@ namespace Ticky.Web.Pages.Auth;
 public class ConfirmMailModel : PageModel
 {
     private readonly DataContext _dataContext;
+    private readonly CodeService _codeService;
     private readonly SignInManager<User> _signInManager;
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public ConfirmMailModel(DataContext dataContext, SignInManager<User> signInManager)
+    public ConfirmMailModel(
+        DataContext dataContext,
+        CodeService codeService,
+        SignInManager<User> signInManager
+    )
     {
         _dataContext = dataContext;
+        _codeService = codeService;
         _signInManager = signInManager;
     }
 
@@ -24,21 +30,18 @@ public class ConfirmMailModel : PageModel
     {
         if (ModelState.IsValid)
         {
-            var targetUser = await _dataContext
-                .Users.Where(x => Input.EmailAddress.Equals(x.Email))
-                .Include(x => x.EmailVerificationCode)
-                .FirstOrDefaultAsync(x =>
-                    x.EmailVerificationCode != null
-                    && Input.Code.Equals(x.EmailVerificationCode.Value)
-                );
+            var targetCode = await _codeService.VerifyCodeAsync(
+                Input.EmailAddress,
+                Input.Code,
+                CodePurpose.NewAccount
+            );
 
-            if (targetUser is not null)
+            if (targetCode is not null)
             {
+                var targetUser = targetCode.User;
                 targetUser.EmailConfirmed = true;
-                _dataContext.Update(targetUser);
-                _dataContext.Codes.Remove(targetUser.EmailVerificationCode!);
-
                 await _dataContext.SaveChangesAsync();
+                await _codeService.ConsumeCodeAsync(targetCode);
 
                 await _signInManager.SignInAsync(targetUser, true);
 
@@ -47,7 +50,7 @@ public class ConfirmMailModel : PageModel
 
             ModelState.AddModelError(
                 $"{nameof(Input)}.{nameof(Input.Code)}",
-                "The provided code was not valid."
+                "The e-mail address or the code was not correct, or the code has expired."
             );
         }
 
@@ -57,8 +60,8 @@ public class ConfirmMailModel : PageModel
     public class InputModel
     {
         [Required(AllowEmptyStrings = false)]
-        [RegularExpression("[1-9]{3}-[1-9]{3}")]
-        [Display(Name = "Confirmation code from the received e-mail", Prompt = "123-456")]
+        [RegularExpression(CodeService.InputPattern)]
+        [Display(Name = "Confirmation code from the received e-mail", Prompt = "K7M2-QX4P")]
         public string Code { get; set; } = string.Empty;
 
         [Required(AllowEmptyStrings = false)]

@@ -27,6 +27,10 @@ public class ForgotPasswordModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        // Without SMTP nobody could receive the code. The page doesn't offer the form either.
+        if (!Constants.SMTP_ENABLED)
+            return Page();
+
         if (ModelState.IsValid)
         {
             var targetUser = await _dataContext.Users.FirstOrDefaultAsync(x =>
@@ -35,10 +39,16 @@ public class ForgotPasswordModel : PageModel
 
             if (targetUser is not null)
             {
-                await _emailService.SendForgottenPasswordCodeEmailAsync(
-                    Input.EmailAddress,
-                    await _codeService.CreateCodeAsync(targetUser, CodePurpose.ForgottenPassword)
-                );
+                // Submitting again right away doesn't replace the code that was just mailed.
+                if (!await _codeService.HasRecentCodeAsync(targetUser))
+                    await _emailService.SendForgottenPasswordCodeEmailAsync(
+                        Input.EmailAddress,
+                        await _codeService.CreateCodeAsync(
+                            targetUser,
+                            CodePurpose.ForgottenPassword
+                        )
+                    );
+
                 return LocalRedirect("/auth/changepassword");
             }
 
