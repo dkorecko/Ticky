@@ -28,6 +28,10 @@
             @Html.EditorFor(model => model.Input.Password, new { htmlAttributes = new { @class = "auth-input" } })
             @Html.ValidationMessageFor(model => model.Input.Password)
             <a class="auth-link" href="/auth/forgotpassword">Forgotten password?</a>
+            @if (Model.ConfirmMailUrl is not null)
+            {
+                <a class="auth-link" href="@Model.ConfirmMailUrl">Enter the confirmation code</a>
+            }
         </div>
 
         @Html.AntiForgeryToken()

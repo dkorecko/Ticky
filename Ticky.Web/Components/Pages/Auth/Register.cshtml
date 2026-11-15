@@ -3,12 +3,12 @@
 
 <div class="auth-items-group">
     <h1>Welcome!</h1>
-    @if (Constants.SMTP_ENABLED && !Constants.DISABLE_USER_SIGNUPS)
+    @if (Model.SignUpsOpen)
     {
         <p class="subtext">Please provide some info for us to create an account for you</p>
     }
 </div>
-@if (Constants.DISABLE_USER_SIGNUPS || !Constants.SMTP_ENABLED)
+@if (!Model.SignUpsOpen)
 {
     <div class="auth-section">
         @if (Constants.DISABLE_USER_SIGNUPS)

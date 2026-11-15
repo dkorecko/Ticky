@@ -53,6 +53,7 @@ builder
         options.SignIn.RequireConfirmedEmail = false;
     })
     .AddEntityFrameworkStores<DataContext>()
+    .AddSignInManager<SignUpAwareSignInManager>()
     .AddDefaultTokenProviders();
 
 builder.Services.ConfigureApplicationCookie(options =>

@@ -26,6 +26,12 @@ public class RegisterModel : PageModel
         _avatarService = avatarService;
     }
 
+    /// <summary>
+    /// Whether accounts can be created. Signing up needs an e-mail to confirm the address, and the administrator can
+    /// turn it off.
+    /// </summary>
+    public bool SignUpsOpen => Constants.SMTP_ENABLED && !Constants.DISABLE_USER_SIGNUPS;
+
     public IActionResult OnGet()
     {
         return Page();
@@ -33,6 +39,10 @@ public class RegisterModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        // The page hides the form then, but a request doesn't need the form.
+        if (!SignUpsOpen)
+            return Page();
+
         if (ModelState.IsValid)
         {
             Input.DisplayName = Input.DisplayName.Trim();
