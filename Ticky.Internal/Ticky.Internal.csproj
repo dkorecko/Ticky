@@ -26,13 +26,13 @@
   </ItemGroup>
 
   <!-- Security pins for transitive packages. Remove each one once the package that pulls it in ships a patched version.
-       Devity.NETCore.MailKit 2.2.2 (via Devity.Mailing) depends on MailKit 4.11.0 (GHSA-9j88-vvj5-vhgr), which depends on
-       MimeKit 4.11.0 (GHSA-g7hc-96xr-gvvx). MimeKit 4.18.x in turn requires System.Security.Cryptography.Pkcs 10.0.13,
-       which replaces the vulnerable 8.0.1 (GHSA-846f-f764-76mx, GHSA-2fmv-rv2c-59x7), so Pkcs needs no pin of its own.
-       Stay on the 4.x line: Devity.NETCore.MailKit is built against it. -->
+       Devity.Mailing 2025.8.13.2012 depends on Devity.NETCore.MailKit 2.2.2, which brings in MailKit 4.11.0
+       (GHSA-9j88-vvj5-vhgr), MimeKit 4.11.0 (GHSA-g7hc-96xr-gvvx) and System.Security.Cryptography.Pkcs 8.0.1
+       (GHSA-846f-f764-76mx, GHSA-2fmv-rv2c-59x7). Devity.NETCore.MailKit 2.5.1 depends on MailKit 4.18.2, which brings
+       MimeKit 4.18.2 and Pkcs 10.0.13, so nothing but this one reference is needed. Drop it once Devity.Mailing depends
+       on Devity.NETCore.MailKit 2.5.1 or newer. -->
   <ItemGroup>
-    <PackageReference Include="MailKit" Version="4.18.2" />
-    <PackageReference Include="MimeKit" Version="4.18.2" />
+    <PackageReference Include="Devity.NETCore.MailKit" Version="2.5.1" />
   </ItemGroup>
 
   <!-- Pomelo.EntityFrameworkCore.MySql 9.0.0 depends on MySqlConnector 2.4.0 (GHSA-473q-m89c-ghf8). Fixed in 2.6.1. -->
