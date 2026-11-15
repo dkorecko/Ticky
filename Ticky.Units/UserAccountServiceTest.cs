@@ -53,6 +53,9 @@ public class UserAccountServiceTest
                 options.Password.RequireUppercase = false;
                 options.Password.RequireLowercase = false;
                 options.Password.RequireNonAlphanumeric = false;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                options.Lockout.AllowedForNewUsers = true;
             })
             .AddRoles<IdentityRole<int>>()
             .AddEntityFrameworkStores<DataContext>();
@@ -178,6 +181,52 @@ public class UserAccountServiceTest
             Assert.That(after.DisplayName, Is.EqualTo("Jane Doe"));
             Assert.That(after.NeedsNewCredentials, Is.False);
             Assert.That(await PasswordWorksAsync(_userId, PASSWORD), Is.True);
+        });
+    }
+
+    [Test]
+    public async Task UpdateUser_NewPassword_EndsALockoutAndForgetsFailedAttempts()
+    {
+        await LockOutAsync(_userId);
+        Assert.That(await IsLockedOutAsync(_userId), Is.True);
+
+        var result = await _service.UpdateUserAsync(_adminId, _userId, "Jane Doe", "jane@test.com", NEW_PASSWORD, true);
+        var after = await GetUserAsync(_userId);
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(result.Succeeded, Is.True);
+            Assert.That(await IsLockedOutAsync(_userId), Is.False);
+            Assert.That(after.LockoutEnd, Is.Null);
+            Assert.That(after.AccessFailedCount, Is.Zero);
+        });
+    }
+
+    [Test]
+    public async Task UpdateUser_WithoutNewPassword_KeepsALockout()
+    {
+        await LockOutAsync(_userId);
+
+        var result = await _service.UpdateUserAsync(_adminId, _userId, "Jane Smith", "jane@test.com", null, true);
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(result.Succeeded, Is.True);
+            Assert.That(await IsLockedOutAsync(_userId), Is.True);
+        });
+    }
+
+    [Test]
+    public async Task UpdateUser_RefusedNewPassword_KeepsALockout()
+    {
+        await LockOutAsync(_userId);
+
+        var result = await _service.UpdateUserAsync(_adminId, _userId, "Jane Doe", "jane@test.com", "abc", true);
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(result.Succeeded, Is.False);
+            Assert.That(await IsLockedOutAsync(_userId), Is.True);
         });
     }
 
@@ -590,6 +639,44 @@ public class UserAccountServiceTest
             Assert.That((await FindByNameAsync("conflict@test.com"))?.Email, Is.EqualTo("admin@test.com"));
             Assert.That((await FindByNameAsync("admin@test.com"))?.Id, Is.EqualTo(_adminId));
         });
+    }
+
+    // Start-up repair of the lockout flag
+
+    [Test]
+    public async Task DataMigrator_TurnsLockoutOnForAccountsThatHaveItOff()
+    {
+        using (var scope = _provider.CreateScope())
+            await scope
+                .ServiceProvider.GetRequiredService<DataContext>()
+                .Users.Where(x => x.Id == _userId)
+                .ExecuteUpdateAsync(x => x.SetProperty(y => y.LockoutEnabled, false));
+
+        using (var scope = _provider.CreateScope())
+            await DataMigrator.Seed(scope.ServiceProvider);
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That((await GetUserAsync(_userId)).LockoutEnabled, Is.True);
+            Assert.That((await GetUserAsync(_adminId)).LockoutEnabled, Is.True);
+        });
+    }
+
+    private async Task LockOutAsync(int id)
+    {
+        using var scope = _provider.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        var user = (await userManager.FindByIdAsync(id.ToString()))!;
+
+        for (var i = 0; i < userManager.Options.Lockout.MaxFailedAccessAttempts; i++)
+            await userManager.AccessFailedAsync(user);
+    }
+
+    private async Task<bool> IsLockedOutAsync(int id)
+    {
+        using var scope = _provider.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        return await userManager.IsLockedOutAsync((await userManager.FindByIdAsync(id.ToString()))!);
     }
 
     private static UserAccountField[] FieldsOf(UserAccountResult result) =>

@@ -51,6 +51,10 @@ builder
         options.Password.RequireLowercase = false;
         options.Password.RequireNonAlphanumeric = false;
         options.SignIn.RequireConfirmedEmail = false;
+        // Wrong passwords at sign-in count against the account: after 5 in a row it is locked for 15 minutes.
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Lockout.AllowedForNewUsers = true;
     })
     .AddEntityFrameworkStores<DataContext>()
     .AddDefaultTokenProviders();
