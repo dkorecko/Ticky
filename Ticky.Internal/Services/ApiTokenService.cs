@@ -57,7 +57,9 @@ public class ApiTokenService
     }
 
     /// <summary>
-    /// Looks up a presented token. Returns null if it is unknown, malformed, revoked or expired.
+    /// Looks up a presented token. Returns null if it is unknown, malformed, revoked or expired, or if its account is
+    /// locked out or still has to replace the credentials it was given: until then the web app lets that account do
+    /// nothing, and its tokens shouldn't be a way around that.
     /// Updates <see cref="ApiToken.LastUsedAt"/> on a hit, at most once per <see cref="Constants.Api.LastUsedPrecision"/>.
     /// </summary>
     public async Task<ValidatedToken?> ValidateAsync(string plaintext)
@@ -76,7 +78,7 @@ public class ApiTokenService
                 x.TokenHash == hash && x.RevokedAt == null && (x.ExpiresAt == null || x.ExpiresAt > now)
             );
 
-        if (token is null)
+        if (token is null || token.User.NeedsNewCredentials || token.User.LockoutEnd > DateTimeOffset.UtcNow)
             return null;
 
         if (token.LastUsedAt is null || now - token.LastUsedAt >= Constants.Api.LastUsedPrecision)
