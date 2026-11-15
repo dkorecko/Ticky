@@ -27,4 +27,9 @@
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The real e-mail templates, so the tests render exactly what Ticky sends. -->
+    <None Include="..\Ticky.Web\wwwroot\emails\*.html" Link="wwwroot\emails\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
