@@ -30,7 +30,7 @@ public class CodeServiceTest
         );
         _db.Database.EnsureCreated();
 
-        _service = new CodeService(_db, new CodeAttemptTracker());
+        _service = new CodeService(_db);
 
         _aliceId = await CreateUserAsync(ALICE);
         _bobId = await CreateUserAsync(BOB);
@@ -392,53 +392,75 @@ public class CodeServiceTest
     // Counting guesses
 
     [Test]
-    public void Tracker_CountsPerCodeAndForgets()
+    public async Task VerifyCode_WrongGuesses_AreCountedOnTheCode()
     {
-        var tracker = new CodeAttemptTracker();
-        var retention = TimeSpan.FromMinutes(30);
+        await _service.CreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
 
-        Assert.Multiple(() =>
+        await _service.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword);
+        await _service.VerifyCodeAsync(ALICE, "WRONG-24", CodePurpose.ForgottenPassword);
+
+        Assert.That(await GetFailedAttemptsAsync(_aliceId), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task VerifyCode_RightGuess_ResetsTheStoredCount()
+    {
+        var code = await _service.CreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
+
+        for (var i = 0; i < CodeService.MaxAttempts - 1; i++)
+            await _service.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword);
+
+        await _service.VerifyCodeAsync(ALICE, code.Value, CodePurpose.ForgottenPassword);
+
+        Assert.That(await GetFailedAttemptsAsync(_aliceId), Is.Zero);
+    }
+
+    [Test]
+    public async Task VerifyCode_CountSurvivesANewServiceAndContext()
+    {
+        // The count is stored with the code, so it doesn't depend on the instance (or the process) that counted.
+        var code = await _service.CreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
+
+        for (var i = 0; i < CodeService.MaxAttempts - 1; i++)
+            await _service.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword);
+
+        using var otherDb = new DataContext(
+            new DbContextOptionsBuilder<DataContext>().UseSqlite(_connection).Options
+        );
+        var otherService = new CodeService(otherDb);
+
+        Assert.Multiple(async () =>
         {
-            Assert.That(tracker.Register(1, retention), Is.EqualTo(1));
-            Assert.That(tracker.Register(1, retention), Is.EqualTo(2));
-            Assert.That(tracker.Register(2, retention), Is.EqualTo(1));
-        });
-
-        tracker.Forget(1);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(tracker.Register(1, retention), Is.EqualTo(1));
-            Assert.That(tracker.Register(2, retention), Is.EqualTo(2));
+            Assert.That(await otherService.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword), Is.Null);
+            Assert.That(await _db.Codes.CountAsync(x => x.UserId == _aliceId), Is.Zero);
+            Assert.That(await otherService.VerifyCodeAsync(ALICE, code.Value, CodePurpose.ForgottenPassword), Is.Null);
         });
     }
 
     [Test]
-    public void Tracker_ParallelGuesses_AreCountedOneByOne()
+    public async Task VerifyCode_CodeThatReachedTheLimit_IsRefusedEvenWithTheRightGuess()
     {
-        var tracker = new CodeAttemptTracker();
-        var counts = new System.Collections.Concurrent.ConcurrentBag<int>();
+        await AddCodeAsync(_aliceId, CodePurpose.ForgottenPassword, "ABCD-2345", DateTime.Now, CodeService.MaxAttempts);
 
-        Parallel.For(0, 500, _ => counts.Add(tracker.Register(7, TimeSpan.FromMinutes(30))));
+        var verified = await _service.VerifyCodeAsync(ALICE, "ABCD-2345", CodePurpose.ForgottenPassword);
 
         Assert.Multiple(() =>
         {
-            Assert.That(counts.OrderBy(x => x), Is.EqualTo(Enumerable.Range(1, 500)));
-            Assert.That(counts.Count(x => x <= CodeService.MaxAttempts), Is.EqualTo(CodeService.MaxAttempts));
+            Assert.That(verified, Is.Null);
+            Assert.That(_db.Codes.Count(x => x.UserId == _aliceId), Is.Zero);
         });
     }
 
     [Test]
-    public void Tracker_DropsCountsOlderThanTheRetention()
+    public async Task CreateCode_StartsWithoutFailedAttempts()
     {
-        var tracker = new CodeAttemptTracker();
+        var alice = await GetUserAsync(_aliceId);
+        await _service.CreateCodeAsync(alice, CodePurpose.ForgottenPassword);
+        await _service.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword);
 
-        tracker.Register(1, TimeSpan.FromMilliseconds(10));
-        Thread.Sleep(50);
+        await _service.CreateCodeAsync(alice, CodePurpose.ForgottenPassword);
 
-        // Counting another code prunes the stale entry, so the first one starts again.
-        tracker.Register(2, TimeSpan.FromMilliseconds(10));
-        Assert.That(tracker.Register(1, TimeSpan.FromMilliseconds(10)), Is.EqualTo(1));
+        Assert.That(await GetFailedAttemptsAsync(_aliceId), Is.Zero);
     }
 
     private async Task<int> CreateUserAsync(string email, bool confirmed = true)
@@ -461,7 +483,10 @@ public class CodeServiceTest
 
     private async Task<User> GetUserAsync(int id) => await _db.Users.SingleAsync(x => x.Id == id);
 
-    private async Task AddCodeAsync(int userId, CodePurpose purpose, string value, DateTime createdAt)
+    private async Task<int> GetFailedAttemptsAsync(int userId) =>
+        await _db.Codes.AsNoTracking().Where(x => x.UserId == userId).Select(x => x.FailedAttempts).SingleAsync();
+
+    private async Task AddCodeAsync(int userId, CodePurpose purpose, string value, DateTime createdAt, int failedAttempts = 0)
     {
         _db.Codes.Add(
             new Code
@@ -469,7 +494,8 @@ public class CodeServiceTest
                 UserId = userId,
                 CodePurpose = purpose,
                 Value = value,
-                CreatedAt = createdAt
+                CreatedAt = createdAt,
+                FailedAttempts = failedAttempts
             }
         );
         await _db.SaveChangesAsync();

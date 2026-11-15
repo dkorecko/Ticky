@@ -28,12 +28,10 @@ public class CodeService
     private const int GROUP_LENGTH = 4;
 
     private readonly DataContext _dataContext;
-    private readonly CodeAttemptTracker _attempts;
 
-    public CodeService(DataContext dataContext, CodeAttemptTracker attempts)
+    public CodeService(DataContext dataContext)
     {
         _dataContext = dataContext;
-        _attempts = attempts;
     }
 
     /// <summary>
@@ -49,26 +47,15 @@ public class CodeService
                 "The account is waiting for its e-mail address to be confirmed, so its code can't be replaced."
             );
 
-        var outstanding = await _dataContext
-            .Codes.Where(x => x.UserId == account.Id)
-            .Select(x => x.Id)
-            .ToListAsync();
+        foreach (
+            var tracked in _dataContext
+                .ChangeTracker.Entries<Code>()
+                .Where(x => x.Entity.UserId == account.Id)
+                .ToList()
+        )
+            tracked.State = EntityState.Detached;
 
-        if (outstanding.Count > 0)
-        {
-            foreach (
-                var tracked in _dataContext
-                    .ChangeTracker.Entries<Code>()
-                    .Where(x => x.Entity.UserId == account.Id)
-                    .ToList()
-            )
-                tracked.State = EntityState.Detached;
-
-            await _dataContext.Codes.Where(x => x.UserId == account.Id).ExecuteDeleteAsync();
-
-            foreach (var id in outstanding)
-                _attempts.Forget(id);
-        }
+        await _dataContext.Codes.Where(x => x.UserId == account.Id).ExecuteDeleteAsync();
 
         var code = new Code
         {
@@ -130,10 +117,13 @@ public class CodeService
             return null;
         }
 
-        // The guess is counted before it is compared, so parallel requests can't make more guesses than allowed.
-        var attempt = _attempts.Register(code.Id, Lifetime);
+        // The guess is counted in the database before it is compared, and only while the limit isn't reached, so
+        // requests made in parallel (or to several instances) can't make more guesses than allowed.
+        var counted = await _dataContext
+            .Codes.Where(x => x.Id == code.Id && x.FailedAttempts < MaxAttempts)
+            .ExecuteUpdateAsync(x => x.SetProperty(y => y.FailedAttempts, y => y.FailedAttempts + 1));
 
-        if (attempt > MaxAttempts)
+        if (counted == 0)
         {
             await ConsumeCodeAsync(code);
             return null;
@@ -141,24 +131,28 @@ public class CodeService
 
         if (Matches(code, submittedCode))
         {
-            _attempts.Forget(code.Id);
+            // Like a person whose new password was refused: the code stays and may be used again.
+            await _dataContext
+                .Codes.Where(x => x.Id == code.Id)
+                .ExecuteUpdateAsync(x => x.SetProperty(y => y.FailedAttempts, 0));
+
             return code;
         }
 
-        if (attempt >= MaxAttempts)
+        var attempts = await _dataContext
+            .Codes.Where(x => x.Id == code.Id)
+            .Select(x => x.FailedAttempts)
+            .FirstOrDefaultAsync();
+
+        if (attempts >= MaxAttempts)
             await ConsumeCodeAsync(code);
 
         return null;
     }
 
     /// <summary>Deletes a code that was used. Returns whether this call was the one that deleted it.</summary>
-    public async Task<bool> ConsumeCodeAsync(Code code)
-    {
-        var deleted = await _dataContext.Codes.Where(x => x.Id == code.Id).ExecuteDeleteAsync();
-        _attempts.Forget(code.Id);
-
-        return deleted > 0;
-    }
+    public async Task<bool> ConsumeCodeAsync(Code code) =>
+        await _dataContext.Codes.Where(x => x.Id == code.Id).ExecuteDeleteAsync() > 0;
 
     public static bool IsExpired(Code code) => DateTime.Now - code.CreatedAt > Lifetime;
 
