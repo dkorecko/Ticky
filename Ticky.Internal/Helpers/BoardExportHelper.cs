@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Identity;
 using System.Text.Json.Serialization.Metadata;
 
 namespace Ticky.Internal.Helpers;
@@ -27,16 +28,21 @@ public static class BoardExportHelper
         TypeInfoResolver = new DefaultJsonTypeInfoResolver { Modifiers = { RestrictUserProperties } },
     };
 
-    /// <summary>Serializes the board as the export file's JSON, with users reduced to <see cref="ExportedUserProperties"/>.</summary>
-    public static string Serialize(Board board) => JsonSerializer.Serialize(board, Options);
+    /// <summary>
+    /// Serializes the board (or a part of it) as the export file's JSON, with users reduced to
+    /// <see cref="ExportedUserProperties"/>.
+    /// </summary>
+    public static string Serialize<T>(T value) => JsonSerializer.Serialize(value, Options);
 
     /// <summary>
     /// An allow-list rather than a block-list: a property added to the user later stays out of the export until
-    /// someone decides it belongs there.
+    /// someone decides it belongs there. It matches the Identity base type, not just <see cref="User"/>, because
+    /// the serializer goes by a property's declared type: a navigation declared as <c>IdentityUser&lt;int&gt;</c>
+    /// would otherwise be written out in full.
     /// </summary>
     private static void RestrictUserProperties(JsonTypeInfo typeInfo)
     {
-        if (typeInfo.Kind != JsonTypeInfoKind.Object || !typeof(User).IsAssignableFrom(typeInfo.Type))
+        if (typeInfo.Kind != JsonTypeInfoKind.Object || !typeof(IdentityUser<int>).IsAssignableFrom(typeInfo.Type))
             return;
 
         for (var i = typeInfo.Properties.Count - 1; i >= 0; i--)

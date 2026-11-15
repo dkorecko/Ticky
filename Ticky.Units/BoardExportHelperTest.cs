@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Text.Json;
+using Microsoft.AspNetCore.Identity;
 
 namespace Ticky.Units;
 
@@ -152,6 +153,18 @@ public class BoardExportHelperTest
         var member = users.Single(x => x.GetProperty("Id").GetInt32() == 2);
         Assert.That(member.GetProperty("DisplayName").GetString(), Is.EqualTo("Member"));
         Assert.That(member.GetProperty("Email").GetString(), Is.EqualTo("member@ticky.test"));
+    }
+
+    [Test]
+    public void Serialize_UserDeclaredAsIdentityBaseType_IsReducedToo()
+    {
+        var holder = new { Owner = (IdentityUser<int>)NewUser(1, "Owner") };
+
+        var json = BoardExportHelper.Serialize(holder);
+
+        Assert.That(json, Does.Not.Contain(SecretMarker));
+        Assert.That(json, Does.Not.Contain("\"PasswordHash\""));
+        Assert.That(json, Does.Contain("\"Email\":\"owner@ticky.test\""));
     }
 
     [Test]
