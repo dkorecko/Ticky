@@ -84,7 +84,7 @@
             <div class="form-group">
                 <Name For="() => _repeatModel.TargetColumnId" />
                 <InputSelect class="form-control" @bind-Value="_repeatModel.TargetColumnId">
-                    <option value="0"></option>
+                    <option value=""></option>
                     @foreach (var column in _columns.OrderBy(x => x.Index))
                     {
                         if (_repeatModel.TargetColumnId.Equals(column.Id))
@@ -146,9 +146,9 @@
                     TargetColumnId = card.RepeatInfo.TargetColumnId
                 };
 
-            // A target that isn't on this board (saved before that was checked) shows as the empty option.
-            if (_repeatModel.TargetColumnId is { } target and not 0 && columns.All(x => x.Id != target))
-                _repeatModel.TargetColumnId = 0;
+            // A target that is missing or isn't on this board (saved before that was checked) opens blank, so it has to be picked again.
+            if (_repeatModel.TargetColumnId is not { } target || columns.All(x => x.Id != target))
+                _repeatModel.TargetColumnId = null;
 
             _repeatModel.SetRelevantSelectedValue(card.RepeatInfo.Selected);
         }

@@ -199,12 +199,12 @@ public class CardService
 
     /// <summary>
     /// Makes the card repeat. The copies go to <see cref="RepeatInfo.TargetColumnId"/>, which has to be a column of the
-    /// card's own board (none, or 0 from the empty option, means the board's first column).
+    /// card's own board (none means the board's first column).
     /// </summary>
     /// <returns>False, and changes nothing, if the target column isn't on the card's board.</returns>
     public async Task<bool> SetRepeatAsync(int cardId, int userId, RepeatInfo repeatInfo)
     {
-        if (repeatInfo.TargetColumnId is { } targetColumnId and not 0)
+        if (repeatInfo.TargetColumnId is { } targetColumnId)
         {
             using var db = _dbContextFactory.CreateDbContext();
             var boardId = await db.Cards

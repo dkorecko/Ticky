@@ -436,9 +436,14 @@ public class CardServiceTest
         Assert.That((await StoredRepeatAsync())!.TargetColumnId, Is.EqualTo(doingId));
     }
 
-    [Test]
-    public async Task SetRepeat_MissingColumn_IsRejected() =>
-        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(999_999)), Is.False);
+    [TestCase(999_999)]
+    [TestCase(0)]
+    [TestCase(-1)]
+    public async Task SetRepeat_ColumnThatDoesNotExist_IsRejected(int targetColumnId)
+    {
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(targetColumnId)), Is.False);
+        Assert.That(await StoredRepeatAsync(), Is.Null);
+    }
 
     [Test]
     public async Task SetRepeat_UserWhoCannotOpenTheCard_ChangesNothing()
@@ -453,13 +458,12 @@ public class CardServiceTest
         Assert.That(await db.Activities.CountAsync(x => x.CardId == _cardId), Is.Zero);
     }
 
-    [TestCase(null)]
-    [TestCase(0)]
-    public async Task SetRepeat_NoTarget_IsStored(int? targetColumnId)
+    [Test]
+    public async Task SetRepeat_NoTarget_IsStored()
     {
-        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(targetColumnId)), Is.True);
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(null)), Is.True);
 
-        Assert.That((await StoredRepeatAsync())!.TargetColumnId, Is.EqualTo(targetColumnId));
+        Assert.That((await StoredRepeatAsync())!.TargetColumnId, Is.Null);
     }
 
     #region Access: users who can't open a card's board can't act on it or its items
