@@ -60,7 +60,18 @@ public class RegisterModel : PageModel
 
             if (result.Succeeded)
             {
-                var code = await _codeService.CreateCodeAsync(identity, CodePurpose.NewAccount);
+                Code code;
+
+                try
+                {
+                    code = await _codeService.CreateCodeAsync(identity, CodePurpose.NewAccount);
+                }
+                catch
+                {
+                    // Without its sign-up code the account would count as a finished one, able to sign in.
+                    await _userManager.DeleteAsync(identity);
+                    throw;
+                }
 
                 try
                 {
