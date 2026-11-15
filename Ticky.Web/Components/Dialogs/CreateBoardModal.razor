@@ -34,6 +34,9 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
+    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+    private MainLayout _mainLayout { get; set; } = default!;
+
     [Parameter]
     public EventCallback OnSubmit { get; set; }
 
@@ -78,6 +81,15 @@
             return;
 
         using var db = _dbContextFactory.CreateDbContext();
+
+        // Only admins see the option, but the role may have changed since the dialog opened.
+        if (!await db.IsProjectAdminAsync(_projectId, _user.Id))
+        {
+            _mainLayout.RunNotification(new("Only project admins can add boards to the project.", NotificationType.Fail));
+            await Modal.Close();
+            return;
+        }
+
         var project = await db.Projects.FirstOrDefaultAsync(x => x.Id.Equals(_projectId));
 
         if (project is not null)

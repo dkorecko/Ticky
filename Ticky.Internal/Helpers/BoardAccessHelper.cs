@@ -21,6 +21,14 @@ public static class BoardAccessHelper
         return board is not null && board.IsAdmin(user);
     }
 
+    /// <summary>
+    /// Whether the user is an admin of the project (see <see cref="Project.AdministeredBy"/>), read from the database
+    /// rather than from a project loaded earlier, since the role may have changed since then. False if the project does
+    /// not exist.
+    /// </summary>
+    public static Task<bool> IsProjectAdminAsync(this DataContext db, int projectId, int userId) =>
+        db.Projects.Where(x => x.Id == projectId).AnyAsync(Project.AdministeredBy(userId));
+
     /// <summary>Only the boards the user may open (see <see cref="Board.AccessibleBy"/>).</summary>
     public static IQueryable<Board> AccessibleBy(this IQueryable<Board> boards, int userId) =>
         boards.Where(Board.AccessibleBy(userId));

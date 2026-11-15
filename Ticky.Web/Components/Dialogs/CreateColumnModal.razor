@@ -42,6 +42,9 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
+    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+    private MainLayout _mainLayout { get; set; } = default!;
+
     [Parameter]
     public EventCallback OnSubmit { get; set; }
 
@@ -80,6 +83,15 @@
             return;
 
         using var db = _dbContextFactory.CreateDbContext();
+
+        // Only admins see the option, but the role may have changed since the dialog opened.
+        if (!await db.IsBoardAdminAsync(_boardId, _user))
+        {
+            _mainLayout.RunNotification(new("Only board admins can add columns.", NotificationType.Fail));
+            await Modal.Close();
+            return;
+        }
+
         var board = await db.Boards.Include(x => x.Columns).FirstOrDefaultAsync(x => x.Id.Equals(_boardId));
 
         if (board is not null)

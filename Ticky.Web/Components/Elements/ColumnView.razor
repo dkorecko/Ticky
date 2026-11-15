@@ -376,9 +376,18 @@
 
         using var db = _dbContextFactory.CreateDbContext();
 
+        // Only admins see the option, but the role may have changed since the page loaded.
+        if (!await db.IsBoardAdminAsync(Board.Id, User))
+        {
+            MainLayout.RunNotification(new("Only board admins can collapse or expand columns.", NotificationType.Fail));
+            return;
+        }
+
         var targetColumn = Board.Columns.First(x => x.Id.Equals(columnId));
         targetColumn.Collapsed = !targetColumn.Collapsed;
-        await db.Columns.Where(x => x.Id.Equals(columnId)).ExecuteUpdateAsync(x => x.SetProperty(y => y.Collapsed, targetColumn.Collapsed));
+        await db.Columns
+            .Where(x => x.Id.Equals(columnId) && x.BoardId.Equals(Board.Id))
+            .ExecuteUpdateAsync(x => x.SetProperty(y => y.Collapsed, targetColumn.Collapsed));
 
         StateHasChanged();
         await OnUpdate.InvokeAsync();
