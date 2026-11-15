@@ -31,6 +31,12 @@ public class DataMigrator
                     .SetProperty(c => c.OrderRule, OrderRule.Migrated)
             );
 
+        // Identity only locks accounts that have this flag. It is set for every account the app creates, but not
+        // for ones that were inserted some other way, so make sure sign-in lockout covers all of them.
+        await dataContext
+            .Users.Where(u => !u.LockoutEnabled)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.LockoutEnabled, true));
+
         var logger = serviceProvider.GetRequiredService<ILogger<DataMigrator>>();
 
         await LegacyActivityConverter.ConvertAsync(dataContext, logger);

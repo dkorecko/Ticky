@@ -125,6 +125,13 @@ public class UserAccountService(IServiceScopeFactory scopeFactory, ILogger<UserA
         {
             await ApplyPasswordAsync(userManager, user, newPassword!, result);
             user.NeedsNewCredentials = requirePasswordChange;
+
+            // A reset is also how a locked account gets back in, so it ends the lockout and forgets earlier failures.
+            if (result.PasswordChanged)
+            {
+                user.LockoutEnd = null;
+                user.AccessFailedCount = 0;
+            }
         }
 
         if (!result.Succeeded || !result.AnythingChanged)

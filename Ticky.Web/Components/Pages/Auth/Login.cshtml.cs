@@ -1,11 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace Ticky.Web.Pages.Auth;
 
 public class LoginModel : PageModel
 {
     private readonly SignInManager<User> _signInManager;
+    private readonly int _lockoutMinutes;
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -14,9 +16,10 @@ public class LoginModel : PageModel
     /// <summary>The user was signed out because their password changed.</summary>
     public bool PasswordChanged { get; set; }
 
-    public LoginModel(SignInManager<User> signInManager)
+    public LoginModel(SignInManager<User> signInManager, IOptions<IdentityOptions> identityOptions)
     {
         _signInManager = signInManager;
+        _lockoutMinutes = (int)Math.Ceiling(identityOptions.Value.Lockout.DefaultLockoutTimeSpan.TotalMinutes);
     }
 
     public IActionResult OnGet(string? returnUrl = null, bool passwordChanged = false)
@@ -35,11 +38,16 @@ public class LoginModel : PageModel
                 Input.Email.Trim(),
                 Input.Password,
                 true,
-                lockoutOnFailure: false
+                lockoutOnFailure: true
             );
 
             if (result.Succeeded)
                 return LocalRedirect(returnUrl ?? Url.Content("~/"));
+            else if (result.IsLockedOut)
+                ModelState.AddModelError(
+                    $"{nameof(Input)}.{nameof(Input.Email)}",
+                    $"Too many failed sign-in attempts. Please try again in {_lockoutMinutes} minutes."
+                );
             else
                 ModelState.AddModelError(
                     $"{nameof(Input)}.{nameof(Input.Email)}",
