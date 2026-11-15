@@ -57,7 +57,7 @@ public class ChangePasswordModel : PageModel
 
             ModelState.AddModelError(
                 $"{nameof(Input)}.{nameof(Input.Code)}",
-                "The e-mail address or the code was not correct, or the code has expired."
+                Constants.Codes.REJECTED_MESSAGE
             );
         }
 
@@ -72,8 +72,8 @@ public class ChangePasswordModel : PageModel
         public string EmailAddress { get; set; } = string.Empty;
 
         [Required(AllowEmptyStrings = false)]
-        [RegularExpression(CodeService.InputPattern)]
-        [Display(Name = "Confirmation code from the e-mail we sent you", Prompt = "K7M2-QX4P")]
+        [RegularExpression(Constants.Codes.INPUT_PATTERN)]
+        [Display(Name = "Confirmation code from the e-mail we sent you", Prompt = Constants.Codes.EXAMPLE)]
         public string Code { get; set; } = string.Empty;
 
         [Required(AllowEmptyStrings = false)]

@@ -18,6 +18,31 @@ namespace Ticky.Base
             public const string MainLayout = "MainLayout";
         }
 
+        public static class Codes
+        {
+            /// <summary>How long a code mailed to confirm an e-mail address or reset a password can be used for.</summary>
+            public const int LIFETIME_IN_MINUTES = 30;
+
+            /// <summary>How soon after a code was created another one can be requested for the same account.</summary>
+            public const int RESEND_DELAY_IN_SECONDS = 60;
+
+            /// <summary>How many guesses a code allows. The code is deleted by the last wrong one.</summary>
+            public const int MAX_ATTEMPTS = 5;
+
+            /// <summary>What the code inputs accept: 8 letters or digits, the dash in the middle is optional.</summary>
+            public const string INPUT_PATTERN = @"\s*[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}\s*";
+
+            /// <summary>Placeholder shown in the code inputs.</summary>
+            public const string EXAMPLE = "K7M2-QX4P";
+
+            /// <summary>
+            /// The one answer for every code that is refused, so it doesn't tell a wrong e-mail address from a wrong,
+            /// expired or used up code.
+            /// </summary>
+            public const string REJECTED_MESSAGE =
+                "The e-mail address or the code was not correct, or the code has expired.";
+        }
+
         public static class Cookies
         {
             public const string Authentication = "ticky-auth";
@@ -37,6 +62,8 @@ namespace Ticky.Base
             public static class Mappings
             {
                 public const string VERIFICATION_CODE = "{VERIFICATION_CODE}";
+                public const string CODE_LIFETIME_IN_MINUTES = "{CODE_LIFETIME_IN_MINUTES}";
+                public const string CODE_MAX_ATTEMPTS = "{CODE_MAX_ATTEMPTS}";
                 public const string CARD_CODE = "{CARD_CODE}";
                 public const string CARD_TEXT = "{CARD_TEXT}";
                 public const string CARD_SCHEDULED_FOR = "{CARD_SCHEDULED_FOR}";

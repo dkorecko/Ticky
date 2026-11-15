@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Ticky.Internal.Data;
+using AppConstants = Ticky.Base.Constants;
 
 namespace Ticky.Units;
 
@@ -65,7 +66,7 @@ public class CodeServiceTest
     public void GenerateCode_FitsTheInputPatternOfTheForms()
     {
         // The attribute on the forms needs the whole value to match.
-        bool Accepts(string input) => System.Text.RegularExpressions.Regex.IsMatch(input, $"^(?:{CodeService.InputPattern})$");
+        bool Accepts(string input) => System.Text.RegularExpressions.Regex.IsMatch(input, $"^(?:{AppConstants.Codes.INPUT_PATTERN})$");
 
         Assert.Multiple(() =>
         {
@@ -189,7 +190,7 @@ public class CodeServiceTest
     {
         var code = await _service.CreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
 
-        for (var i = 0; i < CodeService.MaxAttempts; i++)
+        for (var i = 0; i < AppConstants.Codes.MAX_ATTEMPTS; i++)
             Assert.That(await _service.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword), Is.Null);
 
         await Assert.MultipleAsync(async () =>
@@ -205,7 +206,7 @@ public class CodeServiceTest
     {
         var code = await _service.CreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
 
-        for (var i = 0; i < CodeService.MaxAttempts - 1; i++)
+        for (var i = 0; i < AppConstants.Codes.MAX_ATTEMPTS - 1; i++)
             await _service.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword);
 
         Assert.That(await _service.VerifyCodeAsync(ALICE, code.Value, CodePurpose.ForgottenPassword), Is.Not.Null);
@@ -218,7 +219,7 @@ public class CodeServiceTest
 
         for (var round = 0; round < 3; round++)
         {
-            for (var i = 0; i < CodeService.MaxAttempts - 1; i++)
+            for (var i = 0; i < AppConstants.Codes.MAX_ATTEMPTS - 1; i++)
                 await _service.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword);
 
             // Like a person whose new password was refused: the code stays and may be used again.
@@ -232,7 +233,7 @@ public class CodeServiceTest
         var alicesCode = await _service.CreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
         await _service.CreateCodeAsync(await GetUserAsync(_bobId), CodePurpose.ForgottenPassword);
 
-        for (var i = 0; i < CodeService.MaxAttempts * 2; i++)
+        for (var i = 0; i < AppConstants.Codes.MAX_ATTEMPTS * 2; i++)
             await _service.VerifyCodeAsync(BOB, alicesCode.Value, CodePurpose.ForgottenPassword);
 
         await Assert.MultipleAsync(async () =>
@@ -250,12 +251,12 @@ public class CodeServiceTest
         var alice = await GetUserAsync(_aliceId);
         await _service.CreateCodeAsync(alice, CodePurpose.ForgottenPassword);
 
-        for (var i = 0; i < CodeService.MaxAttempts - 1; i++)
+        for (var i = 0; i < AppConstants.Codes.MAX_ATTEMPTS - 1; i++)
             await _service.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword);
 
         var replacement = await _service.CreateCodeAsync(alice, CodePurpose.ForgottenPassword);
 
-        for (var i = 0; i < CodeService.MaxAttempts - 1; i++)
+        for (var i = 0; i < AppConstants.Codes.MAX_ATTEMPTS - 1; i++)
             await _service.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword);
 
         Assert.That(await _service.VerifyCodeAsync(ALICE, replacement.Value, CodePurpose.ForgottenPassword), Is.Not.Null);
@@ -407,7 +408,7 @@ public class CodeServiceTest
     {
         var code = await _service.CreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
 
-        for (var i = 0; i < CodeService.MaxAttempts - 1; i++)
+        for (var i = 0; i < AppConstants.Codes.MAX_ATTEMPTS - 1; i++)
             await _service.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword);
 
         await _service.VerifyCodeAsync(ALICE, code.Value, CodePurpose.ForgottenPassword);
@@ -421,7 +422,7 @@ public class CodeServiceTest
         // The count is stored with the code, so it doesn't depend on the instance (or the process) that counted.
         var code = await _service.CreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
 
-        for (var i = 0; i < CodeService.MaxAttempts - 1; i++)
+        for (var i = 0; i < AppConstants.Codes.MAX_ATTEMPTS - 1; i++)
             await _service.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword);
 
         using var otherDb = new DataContext(
@@ -440,7 +441,7 @@ public class CodeServiceTest
     [Test]
     public async Task VerifyCode_CodeThatReachedTheLimit_IsRefusedEvenWithTheRightGuess()
     {
-        await AddCodeAsync(_aliceId, CodePurpose.ForgottenPassword, "ABCD-2345", DateTime.Now, CodeService.MaxAttempts);
+        await AddCodeAsync(_aliceId, CodePurpose.ForgottenPassword, "ABCD-2345", DateTime.Now, AppConstants.Codes.MAX_ATTEMPTS);
 
         var verified = await _service.VerifyCodeAsync(ALICE, "ABCD-2345", CodePurpose.ForgottenPassword);
 

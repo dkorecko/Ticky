@@ -50,7 +50,7 @@ public class ConfirmMailModel : PageModel
 
             ModelState.AddModelError(
                 $"{nameof(Input)}.{nameof(Input.Code)}",
-                "The e-mail address or the code was not correct, or the code has expired."
+                Constants.Codes.REJECTED_MESSAGE
             );
         }
 
@@ -60,8 +60,8 @@ public class ConfirmMailModel : PageModel
     public class InputModel
     {
         [Required(AllowEmptyStrings = false)]
-        [RegularExpression(CodeService.InputPattern)]
-        [Display(Name = "Confirmation code from the received e-mail", Prompt = "K7M2-QX4P")]
+        [RegularExpression(Constants.Codes.INPUT_PATTERN)]
+        [Display(Name = "Confirmation code from the received e-mail", Prompt = Constants.Codes.EXAMPLE)]
         public string Code { get; set; } = string.Empty;
 
         [Required(AllowEmptyStrings = false)]

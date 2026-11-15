@@ -11,17 +11,11 @@ namespace Ticky.Internal.Services;
 /// </summary>
 public class CodeService
 {
-    /// <summary>How long a code can be used for. The e-mail templates in wwwroot/emails mention the same time.</summary>
-    public static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(30);
+    /// <summary>How long a code can be used for, see <see cref="Constants.Codes.LIFETIME_IN_MINUTES"/>.</summary>
+    public static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(Constants.Codes.LIFETIME_IN_MINUTES);
 
-    /// <summary>How soon after a code was created another one can be requested for the same account.</summary>
-    public static readonly TimeSpan ResendDelay = TimeSpan.FromMinutes(1);
-
-    /// <summary>How many guesses a code allows. The code is deleted by the last wrong one.</summary>
-    public const int MaxAttempts = 5;
-
-    /// <summary>What the code input accepts: 8 letters or digits, the dash in the middle is optional.</summary>
-    public const string InputPattern = @"\s*[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}\s*";
+    /// <summary>How soon another code can be requested, see <see cref="Constants.Codes.RESEND_DELAY_IN_SECONDS"/>.</summary>
+    public static readonly TimeSpan ResendDelay = TimeSpan.FromSeconds(Constants.Codes.RESEND_DELAY_IN_SECONDS);
 
     // No 0, 1, I, L or O, so a code can be read out and typed without mixing those up.
     private const string ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
@@ -120,7 +114,7 @@ public class CodeService
         // The guess is counted in the database before it is compared, and only while the limit isn't reached, so
         // requests made in parallel (or to several instances) can't make more guesses than allowed.
         var counted = await _dataContext
-            .Codes.Where(x => x.Id == code.Id && x.FailedAttempts < MaxAttempts)
+            .Codes.Where(x => x.Id == code.Id && x.FailedAttempts < Constants.Codes.MAX_ATTEMPTS)
             .ExecuteUpdateAsync(x => x.SetProperty(y => y.FailedAttempts, y => y.FailedAttempts + 1));
 
         if (counted == 0)
@@ -144,7 +138,7 @@ public class CodeService
             .Select(x => x.FailedAttempts)
             .FirstOrDefaultAsync();
 
-        if (attempts >= MaxAttempts)
+        if (attempts >= Constants.Codes.MAX_ATTEMPTS)
             await ConsumeCodeAsync(code);
 
         return null;

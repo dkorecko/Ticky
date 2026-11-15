@@ -29,10 +29,7 @@ namespace Ticky.Internal.Services
                 new DevityEmail(
                     emailAddress,
                     "Verify e-mail",
-                    new DevityTemplate(VERIFY_EMAIL).AddKey(
-                        Constants.Emails.Mappings.VERIFICATION_CODE,
-                        code.Value
-                    )
+                    AddCodeKeys(new DevityTemplate(VERIFY_EMAIL), code)
                 )
             );
 
@@ -152,12 +149,22 @@ namespace Ticky.Internal.Services
                 new DevityEmail(
                     emailAddress,
                     "Forgotten password",
-                    new DevityTemplate(FORGOTTEN_PASSWORD).AddKey(
-                        Constants.Emails.Mappings.VERIFICATION_CODE,
-                        code.Value
-                    )
+                    AddCodeKeys(new DevityTemplate(FORGOTTEN_PASSWORD), code)
                 )
             );
+
+        /// <summary>The code and what the person needs to know about it, so the templates don't state it themselves.</summary>
+        private static DevityTemplate AddCodeKeys(DevityTemplate template, Code code) =>
+            template
+                .AddKey(Constants.Emails.Mappings.VERIFICATION_CODE, code.Value)
+                .AddKey(
+                    Constants.Emails.Mappings.CODE_LIFETIME_IN_MINUTES,
+                    Constants.Codes.LIFETIME_IN_MINUTES.ToString()
+                )
+                .AddKey(
+                    Constants.Emails.Mappings.CODE_MAX_ATTEMPTS,
+                    Constants.Codes.MAX_ATTEMPTS.ToString()
+                );
 
         private async Task SendDevityEmailAsync(DevityEmail devityEmail)
         {
