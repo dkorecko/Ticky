@@ -216,7 +216,7 @@
                         @if (_tab == 0)
                         {
                             <textarea @onchange="OnDescriptionChanged"
-                                class="input-field h-32 resize-none"
+                                class="input-field max-h-[70vh] min-h-32 resize-none [field-sizing:content]"
                                 placeholder="Describe the task ...">@_card.Description</textarea>
                             <hr />
                             <section class="flex flex-col gap-2">

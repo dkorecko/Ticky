@@ -17,30 +17,33 @@
                                 { $"{(Card.Flagged ? "Unmark" : "Mark")} as flagged", async () => await ChangeFlaggedStatus() },
                                 { "Delete task", () => DeleteCardModal?.OpenDialog(Card) }
                             }'>
-            <div class="btn-transparent btn flex h-full">
+            <div class="btn-transparent btn -my-2.5 flex h-full">
                 <span class="material-symbols-rounded g-icon self-center" title="Card options">
                     more_horiz
                 </span>
             </div>
         </Dropdown>
     </div>
-    <h5 class="cursor-pointer break-normal break-words">
+    <h5 class="cursor-pointer wrap-anywhere">
         @Card.Name
     </h5>
     
-    <div class="flex flex-row items-center justify-between gap-3">
-        <div class="flex">
-            @{
-                var i = 0;
-            }
-            @foreach (var assignee in Card.Assignees)
-            {
-                string id = $"avatar_{i}";
-                <div id="@id" class="avatar-mini @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');"></div>
-                i++;
-            }
+    @if (Card.Assignees.Any())
+    {
+        <div class="flex flex-row items-center justify-between gap-3">
+            <div class="flex">
+                @{
+                    var i = 0;
+                }
+                @foreach (var assignee in Card.Assignees)
+                {
+                    string id = $"avatar_{i}";
+                    <div id="@id" class="avatar-mini @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');"></div>
+                    i++;
+                }
+            </div>
         </div>
-    </div>
+    }
     <div class="text-card-data-points flex w-full flex-row flex-wrap items-center justify-start gap-1 text-xs">
         <label class="card-data-point">
             <span class="material-symbols-rounded self-center" title="Card ID">

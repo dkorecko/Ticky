@@ -8,7 +8,7 @@
 <EditProjectModal @ref="_editProjectModal" OnSubmit="async () => await RunNotification(typeof(Project), OperationType.Edited)" />
 <EditProjectMembershipsModal @ref="_editProjectMembershipsModal" OnSubmit="async () => await RunNotification(typeof(ProjectMembership), OperationType.Edited)" />
 <DeleteConfirmationDialog T="Project" @ref="_deleteProjectModal" OnConfirmed="HandleUpdate" />
-<DeleteConfirmationDialog T="Board" @ref="_deleteBoardModal" OnConfirmed="HandleUpdate" />
+<DeleteConfirmationDialog T="Board" @ref="_deleteBoardModal" DeleteHandler="DeleteBoardAsync" OnConfirmed="HandleUpdate" />
 
 <PageTitle>Home - @Constants.APP_NAME</PageTitle>
 
@@ -105,7 +105,7 @@
                 <div class="grid grid-cols-[repeat(auto-fill,minmax(min(16rem,100%),1fr))] gap-4">
                     @foreach (var board in project.Boards.OrderByDescending(x => x.Favorites.Any(y => y.BoardId.Equals(x.Id))).ThenByDescending(x => x.LastVisits.Select(y => y.VisitTime).OrderByDescending(y => y).FirstOrDefault()))
                     {
-                        <BoardCard Board="board" IsAdmin="board.Memberships.Any(x => x.UserId.Equals(_user.Id) && x.IsAdmin) || project.Memberships.Any(x => x.UserId.Equals(_user.Id) && x.IsAdmin)" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" DeleteConfirmationDialog="_deleteBoardModal" />
+                        <BoardCard Board="board" IsAdmin="board.IsAdmin(_user)" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" DeleteConfirmationDialog="_deleteBoardModal" />
                     }
                     @if(project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin) 
                     {
@@ -132,7 +132,7 @@
                 <div class="grid grid-cols-[repeat(auto-fill,minmax(min(16rem,100%),1fr))] gap-4">
                     @foreach (var board in _remainingBoards.OrderByDescending(x => x.Favorites.Any(y => y.BoardId.Equals(x.Id))).ThenByDescending(x => x.LastVisits.Select(y => y.VisitTime).OrderByDescending(y => y).FirstOrDefault()))
                     {
-                        <BoardCard Board="board" IsAdmin="board.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" DeleteConfirmationDialog="_deleteBoardModal" />
+                        <BoardCard Board="board" IsAdmin="board.IsAdmin(_user)" OnEdit="async () => await RunNotification(typeof(Board), OperationType.Edited)" OnFavorite="async () => await RunNotification(typeof(Board), OperationType.Favorited)" DeleteConfirmationDialog="_deleteBoardModal" />
                     }
                 </div>
             </section>
@@ -178,10 +178,28 @@
         StateHasChanged();
     }
 
-    protected override async Task HandleUpdate() 
+    protected override async Task HandleUpdate()
     {
         _projects = await LoadProjectsAsync();
         _remainingBoards = await LoadRemainingBoardsAsync();
+    }
+
+    /// <summary>
+    /// Deletes the board if the user still administers it. Only admins see the option, but the role may have changed
+    /// since the page loaded.
+    /// </summary>
+    private async Task<bool> DeleteBoardAsync(Board board)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        if (!await db.IsBoardAdminAsync(board.Id, _user))
+        {
+            _mainLayout.RunNotification(new("Only board admins can delete the board.", NotificationType.Fail));
+            return false;
+        }
+
+        await db.Boards.Where(x => x.Id == board.Id).ExecuteDeleteAsync();
+        return true;
     }
 
     private async Task<IEnumerable<Project>> LoadProjectsAsync()

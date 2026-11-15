@@ -191,7 +191,7 @@
         <div class="flex min-h-0 w-full flex-1 flex-row">
             @if (_board is not null)
             {
-                <section id="board-section" class="w-full flex-row gap-2 overflow-x-auto pt-2 @(_preferences.ShowStats ? "hidden md:flex" : "flex")">
+                <section id="board-section" data-card-size="@_user.CardSize" class="w-full flex-row gap-2 overflow-x-auto pt-2 @(_preferences.ShowStats ? "hidden md:flex" : "flex")">
                     <SortableList Class="flex flex-1 flex-row gap-2" Style="@ColumnRowMaxWidth()" Animation=@(_board.DisableSortingAnimations ? 0 : 200) Items="_board.Columns.OrderBy(x => x.Index).ToList()" Context="column" OnUpdate="OnColumnMoved" Direction="horizontal" Handle=".drag-toggle" Pull=false Put=false>
                         <SortableItemTemplate>
                             <ColumnView @key="column.Id" Column="column" Cards="_cards" Members="_members" Board="@_board" EditColumnModal="_editColumnModal" DeleteColumnModal="_deleteColumnModal" EditCardModal="_editCardModal" DeleteCardModal="_deleteTaskModal" OnCardMoved=StateHasChanged AddingSetter=SetAdding IsAdmin="IsAdmin" AddingCardHere="(_adding == column.Id)" OnUpdate="HandleUpdate" />
@@ -238,11 +238,12 @@
 
     private CreateColumnModal? _createColumnModal;
 
-    // Matches the 28rem max width and gap-2 of .board-column, so the row stops growing once every column is at full width.
+    // Matches the max width (--column-max, set per card size) and gap-2 of .board-column, so the row stops growing
+    // once every column is at full width.
     private string ColumnRowMaxWidth()
     {
         var count = _board?.Columns.Count ?? 0;
-        return count == 0 ? string.Empty : $"max-width: calc({count} * 28rem + {count - 1} * 0.5rem);";
+        return count == 0 ? string.Empty : $"max-width: calc({count} * var(--column-max) + {count - 1} * 0.5rem);";
     }
     private EditColumnModal? _editColumnModal;
     private EditCardModal? _editCardModal;

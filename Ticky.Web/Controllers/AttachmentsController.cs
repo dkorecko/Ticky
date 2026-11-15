@@ -41,7 +41,9 @@ public class AttachmentsController : ControllerBase
                 x.FileName == decodedFileName
             );
 
-            if (attachment is null)
+            // Same response as a missing file for someone who can't see the card, so the link doesn't reveal
+            // that the attachment exists.
+            if (attachment is null || !await CanAccessCardAsync(attachment.CardId))
                 return NotFound();
 
             var absolutePath = Path.GetFullPath(
@@ -81,7 +83,11 @@ public class AttachmentsController : ControllerBase
                 x.FileName == decodedFileName
             );
 
-            if (attachment is null || !AttachmentHelper.IsImage(attachment))
+            if (
+                attachment is null
+                || !AttachmentHelper.IsImage(attachment)
+                || !await CanAccessCardAsync(attachment.CardId)
+            )
                 return NotFound();
 
             var absolutePath = Path.GetFullPath(
@@ -163,4 +169,12 @@ public class AttachmentsController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
+
+    /// <summary>
+    /// Whether the signed-in user may see the card, i.e. is a member of its board or project. Checked on every
+    /// request, so a link stops working for someone who has since been removed from the board.
+    /// </summary>
+    private async Task<bool> CanAccessCardAsync(int cardId) =>
+        int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId)
+        && await _cardService.CanAccessCardAsync(cardId, userId);
 }
