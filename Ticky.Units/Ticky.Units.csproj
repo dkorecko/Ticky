@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Ticky.Base\Ticky.Base.csproj" />
     <ProjectReference Include="..\Ticky.Internal\Ticky.Internal.csproj" />
+    <ProjectReference Include="..\Ticky.Web\Ticky.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

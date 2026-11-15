@@ -1,8 +1,13 @@
+using System.Collections.Concurrent;
+
 namespace Ticky.Web.Hubs;
 
 [Authorize]
 public class UpdateHub : Hub
 {
+    /// <summary>Key in <see cref="HubCallerContext.Items"/> for the boards this connection has been verified for.</summary>
+    private const string VerifiedBoardsKey = "VerifiedBoards";
+
     private readonly IDbContextFactory<DataContext> _dbContextFactory;
 
     public UpdateHub(IDbContextFactory<DataContext> dbContextFactory)
@@ -28,11 +33,32 @@ public class UpdateHub : Hub
         return await db.Boards.AccessibleBy(userId).AnyAsync(b => b.Id == boardId);
     }
 
+    /// <summary>The boards this connection already passed the access check for; lives as long as the connection.</summary>
+    private ConcurrentDictionary<int, byte> VerifiedBoards =>
+        (ConcurrentDictionary<int, byte>)(
+            Context.Items.TryGetValue(VerifiedBoardsKey, out var boards) && boards is not null
+                ? boards
+                : Context.Items[VerifiedBoardsKey] = new ConcurrentDictionary<int, byte>()
+        );
+
     /// <summary>The group of connections viewing a board, which <see cref="BoardChange"/> is sent to.</summary>
     public static string BoardGroup(int boardId) => $"board_{boardId}";
 
+    /// <summary>
+    /// Tells the other viewers of a board to reload it. Only for boards the caller can open: the check runs once per
+    /// board and connection (<see cref="SubscribeBoard"/> already did it for the boards the caller is viewing), so a
+    /// change doesn't cost a query. A client that reconnected and didn't subscribe again is checked on its first change.
+    /// </summary>
     public async Task BoardChange(int boardId, Guid pageId)
     {
+        if (!VerifiedBoards.ContainsKey(boardId))
+        {
+            if (!await IsUserInBoard(boardId))
+                return;
+
+            VerifiedBoards[boardId] = 0;
+        }
+
         await Clients.Group(BoardGroup(boardId)).SendAsync(nameof(BoardChange), boardId, pageId);
     }
 
@@ -41,6 +67,7 @@ public class UpdateHub : Hub
         if (!await IsUserInBoard(boardId))
             return;
 
+        VerifiedBoards[boardId] = 0;
         await Groups.AddToGroupAsync(Context.ConnectionId, BoardGroup(boardId));
     }
 }
