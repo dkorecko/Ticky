@@ -19,7 +19,7 @@
 
 <CreateColumnModal @ref="_createColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Added)" />
 <EditColumnModal @ref="_editColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Edited)" />
-<DeleteConfirmationDialog T="Column" @ref="_deleteColumnModal" OnConfirmed="HandleUpdate" />
+<DeleteConfirmationDialog T="Column" @ref="_deleteColumnModal" DeleteHandler="DeleteColumnAsync" OnConfirmed="HandleUpdate" />
 <DeleteConfirmationDialog T="Card" @ref="_deleteTaskModal" OnConfirmed="HandleUpdate" />
 <EditCardModal @ref="_editCardModal" OnSubmit="OnTaskEdited" />
 <EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
@@ -266,6 +266,14 @@
 
     protected override void OnParametersSet()
     {
+        // The URL moved to another board (e.g. a search result) while this one is shown, so this component's board,
+        // members and columns are the old board's. Load the new URL from scratch rather than open its card in them.
+        if (_board is not null && _board.Id != Id)
+        {
+            _navigationManager.NavigateTo(_navigationManager.Uri, forceLoad: true);
+            return;
+        }
+
         if (_board is null || !CardId.HasValue || _initialCardId == CardId)
             return;
 
@@ -456,6 +464,11 @@
         {
             using var db = _dbContextFactory.CreateDbContext();
 
+            // Only admins get the drag handle, but the callback is reachable by any member, and the role may have
+            // changed since the page loaded. The catch below puts the columns back.
+            if (!await db.IsBoardAdminAsync(Id, _user))
+                throw new UnauthorizedAccessException("Only board admins can reorder columns.");
+
             var targetBoard = db.Boards
                 .Include(x => x.Columns)
                 .FirstOrDefault(x => x.Id.Equals(Id));
@@ -490,7 +503,10 @@
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to persist moved column.");
+            var notAllowed = ex is UnauthorizedAccessException;
+
+            if (!notAllowed)
+                _logger.LogError(ex, "Failed to persist moved column.");
 
             foreach (var oldColumnPosition in snapshot)
             {
@@ -501,8 +517,29 @@
             IndexHelper.FixIndices(_board.Columns);
             StateHasChanged();
 
-            MainLayout.RunNotification(new("Failed to move column. Changes were reverted.", NotificationType.Fail));
+            MainLayout.RunNotification(new(
+                notAllowed ? ex.Message : "Failed to move column. Changes were reverted.",
+                NotificationType.Fail
+            ));
         }
+    }
+
+    /// <summary>
+    /// Deletes the column if the user still administers the board. Only admins see the option, but the role may have
+    /// changed since the page loaded.
+    /// </summary>
+    private async Task<bool> DeleteColumnAsync(Column column)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        if (!await db.IsBoardAdminAsync(Id, _user))
+        {
+            MainLayout.RunNotification(new("Only board admins can delete columns.", NotificationType.Fail));
+            return false;
+        }
+
+        await db.Columns.Where(x => x.Id == column.Id && x.BoardId == Id).ExecuteDeleteAsync();
+        return true;
     }
 
     private async Task OnDataChanged()

@@ -440,6 +440,19 @@ public class CardServiceTest
     public async Task SetRepeat_MissingColumn_IsRejected() =>
         Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(999_999)), Is.False);
 
+    [Test]
+    public async Task SetRepeat_UserWhoCannotOpenTheCard_ChangesNothing()
+    {
+        var doingId = await AddColumnAsync("Doing", finished: false);
+
+        await _service.SetRepeatAsync(_cardId, _outsiderId, NewRepeat(doingId));
+        await _service.SetRepeatAsync(_cardId, _outsiderId, NewRepeat(null));
+
+        Assert.That(await StoredRepeatAsync(), Is.Null);
+        using var db = _factory.CreateDbContext();
+        Assert.That(await db.Activities.CountAsync(x => x.CardId == _cardId), Is.Zero);
+    }
+
     [TestCase(null)]
     [TestCase(0)]
     public async Task SetRepeat_NoTarget_IsStored(int? targetColumnId)
@@ -448,6 +461,209 @@ public class CardServiceTest
 
         Assert.That((await StoredRepeatAsync())!.TargetColumnId, Is.EqualTo(targetColumnId));
     }
+
+    #region Access: users who can't open a card's board can't act on it or its items
+
+    /// <summary>A card on a board that nobody from the fixture can open.</summary>
+    private async Task<int> AddForeignCardAsync()
+    {
+        using var db = _factory.CreateDbContext();
+
+        var project = new Project { Name = "Foreign project" };
+        db.Projects.Add(project);
+        await db.SaveChangesAsync();
+
+        var board = new Board { Name = "Foreign", Description = "", Code = "FOR", ProjectId = project.Id };
+        db.Boards.Add(board);
+        await db.SaveChangesAsync();
+
+        var column = new Column { Name = "Foreign column", BoardId = board.Id, Index = 0 };
+        db.Columns.Add(column);
+        await db.SaveChangesAsync();
+
+        var card = new Card { Name = "Foreign card", Number = 1, Index = 0, ColumnId = column.Id, CreatedById = _boardMemberId };
+        db.Cards.Add(card);
+        await db.SaveChangesAsync();
+
+        return card.Id;
+    }
+
+    [Test]
+    public async Task Outsider_ChangingACard_ChangesNothing()
+    {
+        var doneId = await AddColumnAsync("Done", finished: true);
+
+        using (var db = _factory.CreateDbContext())
+        {
+            var board = await db.Boards.SingleAsync();
+            db.Labels.Add(new Label { Name = "Bug", BoardId = board.Id, TextColor = System.Drawing.Color.Black, BackgroundColor = System.Drawing.Color.Red });
+            await db.SaveChangesAsync();
+        }
+
+        int labelId;
+        using (var db = _factory.CreateDbContext())
+            labelId = (await db.Labels.SingleAsync()).Id;
+
+        var deadline = new DateTime(2030, 1, 2, 9, 0, 0);
+
+        await _service.RenameAsync(_cardId, _outsiderId, "Hijacked");
+        await _service.UpdateDescriptionAsync(_cardId, _outsiderId, "Hijacked");
+        await _service.SetPriorityAsync(_cardId, _outsiderId, CardPriority.Critical);
+        await _service.SetDeadlineAsync(_cardId, _outsiderId, deadline);
+        await _service.SnoozeAsync(_cardId, _outsiderId, deadline);
+        await _service.MoveToAdjacentColumnAsync(_cardId, _outsiderId, 1);
+        await _service.JoinAsync(_cardId, _outsiderId);
+        await _service.AddSubtaskAsync(_cardId, _outsiderId, "Sneaky");
+        await _service.AddReminderAsync(_cardId, _outsiderId, deadline);
+        await _service.StartTimerAsync(_cardId, _outsiderId);
+        await _service.AddTimeRecordAsync(_cardId, _outsiderId, TimeSpan.FromHours(1));
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(await _service.MoveToColumnAsync(_cardId, _outsiderId, doneId, null), Is.False);
+            Assert.That(await _service.ToggleLabelAsync(_cardId, _outsiderId, labelId), Is.Null);
+            Assert.That(await _service.ToggleAssigneeAsync(_cardId, _outsiderId, _boardMemberId), Is.Null);
+            Assert.That(await _service.AddCommentAsync(_cardId, _outsiderId, "Hi"), Is.Null);
+            Assert.That(await _service.AddAttachmentAsync(_cardId, _outsiderId, "stored.txt", "x.txt"), Is.False);
+        });
+
+        using var check = _factory.CreateDbContext();
+        var card = await check.Cards.Include(x => x.Assignees).Include(x => x.Labels).SingleAsync(x => x.Id == _cardId);
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(card.Name, Is.EqualTo("Card 1"));
+            Assert.That(card.Description, Is.Empty);
+            Assert.That(card.Priority, Is.EqualTo(CardPriority.Normal));
+            Assert.That(card.Deadline, Is.Null);
+            Assert.That(card.SnoozedUntil, Is.Null);
+            Assert.That(card.Assignees, Is.Empty);
+            Assert.That(card.Labels, Is.Empty);
+            Assert.That(await check.Activities.CountAsync(), Is.Zero);
+            Assert.That(await check.Comments.CountAsync(), Is.Zero);
+            Assert.That(await check.Subtasks.CountAsync(), Is.Zero);
+            Assert.That(await check.Reminders.CountAsync(), Is.Zero);
+            Assert.That(await check.Attachments.CountAsync(), Is.Zero);
+            Assert.That(await check.TimeRecords.CountAsync(), Is.Zero);
+        });
+    }
+
+    [Test]
+    public async Task Outsider_ChangingItemsOfACard_ChangesNothing()
+    {
+        var deadline = new DateTime(2030, 1, 2, 9, 0, 0);
+
+        await _service.AddSubtaskAsync(_cardId, _boardMemberId, "Subtask");
+        await _service.AddReminderAsync(_cardId, _boardMemberId, deadline);
+        await _service.AddTimeRecordAsync(_cardId, _boardMemberId, TimeSpan.FromHours(1));
+        await _service.AddAttachmentAsync(_cardId, _boardMemberId, "stored.txt", "x.txt");
+        Assert.That(await _service.LinkCardsAsync(_cardId, _otherCardId, _boardMemberId, "relates to"), Is.Null);
+
+        int subtaskId, reminderId, recordId, attachmentId, linkId;
+        using (var db = _factory.CreateDbContext())
+        {
+            subtaskId = (await db.Subtasks.SingleAsync()).Id;
+            reminderId = (await db.Reminders.SingleAsync()).Id;
+            recordId = (await db.TimeRecords.SingleAsync()).Id;
+            attachmentId = (await db.Attachments.SingleAsync()).Id;
+            linkId = (await db.CardLinks.FirstAsync(x => x.CardOneId == _cardId)).Id;
+        }
+
+        int activitiesBefore;
+        using (var db = _factory.CreateDbContext())
+            activitiesBefore = await db.Activities.CountAsync();
+
+        await _service.EditSubtaskAsync(subtaskId, _outsiderId, "Hijacked");
+        await _service.SetSubtaskCompletedAsync(subtaskId, _outsiderId, true);
+        await _service.DeleteSubtaskAsync(subtaskId, _outsiderId);
+        await _service.EditTimeRecordAsync(recordId, _outsiderId, TimeSpan.FromHours(9));
+        await _service.RemoveTimeRecordAsync(_cardId, _outsiderId, recordId);
+        await _service.RemoveReminderAsync(_cardId, _outsiderId, reminderId);
+        await _service.RemoveAttachmentAsync(_cardId, _outsiderId, attachmentId);
+        await _service.RemoveLinkAsync(linkId, _outsiderId);
+
+        Assert.That(await _service.ToggleSubtaskAssigneeAsync(subtaskId, _outsiderId, _boardMemberId), Is.Null);
+
+        using var check = _factory.CreateDbContext();
+        var subtask = await check.Subtasks.Include(x => x.Assignees).SingleAsync();
+        var record = await check.TimeRecords.SingleAsync();
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(subtask.Text, Is.EqualTo("Subtask"));
+            Assert.That(subtask.Completed, Is.False);
+            Assert.That(subtask.Assignees, Is.Empty);
+            Assert.That(record.GetTotalTime(), Is.EqualTo(TimeSpan.FromHours(1)).Within(TimeSpan.FromSeconds(1)));
+            Assert.That(await check.Reminders.CountAsync(), Is.EqualTo(1));
+            Assert.That(await check.Attachments.CountAsync(), Is.EqualTo(1));
+            Assert.That(await check.CardLinks.CountAsync(), Is.EqualTo(2));
+            Assert.That(await check.Activities.CountAsync(), Is.EqualTo(activitiesBefore));
+        });
+    }
+
+    [Test]
+    public async Task ProjectMember_ChangingItemsOfACard_Works()
+    {
+        await _service.AddSubtaskAsync(_cardId, _projectMemberId, "Subtask");
+
+        int subtaskId;
+        using (var db = _factory.CreateDbContext())
+            subtaskId = (await db.Subtasks.SingleAsync()).Id;
+
+        await _service.EditSubtaskAsync(subtaskId, _projectMemberId, "Edited");
+        await _service.AddTimeRecordAsync(_cardId, _projectMemberId, TimeSpan.FromHours(1));
+
+        using var db2 = _factory.CreateDbContext();
+        Assert.That((await db2.Subtasks.SingleAsync()).Text, Is.EqualTo("Edited"));
+
+        var recordId = (await db2.TimeRecords.SingleAsync()).Id;
+        await _service.RemoveTimeRecordAsync(_cardId, _projectMemberId, recordId);
+
+        using var check = _factory.CreateDbContext();
+        Assert.That(await check.TimeRecords.CountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task LinkCards_CardTheUserCannotOpen_IsRefusedAndNothingIsLinked()
+    {
+        var foreignCardId = await AddForeignCardAsync();
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(await _service.LinkCardsAsync(_cardId, foreignCardId, _boardMemberId, "relates to"), Is.Not.Null);
+            Assert.That(await _service.LinkCardsAsync(foreignCardId, _cardId, _boardMemberId, "relates to"), Is.Not.Null);
+            Assert.That(await _service.LinkCardsAsync(_cardId, _otherCardId, _outsiderId, "relates to"), Is.Not.Null);
+        });
+
+        using var db = _factory.CreateDbContext();
+        Assert.That(await db.CardLinks.CountAsync(), Is.Zero);
+        Assert.That(await db.Activities.CountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task RemoveLink_OtherCardOnABoardTheUserCannotOpen_StillRemovesBothSides()
+    {
+        // The user can open the card they see the link on, so they can clean up a link to a board they lost access to.
+        var foreignCardId = await AddForeignCardAsync();
+
+        using (var db = _factory.CreateDbContext())
+        {
+            db.CardLinks.Add(new CardLink { CardOneId = _cardId, CardTwoId = foreignCardId, Category = "relates to" });
+            db.CardLinks.Add(new CardLink { CardOneId = foreignCardId, CardTwoId = _cardId, Category = "relates to" });
+            await db.SaveChangesAsync();
+        }
+
+        int linkId;
+        using (var db = _factory.CreateDbContext())
+            linkId = (await db.CardLinks.SingleAsync(x => x.CardOneId == _cardId)).Id;
+
+        await _service.RemoveLinkAsync(linkId, _boardMemberId);
+
+        using var check = _factory.CreateDbContext();
+        Assert.That(await check.CardLinks.CountAsync(), Is.Zero);
+    }
+
+    #endregion
 
     private class TestDbContextFactory(DbContextOptions<DataContext> options) : IDbContextFactory<DataContext>
     {

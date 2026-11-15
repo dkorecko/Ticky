@@ -7,7 +7,7 @@
 <CreateBoardModal @ref="_createBoardModal" OnSubmit="async () => await RunNotification(typeof(Board), OperationType.Added)" ImportModal="_importModal" />
 <EditProjectModal @ref="_editProjectModal" OnSubmit="async () => await RunNotification(typeof(Project), OperationType.Edited)" />
 <EditProjectMembershipsModal @ref="_editProjectMembershipsModal" OnSubmit="async () => await RunNotification(typeof(ProjectMembership), OperationType.Edited)" />
-<DeleteConfirmationDialog T="Project" @ref="_deleteProjectModal" OnConfirmed="HandleUpdate" />
+<DeleteConfirmationDialog T="Project" @ref="_deleteProjectModal" DeleteHandler="DeleteProjectAsync" OnConfirmed="HandleUpdate" />
 <DeleteConfirmationDialog T="Board" @ref="_deleteBoardModal" DeleteHandler="DeleteBoardAsync" OnConfirmed="HandleUpdate" />
 
 <PageTitle>Home - @Constants.APP_NAME</PageTitle>
@@ -182,6 +182,24 @@
     {
         _projects = await LoadProjectsAsync();
         _remainingBoards = await LoadRemainingBoardsAsync();
+    }
+
+    /// <summary>
+    /// Deletes the project if the user still administers it. Only admins see the option, but the role may have changed
+    /// since the page loaded.
+    /// </summary>
+    private async Task<bool> DeleteProjectAsync(Project project)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        if (!await db.IsProjectAdminAsync(project.Id, _user.Id))
+        {
+            _mainLayout.RunNotification(new("Only project admins can delete the project.", NotificationType.Fail));
+            return false;
+        }
+
+        await db.Projects.Where(x => x.Id == project.Id).ExecuteDeleteAsync();
+        return true;
     }
 
     /// <summary>
