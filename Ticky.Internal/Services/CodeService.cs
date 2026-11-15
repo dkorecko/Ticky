@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Linq.Expressions;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,12 +30,26 @@ public class CodeService
     }
 
     /// <summary>
-    /// Creates a code for the account. An account has a single code, so one that is still outstanding is replaced,
-    /// except the sign-up code of an account that isn't confirmed yet: it marks the account as pending, so nothing
-    /// else may take its place.
+    /// Creates a code for the account, replacing the one that is outstanding (an account has a single code), except
+    /// the sign-up code of an account that isn't confirmed yet: it marks the account as pending, so nothing else may
+    /// take its place.
     /// </summary>
     /// <exception cref="InvalidOperationException">Another code was asked for a pending sign-up.</exception>
-    public async Task<Code> CreateCodeAsync(User account, CodePurpose codePurpose)
+    public async Task<Code> CreateCodeAsync(User account, CodePurpose codePurpose) =>
+        (await IssueCodeAsync(account, codePurpose, keepRecent: false))!;
+
+    /// <summary>
+    /// Like <see cref="CreateCodeAsync"/>, but a code that was created less than <see cref="ResendDelay"/> ago is left
+    /// alone (even if it is used up), so asking again right away neither replaces the code that was just mailed nor
+    /// mails another one. Only codes older than that are deleted, and the unique index on the account decides between
+    /// requests that arrive together, so exactly one of them creates the code.
+    /// </summary>
+    /// <returns>The new code, or <c>null</c> when a recent one is in place and nothing should be mailed.</returns>
+    /// <exception cref="InvalidOperationException">Another code was asked for a pending sign-up.</exception>
+    public async Task<Code?> TryCreateCodeAsync(User account, CodePurpose codePurpose) =>
+        await IssueCodeAsync(account, codePurpose, keepRecent: true);
+
+    private async Task<Code?> IssueCodeAsync(User account, CodePurpose codePurpose, bool keepRecent)
     {
         if (codePurpose != CodePurpose.NewAccount && await HasPendingSignUpAsync(account))
             throw new InvalidOperationException(
@@ -49,7 +64,21 @@ public class CodeService
         )
             tracked.State = EntityState.Detached;
 
-        await _dataContext.Codes.Where(x => x.UserId == account.Id).ExecuteDeleteAsync();
+        var outstanding = _dataContext.Codes.Where(x => x.UserId == account.Id);
+
+        if (keepRecent)
+        {
+            var threshold = DateTime.Now - ResendDelay;
+
+            // The usual case. Looking first keeps the unique index, which still decides between requests that arrive
+            // together, from being hit (and logged as an error by EF) every time a code was just created.
+            if (await _dataContext.Codes.AnyAsync(x => x.UserId == account.Id && x.CreatedAt > threshold))
+                return null;
+
+            outstanding = outstanding.Where(x => x.CreatedAt <= threshold);
+        }
+
+        await outstanding.ExecuteDeleteAsync();
 
         var code = new Code
         {
@@ -60,7 +89,21 @@ public class CodeService
         };
 
         _dataContext.Codes.Add(code);
-        await _dataContext.SaveChangesAsync();
+
+        try
+        {
+            await _dataContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException) when (keepRecent)
+        {
+            _dataContext.Entry(code).State = EntityState.Detached;
+
+            // The recent code (or the one a parallel request has just created) is in place.
+            if (await _dataContext.Codes.AnyAsync(x => x.UserId == account.Id))
+                return null;
+
+            throw;
+        }
 
         return code;
     }
@@ -71,22 +114,18 @@ public class CodeService
             x.UserId == account.Id && x.CodePurpose == CodePurpose.NewAccount && !x.User.EmailConfirmed
         );
 
-    /// <summary>Whether the account got a code a moment ago, so another one shouldn't be mailed yet.</summary>
-    public async Task<bool> HasRecentCodeAsync(User account)
-    {
-        var threshold = DateTime.Now - ResendDelay;
-        return await _dataContext.Codes.AnyAsync(x =>
-            x.UserId == account.Id && x.CreatedAt > threshold
-        );
-    }
-
     /// <summary>
     /// Checks the code submitted for the account with this e-mail address and returns it (with its user) when it is
-    /// the account's current code for this purpose, hasn't expired and the guess is right. Every guess counts, and the
-    /// code is deleted once it has expired or the last guess it allows was wrong. A code that is returned stays in
-    /// the database until <see cref="ConsumeCodeAsync"/> is called, so a form that is sent back to the person for
-    /// something else, like a weak password, doesn't cost them the code.
+    /// the account's current code for this purpose, hasn't expired and the guess is right. Every guess counts, and
+    /// the guesses a code allows are limited. A code that is returned stays in the database until
+    /// <see cref="ConsumeCodeAsync"/> is called, so a form that is sent back to the person for something else, like
+    /// a weak password, doesn't cost them the code.
     /// </summary>
+    /// <remarks>
+    /// A code that has expired or is used up isn't deleted here, it just stops working. Its row keeps a pending
+    /// sign-up marked (see <see cref="HasPendingSignUpAsync"/>) and keeps the resend delay running, and the cleanup
+    /// job removes it, together with the account of a sign-up that was never confirmed.
+    /// </remarks>
     /// <returns>
     /// The code, or <c>null</c> without a reason, so the caller can't tell an unknown e-mail address from a wrong,
     /// expired or used up code.
@@ -102,14 +141,8 @@ public class CodeService
             .Codes.Include(x => x.User)
             .FirstOrDefaultAsync(x => x.User.Email == email && x.CodePurpose == purpose);
 
-        if (code is null)
+        if (code is null || IsExpired(code))
             return null;
-
-        if (IsExpired(code))
-        {
-            await ConsumeCodeAsync(code);
-            return null;
-        }
 
         // The guess is counted in the database before it is compared, and only while the limit isn't reached, so
         // requests made in parallel (or to several instances) can't make more guesses than allowed.
@@ -118,35 +151,31 @@ public class CodeService
             .ExecuteUpdateAsync(x => x.SetProperty(y => y.FailedAttempts, y => y.FailedAttempts + 1));
 
         if (counted == 0)
-        {
-            await ConsumeCodeAsync(code);
             return null;
-        }
 
-        if (Matches(code, submittedCode))
-        {
-            // Like a person whose new password was refused: the code stays and may be used again.
-            await _dataContext
-                .Codes.Where(x => x.Id == code.Id)
-                .ExecuteUpdateAsync(x => x.SetProperty(y => y.FailedAttempts, 0));
+        if (!Matches(code, submittedCode))
+            return null;
 
-            return code;
-        }
-
-        var attempts = await _dataContext
+        // Like a person whose new password was refused: the code stays and may be used again.
+        await _dataContext
             .Codes.Where(x => x.Id == code.Id)
-            .Select(x => x.FailedAttempts)
-            .FirstOrDefaultAsync();
+            .ExecuteUpdateAsync(x => x.SetProperty(y => y.FailedAttempts, 0));
 
-        if (attempts >= Constants.Codes.MAX_ATTEMPTS)
-            await ConsumeCodeAsync(code);
-
-        return null;
+        return code;
     }
 
     /// <summary>Deletes a code that was used. Returns whether this call was the one that deleted it.</summary>
     public async Task<bool> ConsumeCodeAsync(Code code) =>
         await _dataContext.Codes.Where(x => x.Id == code.Id).ExecuteDeleteAsync() > 0;
+
+    /// <summary>
+    /// The codes the cleanup job removes: those past their lifetime, and sign-up codes of accounts that have been
+    /// confirmed in the meantime. A password reset code of a confirmed account is a live one until it expires.
+    /// </summary>
+    public static Expression<Func<Code, bool>> Obsolete(DateTime expiredBefore) =>
+        x =>
+            expiredBefore > x.CreatedAt
+            || (x.CodePurpose == CodePurpose.NewAccount && x.User != null && x.User.EmailConfirmed);
 
     public static bool IsExpired(Code code) => DateTime.Now - code.CreatedAt > Lifetime;
 

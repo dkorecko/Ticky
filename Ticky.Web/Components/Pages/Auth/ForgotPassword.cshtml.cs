@@ -40,14 +40,16 @@ public class ForgotPasswordModel : PageModel
             // A sign-up that isn't confirmed yet is handled like an unknown account, its code must stay in place.
             if (targetUser is not null && !await _codeService.HasPendingSignUpAsync(targetUser))
             {
-                // Submitting again right away doesn't replace the code that was just mailed.
-                if (!await _codeService.HasRecentCodeAsync(targetUser))
+                // Null when a code was mailed a moment ago: it stays valid and isn't replaced or mailed again.
+                var code = await _codeService.TryCreateCodeAsync(
+                    targetUser,
+                    CodePurpose.ForgottenPassword
+                );
+
+                if (code is not null)
                     await _emailService.SendForgottenPasswordCodeEmailAsync(
                         Input.EmailAddress,
-                        await _codeService.CreateCodeAsync(
-                            targetUser,
-                            CodePurpose.ForgottenPassword
-                        )
+                        code
                     );
 
                 return LocalRedirect("/auth/changepassword");

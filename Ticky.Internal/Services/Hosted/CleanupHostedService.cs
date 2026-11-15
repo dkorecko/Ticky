@@ -18,7 +18,7 @@ public class CleanupHostedService(IServiceScopeFactory serviceScopeFactory)
         var expiredBefore = DateTime.Now - CodeService.Lifetime;
         var codesForDeletion = await db
             .Codes.Include(x => x.User)
-            .Where(x => expiredBefore > x.CreatedAt || (x.User != null && x.User.EmailConfirmed))
+            .Where(CodeService.Obsolete(expiredBefore))
             .ToListAsync();
         int deletedAccounts = 0;
 

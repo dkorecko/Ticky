@@ -151,7 +151,7 @@ public class CodeServiceTest
     // Expiry
 
     [Test]
-    public async Task VerifyCode_AfterTheLifetime_FailsAndDeletesTheCode()
+    public async Task VerifyCode_AfterTheLifetime_FailsAndLeavesTheCodeToTheCleanup()
     {
         await AddCodeAsync(_aliceId, CodePurpose.ForgottenPassword, "ABCD-2345", DateTime.Now - CodeService.Lifetime - TimeSpan.FromMinutes(1));
 
@@ -160,7 +160,22 @@ public class CodeServiceTest
         await Assert.MultipleAsync(async () =>
         {
             Assert.That(verified, Is.Null);
-            Assert.That(await _db.Codes.CountAsync(x => x.UserId == _aliceId), Is.Zero);
+            Assert.That(await _db.Codes.CountAsync(x => x.UserId == _aliceId), Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public async Task VerifyCode_ExpiredSignUpCode_KeepsTheAccountPending()
+    {
+        // Deleting it would leave an unconfirmed account that nothing marks as pending and the cleanup never finds.
+        await AddCodeAsync(_carolId, CodePurpose.NewAccount, "ABCD-2345", DateTime.Now - CodeService.Lifetime - TimeSpan.FromMinutes(1));
+
+        var verified = await _service.VerifyCodeAsync(CAROL, "ABCD-2345", CodePurpose.NewAccount);
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(verified, Is.Null);
+            Assert.That(await _service.HasPendingSignUpAsync(await GetUserAsync(_carolId)), Is.True);
         });
     }
 
@@ -186,7 +201,7 @@ public class CodeServiceTest
     // Guess limit
 
     [Test]
-    public async Task VerifyCode_AfterTheLastAllowedWrongGuess_DeletesTheCode()
+    public async Task VerifyCode_AfterTheLastAllowedWrongGuess_LocksTheCode()
     {
         var code = await _service.CreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
 
@@ -195,8 +210,9 @@ public class CodeServiceTest
 
         await Assert.MultipleAsync(async () =>
         {
-            Assert.That(await _db.Codes.CountAsync(x => x.UserId == _aliceId), Is.Zero);
-            // Even the right code is gone, a new one has to be requested.
+            // The row stays (it keeps the resend delay running and a pending sign-up marked) but is dead.
+            Assert.That(await GetFailedAttemptsAsync(_aliceId), Is.EqualTo(AppConstants.Codes.MAX_ATTEMPTS));
+            // Even the right code is refused, a new one has to be requested.
             Assert.That(await _service.VerifyCodeAsync(ALICE, code.Value, CodePurpose.ForgottenPassword), Is.Null);
         });
     }
@@ -238,8 +254,8 @@ public class CodeServiceTest
 
         await Assert.MultipleAsync(async () =>
         {
-            // Bob's own code was used up by the guesses at his e-mail address...
-            Assert.That(await _db.Codes.CountAsync(x => x.UserId == _bobId), Is.Zero);
+            // Bob's own code was locked by the guesses at his e-mail address...
+            Assert.That(await GetFailedAttemptsAsync(_bobId), Is.EqualTo(AppConstants.Codes.MAX_ATTEMPTS));
             // ...and Alice's wasn't touched.
             Assert.That(await _service.VerifyCodeAsync(ALICE, alicesCode.Value, CodePurpose.ForgottenPassword), Is.Not.Null);
         });
@@ -376,18 +392,118 @@ public class CodeServiceTest
     }
 
     [Test]
-    public async Task HasRecentCode_OnlyRightAfterACodeWasCreated()
+    public async Task TryCreateCode_WithoutACode_CreatesIt()
+    {
+        var code = await _service.TryCreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
+
+        Assert.That(code, Is.Not.Null);
+        Assert.That(await _service.VerifyCodeAsync(ALICE, code!.Value, CodePurpose.ForgottenPassword), Is.Not.Null);
+    }
+
+    [Test]
+    public async Task TryCreateCode_RecentCode_IsLeftAloneAndNothingIsCreated()
     {
         var alice = await GetUserAsync(_aliceId);
-        var bob = await GetUserAsync(_bobId);
-        await _service.CreateCodeAsync(alice, CodePurpose.ForgottenPassword);
-        await AddCodeAsync(_bobId, CodePurpose.ForgottenPassword, "ABCD-2345", DateTime.Now - CodeService.ResendDelay - TimeSpan.FromSeconds(5));
+        var first = await _service.TryCreateCodeAsync(alice, CodePurpose.ForgottenPassword);
 
-        await Assert.MultipleAsync(async () =>
+        var second = await _service.TryCreateCodeAsync(alice, CodePurpose.ForgottenPassword);
+
+        var stored = await _db.Codes.AsNoTracking().SingleAsync(x => x.UserId == _aliceId);
+        Assert.Multiple(() =>
         {
-            Assert.That(await _service.HasRecentCodeAsync(alice), Is.True);
-            Assert.That(await _service.HasRecentCodeAsync(bob), Is.False);
+            Assert.That(second, Is.Null);
+            Assert.That(stored.Value, Is.EqualTo(first!.Value));
         });
+    }
+
+    [Test]
+    public async Task TryCreateCode_RecentCodeThatIsUsedUp_BlocksUntilTheDelayPasses()
+    {
+        var alice = await GetUserAsync(_aliceId);
+        await _service.TryCreateCodeAsync(alice, CodePurpose.ForgottenPassword);
+
+        for (var i = 0; i < AppConstants.Codes.MAX_ATTEMPTS; i++)
+            await _service.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword);
+
+        // Using the code up must not give a way around the resend delay.
+        Assert.That(await _service.TryCreateCodeAsync(alice, CodePurpose.ForgottenPassword), Is.Null);
+
+        await _db.Codes.Where(x => x.UserId == _aliceId).ExecuteDeleteAsync();
+        await AddCodeAsync(_aliceId, CodePurpose.ForgottenPassword, "ABCD-2345", DateTime.Now - CodeService.ResendDelay - TimeSpan.FromSeconds(5), AppConstants.Codes.MAX_ATTEMPTS);
+
+        var fresh = await _service.TryCreateCodeAsync(alice, CodePurpose.ForgottenPassword);
+
+        Assert.That(fresh, Is.Not.Null);
+        Assert.That(await GetFailedAttemptsAsync(_aliceId), Is.Zero);
+    }
+
+    [Test]
+    public async Task TryCreateCode_CodeOlderThanTheDelay_IsReplaced()
+    {
+        await AddCodeAsync(_aliceId, CodePurpose.ForgottenPassword, "ABCD-2345", DateTime.Now - CodeService.ResendDelay - TimeSpan.FromSeconds(5));
+
+        var replacement = await _service.TryCreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
+
+        var stored = await _db.Codes.AsNoTracking().SingleAsync(x => x.UserId == _aliceId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(replacement, Is.Not.Null);
+            Assert.That(stored.Value, Is.EqualTo(replacement!.Value));
+        });
+    }
+
+    [Test]
+    public async Task TryCreateCode_AfterRunningIntoARecentCode_TheContextStaysUsable()
+    {
+        var alice = await GetUserAsync(_aliceId);
+        await _service.TryCreateCodeAsync(alice, CodePurpose.ForgottenPassword);
+        await _service.TryCreateCodeAsync(alice, CodePurpose.ForgottenPassword);
+
+        // The insert that was refused must not be retried by the next save of the same context.
+        var bobsCode = await _service.TryCreateCodeAsync(await GetUserAsync(_bobId), CodePurpose.ForgottenPassword);
+
+        Assert.That(bobsCode, Is.Not.Null);
+        Assert.That(await _db.Codes.CountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task TryCreateCode_PendingSignUp_KeepsItsCodeAndRefusesAnother()
+    {
+        var carol = await GetUserAsync(_carolId);
+        await AddCodeAsync(_carolId, CodePurpose.NewAccount, "ABCD-2345", DateTime.Now - CodeService.ResendDelay - TimeSpan.FromMinutes(10));
+
+        Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await _service.TryCreateCodeAsync(carol, CodePurpose.ForgottenPassword)
+        );
+
+        var stored = await _db.Codes.AsNoTracking().SingleAsync(x => x.UserId == _carolId);
+        Assert.That(stored.CodePurpose, Is.EqualTo(CodePurpose.NewAccount));
+    }
+
+    // Cleanup
+
+    [Test]
+    public async Task Obsolete_KeepsLiveCodesAndRemovesDeadOnes()
+    {
+        await AddCodeAsync(_aliceId, CodePurpose.ForgottenPassword, "ABCD-2345", DateTime.Now); // confirmed, live reset code
+        await AddCodeAsync(_bobId, CodePurpose.NewAccount, "EFGH-2345", DateTime.Now); // confirmed in the meantime
+        await AddCodeAsync(_carolId, CodePurpose.NewAccount, "JKMN-2345", DateTime.Now); // pending sign-up
+
+        var obsolete = await ObsoleteUserIdsAsync();
+
+        Assert.That(obsolete, Is.EqualTo(new[] { _bobId }));
+    }
+
+    [Test]
+    public async Task Obsolete_RemovesCodesPastTheirLifetime()
+    {
+        var old = DateTime.Now - CodeService.Lifetime - TimeSpan.FromMinutes(1);
+        await AddCodeAsync(_aliceId, CodePurpose.ForgottenPassword, "ABCD-2345", old);
+        await AddCodeAsync(_carolId, CodePurpose.NewAccount, "JKMN-2345", old);
+
+        var obsolete = await ObsoleteUserIdsAsync();
+
+        Assert.That(obsolete, Is.EquivalentTo(new[] { _aliceId, _carolId }));
     }
 
     // Counting guesses
@@ -433,7 +549,7 @@ public class CodeServiceTest
         Assert.Multiple(async () =>
         {
             Assert.That(await otherService.VerifyCodeAsync(ALICE, "WRONG-23", CodePurpose.ForgottenPassword), Is.Null);
-            Assert.That(await _db.Codes.CountAsync(x => x.UserId == _aliceId), Is.Zero);
+            Assert.That(await GetFailedAttemptsAsync(_aliceId), Is.EqualTo(AppConstants.Codes.MAX_ATTEMPTS));
             Assert.That(await otherService.VerifyCodeAsync(ALICE, code.Value, CodePurpose.ForgottenPassword), Is.Null);
         });
     }
@@ -448,7 +564,7 @@ public class CodeServiceTest
         Assert.Multiple(() =>
         {
             Assert.That(verified, Is.Null);
-            Assert.That(_db.Codes.Count(x => x.UserId == _aliceId), Is.Zero);
+            Assert.That(_db.Codes.Count(x => x.UserId == _aliceId), Is.EqualTo(1));
         });
     }
 
@@ -481,6 +597,14 @@ public class CodeServiceTest
 
         return user.Id;
     }
+
+    private async Task<List<int>> ObsoleteUserIdsAsync() =>
+        await _db
+            .Codes.Include(x => x.User)
+            .Where(CodeService.Obsolete(DateTime.Now - CodeService.Lifetime))
+            .Select(x => x.UserId)
+            .OrderBy(x => x)
+            .ToListAsync();
 
     private async Task<User> GetUserAsync(int id) => await _db.Users.SingleAsync(x => x.Id == id);
 
