@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.RegularExpressions;
 using Ticky.Base.Converters;
 
 namespace Ticky.Internal.Helpers;
@@ -11,12 +12,12 @@ public static class ActivityFormatter
 {
     /// <summary>
     /// HTML describing what happened, without the person's name, e.g. "<b>added</b> label <b>Bug</b>".
-    /// Every value is escaped.
+    /// Every value is escaped. Old rows that were never converted to data show their stored text, escaped the same way.
     /// </summary>
     public static string ToHtml(this Activity activity)
     {
         if (activity.LegacyText is not null)
-            return activity.LegacyText;
+            return EscapeLegacyText(activity.LegacyText);
 
         return activity switch
         {
@@ -78,6 +79,33 @@ public static class ActivityFormatter
             _ => string.Empty,
         };
     }
+
+    /// <summary>
+    /// Old texts were built with unescaped names, so they can hold anything a person typed. Everything but the plain
+    /// <c>&lt;b&gt;</c> / <c>&lt;/b&gt;</c> tags those templates used is escaped. Decoding first keeps values an older
+    /// version already escaped (e.g. "R&amp;amp;D") from being escaped twice. A name that held a lone <c>&lt;b&gt;</c>
+    /// would leave bold open and swallow the rows after it, so open tags are closed at the end.
+    /// </summary>
+    private static string EscapeLegacyText(string text)
+    {
+        var open = 0;
+
+        var html = BoldTag.Replace(WebUtility.HtmlEncode(WebUtility.HtmlDecode(text)), tag =>
+        {
+            if (tag.Value == "&lt;b&gt;")
+            {
+                open++;
+                return "<b>";
+            }
+
+            open = Math.Max(0, open - 1);
+            return "</b>";
+        });
+
+        return html + string.Concat(Enumerable.Repeat("</b>", open));
+    }
+
+    private static readonly Regex BoldTag = new("&lt;/?b&gt;", RegexOptions.CultureInvariant);
 
     /// <summary>The action word, emphasized.</summary>
     private static string B(string verb) => $"<b>{verb}</b>";

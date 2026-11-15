@@ -56,6 +56,54 @@ public class ActivityTest
         Assert.That(activity.ToHtml(), Is.EqualTo("<b>something</b> else"));
     }
 
+    [Test]
+    public void Text_LegacyText_EscapesEverythingButBold()
+    {
+        // What the old templates stored for a subtask named: x</b><img src=x onerror="window.__xss=1"><b>
+        var activity = new GenericActivity { LegacyText = "<b>added</b> subtask <b>x</b><img src=x onerror=\"window.__xss=1\"><b></b>" };
+
+        Assert.That(activity.ToHtml(), Is.EqualTo("<b>added</b> subtask <b>x</b>&lt;img src=x onerror=&quot;window.__xss=1&quot;&gt;<b></b>"));
+    }
+
+    [TestCase("<script>alert(1)</script>", "&lt;script&gt;alert(1)&lt;/script&gt;")]
+    [TestCase("<B>shout</B>", "&lt;B&gt;shout&lt;/B&gt;")]
+    [TestCase("<b onmouseover=\"x()\">hi</b>", "&lt;b onmouseover=&quot;x()&quot;&gt;hi</b>")]
+    [TestCase("<b/onmouseover=x()>hi</b>", "&lt;b/onmouseover=x()&gt;hi</b>")]
+    public void Text_LegacyText_KeepsOnlyPlainBoldTags(string legacyText, string expected)
+    {
+        Assert.That(new GenericActivity { LegacyText = legacyText }.ToHtml(), Is.EqualTo(expected));
+    }
+
+    [TestCase("<b>did</b> something <b>unclosed", "<b>did</b> something <b>unclosed</b>")]
+    [TestCase("<b>did</b> <b><b>nested", "<b>did</b> <b><b>nested</b></b>")]
+    [TestCase("<b>added</b> label <b>a</b>b</b>", "<b>added</b> label <b>a</b>b</b>")]
+    public void Text_LegacyText_NeverLeavesBoldOpen(string legacyText, string expected)
+    {
+        Assert.That(new GenericActivity { LegacyText = legacyText }.ToHtml(), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void Text_LegacyText_PlainBoldTextIsUnchanged()
+    {
+        const string text = "<b>marked</b> the subtask <b>Write tests</b> as <b>to be done</b>";
+
+        Assert.That(new GenericActivity { LegacyText = text }.ToHtml(), Is.EqualTo(text));
+    }
+
+    [Test]
+    public void Text_LegacyText_DoesNotEscapeTwice()
+    {
+        // A later 1.15 version already escaped values; an older one stored them raw.
+        var escaped = new GenericActivity { LegacyText = "<b>added</b> label <b>R&amp;D &lt;3</b>" };
+        var raw = new GenericActivity { LegacyText = "<b>added</b> label <b>R&D</b>" };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(escaped.ToHtml(), Is.EqualTo("<b>added</b> label <b>R&amp;D &lt;3</b>"));
+            Assert.That(raw.ToHtml(), Is.EqualTo("<b>added</b> label <b>R&amp;D</b>"));
+        });
+    }
+
     #endregion
 
     #region Converting old text
@@ -284,6 +332,21 @@ public class ActivityTest
             Assert.That(activity.LegacyText, Is.EqualTo(text));
             Assert.That(activity.LabelName, Is.Null);
             Assert.That(activity.ToHtml(), Is.EqualTo(text));
+        });
+    }
+
+    [Test]
+    public async Task Convert_NameWithMarkup_KeepsTextButShowsItEscaped()
+    {
+        const string text = "<b>added</b> subtask <b>x</b><img src=x onerror=\"window.__xss=1\"><b></b>";
+
+        var activity = (SubtaskAddedActivity)(await ConvertAsync(text)).Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(activity.LegacyText, Is.EqualTo(text));
+            Assert.That(activity.ToHtml(), Does.Not.Contain("<img"));
+            Assert.That(activity.ToHtml(), Is.EqualTo("<b>added</b> subtask <b>x</b>&lt;img src=x onerror=&quot;window.__xss=1&quot;&gt;<b></b>"));
         });
     }
 
