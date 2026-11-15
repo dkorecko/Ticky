@@ -1,6 +1,5 @@
 ﻿@inject IDbContextFactory<DataContext> _dbContextFactory
 @inject IJSRuntime _js
-@inject CardNumberingService _cardNumberingService
 @inject CardService _cardService
 @inject ILogger<ColumnView> _logger
 @inherits NotifiableBase
@@ -428,48 +427,17 @@
         if (_createTaskModel is null || string.IsNullOrWhiteSpace(_createTaskModel.Text))
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
+        var result = await _cardService.CreateCardAsync(columnId, User.Id, _createTaskModel.Text, User.AutomaticAssign);
 
-        var column = await db.Columns
-            .Include(x => x.Cards)
-            .FirstOrDefaultAsync(x => x.Id.Equals(columnId));
+        if (result.Status == CardService.CreateCardStatus.ColumnFull)
+        {
+            MainLayout.RunNotification(new("This column is already full.", NotificationType.Fail));
+            return;
+        }
 
-        if (column is null)
+        if (result.Card is not { } newCard)
             return;
 
-        int newIndex = 0;
-
-        switch (Column.NewCardPlacement)
-        {
-            case CardPlacement.Top:
-                {
-                    foreach (var card in column.Cards)
-                        card.Index++;
-                    break;
-                }
-            default:
-                newIndex = IndexHelper.GetNextIndex(column.Cards);
-                break;
-        }
-
-        var newCard = new Card
-        {
-            Name = _createTaskModel.Text,
-            ColumnId = columnId,
-            Index = newIndex,
-            CreatedAt = DateTime.Now,
-            Number = await _cardNumberingService.GetNextNumberAsync(Board.Id),
-            CreatedById = User.Id
-        };
-
-        if (User.AutomaticAssign)
-        {
-            var targetUser = await db.Users.FirstAsync(x => x.Id.Equals(User.Id));
-            newCard.Assignees.Add(targetUser);
-        }
-
-        column.Cards.Add(newCard);
-        await db.SaveChangesAsync();
         await OnUpdate.InvokeAsync();
 
         _createTaskModel = new();

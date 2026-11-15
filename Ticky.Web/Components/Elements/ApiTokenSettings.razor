@@ -1,0 +1,299 @@
+@* The API tokens tab of the user settings: create, list and revoke tokens. *@
+@inject ApiTokenService _apiTokenService
+@inject IJSRuntime _js
+@inherits NotifiableBase
+
+<div class="setting-description">
+    <h6 class="font-semibold">API tokens</h6>
+    <p class="text-sm opacity-70">
+        Tokens let scripts and agents use Ticky's API as you, for example to let an agent read and update your boards.
+        A token reaches only the boards you can and a read-only token can't change anything.
+        Ticky stores only a hash of each token, so a lost token can't be shown again: revoke it and create a new one.
+    </p>
+    <p class="text-sm opacity-60">
+        Send it with each request as <code>Authorization: Bearer &lt;token&gt;</code>.
+        The <a class="form-link underline" href="@Constants.Api.DocsPath" target="_blank" rel="noopener">API reference</a>
+        lists every endpoint and lets you try them, and the
+        <a class="form-link underline" href="@Constants.Api.OpenApiPath" target="_blank" rel="noopener">OpenAPI document</a>
+        describes them for API clients.
+    </p>
+</div>
+
+<HorizontalSeparator/>
+
+<div class="settings-section">
+    <div class="setting-description">
+        <label class="font-semibold opacity-90" for="new-token-name">Create a token</label>
+        <label class="w-4/5 max-w-2xl opacity-70" for="new-token-name">
+            Name it after where you'll use it, so you can tell your tokens apart. Only you can see it.
+        </label>
+    </div>
+
+    <EditForm class="form col-span-3 w-full max-w-sm md:col-span-1 lg:col-span-2" Model="_createModel" OnValidSubmit="CreateAsync">
+        <DataAnnotationsValidator />
+
+        <div class="form-group">
+            <InputText id="new-token-name" class="input-field" @bind-Value="_createModel.Name" placeholder="Claude Code" maxlength="@Constants.Api.TokenNameMaxLength" />
+            <ValidationMessage For="() => _createModel.Name" />
+        </div>
+
+        <div class="form-group">
+            <label class="text-sm opacity-70">Access</label>
+            <div class="flex h-min w-max flex-row gap-1 rounded-button border border-line p-0.5" role="radiogroup" aria-label="Access">
+                @foreach (var scope in Enum.GetValues<ApiTokenScope>())
+                {
+                    <button type="button" role="radio" aria-checked="@((_createModel.Scope == scope).ToString().ToLowerInvariant())"
+                            data-active="@((_createModel.Scope == scope).ToString())" class="detail-tab"
+                            @onclick="() => _createModel.Scope = scope">
+                        @ScopeLabel(scope)
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="text-sm opacity-70">Expires after</label>
+            <div class="flex h-min w-max flex-row flex-wrap gap-1 rounded-button border border-line p-0.5" role="radiogroup" aria-label="Expires after">
+                @foreach (var option in ExpiryOptions)
+                {
+                    <button type="button" role="radio" aria-checked="@((_createModel.ExpiresInDays == option.Days).ToString().ToLowerInvariant())"
+                            data-active="@((_createModel.ExpiresInDays == option.Days).ToString())" class="detail-tab"
+                            @onclick="() => _createModel.ExpiresInDays = option.Days">
+                        @option.Label
+                    </button>
+                }
+            </div>
+        </div>
+
+        <button class="btn btn-purple max-w-sm" type="submit" disabled="@_isCreating">Create token</button>
+    </EditForm>
+</div>
+
+@if (_created is not null)
+{
+    <div class="flex flex-col gap-3 rounded-lg border border-secondary/40 bg-secondary/10 p-4 dark:border-secondaryDark/40 dark:bg-secondaryDark/10">
+        <div class="flex items-start justify-between gap-3">
+            <strong>Copy your new token now. It won't be shown again.</strong>
+            <button type="button" title="Close" class="material-symbols-rounded g-icon icon-button" @onclick="DismissCreated">close</button>
+        </div>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <code class="min-w-0 flex-1 select-all break-all rounded bg-background px-3 py-2 font-mono text-sm dark:bg-bgDark">@_created.Plaintext</code>
+            <button type="button" class="btn btn-purple shrink-0 sm:!w-max" @onclick="CopyCreated">Copy</button>
+        </div>
+    </div>
+}
+
+<HorizontalSeparator/>
+
+<div class="settings-section">
+    <div class="setting-description">
+        <h6 class="font-semibold">Your tokens</h6>
+        <p class="w-4/5 max-w-2xl text-sm opacity-70">
+            Revoking a token stops it working right away, for everything that uses it.
+        </p>
+    </div>
+
+    <div class="col-span-3 w-full md:col-span-2 lg:col-span-3">
+        @if (_tokens is null)
+        {
+            <Spinner/>
+        }
+        else if (_tokens.Count == 0)
+        {
+            <p class="text-sm opacity-60">No tokens yet.</p>
+        }
+        else
+        {
+            var now = DateTime.Now;
+
+            <ul class="flex flex-col divide-y divide-line">
+                @foreach (var token in _tokens)
+                {
+                    var active = token.IsActiveAt(now);
+
+                    <li class='flex items-center gap-3 py-3 @(active ? string.Empty : "opacity-60")'>
+                        <div class="flex min-w-0 flex-1 flex-col gap-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="break-words font-medium">@token.Name</span>
+                                <span class='text-2xs rounded-full px-2 py-0.5 font-medium @(token.Scope == ApiTokenScope.ReadWrite ? "bg-secondary/10 text-secondary dark:bg-secondaryDark/15 dark:text-secondaryDark" : "bg-text/[0.06] text-subtext dark:bg-textDark/10 dark:text-subtextDark")'>
+                                    @ScopeLabel(token.Scope)
+                                </span>
+                                @if (token.RevokedAt is not null)
+                                {
+                                    <span class="text-2xs rounded-full bg-text/[0.06] px-2 py-0.5 font-medium text-subtext dark:bg-textDark/10 dark:text-subtextDark">Revoked</span>
+                                }
+                                else if (!active)
+                                {
+                                    <span class="text-2xs rounded-full bg-text/[0.06] px-2 py-0.5 font-medium text-subtext dark:bg-textDark/10 dark:text-subtextDark">Expired</span>
+                                }
+                            </div>
+                            <span class="text-xs opacity-70">@Details(token, now)</span>
+                        </div>
+
+                        @if (active)
+                        {
+                            <button type="button" class="btn btn-transparent shrink-0 !w-max" @onclick="() => AskToRevokeAsync(token)">Revoke</button>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+<Modal @ref="_revokeModal" Title="Revoke token" RedSubmit="true" SubmitButtonText="Revoke" OnSubmitAttempted="RevokeConfirmedAsync">
+    <p>
+        Revoke <b>@_tokenToRevoke?.Name</b>? Anything that uses it loses access right away.<br />
+        <b>This can't be undone.</b>
+    </p>
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    private static readonly (string Label, int? Days)[] ExpiryOptions =
+    [
+        ("30 days", 30),
+        ("90 days", 90),
+        ("1 year", 365),
+        ("Never", null),
+    ];
+
+    private class CreateModel
+    {
+        [Required(AllowEmptyStrings = false, ErrorMessage = "A name is required.")]
+        [MaxLength(Constants.Api.TokenNameMaxLength)]
+        public string Name { get; set; } = string.Empty;
+
+        public ApiTokenScope Scope { get; set; } = ApiTokenScope.ReadOnly;
+
+        public int? ExpiresInDays { get; set; } = 90;
+    }
+
+    private CreateModel _createModel = new();
+    private List<ApiToken>? _tokens;
+    private ApiTokenService.CreateResult? _created;
+    private bool _isCreating;
+
+    private Modal? _revokeModal;
+    private ApiToken? _tokenToRevoke;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await LoadTokensAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadTokensAsync()
+    {
+        _tokens = await _apiTokenService.ListAsync(_user.Id);
+    }
+
+    private static string ScopeLabel(ApiTokenScope scope) =>
+        scope switch
+        {
+            ApiTokenScope.ReadWrite => "Read and write",
+            _ => "Read only",
+        };
+
+    private static string Details(ApiToken token, DateTime now)
+    {
+        var parts = new List<string> { $"Created {token.CreatedAt.ToShortString()}" };
+
+        parts.Add(token.LastUsedAt is null ? "Never used" : $"Last used {token.LastUsedAt.Value.ToShortString()}");
+
+        if (token.RevokedAt is not null)
+            parts.Add($"Revoked {token.RevokedAt.Value.ToShortString()}");
+        else if (token.ExpiresAt is null)
+            parts.Add("Never expires");
+        else
+            parts.Add($"{(token.ExpiresAt > now ? "Expires" : "Expired")} {token.ExpiresAt.Value.ToString("MMM d, yyyy")}");
+
+        return string.Join(" · ", parts);
+    }
+
+    private async Task CreateAsync()
+    {
+        if (_isCreating)
+            return;
+
+        _isCreating = true;
+
+        try
+        {
+            var expiresAt = _createModel.ExpiresInDays is int days ? DateTime.Now.AddDays(days) : (DateTime?)null;
+            _created = await _apiTokenService.CreateAsync(_user.Id, _createModel.Name, _createModel.Scope, expiresAt);
+            _createModel = new();
+            await LoadTokensAsync();
+            MainLayout.RunNotification(new Notification("Token created. Copy it before leaving this page."));
+        }
+        catch (ArgumentException ex)
+        {
+            MainLayout.RunNotification(new Notification(ex.Message, NotificationType.Fail));
+        }
+        finally
+        {
+            _isCreating = false;
+        }
+    }
+
+    private async Task AskToRevokeAsync(ApiToken token)
+    {
+        _tokenToRevoke = token;
+
+        // Same rule as deleting: users who turned confirmations off revoke straight away.
+        if (_user.InstantDelete || _revokeModal is null)
+        {
+            await RevokeConfirmedAsync();
+            return;
+        }
+
+        await _revokeModal.Show();
+    }
+
+    private async Task RevokeConfirmedAsync()
+    {
+        if (_tokenToRevoke is null)
+            return;
+
+        var tokenId = _tokenToRevoke.Id;
+        _tokenToRevoke = null;
+
+        if (_revokeModal is not null)
+            await _revokeModal.Close();
+
+        if (!await _apiTokenService.RevokeAsync(_user.Id, tokenId))
+            return;
+
+        if (_created?.Token.Id == tokenId)
+            _created = null;
+
+        await LoadTokensAsync();
+        MainLayout.RunNotification(new Notification("Token revoked."));
+    }
+
+    private void DismissCreated()
+    {
+        _created = null;
+    }
+
+    private async Task CopyCreated()
+    {
+        if (_created is null)
+            return;
+
+        // copyText falls back to a hidden textarea where the Clipboard API is unavailable (plain HTTP).
+        // It returns false on failure, but nothing when the fallback works, hence bool? and "not false".
+        var copied = await _js.InvokeAsync<bool?>("copyText", _created.Plaintext);
+
+        MainLayout.RunNotification(
+            copied != false
+                ? new Notification("Copied to clipboard.")
+                : new Notification("Couldn't copy. Select the token and copy it yourself.", NotificationType.Fail)
+        );
+    }
+}

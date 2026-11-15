@@ -1,5 +1,4 @@
-﻿@inject IDbContextFactory<DataContext> _dbContextFactory
-@inject CardService _cardService
+﻿@inject CardService _cardService
 
 <div id="@Card.Id" data-blocked="@Card.Flagged.ToString()" class="task-card" @onclick="() => EditCardModal.Open(Card.Id, Members, Columns)">
     <div class="flex flex-row items-center justify-between gap-2">
@@ -205,17 +204,11 @@
 
     private async Task ChangeFlaggedStatus()
     {
-        using var db = _dbContextFactory.CreateDbContext();
+        var flagged = !Card.Flagged;
 
-        var card = await db.Cards.FindAsync(Card.Id);
+        await _cardService.SetFlaggedAsync(Card.Id, flagged);
+        Card.Flagged = flagged;
 
-        if (card is null)
-            return;
-
-        card.Flagged = !card.Flagged;
-        Card.Flagged = card.Flagged;
-
-        await db.SaveChangesAsync();
         StateHasChanged();
         await OnCardUpdated.InvokeAsync();
     }

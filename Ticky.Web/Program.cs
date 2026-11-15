@@ -1,10 +1,14 @@
 using Devity.Mailing;
 using Devity.NETCore.MailKit.Infrastructure.Internal;
 using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
+using Scalar.AspNetCore;
+using Ticky.Web.Auth;
+using Ticky.Web.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -119,6 +123,7 @@ if (Constants.SMTP_ENABLED)
 
 builder.Services.AddScoped<CodeService>();
 builder.Services.AddScoped<CardService>();
+builder.Services.AddScoped<ApiTokenService>();
 builder.Services.AddDevityMailing<EmailService>(mailKitOptions!);
 builder.Services.AddScoped<AvatarService>();
 builder.Services.AddScoped<UserAccountService>();
@@ -148,15 +153,65 @@ builder
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 
+// Register the bearer scheme alongside Identity's cookie. AddIdentity already set the cookie
+// as default; this just adds an extra scheme that API controllers opt into via policy.
+builder
+    .Services.AddAuthentication()
+    .AddScheme<ApiTokenAuthenticationOptions, ApiTokenAuthenticationHandler>(
+        Constants.Api.TokenScheme,
+        _ => { }
+    );
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(
         Constants.Policies.RequireAdmin,
         policy => policy.RequireClaim(ClaimTypes.Role, Constants.Roles.Admin).Build()
     );
+
+    // Accepts either the signed-in browser user or a presented API token.
+    options.AddPolicy(
+        Constants.Policies.ApiCallerAuthenticated,
+        policy => policy
+            .AddAuthenticationSchemes(Constants.Api.TokenScheme, IdentityConstants.ApplicationScheme)
+            .RequireAuthenticatedUser()
+    );
+
+    // For endpoints that change data: the browser user, or a token with the read and write scope.
+    // Only token callers carry the scope claim.
+    options.AddPolicy(
+        Constants.Policies.ApiCallerCanWrite,
+        policy => policy
+            .AddAuthenticationSchemes(Constants.Api.TokenScheme, IdentityConstants.ApplicationScheme)
+            .RequireAuthenticatedUser()
+            .RequireAssertion(context =>
+                !context.User.HasClaim(c => c.Type == Constants.Api.ScopeClaim)
+                || context.User.HasClaim(Constants.Api.ScopeClaim, nameof(ApiTokenScope.ReadWrite))
+            )
+    );
 });
 
-builder.Services.AddControllers();
+// Enums are names ("High") both ways, a stable contract for API callers. Numbers are rejected, so a request
+// can't store a value that isn't defined (e.g. "priority": 99). The HTTP JSON options get the same converter
+// because the OpenAPI document is built from them, so it lists the names too.
+static void UseApiJson(System.Text.Json.JsonSerializerOptions options) =>
+    options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter(allowIntegerValues: false));
+
+builder.Services.AddControllers().AddJsonOptions(options => UseApiJson(options.JsonSerializerOptions));
+builder.Services.ConfigureHttpJsonOptions(options => UseApiJson(options.SerializerOptions));
+
+// Every API error is a ProblemDetails body (RFC 9457), including the 401 and 403 from the auth middleware.
+builder.Services.AddProblemDetails();
+
+builder.Services.AddOpenApi(
+    Constants.Api.DocumentName,
+    options =>
+    {
+        options.ShouldInclude = description =>
+            description.RelativePath?.StartsWith(Constants.Api.RoutePrefix + "/", StringComparison.OrdinalIgnoreCase) == true;
+        options.AddDocumentTransformer<ApiDocumentTransformer>();
+    }
+);
 
 #if !DEBUG
 // NOTE: In production, the application is expected to run behind a reverse proxy (e.g., Nginx, Traefik) that terminates HTTPS.
@@ -198,6 +253,13 @@ app.Use(
 
         return next(context);
     }
+);
+
+// Public API errors without a body (the 401 and 403 from the auth middleware, unknown routes) get a
+// ProblemDetails body like every other API error.
+app.UseWhen(
+    context => context.Request.Path.StartsWithSegments(Constants.Api.BasePath),
+    api => api.UseStatusCodePages()
 );
 
 app.UseAntiforgery();
@@ -250,6 +312,27 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// The API description generated from the controllers, and a page to browse and try it. Both are public: they
+// describe the API, not anyone's data.
+app.MapOpenApi(Constants.Api.OpenApiRoute);
+app.MapScalarApiReference(
+    Constants.Api.DocsPath,
+    options =>
+        options
+            .WithTitle("Ticky API")
+            .WithOpenApiRoutePattern(Constants.Api.OpenApiRoute)
+            .AddDocument(Constants.Api.DocumentName)
+            .AddPreferredSecuritySchemes(Constants.Api.SecuritySchemeName)
+            // Ticky is self-hosted and can run fully offline, so nothing on the page may call Scalar's servers:
+            // its script is served from the package, and its fonts, telemetry, AI chat and cloud tools are off.
+            .DisableDefaultFonts()
+            .DisableTelemetry()
+            .DisableAgent()
+            .DisableMcp()
+            .HideDeveloperTools()
+);
+
 // Serves build-time assets fingerprinted and pre-compressed, with long-lived caching.
 app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();

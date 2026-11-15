@@ -128,12 +128,10 @@
 
         // Open cards assigned to the user, on boards they can still access. Snoozed cards are hidden like on the board.
         _cards = await db.Cards
+            .AccessibleBy(userId)
             .Include(x => x.Column)
                 .ThenInclude(x => x.Board)
-            .Where(x => x.Assignees.Any(a => a.Id == userId)
-                && !x.Column.Finished
-                && !x.SnoozedUntil.HasValue
-                && (x.Column.Board.Memberships.Any(m => m.UserId == userId) || x.Column.Board.Project.Memberships.Any(m => m.UserId == userId)))
+            .Where(x => x.Assignees.Any(a => a.Id == userId) && !x.Column.Finished && !x.SnoozedUntil.HasValue)
             .AsNoTracking()
             .ToListAsync();
 

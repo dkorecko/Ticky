@@ -25,22 +25,15 @@ public class UpdateHub : Hub
         if (!success)
             return false;
 
-        return await db
-            .Boards.Include(x => x.Memberships)
-            .Include(x => x.Project)
-            .ThenInclude(x => x.Memberships)
-            .AnyAsync(b =>
-                b.Id == boardId
-                && (
-                    b.Memberships.Any(m => m.UserId == userId)
-                    || b.Project.Memberships.Any(pm => pm.UserId == userId)
-                )
-            );
+        return await db.Boards.AccessibleBy(userId).AnyAsync(b => b.Id == boardId);
     }
+
+    /// <summary>The group of connections viewing a board, which <see cref="BoardChange"/> is sent to.</summary>
+    public static string BoardGroup(int boardId) => $"board_{boardId}";
 
     public async Task BoardChange(int boardId, Guid pageId)
     {
-        await Clients.Group($"board_{boardId}").SendAsync(nameof(BoardChange), boardId, pageId);
+        await Clients.Group(BoardGroup(boardId)).SendAsync(nameof(BoardChange), boardId, pageId);
     }
 
     public async Task SubscribeBoard(int boardId)
@@ -48,6 +41,6 @@ public class UpdateHub : Hub
         if (!await IsUserInBoard(boardId))
             return;
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"board_{boardId}");
+        await Groups.AddToGroupAsync(Context.ConnectionId, BoardGroup(boardId));
     }
 }

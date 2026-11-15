@@ -26,7 +26,7 @@ public class CardServiceTest
         _factory = new TestDbContextFactory(
             new DbContextOptionsBuilder<DataContext>().UseSqlite(_connection).Options
         );
-        _service = new CardService(_factory);
+        _service = new CardService(_factory, new CardNumberingService(_factory));
 
         using var db = _factory.CreateDbContext();
         db.Database.EnsureCreated();
@@ -205,6 +205,171 @@ public class CardServiceTest
         using var db = _factory.CreateDbContext();
         Assert.That((await db.Cards.SingleAsync(x => x.Id == _otherCardId)).ColumnId, Is.Not.EqualTo(doneId));
         Assert.That(await db.Activities.CountAsync(x => x.CardId == _otherCardId), Is.Zero);
+    }
+
+    [Test]
+    public async Task CreateCard_ProjectMember_AddsTrimmedCardAtBottom()
+    {
+        var columnId = await AddColumnAsync("Doing", finished: false);
+        await _service.CreateCardAsync(columnId, _projectMemberId, "First");
+        var result = await _service.CreateCardAsync(columnId, _projectMemberId, "  Second  ");
+
+        Assert.That(result.Status, Is.EqualTo(CardService.CreateCardStatus.Created));
+
+        using var db = _factory.CreateDbContext();
+        var cards = await db.Cards.Where(x => x.ColumnId == columnId).OrderBy(x => x.Index).ToListAsync();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(cards.Select(x => x.Name), Is.EqualTo(new[] { "First", "Second" }));
+            Assert.That(cards[1].Number, Is.GreaterThan(cards[0].Number));
+            Assert.That(cards[1].CreatedById, Is.EqualTo(_projectMemberId));
+        });
+    }
+
+    [Test]
+    public async Task CreateCard_TopPlacement_PutsNewCardFirst()
+    {
+        var columnId = await AddColumnAsync("Doing", finished: false);
+        await _service.CreateCardAsync(columnId, _boardMemberId, "Older");
+
+        using (var db = _factory.CreateDbContext())
+        {
+            (await db.Columns.SingleAsync(x => x.Id == columnId)).NewCardPlacement = CardPlacement.Top;
+            await db.SaveChangesAsync();
+        }
+
+        await _service.CreateCardAsync(columnId, _boardMemberId, "Newer");
+
+        using var check = _factory.CreateDbContext();
+        var names = await check.Cards.Where(x => x.ColumnId == columnId).OrderBy(x => x.Index).Select(x => x.Name).ToListAsync();
+        Assert.That(names, Is.EqualTo(new[] { "Newer", "Older" }));
+    }
+
+    [Test]
+    public async Task CreateCard_Outsider_NotFoundAndNothingCreated()
+    {
+        var columnId = await AddColumnAsync("Doing", finished: false);
+        var result = await _service.CreateCardAsync(columnId, _outsiderId, "Sneaky");
+
+        using var db = _factory.CreateDbContext();
+        Assert.That(result.Status, Is.EqualTo(CardService.CreateCardStatus.NotFound));
+        Assert.That(await db.Cards.CountAsync(x => x.ColumnId == columnId), Is.Zero);
+    }
+
+    [Test]
+    public async Task CreateCard_FullColumn_ColumnFullAndNothingCreated()
+    {
+        var columnId = await AddColumnAsync("Done", finished: true, maxCards: 1);
+
+        Assert.That((await _service.CreateCardAsync(columnId, _boardMemberId, "Fits")).Status, Is.EqualTo(CardService.CreateCardStatus.Created));
+        Assert.That((await _service.CreateCardAsync(columnId, _boardMemberId, "Too many")).Status, Is.EqualTo(CardService.CreateCardStatus.ColumnFull));
+
+        using var db = _factory.CreateDbContext();
+        Assert.That(await db.Cards.CountAsync(x => x.ColumnId == columnId), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task CreateCard_BlankName_InvalidName()
+    {
+        var columnId = await AddColumnAsync("Doing", finished: false);
+        Assert.That((await _service.CreateCardAsync(columnId, _boardMemberId, "   ")).Status, Is.EqualTo(CardService.CreateCardStatus.InvalidName));
+    }
+
+    [Test]
+    public async Task CreateCard_AssignCreator_AssignsTheUser()
+    {
+        var columnId = await AddColumnAsync("Doing", finished: false);
+        var result = await _service.CreateCardAsync(columnId, _boardMemberId, "Mine", assignCreator: true);
+
+        using var db = _factory.CreateDbContext();
+        var card = await db.Cards.Include(x => x.Assignees).SingleAsync(x => x.Id == result.Card!.Id);
+        Assert.That(card.Assignees.Select(x => x.Id), Is.EqualTo(new[] { _boardMemberId }));
+    }
+
+    [Test]
+    public async Task AddComment_ReturnsTheNewComment()
+    {
+        await _service.AddCommentAsync(_cardId, _boardMemberId, "First");
+        var comment = await _service.AddCommentAsync(_cardId, _boardMemberId, "Second");
+
+        Assert.That(comment, Is.Not.Null);
+        Assert.That(comment!.Text, Is.EqualTo("Second"));
+
+        using var db = _factory.CreateDbContext();
+        Assert.That((await db.Comments.SingleAsync(x => x.Id == comment.Id)).Text, Is.EqualTo("Second"));
+        Assert.That(await _service.AddCommentAsync(_cardId, _boardMemberId, "  "), Is.Null);
+    }
+
+    [TestCase("board member", true)]
+    [TestCase("project member", true)]
+    [TestCase("outsider", false)]
+    public async Task AccessibleBy_AppliesTheBoardRuleToBoardsColumnsAndCards(string who, bool canOpen)
+    {
+        var userId = who switch
+        {
+            "board member" => _boardMemberId,
+            "project member" => _projectMemberId,
+            _ => _outsiderId,
+        };
+
+        using var db = _factory.CreateDbContext();
+
+        Assert.That(await db.Boards.AccessibleBy(userId).CountAsync(), Is.EqualTo(canOpen ? 1 : 0));
+        Assert.That(await db.Columns.AccessibleBy(userId).CountAsync(), Is.EqualTo(canOpen ? 1 : 0));
+        Assert.That(await db.Cards.AccessibleBy(userId).CountAsync(), Is.EqualTo(canOpen ? 3 : 0));
+    }
+
+    [Test]
+    public async Task Rename_SameName_LogsNothing()
+    {
+        await _service.RenameAsync(_cardId, _boardMemberId, "Card 1");
+
+        using var db = _factory.CreateDbContext();
+        Assert.That(await db.Activities.CountAsync(x => x.CardId == _cardId), Is.Zero);
+    }
+
+    [Test]
+    public async Task SetDeadline_SameDeadline_KeepsReminderStateAndLogsOnce()
+    {
+        var deadline = new DateTime(2030, 1, 2, 9, 0, 0);
+        await _service.SetDeadlineAsync(_cardId, _boardMemberId, deadline);
+
+        using (var db = _factory.CreateDbContext())
+        {
+            (await db.Cards.SingleAsync(x => x.Id == _cardId)).DeadlineProcessed = true;
+            await db.SaveChangesAsync();
+        }
+
+        await _service.SetDeadlineAsync(_cardId, _boardMemberId, deadline);
+
+        using var check = _factory.CreateDbContext();
+        Assert.That((await check.Cards.SingleAsync(x => x.Id == _cardId)).DeadlineProcessed, Is.True);
+        Assert.That(await check.Activities.CountAsync(x => x.CardId == _cardId), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task RemoveDeadline_NoDeadline_LogsNothing()
+    {
+        await _service.RemoveDeadlineAsync(_cardId, _boardMemberId);
+
+        using var db = _factory.CreateDbContext();
+        Assert.That(await db.Activities.CountAsync(x => x.CardId == _cardId), Is.Zero);
+    }
+
+    [Test]
+    public async Task SetFlagged_SetsAndClearsWithoutLogging()
+    {
+        await _service.SetFlaggedAsync(_cardId, true);
+
+        using (var db = _factory.CreateDbContext())
+            Assert.That((await db.Cards.SingleAsync(x => x.Id == _cardId)).Flagged, Is.True);
+
+        await _service.SetFlaggedAsync(_cardId, false);
+
+        using var check = _factory.CreateDbContext();
+        Assert.That((await check.Cards.SingleAsync(x => x.Id == _cardId)).Flagged, Is.False);
+        Assert.That(await check.Activities.CountAsync(x => x.CardId == _cardId), Is.Zero);
     }
 
     private class TestDbContextFactory(DbContextOptions<DataContext> options) : IDbContextFactory<DataContext>
