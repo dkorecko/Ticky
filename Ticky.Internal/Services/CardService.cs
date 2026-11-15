@@ -7,6 +7,9 @@ namespace Ticky.Internal.Services;
 /// <summary>
 /// Card edits made from the card detail view and its dialogs. Most of them also write an entry to the card's activity log.
 /// Each method loads only what it changes and does nothing if the card or item no longer exists.
+/// Methods that take a user only act on cards on boards that user may open (see <see cref="BoardAccessHelper"/>), and
+/// treat any other card, or an item of one, as if it did not exist. The ones without a user (<see cref="SetFlaggedAsync"/>,
+/// <see cref="EndTimerAsync"/>) leave that check to the caller.
 /// </summary>
 /// <remarks>
 /// Activities store what happened as data; the text is built when shown (see <see cref="ActivityFormatter"/>).
@@ -132,7 +135,7 @@ public class CardService
     public async Task SetPriorityAsync(int cardId, int userId, CardPriority priority)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.FirstOrDefaultAsync(x => x.Id == cardId);
+        var card = await db.Cards.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == cardId);
 
         if (card is null || card.Priority == priority)
             return;
@@ -209,7 +212,7 @@ public class CardService
     public async Task MoveToAdjacentColumnAsync(int cardId, int userId, int offset)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.Include(x => x.Column).FirstOrDefaultAsync(x => x.Id == cardId);
+        var card = await db.Cards.AccessibleBy(userId).Include(x => x.Column).FirstOrDefaultAsync(x => x.Id == cardId);
 
         if (card is null)
             return;
@@ -234,7 +237,7 @@ public class CardService
     public async Task<bool> MoveToColumnAsync(int cardId, int userId, int targetColumnId, int? beforeCardId)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.Include(x => x.Column.Cards).FirstOrDefaultAsync(x => x.Id == cardId);
+        var card = await db.Cards.AccessibleBy(userId).Include(x => x.Column.Cards).FirstOrDefaultAsync(x => x.Id == cardId);
         var targetColumn = await db.Columns.Include(x => x.Cards).FirstOrDefaultAsync(x => x.Id == targetColumnId);
 
         if (card is null || targetColumn is null || targetColumn.BoardId != card.Column.BoardId)
@@ -276,7 +279,7 @@ public class CardService
     public async Task<List<Label>?> ToggleLabelAsync(int cardId, int userId, int labelId)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.Include(x => x.Labels).FirstOrDefaultAsync(x => x.Id == cardId);
+        var card = await db.Cards.AccessibleBy(userId).Include(x => x.Labels).FirstOrDefaultAsync(x => x.Id == cardId);
         var label = await db.Labels.FirstOrDefaultAsync(x => x.Id == labelId);
 
         if (card is null || label is null)
@@ -303,7 +306,7 @@ public class CardService
     public async Task JoinAsync(int cardId, int userId)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.Include(x => x.Assignees).FirstOrDefaultAsync(x => x.Id == cardId);
+        var card = await db.Cards.AccessibleBy(userId).Include(x => x.Assignees).FirstOrDefaultAsync(x => x.Id == cardId);
 
         if (card is null || card.Assignees.Any(x => x.Id == userId))
             return;
@@ -322,7 +325,7 @@ public class CardService
     public async Task LeaveAsync(int cardId, int userId)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.Include(x => x.Assignees).FirstOrDefaultAsync(x => x.Id == cardId);
+        var card = await db.Cards.AccessibleBy(userId).Include(x => x.Assignees).FirstOrDefaultAsync(x => x.Id == cardId);
         var assignee = card?.Assignees.FirstOrDefault(x => x.Id == userId);
 
         if (card is null || assignee is null)
@@ -339,7 +342,7 @@ public class CardService
     public async Task<List<User>?> ToggleAssigneeAsync(int cardId, int userId, int memberId)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.Include(x => x.Assignees).FirstOrDefaultAsync(x => x.Id == cardId);
+        var card = await db.Cards.AccessibleBy(userId).Include(x => x.Assignees).FirstOrDefaultAsync(x => x.Id == cardId);
         var member = await db.Users.FirstOrDefaultAsync(x => x.Id == memberId);
 
         if (card is null || member is null)
@@ -371,7 +374,7 @@ public class CardService
 
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (!await db.Cards.AnyAsync(x => x.Id == cardId))
+        if (!await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId))
             return null;
 
         var comment = new Comment
@@ -396,7 +399,7 @@ public class CardService
     {
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (!await db.Cards.AnyAsync(x => x.Id == cardId))
+        if (!await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId))
             return;
 
         var subtasks = await db.Subtasks.Where(x => x.CardId == cardId).ToListAsync();
@@ -415,7 +418,7 @@ public class CardService
     public async Task EditSubtaskAsync(int subtaskId, int userId, string text)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var subtask = await db.Subtasks.FirstOrDefaultAsync(x => x.Id == subtaskId);
+        var subtask = await db.Subtasks.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == subtaskId);
 
         if (subtask is null)
             return;
@@ -429,7 +432,7 @@ public class CardService
     public async Task SetSubtaskCompletedAsync(int subtaskId, int userId, bool completed)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var subtask = await db.Subtasks.FirstOrDefaultAsync(x => x.Id == subtaskId);
+        var subtask = await db.Subtasks.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == subtaskId);
 
         if (subtask is null)
             return;
@@ -443,7 +446,7 @@ public class CardService
     public async Task DeleteSubtaskAsync(int subtaskId, int userId)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var subtask = await db.Subtasks.FirstOrDefaultAsync(x => x.Id == subtaskId);
+        var subtask = await db.Subtasks.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == subtaskId);
 
         if (subtask is null)
             return;
@@ -462,7 +465,7 @@ public class CardService
     public async Task<List<User>?> ToggleSubtaskAssigneeAsync(int subtaskId, int userId, int memberId)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var subtask = await db.Subtasks.Include(x => x.Assignees).FirstOrDefaultAsync(x => x.Id == subtaskId);
+        var subtask = await db.Subtasks.AccessibleBy(userId).Include(x => x.Assignees).FirstOrDefaultAsync(x => x.Id == subtaskId);
         var member = await db.Users.FirstOrDefaultAsync(x => x.Id == memberId);
 
         if (subtask is null || member is null)
@@ -490,7 +493,7 @@ public class CardService
     {
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (!await db.Cards.AnyAsync(x => x.Id == cardId))
+        if (!await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId))
             return;
 
         db.Reminders.Add(new Reminder { CardId = cardId, At = at });
@@ -502,7 +505,7 @@ public class CardService
     public async Task RemoveReminderAsync(int cardId, int userId, int reminderId)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var reminder = await db.Reminders.FirstOrDefaultAsync(x => x.Id == reminderId && x.CardId == cardId);
+        var reminder = await db.Reminders.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == reminderId && x.CardId == cardId);
 
         if (reminder is null)
             return;
@@ -523,7 +526,7 @@ public class CardService
     {
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (!await db.Cards.AnyAsync(x => x.Id == cardId))
+        if (!await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId))
             return false;
 
         db.Attachments.Add(new Attachment
@@ -541,7 +544,7 @@ public class CardService
     public async Task RemoveAttachmentAsync(int cardId, int userId, int attachmentId)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var attachment = await db.Attachments.FirstOrDefaultAsync(x => x.Id == attachmentId && x.CardId == cardId);
+        var attachment = await db.Attachments.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == attachmentId && x.CardId == cardId);
 
         if (attachment is null)
             return;
@@ -560,7 +563,7 @@ public class CardService
     {
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (!await db.Cards.AnyAsync(x => x.Id == cardId))
+        if (!await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId))
             return;
 
         db.TimeRecords.Add(new TimeRecord
@@ -595,7 +598,7 @@ public class CardService
     {
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (!await db.Cards.AnyAsync(x => x.Id == cardId))
+        if (!await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId))
             return;
 
         var now = DateTime.Now;
@@ -616,7 +619,7 @@ public class CardService
     public async Task EditTimeRecordAsync(int timeRecordId, int userId, TimeSpan duration)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var record = await db.TimeRecords.FirstOrDefaultAsync(x => x.Id == timeRecordId);
+        var record = await db.TimeRecords.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == timeRecordId);
 
         if (record is null)
             return;
@@ -635,7 +638,7 @@ public class CardService
     public async Task RemoveTimeRecordAsync(int cardId, int userId, int timeRecordId)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var record = await db.TimeRecords.FirstOrDefaultAsync(x => x.Id == timeRecordId && x.CardId == cardId);
+        var record = await db.TimeRecords.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == timeRecordId && x.CardId == cardId);
 
         if (record is null)
             return;
@@ -665,8 +668,8 @@ public class CardService
             return "Unknown relationship type.";
 
         using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.AsNoTracking().Include(x => x.Column.Board).FirstOrDefaultAsync(x => x.Id == cardId);
-        var targetCard = await db.Cards.AsNoTracking().Include(x => x.Column.Board).FirstOrDefaultAsync(x => x.Id == targetCardId);
+        var card = await db.Cards.AccessibleBy(userId).AsNoTracking().Include(x => x.Column.Board).FirstOrDefaultAsync(x => x.Id == cardId);
+        var targetCard = await db.Cards.AccessibleBy(userId).AsNoTracking().Include(x => x.Column.Board).FirstOrDefaultAsync(x => x.Id == targetCardId);
 
         if (card is null)
             return "This card does not exist anymore.";
@@ -692,6 +695,7 @@ public class CardService
     {
         using var db = _dbContextFactory.CreateDbContext();
         var link = await db.CardLinks
+            .AccessibleBy(userId)
             .Include(x => x.CardOne.Column.Board)
             .Include(x => x.CardTwo.Column.Board)
             .FirstOrDefaultAsync(x => x.Id == linkId);
@@ -748,7 +752,7 @@ public class CardService
     )
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.FirstOrDefaultAsync(x => x.Id == cardId);
+        var card = await db.Cards.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == cardId);
 
         if (card is null || unchanged?.Invoke(card) == true)
             return;

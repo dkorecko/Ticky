@@ -195,7 +195,13 @@
     private async Task ToggleTimer()
     {
         if (RunningTimer is { } timer)
+        {
+            // EndTimerAsync doesn't check access itself.
+            if (!await _cardService.CanAccessCardAsync(Card.Id, _user.Id))
+                return;
+
             await _cardService.EndTimerAsync(Card.Id, timer.Id);
+        }
         else
             await _cardService.StartTimerAsync(Card.Id, _user.Id);
 
@@ -204,6 +210,10 @@
 
     private async Task ChangeFlaggedStatus()
     {
+        // SetFlaggedAsync doesn't check access itself.
+        if (!await _cardService.CanAccessCardAsync(Card.Id, _user.Id))
+            return;
+
         var flagged = !Card.Flagged;
 
         await _cardService.SetFlaggedAsync(Card.Id, flagged);

@@ -266,6 +266,14 @@
 
     protected override void OnParametersSet()
     {
+        // The URL moved to another board (e.g. a search result) while this one is shown, so this component's board,
+        // members and columns are the old board's. Load the new URL from scratch rather than open its card in them.
+        if (_board is not null && _board.Id != Id)
+        {
+            _navigationManager.NavigateTo(_navigationManager.Uri, forceLoad: true);
+            return;
+        }
+
         if (_board is null || !CardId.HasValue || _initialCardId == CardId)
             return;
 
