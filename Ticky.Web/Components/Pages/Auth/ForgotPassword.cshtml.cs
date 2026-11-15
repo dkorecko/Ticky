@@ -37,7 +37,8 @@ public class ForgotPasswordModel : PageModel
                 Input.EmailAddress.Equals(x.Email)
             );
 
-            if (targetUser is not null)
+            // A sign-up that isn't confirmed yet is handled like an unknown account, its code must stay in place.
+            if (targetUser is not null && !await _codeService.HasPendingSignUpAsync(targetUser))
             {
                 // Submitting again right away doesn't replace the code that was just mailed.
                 if (!await _codeService.HasRecentCodeAsync(targetUser))

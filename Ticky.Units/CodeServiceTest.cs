@@ -9,6 +9,7 @@ public class CodeServiceTest
 {
     private const string ALICE = "alice@test.com";
     private const string BOB = "bob@test.com";
+    private const string CAROL = "carol@test.com";
 
     private SqliteConnection _connection = null!;
     private DataContext _db = null!;
@@ -16,6 +17,7 @@ public class CodeServiceTest
 
     private int _aliceId;
     private int _bobId;
+    private int _carolId;
 
     [SetUp]
     public async Task Setup()
@@ -32,6 +34,8 @@ public class CodeServiceTest
 
         _aliceId = await CreateUserAsync(ALICE);
         _bobId = await CreateUserAsync(BOB);
+        // Signed up, but hasn't confirmed the e-mail address yet.
+        _carolId = await CreateUserAsync(CAROL, confirmed: false);
     }
 
     [TearDown]
@@ -137,6 +141,8 @@ public class CodeServiceTest
         await Assert.MultipleAsync(async () =>
         {
             Assert.That(await _service.VerifyCodeAsync(ALICE, code.Value, CodePurpose.ForgottenPassword), Is.Null);
+            // Asking for it with the wrong purpose neither uses it up nor counts as a guess.
+            Assert.That(await _db.Codes.CountAsync(x => x.UserId == _aliceId), Is.EqualTo(1));
             Assert.That(await _service.VerifyCodeAsync(ALICE, code.Value, CodePurpose.NewAccount), Is.Not.Null);
         });
     }
@@ -289,6 +295,73 @@ public class CodeServiceTest
     }
 
     [Test]
+    public async Task CreateCode_PendingSignUp_KeepsItsCodeAndRefusesAnother()
+    {
+        var carol = await GetUserAsync(_carolId);
+        var signUp = await _service.CreateCodeAsync(carol, CodePurpose.NewAccount);
+
+        Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await _service.CreateCodeAsync(carol, CodePurpose.ForgottenPassword)
+        );
+
+        var stored = await _db.Codes.AsNoTracking().SingleAsync(x => x.UserId == _carolId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(stored.Value, Is.EqualTo(signUp.Value));
+            Assert.That(stored.CodePurpose, Is.EqualTo(CodePurpose.NewAccount));
+        });
+    }
+
+    [Test]
+    public async Task CreateCode_PendingSignUpAskingForANewSignUpCode_ReplacesIt()
+    {
+        var carol = await GetUserAsync(_carolId);
+        var first = await _service.CreateCodeAsync(carol, CodePurpose.NewAccount);
+
+        var second = await _service.CreateCodeAsync(carol, CodePurpose.NewAccount);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(second.Value, Is.Not.EqualTo(first.Value));
+            Assert.That(_db.Codes.Count(x => x.UserId == _carolId), Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public async Task HasPendingSignUp_OnlyForAnUnconfirmedAccountWithASignUpCode()
+    {
+        var alice = await GetUserAsync(_aliceId);
+        var bob = await GetUserAsync(_bobId);
+        var carol = await GetUserAsync(_carolId);
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(await _service.HasPendingSignUpAsync(carol), Is.False, "no code yet");
+
+            // Whatever the age of the code: the account stays pending until the cleanup removes both.
+            await AddCodeAsync(_carolId, CodePurpose.NewAccount, "ABCD-2345", DateTime.Now - CodeService.Lifetime - TimeSpan.FromHours(1));
+            Assert.That(await _service.HasPendingSignUpAsync(carol), Is.True);
+
+            await AddCodeAsync(_aliceId, CodePurpose.NewAccount, "ABCD-2345", DateTime.Now);
+            Assert.That(await _service.HasPendingSignUpAsync(alice), Is.False, "confirmed account");
+
+            await AddCodeAsync(_bobId, CodePurpose.ForgottenPassword, "EFGH-2345", DateTime.Now);
+            Assert.That(await _service.HasPendingSignUpAsync(bob), Is.False, "reset code");
+        });
+    }
+
+    [Test]
+    public async Task CreateCode_ConfirmedAccountWithAnOldSignUpCode_ReplacesIt()
+    {
+        await AddCodeAsync(_aliceId, CodePurpose.NewAccount, "ABCD-2345", DateTime.Now);
+
+        var replacement = await _service.CreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
+
+        var stored = await _db.Codes.AsNoTracking().SingleAsync(x => x.UserId == _aliceId);
+        Assert.That(stored.Value, Is.EqualTo(replacement.Value));
+    }
+
+    [Test]
     public async Task ConsumeCode_DeletesTheCodeOnlyOnce()
     {
         var code = await _service.CreateCodeAsync(await GetUserAsync(_aliceId), CodePurpose.ForgottenPassword);
@@ -368,7 +441,7 @@ public class CodeServiceTest
         Assert.That(tracker.Register(1, TimeSpan.FromMilliseconds(10)), Is.EqualTo(1));
     }
 
-    private async Task<int> CreateUserAsync(string email)
+    private async Task<int> CreateUserAsync(string email, bool confirmed = true)
     {
         var user = new User
         {
@@ -377,6 +450,7 @@ public class CodeServiceTest
             Email = email,
             NormalizedEmail = email.ToUpperInvariant(),
             DisplayName = email,
+            EmailConfirmed = confirmed,
             SecurityStamp = Guid.NewGuid().ToString()
         };
         _db.Users.Add(user);

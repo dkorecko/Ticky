@@ -37,10 +37,18 @@ public class CodeService
     }
 
     /// <summary>
-    /// Creates a code for the account. An account has a single code, so one that is still outstanding is replaced.
+    /// Creates a code for the account. An account has a single code, so one that is still outstanding is replaced,
+    /// except the sign-up code of an account that isn't confirmed yet: it marks the account as pending, so nothing
+    /// else may take its place.
     /// </summary>
+    /// <exception cref="InvalidOperationException">Another code was asked for a pending sign-up.</exception>
     public async Task<Code> CreateCodeAsync(User account, CodePurpose codePurpose)
     {
+        if (codePurpose != CodePurpose.NewAccount && await HasPendingSignUpAsync(account))
+            throw new InvalidOperationException(
+                "The account is waiting for its e-mail address to be confirmed, so its code can't be replaced."
+            );
+
         var outstanding = await _dataContext
             .Codes.Where(x => x.UserId == account.Id)
             .Select(x => x.Id)
@@ -75,6 +83,12 @@ public class CodeService
 
         return code;
     }
+
+    /// <summary>Whether the account is a sign-up that hasn't confirmed its e-mail address yet, whatever the code's age.</summary>
+    public async Task<bool> HasPendingSignUpAsync(User account) =>
+        await _dataContext.Codes.AnyAsync(x =>
+            x.UserId == account.Id && x.CodePurpose == CodePurpose.NewAccount && !x.User.EmailConfirmed
+        );
 
     /// <summary>Whether the account got a code a moment ago, so another one shouldn't be mailed yet.</summary>
     public async Task<bool> HasRecentCodeAsync(User account)
