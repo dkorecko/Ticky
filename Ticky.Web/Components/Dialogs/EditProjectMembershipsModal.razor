@@ -89,6 +89,9 @@
 
         using var db = _dbContextFactory.CreateDbContext();
 
+        if (!await CheckAdminAsync(db))
+            return;
+
         var project = await db.Projects
             .Include(x => x.Memberships)
                 .ThenInclude(x => x.User)
@@ -134,7 +137,12 @@
 
         using var db = _dbContextFactory.CreateDbContext();
 
-        var targetMembership = await db.ProjectMemberships.FirstOrDefaultAsync(x => x.Id.Equals(membershipId));
+        if (!await CheckAdminAsync(db))
+            return;
+
+        // Only a membership of this project may be changed.
+        var targetMembership = await db.ProjectMemberships
+            .FirstOrDefaultAsync(x => x.Id.Equals(membershipId) && x.ProjectId.Equals(_project.Id));
 
         if (targetMembership is null)
             return;
@@ -152,6 +160,9 @@
             return;
 
         using var db = _dbContextFactory.CreateDbContext();
+
+        if (!await CheckAdminAsync(db))
+            return;
 
         var project = await db.Projects
             .Include(x => x.Memberships)
@@ -171,5 +182,22 @@
 
         _project = project;
         await OnSubmit.InvokeAsync();
+    }
+
+    /// <summary>
+    /// Re-checks the admin role before a change, in case it was taken away after the dialog opened. If it was, tells
+    /// the user and closes the dialog.
+    /// </summary>
+    private async Task<bool> CheckAdminAsync(DataContext db)
+    {
+        if (_project is not null && await db.IsProjectAdminAsync(_project.Id, _user.Id))
+            return true;
+
+        _mainLayout.RunNotification(new Notification("Only project admins can manage the project's members.", NotificationType.Fail));
+
+        if (Modal is not null)
+            await Modal.Close();
+
+        return false;
     }
 }
