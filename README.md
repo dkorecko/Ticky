@@ -209,6 +209,16 @@ If you have any questions, need help setting up, want to share your feedback or 
 
 The application automatically applies migrations on startup.
 
+### Reverse Proxy and HTTPS
+
+The container listens on plain HTTP (port `8080`), so for HTTPS put a reverse proxy in front of it (Nginx, Traefik, Caddy, ...) that terminates TLS. The proxy has to send the `X-Forwarded-Proto` header (and `X-Forwarded-For` for the client address). Most proxies do this out of the box; with Nginx add `proxy_set_header X-Forwarded-Proto $scheme;`.
+
+Ticky reads these headers to know the visitor is on HTTPS, and then marks its sign-in cookie `Secure`, so browsers never send it over plain HTTP. When no `X-Forwarded-Proto` header arrives, as when you open Ticky over plain HTTP on your LAN, nothing changes and sign-in keeps working.
+
+- `ASPNETCORE_FORWARDEDHEADERS_ENABLED` (default `true` in the Docker image): trust the `X-Forwarded-Proto` and `X-Forwarded-For` headers. Set it to `false` if you'd rather Ticky ignored them. Outside Docker it is off, so when you run Ticky with `dotnet run` behind a proxy, set it to `true` yourself.
+
+Docker networks give the proxy a changing address, so Ticky can't be told which proxy to trust and accepts these headers from any sender. A client that reaches the container directly can therefore set them on its own requests, which only changes how Ticky sees that client's own request (Ticky does nothing with the client address). Still, keep port `8080` behind your proxy instead of publishing it to the internet, and make sure your proxy overwrites `X-Forwarded-*` headers rather than passing along ones sent by visitors.
+
 ## 🔌 API
 
 Ticky has a REST API under `/api/v1`, so scripts and agents can read and update your boards. Every request acts as the user who created the token, so it reaches exactly the boards that user can.
