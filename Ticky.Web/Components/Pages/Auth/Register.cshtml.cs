@@ -70,6 +70,9 @@ public class RegisterModel : PageModel
                     await _userManager.DeleteAsync(identity);
                 }
             }
+            // Don't reveal that the address has an account: answer like a successful sign-up. Nothing is created.
+            else if (result.IsDuplicateAccount())
+                return LocalRedirect($"/auth/confirmmail?email={Input.Email}");
             else
                 foreach (var error in result.Errors)
                 {

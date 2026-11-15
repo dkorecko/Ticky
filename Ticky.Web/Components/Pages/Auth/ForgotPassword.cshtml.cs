@@ -42,10 +42,8 @@ public class ForgotPasswordModel : PageModel
                 return LocalRedirect("/auth/changepassword");
             }
 
-            ModelState.AddModelError(
-                $"{nameof(Input)}.{nameof(Input.EmailAddress)}",
-                "The provider e-mail address is not linked to any existing account."
-            );
+            // An unknown address gets the same answer as a known one, so the form can't tell who has an account.
+            return LocalRedirect("/auth/changepassword");
         }
 
         return Page();
