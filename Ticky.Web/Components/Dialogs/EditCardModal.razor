@@ -544,8 +544,13 @@
         using var db = _dbContextFactory.CreateDbContext();
         _card = await GetNoTrackingCard(db, cardId);
 
-        if (_card is null)
+        // Only a card the user can open (GetNoTrackingCard) and that is on the board the caller shows, which is what
+        // its columns are: a card id from the URL must not open another board's card inside this board.
+        if (_card is null || !columns.Any(x => x.Id == _card.ColumnId))
+        {
+            _card = null;
             return;
+        }
 
         _members = members;
         _columns = columns;
@@ -714,7 +719,8 @@
 
     private async Task EndTimer(TimeRecord activeTimeRecord)
     {
-        if (_card is null)
+        // EndTimerAsync doesn't check access itself.
+        if (_card is null || !await _cardService.CanAccessCardAsync(_card.Id, _user.Id))
             return;
 
         await _cardService.EndTimerAsync(_card.Id, activeTimeRecord.Id);
@@ -782,6 +788,13 @@
 
     private async Task OpenLinkedCard(Card linkedCard)
     {
+        // The link shows the linked card's name, but the user may not be able to open its board.
+        if (!await _cardService.CanAccessCardAsync(linkedCard.Id, _user.Id))
+        {
+            _mainLayout.RunNotification(new Notification("You do not have access to that card.", NotificationType.Fail));
+            return;
+        }
+
         await Modal!.Close();
 
         // Same board: reopen in place, since navigating to an unchanged URL would not open anything.
@@ -858,6 +871,7 @@
         {
             using var db = _dbContextFactory.CreateDbContext();
             var card = await db.Cards
+                .AccessibleBy(_user.Id)
                 .Include(x => x.Subtasks)
                 .FirstOrDefaultAsync(x => x.Id == _card.Id);
 
@@ -920,6 +934,13 @@
         if (_card is null)
             return;
 
+        // Before anything is written to disk; AddAttachmentAsync checks again for each file.
+        if (!await _cardService.CanAccessCardAsync(_card.Id, _user.Id))
+        {
+            _mainLayout.RunNotification(new Notification("You do not have access to this card.", NotificationType.Fail));
+            return;
+        }
+
         if(e.FileCount > Constants.Limits.MAX_FILES)
         {
             _mainLayout.RunNotification(new Notification($"Only {Constants.Limits.MAX_FILES} can be uploaded.", NotificationType.Fail));
@@ -973,6 +994,7 @@
     private async Task<Card?> GetNoTrackingCard(DataContext db, int id)
     { 
         var card = await db.Cards
+            .AccessibleBy(_user.Id)
             .AsNoTracking()
             .Include(x => x.Column)
                 .ThenInclude(x => x.Board)
@@ -1020,6 +1042,7 @@
         {
             using var db = _dbContextFactory.CreateDbContext();
             _subtasks = await db.Subtasks
+                .AccessibleBy(_user.Id)
                 .Where(x => x.CardId == _card.Id)
                 .Include(x => x.Assignees)
                 .OrderBy(x => x.Index)
