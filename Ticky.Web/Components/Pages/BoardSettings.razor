@@ -1,6 +1,5 @@
 @page "/boards/settings/{Id:int}"
 @using System.Reflection
-@using System.Text.Json
 @inject IDbContextFactory<DataContext> _dbContextFactory
 @inject ILogger<BoardSettings> _logger
 @inject NavigationManager _navigationManager
@@ -360,10 +359,7 @@
                 .ThenInclude(x => x.Memberships)
             .FirstAsync(x => x.Id.Equals(Id));
 
-        await _js.InvokeVoidAsync("downloadJsonText", $"{board.Name}_{board.CreatedAt.Ticks}.json", JsonSerializer.Serialize(board, new JsonSerializerOptions
-        {
-            ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
-        }));
+        await _js.InvokeVoidAsync("downloadJsonText", $"{board.Name}_{board.CreatedAt.Ticks}.json", BoardExportHelper.Serialize(board));
 
         _isLoading = false;
         StateHasChanged();
