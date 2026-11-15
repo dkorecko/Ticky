@@ -15,6 +15,9 @@ public class ApiTokenAuthenticationOptions : AuthenticationSchemeOptions { }
 public class ApiTokenAuthenticationHandler
     : AuthenticationHandler<ApiTokenAuthenticationOptions>
 {
+    /// <summary>The HTTP authentication scheme of the Authorization and WWW-Authenticate headers (RFC 6750).</summary>
+    private const string BearerScheme = "Bearer";
+
     private readonly ApiTokenService _apiTokenService;
 
     public ApiTokenAuthenticationHandler(
@@ -34,7 +37,7 @@ public class ApiTokenAuthenticationHandler
             return AuthenticateResult.NoResult();
 
         var value = header.ToString();
-        const string prefix = "Bearer ";
+        const string prefix = BearerScheme + " ";
 
         if (!value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
             return AuthenticateResult.NoResult();
@@ -44,18 +47,22 @@ public class ApiTokenAuthenticationHandler
         if (string.IsNullOrEmpty(token))
             return AuthenticateResult.NoResult();
 
-        var user = await _apiTokenService.ValidateAsync(token);
+        var validated = await _apiTokenService.ValidateAsync(token);
 
-        if (user is null)
-            return AuthenticateResult.Fail("Invalid or revoked API token.");
+        if (validated is null)
+            return AuthenticateResult.Fail("Invalid, expired or revoked API token.");
+
+        var user = validated.User;
 
         // Match the Identity cookie's claim shape so downstream code can use
-        // User.FindFirst(ClaimTypes.NameIdentifier) exactly as before.
+        // User.FindFirst(ClaimTypes.NameIdentifier) exactly as before. The scope claim only exists for
+        // token callers; the ApiCallerCanWrite policy reads it.
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.UserName ?? user.DisplayName),
             new(ClaimTypes.Email, user.Email ?? string.Empty),
+            new(Constants.Api.ScopeClaim, validated.Scope.ToString()),
         };
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);
@@ -63,5 +70,12 @@ public class ApiTokenAuthenticationHandler
         var ticket = new AuthenticationTicket(principal, Scheme.Name);
 
         return AuthenticateResult.Success(ticket);
+    }
+
+    /// <summary>Tells clients a 401 wants a bearer token, as HTTP expects of a 401.</summary>
+    protected override Task HandleChallengeAsync(AuthenticationProperties properties)
+    {
+        Response.Headers.WWWAuthenticate = BearerScheme;
+        return base.HandleChallengeAsync(properties);
     }
 }

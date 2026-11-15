@@ -2,9 +2,11 @@ using Ticky.Base.Enums;
 
 namespace Ticky.Base.DTOs.Api;
 
+// Times: Ticky works in the server's local time. Times sent without an offset are taken as server-local,
+// times with an offset (or "Z") are converted to it, and times are returned without an offset.
+
 public class CreateCardRequest
 {
-    [Required(AllowEmptyStrings = false, ErrorMessage = "A column is required.")]
     public required int ColumnId { get; set; }
 
     [Required(AllowEmptyStrings = false, ErrorMessage = "A name is required.")]
@@ -13,9 +15,9 @@ public class CreateCardRequest
 }
 
 /// <summary>
-/// Partial update: each field is optional. Null means "don't change"; an explicit value — including
-/// an explicit null for <see cref="Deadline"/> — is applied. Use dedicated endpoints for moves and
-/// membership changes rather than overloading this.
+/// Partial update: each field is optional, and a missing or null field is left unchanged. To remove the
+/// deadline, send <c>"clearDeadline": true</c>, which wins over <see cref="Deadline"/>. Moving cards has
+/// its own endpoint.
 /// </summary>
 public class UpdateCardRequest
 {
@@ -26,7 +28,6 @@ public class UpdateCardRequest
 
     public CardPriority? Priority { get; set; }
 
-    /// <summary>Set to clear-deadline via an explicit <c>"clearDeadline": true</c> (since null means "no change").</summary>
     public DateTime? Deadline { get; set; }
 
     public bool? ClearDeadline { get; set; }
@@ -36,7 +37,6 @@ public class UpdateCardRequest
 
 public class MoveCardRequest
 {
-    [Required]
     public required int TargetColumnId { get; set; }
 
     /// <summary>Card to insert before, or null to append at the end of the target column.</summary>

@@ -23,6 +23,8 @@ namespace Ticky.Internal.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     TokenHash = table.Column<string>(type: "varchar(64)", maxLength: 64, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    Scope = table.Column<int>(type: "int", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     LastUsedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     RevokedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)

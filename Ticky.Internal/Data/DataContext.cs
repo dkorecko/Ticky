@@ -235,7 +235,7 @@ namespace Ticky.Internal.Data
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Lookup path on every API request — unique because collisions would be ambiguous.
+            // Lookup path on every API request - unique because collisions would be ambiguous.
             modelBuilder.Entity<ApiToken>().HasIndex(x => x.TokenHash).IsUnique();
         }
 

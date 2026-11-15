@@ -46,6 +46,7 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Completion Confetti**: Feel the satisfaction of completing each task with a bunch of confetti, there to celebrate your success.
 - **Filtering**: Easily find and organize tasks based on various criteria.
 - **Trello import**: You can import your Trello boards, including the ability to map all the assigned members from your Trello board to Ticky users.
+- **API**: Let scripts and agents read and update your boards with API tokens, read-only or read and write. See [API](#-api).
 - ... and more!
 
 ## 📋 Prerequisites
@@ -207,6 +208,54 @@ If you have any questions, need help setting up, want to share your feedback or 
 ### Database Setup
 
 The application automatically applies migrations on startup.
+
+## 🔌 API
+
+Ticky has a REST API under `/api/v1`, so scripts and agents can read and update your boards. Every request acts as the user who created the token, so it reaches exactly the boards that user can.
+
+### Tokens
+
+Create a token in **Settings → API tokens**. Choose whether it's **Read only** (only the `GET` endpoints) or **Read and write**, and when it expires. The token is shown once, since Ticky stores only a hash of it. Revoking it there stops it working right away.
+
+Send the token with every request:
+
+```bash
+curl -H "Authorization: Bearer tky_..." http://localhost:4088/api/v1/boards
+```
+
+### Endpoints
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| `GET` | `/api/v1/boards` | Boards you can open |
+| `GET` | `/api/v1/boards/{id}` | A board with its columns and labels |
+| `GET` | `/api/v1/boards/{id}/cards` | All cards on a board, in board order |
+| `GET` | `/api/v1/cards/{id}` | A card with its description, assignees, labels, subtasks and comments |
+| `POST` | `/api/v1/cards` | Create a card in a column |
+| `PATCH` | `/api/v1/cards/{id}` | Change a card's name, description, priority, deadline or flag |
+| `POST` | `/api/v1/cards/{id}/move` | Move a card to another column on the same board |
+| `POST` | `/api/v1/cards/{id}/comments` | Comment on a card |
+
+Every Ticky instance serves the full reference at `/api/docs`, where you can also try the endpoints, and the OpenAPI document at `/openapi/v1.json` for API clients and code generators. Both work offline.
+
+For example, to create a card and then move it to another column:
+
+```bash
+curl -X POST http://localhost:4088/api/v1/cards \
+  -H "Authorization: Bearer tky_..." -H "Content-Type: application/json" \
+  -d '{"columnId": 12, "name": "Renew the domain"}'
+
+curl -X POST http://localhost:4088/api/v1/cards/345/move \
+  -H "Authorization: Bearer tky_..." -H "Content-Type: application/json" \
+  -d '{"targetColumnId": 13}'
+```
+
+### Conventions
+
+- **Times** are in the server's time zone (in Docker that's UTC unless you set `TZ`) and are returned without an offset. Times you send with an offset or `Z` are converted to it.
+- **Enums** are names, like `"priority": "High"`.
+- **Errors** are [problem details](https://www.rfc-editor.org/rfc/rfc9457): `401` without a valid token, `403` when a read-only token calls a write endpoint, `404` for boards and cards that don't exist or that you can't access, and `400` or `409` with a `detail` or per-field `errors` when a request can't be done.
+- **Changes** made through the API show up on open boards right away and appear in the card's activity as yours.
 
 ## 🧪 Development
 

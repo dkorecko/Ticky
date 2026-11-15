@@ -25,32 +25,46 @@ public class CardService
         _cardNumberingService = cardNumberingService;
     }
 
-    /// <summary>
-    /// Creates a new card at the bottom of <paramref name="columnId"/>. Returns null if the column
-    /// doesn't exist or the user can't access its board. No activity log entry — matches the UI's
-    /// behaviour, which doesn't log card creation either.
-    /// </summary>
-    public async Task<Card?> CreateCardAsync(int columnId, int userId, string name)
+    public enum CreateCardStatus
     {
+        Created,
+
+        /// <summary>The column doesn't exist, or the user isn't a member of its board or project.</summary>
+        NotFound,
+
+        /// <summary>The column already holds its maximum number of cards.</summary>
+        ColumnFull,
+
+        /// <summary>The name is empty after trimming.</summary>
+        InvalidName
+    }
+
+    public record CreateCardResult(CreateCardStatus Status, Card? Card = null);
+
+    /// <summary>
+    /// Creates a card in <paramref name="columnId"/>, at the top or bottom as the column's placement setting says.
+    /// No activity log entry, as before this method existed.
+    /// </summary>
+    /// <param name="assignCreator">Also assigns the card to the user, for those who turned on automatic assigning.</param>
+    public async Task<CreateCardResult> CreateCardAsync(int columnId, int userId, string name, bool assignCreator = false)
+    {
+        name = name?.Trim() ?? string.Empty;
+
+        if (name.Length == 0)
+            return new(CreateCardStatus.InvalidName);
+
         using var db = _dbContextFactory.CreateDbContext();
 
         var column = await db.Columns
+            .AccessibleBy(userId)
             .Include(x => x.Cards)
-            .Include(x => x.Board)
-                .ThenInclude(b => b.Memberships)
-            .Include(x => x.Board)
-                .ThenInclude(b => b.Project)
-                    .ThenInclude(p => p.Memberships)
             .FirstOrDefaultAsync(x => x.Id == columnId);
 
         if (column is null)
-            return null;
+            return new(CreateCardStatus.NotFound);
 
-        var hasAccess = column.Board.Memberships.Any(m => m.UserId == userId)
-            || column.Board.Project.Memberships.Any(m => m.UserId == userId);
-
-        if (!hasAccess)
-            return null;
+        if (column.MaxCards != 0 && column.Cards.Count >= column.MaxCards)
+            return new(CreateCardStatus.ColumnFull);
 
         int newIndex;
 
@@ -75,35 +89,45 @@ public class CardService
             CreatedById = userId,
         };
 
+        if (assignCreator)
+            card.Assignees.Add(await db.Users.FirstAsync(x => x.Id == userId));
+
         column.Cards.Add(card);
         await db.SaveChangesAsync();
 
-        return card;
+        return new(CreateCardStatus.Created, card);
     }
 
     /// <summary>
-    /// Whether the user may see and edit the card: they must be a member of its board or of the board's project
-    /// (the same rule as <see cref="Board.VerifyAccess"/>). False if the card does not exist.
+    /// Whether the user may see and edit the card: they must be able to open its board (see
+    /// <see cref="Board.AccessibleBy"/>). False if the card does not exist.
     /// </summary>
     public async Task<bool> CanAccessCardAsync(int cardId, int userId)
     {
         using var db = _dbContextFactory.CreateDbContext();
 
-        return await db.Cards
-            .Where(x => x.Id == cardId)
-            .AnyAsync(x =>
-                x.Column.Board.Memberships.Any(m => m.UserId == userId)
-                || x.Column.Board.Project.Memberships.Any(m => m.UserId == userId)
-            );
+        return await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId);
     }
 
     #region Card fields
 
     public Task RenameAsync(int cardId, int userId, string name) =>
-        UpdateAsync(cardId, userId, card => new TitleChangedActivity { OldTitle = card.Name, NewTitle = name }, card => card.Name = name);
+        UpdateAsync(
+            cardId,
+            userId,
+            card => new TitleChangedActivity { OldTitle = card.Name, NewTitle = name },
+            card => card.Name = name,
+            unchanged: card => card.Name == name
+        );
 
     public Task UpdateDescriptionAsync(int cardId, int userId, string description) =>
-        UpdateAsync(cardId, userId, _ => new DescriptionChangedActivity(), card => card.Description = description);
+        UpdateAsync(
+            cardId,
+            userId,
+            _ => new DescriptionChangedActivity(),
+            card => card.Description = description,
+            unchanged: card => card.Description == description
+        );
 
     public async Task SetPriorityAsync(int cardId, int userId, CardPriority priority)
     {
@@ -119,6 +143,24 @@ public class CardService
         await db.SaveChangesAsync();
     }
 
+    /// <summary>Flags or unflags the card. Not written to the activity log, as flagging never was.</summary>
+    public async Task SetFlaggedAsync(int cardId, bool flagged)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await db.Cards.FirstOrDefaultAsync(x => x.Id == cardId);
+
+        if (card is null || card.Flagged == flagged)
+            return;
+
+        card.Flagged = flagged;
+
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Sets the deadline and arms its reminder again. Setting the deadline the card already has does nothing, so a
+    /// reminder that already went out isn't sent again.
+    /// </summary>
     public Task SetDeadlineAsync(int cardId, int userId, DateTime deadline) =>
         UpdateAsync(
             cardId,
@@ -128,11 +170,18 @@ public class CardService
             {
                 card.Deadline = deadline;
                 card.DeadlineProcessed = false;
-            }
+            },
+            unchanged: card => card.Deadline == deadline
         );
 
     public Task RemoveDeadlineAsync(int cardId, int userId) =>
-        UpdateAsync(cardId, userId, _ => new DeadlineRemovedActivity(), card => card.Deadline = null);
+        UpdateAsync(
+            cardId,
+            userId,
+            _ => new DeadlineRemovedActivity(),
+            card => card.Deadline = null,
+            unchanged: card => card.Deadline is null
+        );
 
     public Task SnoozeAsync(int cardId, int userId, DateTime until) =>
         UpdateAsync(
@@ -314,25 +363,29 @@ public class CardService
 
     #region Comments
 
-    public async Task AddCommentAsync(int cardId, int userId, string text)
+    /// <returns>The new comment, or null if the text is empty or the card no longer exists.</returns>
+    public async Task<Comment?> AddCommentAsync(int cardId, int userId, string text)
     {
         if (string.IsNullOrWhiteSpace(text))
-            return;
+            return null;
 
         using var db = _dbContextFactory.CreateDbContext();
 
         if (!await db.Cards.AnyAsync(x => x.Id == cardId))
-            return;
+            return null;
 
-        db.Comments.Add(new Comment
+        var comment = new Comment
         {
             Text = text,
             CreatedById = userId,
             CardId = cardId,
-        });
+        };
+
+        db.Comments.Add(comment);
         Log(db, cardId, userId, new CommentPostedActivity());
 
         await db.SaveChangesAsync();
+        return comment;
     }
 
     #endregion
@@ -682,12 +735,22 @@ public class CardService
     #endregion
 
     /// <summary>Changes a field on the card and logs it. The activity is created before the change, so it can see the old value.</summary>
-    private async Task UpdateAsync(int cardId, int userId, Func<Card, Activity> activity, Action<Card> change)
+    /// <param name="unchanged">
+    /// Whether the change would leave the card as it is. Then nothing is saved or logged, so the activity log only
+    /// shows real changes.
+    /// </param>
+    private async Task UpdateAsync(
+        int cardId,
+        int userId,
+        Func<Card, Activity> activity,
+        Action<Card> change,
+        Func<Card, bool>? unchanged = null
+    )
     {
         using var db = _dbContextFactory.CreateDbContext();
         var card = await db.Cards.FirstOrDefaultAsync(x => x.Id == cardId);
 
-        if (card is null)
+        if (card is null || unchanged?.Invoke(card) == true)
             return;
 
         var entry = activity(card);

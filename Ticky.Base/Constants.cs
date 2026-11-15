@@ -130,6 +130,12 @@ namespace Ticky.Base
 
             /// <summary>Accepts either the Identity cookie or a bearer API token. API controllers use this.</summary>
             public const string ApiCallerAuthenticated = "ApiCallerAuthenticated";
+
+            /// <summary>
+            /// Like <see cref="ApiCallerAuthenticated"/>, but API tokens also need the read and write scope.
+            /// Endpoints that change data use this.
+            /// </summary>
+            public const string ApiCallerCanWrite = "ApiCallerCanWrite";
         }
 
         public static class Roles
@@ -142,11 +148,46 @@ namespace Ticky.Base
             /// <summary>Authentication scheme name for bearer API tokens (stacked alongside Identity's cookie).</summary>
             public const string TokenScheme = "ApiToken";
 
+            /// <summary>Version of the public API: part of its routes, and the name and version of its OpenAPI document.</summary>
+            public const string Version = "v1";
+
+            /// <summary>
+            /// Route prefix of the public API, for the controllers' route templates. The attachment and health
+            /// endpoints under /api serve the app itself.
+            /// </summary>
+            public const string RoutePrefix = "api/" + Version;
+
+            /// <summary>Request path of the public API, for matching requests.</summary>
+            public const string BasePath = "/" + RoutePrefix;
+
+            /// <summary>Name of the OpenAPI document describing this version, served at <see cref="OpenApiPath"/>.</summary>
+            public const string DocumentName = Version;
+
+            /// <summary>Route the OpenAPI documents are served from, shared by the document and the API reference.</summary>
+            public const string OpenApiRoute = "/openapi/{documentName}.json";
+
+            /// <summary>The OpenAPI document, <see cref="OpenApiRoute"/> filled in with <see cref="DocumentName"/>.</summary>
+            public const string OpenApiPath = "/openapi/" + DocumentName + ".json";
+
+            /// <summary>The browsable API reference.</summary>
+            public const string DocsPath = "/api/docs";
+
+            /// <summary>Name of the bearer security scheme in the OpenAPI document.</summary>
+            public const string SecuritySchemeName = "Bearer";
+
             /// <summary>Token plaintext prefix. Lets humans and server logs spot a Ticky API token at a glance.</summary>
             public const string TokenPrefix = "tky_";
 
             /// <summary>Random-bytes length behind the prefix. 32 bytes = 256 bits of entropy.</summary>
             public const int TokenRandomBytes = 32;
+
+            public const int TokenNameMaxLength = 80;
+
+            /// <summary>Claim carrying the <see cref="Enums.ApiTokenScope"/> of the token a request was made with.</summary>
+            public const string ScopeClaim = "ticky:api_scope";
+
+            /// <summary>How often a token's last-used time is written, so busy clients don't cause a write per request.</summary>
+            public static readonly TimeSpan LastUsedPrecision = TimeSpan.FromMinutes(1);
         }
 
         public static class StorageKeys

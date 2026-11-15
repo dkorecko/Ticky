@@ -12,7 +12,7 @@ using Ticky.Internal.Data;
 namespace Ticky.Internal.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20261109134942_ApiTokens")]
+    [Migration("20261113160343_ApiTokens")]
     partial class ApiTokens
     {
         /// <inheritdoc />
@@ -271,6 +271,9 @@ namespace Ticky.Internal.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime?>("LastUsedAt")
                         .HasColumnType("datetime(6)");
 
@@ -281,6 +284,9 @@ namespace Ticky.Internal.Migrations
 
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("int");
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
@@ -829,6 +835,9 @@ namespace Ticky.Internal.Migrations
 
                     b.Property<bool>("AutomaticDeadlineReminder")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("CardSize")
+                        .HasColumnType("int");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()

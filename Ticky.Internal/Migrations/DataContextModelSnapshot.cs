@@ -268,6 +268,9 @@ namespace Ticky.Internal.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime?>("LastUsedAt")
                         .HasColumnType("datetime(6)");
 
@@ -278,6 +281,9 @@ namespace Ticky.Internal.Migrations
 
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("int");
 
                     b.Property<string>("TokenHash")
                         .IsRequired()

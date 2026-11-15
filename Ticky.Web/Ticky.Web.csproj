@@ -11,18 +11,24 @@
     <!-- User uploads are runtime data served by UseStaticFiles, not build assets. Keeping them out of the
          project also stops dotnet watch from crashing whenever a file gets uploaded. -->
     <DefaultItemExcludes>$(DefaultItemExcludes);wwwroot\uploaded\**</DefaultItemExcludes>
+    <!-- The OpenAPI document takes endpoint descriptions from the controllers' XML comments, which needs the
+         documentation file. CS1591 (public member without a comment) is off: most of the app isn't documented. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Devity.Blazor" Version="2025.5.7.2024" />
     <PackageReference Include="Devity.Extensions" Version="2026.1.4.1450" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.22" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.14" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.22">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.21.0" />
   </ItemGroup>
 
   <ItemGroup>
