@@ -18,7 +18,7 @@ builder
     .Services.AddRazorComponents()
     .AddInteractiveServerComponents(options =>
     {
-        options.DetailedErrors = true;
+        options.DetailedErrors = builder.Environment.IsDevelopment();
     });
 
 builder.Services.AddDbContextFactory<DataContext>(options =>

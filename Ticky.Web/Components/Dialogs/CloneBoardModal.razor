@@ -1,4 +1,5 @@
 @inject IDbContextFactory<DataContext> _dbContextFactory
+@inject ILogger<CloneBoardModal> _logger
 @inherits AbstractModal
 
 <Modal @ref="Modal" Title="Clone board" OnSubmitAttempted="OnSubmitAttempted">
@@ -273,7 +274,8 @@
 		}
 		catch (Exception ex)
 		{
-			_mainLayout.RunNotification(new($"Failed to clone board: {ex.Message}", NotificationType.Fail));
+			_logger.LogError(ex, "Failed to clone board {BoardId}", _sourceBoard.Id);
+			_mainLayout.RunNotification(new("Failed to clone the board. Please try again.", NotificationType.Fail));
 		}
 	}
 }
