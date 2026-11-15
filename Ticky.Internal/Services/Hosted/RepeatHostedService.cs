@@ -40,8 +40,11 @@ public class RepeatHostedService(IServiceScopeFactory serviceScopeFactory) : Abs
         {
             card.RepeatInfo!.LastRepeat = DateTime.Now;
 
+            // Only a column of the card's own board counts; a stored target on any other board is ignored.
             var targetColumn = await db
-                .Columns.Where(x => x.Id.Equals(card.RepeatInfo.TargetColumnId))
+                .Columns.Where(x =>
+                    x.Id.Equals(card.RepeatInfo.TargetColumnId) && x.BoardId == card.Column.BoardId
+                )
                 .Include(x => x.Cards)
                 .FirstOrDefaultAsync();
 

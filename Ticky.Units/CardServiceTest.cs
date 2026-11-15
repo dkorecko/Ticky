@@ -372,6 +372,83 @@ public class CardServiceTest
         Assert.That(await check.Activities.CountAsync(x => x.CardId == _cardId), Is.Zero);
     }
 
+    private static RepeatInfo NewRepeat(int? targetColumnId) =>
+        new()
+        {
+            Type = RepeatType.Daily,
+            Time = new TimeOnly(9, 0),
+            CardPlacement = CardPlacement.Top,
+            TargetColumnId = targetColumnId,
+        };
+
+    /// <summary>A column on a second board, which none of the test users belongs to.</summary>
+    private async Task<int> AddColumnOnOtherBoardAsync()
+    {
+        using var db = _factory.CreateDbContext();
+        var board = new Board { Name = "Other", Description = "", Code = "OTH", ProjectId = (await db.Boards.FirstAsync()).ProjectId };
+        db.Boards.Add(board);
+        await db.SaveChangesAsync();
+
+        var column = new Column { Name = "Victim column", BoardId = board.Id, Index = 0 };
+        db.Columns.Add(column);
+        await db.SaveChangesAsync();
+        return column.Id;
+    }
+
+    private async Task<RepeatInfo?> StoredRepeatAsync()
+    {
+        using var db = _factory.CreateDbContext();
+        return (await db.Cards.SingleAsync(x => x.Id == _cardId)).RepeatInfo;
+    }
+
+    [Test]
+    public async Task SetRepeat_ColumnOnTheCardsBoard_IsStored()
+    {
+        var doingId = await AddColumnAsync("Doing", finished: false);
+
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(doingId)), Is.True);
+
+        Assert.That((await StoredRepeatAsync())!.TargetColumnId, Is.EqualTo(doingId));
+        using var db = _factory.CreateDbContext();
+        Assert.That(await db.Activities.CountAsync(x => x.CardId == _cardId), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task SetRepeat_ColumnOnAnotherBoard_IsRejectedAndNothingChanges()
+    {
+        var foreignColumnId = await AddColumnOnOtherBoardAsync();
+
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(foreignColumnId)), Is.False);
+
+        Assert.That(await StoredRepeatAsync(), Is.Null);
+        using var db = _factory.CreateDbContext();
+        Assert.That(await db.Activities.CountAsync(x => x.CardId == _cardId), Is.Zero);
+    }
+
+    [Test]
+    public async Task SetRepeat_ForeignColumnOnCardWithRepeat_KeepsTheEarlierRepeat()
+    {
+        var doingId = await AddColumnAsync("Doing", finished: false);
+        await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(doingId));
+
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(await AddColumnOnOtherBoardAsync())), Is.False);
+
+        Assert.That((await StoredRepeatAsync())!.TargetColumnId, Is.EqualTo(doingId));
+    }
+
+    [Test]
+    public async Task SetRepeat_MissingColumn_IsRejected() =>
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(999_999)), Is.False);
+
+    [TestCase(null)]
+    [TestCase(0)]
+    public async Task SetRepeat_NoTarget_IsStored(int? targetColumnId)
+    {
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(targetColumnId)), Is.True);
+
+        Assert.That((await StoredRepeatAsync())!.TargetColumnId, Is.EqualTo(targetColumnId));
+    }
+
     private class TestDbContextFactory(DbContextOptions<DataContext> options) : IDbContextFactory<DataContext>
     {
         public DataContext CreateDbContext() => new(options);
