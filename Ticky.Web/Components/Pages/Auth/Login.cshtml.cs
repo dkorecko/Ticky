@@ -16,6 +16,9 @@ public class LoginModel : PageModel
     /// <summary>The user was signed out because their password changed.</summary>
     public bool PasswordChanged { get; set; }
 
+    /// <summary>The page that confirms the e-mail address, set when the sign-up of the account isn't finished.</summary>
+    public string? ConfirmMailUrl { get; set; }
+
     public LoginModel(SignInManager<User> signInManager, IOptions<IdentityOptions> identityOptions)
     {
         _signInManager = signInManager;
@@ -48,6 +51,15 @@ public class LoginModel : PageModel
                     $"{nameof(Input)}.{nameof(Input.Email)}",
                     $"Too many failed sign-in attempts. Please try again in {_lockoutMinutes} minutes."
                 );
+            else if (result.IsNotAllowed)
+            {
+                // Only reached with the right password, see SignUpAwareSignInManager.
+                ConfirmMailUrl = $"/auth/confirmmail?email={Uri.EscapeDataString(Input.Email.Trim())}";
+                ModelState.AddModelError(
+                    $"{nameof(Input)}.{nameof(Input.Email)}",
+                    "Your sign-up isn't finished. Please confirm your e-mail address with the code we sent you first."
+                );
+            }
             else
                 ModelState.AddModelError(
                     $"{nameof(Input)}.{nameof(Input.Email)}",

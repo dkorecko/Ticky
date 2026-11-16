@@ -57,6 +57,7 @@ builder
         options.Lockout.AllowedForNewUsers = true;
     })
     .AddEntityFrameworkStores<DataContext>()
+    .AddSignInManager<SignUpAwareSignInManager>()
     .AddDefaultTokenProviders();
 
 builder.Services.ConfigureApplicationCookie(options =>
