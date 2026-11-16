@@ -135,7 +135,7 @@ builder.Services.AddScoped<CardNumberingService>();
 builder.Services.AddScoped<SearchService>();
 builder.Services.AddScoped<TrelloImportService>();
 builder.Services.AddSingleton<InformationService>();
-builder.Services.AddSingleton(_ => new SignUpRateLimiter());
+builder.Services.AddSingleton<SignUpRateLimiter>();
 builder.Services.AddHostedService<CleanupHostedService>();
 builder.Services.AddHostedService<SnoozeHostedService>();
 builder.Services.AddHostedService<RepeatHostedService>();
