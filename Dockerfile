@@ -43,4 +43,8 @@ RUN export DOTNET_ARCH=$(case ${TARGETARCH} in \
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
+# Ticky runs behind a reverse proxy that terminates HTTPS, so honour its X-Forwarded-Proto / X-Forwarded-For
+# headers. Without this the app only ever sees plain HTTP and never marks the sign-in cookie as Secure.
+# Switch it off with ASPNETCORE_FORWARDEDHEADERS_ENABLED=false (see the README).
+ENV ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
 ENTRYPOINT ["dotnet", "Ticky.Web.dll"]

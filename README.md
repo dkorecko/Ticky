@@ -90,6 +90,8 @@ services:
     image: ghcr.io/dkorecko/ticky:latest # or pin to a specific version (like v1.0.0) for manual updates
     container_name: ticky-app
     ports:
+      # Behind a reverse proxy, don't publish this port: remove the whole "ports" entry if the proxy runs in the same Compose network (it reaches ticky-app:8080),
+      # or use "127.0.0.1:4088:8080" if the proxy runs on the same host.
       - "4088:8080"
     restart: unless-stopped
     volumes:
@@ -110,6 +112,9 @@ services:
       - SMTP_USERNAME=your-smtp-username
       - SMTP_PASSWORD=your-smtp-password
       - SMTP_SECURITY=true
+      # Behind an HTTPS reverse proxy that sends X-Forwarded-Proto (most do; Nginx needs "proxy_set_header X-Forwarded-Proto $scheme;"), Ticky trusts the X-Forwarded-Proto/-For headers so the sign-in cookie is marked Secure.
+      # This is on by default in the image, and nothing changes over plain HTTP without that header. Sign in again once over HTTPS to get a Secure cookie. Uncomment to turn it off.
+      #- ASPNETCORE_FORWARDEDHEADERS_ENABLED=false
     depends_on:
       ticky-db:
         condition: service_healthy

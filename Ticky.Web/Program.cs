@@ -66,6 +66,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
     options.LoginPath = "/auth/login";
 
+    // Secure whenever the request is HTTPS. Behind a TLS-terminating proxy that relies on the forwarded headers
+    // (ASPNETCORE_FORWARDEDHEADERS_ENABLED, on in the Docker image); plain-HTTP setups keep working without Secure.
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.HttpOnly = true;
