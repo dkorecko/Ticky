@@ -84,7 +84,7 @@
             <div class="form-group">
                 <Name For="() => _repeatModel.TargetColumnId" />
                 <InputSelect class="form-control" @bind-Value="_repeatModel.TargetColumnId">
-                    <option value="0"></option>
+                    <option value=""></option>
                     @foreach (var column in _columns.OrderBy(x => x.Index))
                     {
                         if (_repeatModel.TargetColumnId.Equals(column.Id))
@@ -98,6 +98,10 @@
                     }
                 </InputSelect>
                 <ValidationMessage For="() => _repeatModel.TargetColumnId" />
+                @if (_targetColumnError is not null)
+                {
+                    <div class="validation-message">@_targetColumnError</div>
+                }
             </div>
 
             <button type="submit" class="btn btn-yellow">Set</button>
@@ -118,10 +122,12 @@
 
     private RepeatCardModel _repeatModel = new();
     private List<Column>? _columns;
+    private string? _targetColumnError;
 
-    public void Open(ElementReference? triggerElement, Card card, List<Column> columns) 
+    public void Open(ElementReference? triggerElement, Card card, List<Column> columns)
     {
         _card = card;
+        _targetColumnError = null;
 
         _repeatModel = new()
             {
@@ -140,6 +146,10 @@
                     TargetColumnId = card.RepeatInfo.TargetColumnId
                 };
 
+            // A target that is missing or isn't on this board (saved before that was checked) opens blank, so it has to be picked again.
+            if (_repeatModel.TargetColumnId is not { } target || columns.All(x => x.Id != target))
+                _repeatModel.TargetColumnId = null;
+
             _repeatModel.SetRelevantSelectedValue(card.RepeatInfo.Selected);
         }
 
@@ -157,7 +167,9 @@
         var time = DateTime.ParseExact(_repeatModel.Time, "HH:mm", null);
         var timeOnly = TimeOnly.FromDateTime(time);
 
-        await _cardService.SetRepeatAsync(_card.Id, _user.Id, new()
+        _targetColumnError = null;
+
+        var saved = await _cardService.SetRepeatAsync(_card.Id, _user.Id, new()
         {
             Type = _repeatModel.Type,
             LastRepeat = _repeatModel.StartDate.ToDateTime(timeOnly),
@@ -167,6 +179,12 @@
             CardPlacement = _repeatModel.CardPlacement,
             TargetColumnId = _repeatModel.TargetColumnId
         });
+
+        if (!saved)
+        {
+            _targetColumnError = "The target column has to be on this card's board.";
+            return;
+        }
 
         StateHasChanged();
         await UpdateCard.InvokeAsync();

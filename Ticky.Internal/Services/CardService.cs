@@ -197,13 +197,38 @@ public class CardService
     public Task UnsnoozeAsync(int cardId, int userId) =>
         UpdateAsync(cardId, userId, _ => new UnsnoozedActivity(), card => card.SnoozedUntil = null);
 
-    public Task SetRepeatAsync(int cardId, int userId, RepeatInfo repeatInfo) =>
-        UpdateAsync(
+    /// <summary>
+    /// Makes the card repeat. The copies go to <see cref="RepeatInfo.TargetColumnId"/>, which has to be a column of the
+    /// card's own board. There is always one: the repeat job's fallback to the board's first column only exists for
+    /// repeats saved before this was required.
+    /// </summary>
+    /// <returns>False, and changes nothing, if there is no target column or it isn't on the card's board (0 and unknown ids included).</returns>
+    public async Task<bool> SetRepeatAsync(int cardId, int userId, RepeatInfo repeatInfo)
+    {
+        if (repeatInfo.TargetColumnId is not { } targetColumnId)
+            return false;
+
+        using (var db = _dbContextFactory.CreateDbContext())
+        {
+            var boardId = await db.Cards
+                .AccessibleBy(userId)
+                .Where(x => x.Id == cardId)
+                .Select(x => (int?)x.Column.BoardId)
+                .FirstOrDefaultAsync();
+
+            if (boardId is not null && !await db.Columns.AnyAsync(x => x.Id == targetColumnId && x.BoardId == boardId))
+                return false;
+        }
+
+        await UpdateAsync(
             cardId,
             userId,
             _ => new RepeatSetActivity { RepeatType = repeatInfo.Type },
             card => card.RepeatInfo = repeatInfo
         );
+
+        return true;
+    }
 
     public Task RemoveRepeatAsync(int cardId, int userId) =>
         UpdateAsync(cardId, userId, _ => new RepeatDisabledActivity(), card => card.RepeatInfo = null);

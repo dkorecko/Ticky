@@ -372,6 +372,102 @@ public class CardServiceTest
         Assert.That(await check.Activities.CountAsync(x => x.CardId == _cardId), Is.Zero);
     }
 
+    private static RepeatInfo NewRepeat(int? targetColumnId) =>
+        new()
+        {
+            Type = RepeatType.Daily,
+            Time = new TimeOnly(9, 0),
+            CardPlacement = CardPlacement.Top,
+            TargetColumnId = targetColumnId,
+        };
+
+    /// <summary>A column on a second board, which none of the test users belongs to.</summary>
+    private async Task<int> AddColumnOnOtherBoardAsync()
+    {
+        using var db = _factory.CreateDbContext();
+        var board = new Board { Name = "Other", Description = "", Code = "OTH", ProjectId = (await db.Boards.FirstAsync()).ProjectId };
+        db.Boards.Add(board);
+        await db.SaveChangesAsync();
+
+        var column = new Column { Name = "Victim column", BoardId = board.Id, Index = 0 };
+        db.Columns.Add(column);
+        await db.SaveChangesAsync();
+        return column.Id;
+    }
+
+    private async Task<RepeatInfo?> StoredRepeatAsync()
+    {
+        using var db = _factory.CreateDbContext();
+        return (await db.Cards.SingleAsync(x => x.Id == _cardId)).RepeatInfo;
+    }
+
+    [Test]
+    public async Task SetRepeat_ColumnOnTheCardsBoard_IsStored()
+    {
+        var doingId = await AddColumnAsync("Doing", finished: false);
+
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(doingId)), Is.True);
+
+        Assert.That((await StoredRepeatAsync())!.TargetColumnId, Is.EqualTo(doingId));
+        using var db = _factory.CreateDbContext();
+        Assert.That(await db.Activities.CountAsync(x => x.CardId == _cardId), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task SetRepeat_ColumnOnAnotherBoard_IsRejectedAndNothingChanges()
+    {
+        var foreignColumnId = await AddColumnOnOtherBoardAsync();
+
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(foreignColumnId)), Is.False);
+
+        Assert.That(await StoredRepeatAsync(), Is.Null);
+        using var db = _factory.CreateDbContext();
+        Assert.That(await db.Activities.CountAsync(x => x.CardId == _cardId), Is.Zero);
+    }
+
+    [Test]
+    public async Task SetRepeat_ForeignColumnOnCardWithRepeat_KeepsTheEarlierRepeat()
+    {
+        var doingId = await AddColumnAsync("Doing", finished: false);
+        await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(doingId));
+
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(await AddColumnOnOtherBoardAsync())), Is.False);
+
+        Assert.That((await StoredRepeatAsync())!.TargetColumnId, Is.EqualTo(doingId));
+    }
+
+    [TestCase(999_999)]
+    [TestCase(0)]
+    [TestCase(-1)]
+    public async Task SetRepeat_ColumnThatDoesNotExist_IsRejected(int targetColumnId)
+    {
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(targetColumnId)), Is.False);
+        Assert.That(await StoredRepeatAsync(), Is.Null);
+    }
+
+    [Test]
+    public async Task SetRepeat_UserWhoCannotOpenTheCard_ChangesNothing()
+    {
+        var doingId = await AddColumnAsync("Doing", finished: false);
+
+        await _service.SetRepeatAsync(_cardId, _outsiderId, NewRepeat(doingId));
+        await _service.SetRepeatAsync(_cardId, _outsiderId, NewRepeat(null));
+
+        Assert.That(await StoredRepeatAsync(), Is.Null);
+        using var db = _factory.CreateDbContext();
+        Assert.That(await db.Activities.CountAsync(x => x.CardId == _cardId), Is.Zero);
+    }
+
+    [Test]
+    public async Task SetRepeat_NoTarget_IsRejectedAndNothingChanges()
+    {
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(null)), Is.False);
+
+        Assert.That(await StoredRepeatAsync(), Is.Null);
+        using var db = _factory.CreateDbContext();
+        Assert.That(await db.Activities.CountAsync(x => x.CardId == _cardId), Is.Zero);
+    }
+
     #region Access: users who can't open a card's board can't act on it or its items
 
     /// <summary>A card on a board that nobody from the fixture can open.</summary>
