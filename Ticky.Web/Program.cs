@@ -75,6 +75,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.Configure<AntiforgeryOptions>(options =>
 {
     options.Cookie.Name = Constants.Cookies.Antiforgery;
+    options.HeaderName = Constants.Headers.Antiforgery;
 });
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>

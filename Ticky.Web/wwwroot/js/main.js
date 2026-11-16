@@ -284,7 +284,7 @@ async function copyText(text) {
 let pasteHandler = null;
 let pasteDotNetRef = null;
 
-function attachCardPasteHandler(dotNetReference, targetCardId) {
+function attachCardPasteHandler(dotNetReference, targetCardId, antiforgeryHeaderName, antiforgeryToken) {
     detachCardPasteHandler();
     pasteDotNetRef = dotNetReference;
 
@@ -303,8 +303,13 @@ function attachCardPasteHandler(dotNetReference, targetCardId) {
             formData.append('file', file, file.name);
             formData.append('cardId', targetCardId);
 
+            const headers = {};
+            if (antiforgeryHeaderName && antiforgeryToken)
+                headers[antiforgeryHeaderName] = antiforgeryToken;
+
             fetch('/api/attachments/upload', {
                 method: 'POST',
+                headers: headers,
                 body: formData,
                 credentials: 'same-origin'
             }).then(response => {
