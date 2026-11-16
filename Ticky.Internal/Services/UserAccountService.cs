@@ -131,6 +131,10 @@ public class UserAccountService(IServiceScopeFactory scopeFactory, ILogger<UserA
             {
                 user.LockoutEnd = null;
                 user.AccessFailedCount = 0;
+
+                // The new password is how people take back an account that may have been compromised, so tokens made
+                // before it stop working. They're saved together with the password: both change or neither does.
+                await RevokeApiTokensAsync(db, user.Id);
             }
         }
 
@@ -472,6 +476,16 @@ public class UserAccountService(IServiceScopeFactory scopeFactory, ILogger<UserA
         user.PasswordHash = userManager.PasswordHasher.HashPassword(user, password);
         user.SecurityStamp = Convert.ToHexString(RandomNumberGenerator.GetBytes(20));
         result.PasswordChanged = true;
+    }
+
+    /// <remarks>Only marks the tokens: the caller's next save on <paramref name="db"/> stores the change.</remarks>
+    private static async Task RevokeApiTokensAsync(DataContext db, int userId)
+    {
+        var now = DateTime.Now;
+        var tokens = await db.ApiTokens.Where(x => x.UserId == userId && x.RevokedAt == null).ToListAsync();
+
+        foreach (var token in tokens.Where(x => x.IsActiveAt(now)))
+            token.RevokedAt = now;
     }
 
     /// <remarks>Doesn't save anything, unlike <see cref="UserManager{TUser}.CheckPasswordAsync"/>.</remarks>

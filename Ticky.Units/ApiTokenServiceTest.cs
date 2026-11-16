@@ -105,6 +105,55 @@ public class ApiTokenServiceTest
     }
 
     [Test]
+    public async Task Validate_AccountNeedsNewCredentials_NullUntilTheyAreSet()
+    {
+        var created = await _service.CreateAsync(_userId, "Agent", ApiTokenScope.ReadOnly, null);
+
+        await UpdateUserAsync(_userId, x => x.NeedsNewCredentials = true);
+        Assert.That(await _service.ValidateAsync(created.Plaintext), Is.Null);
+
+        await UpdateUserAsync(_userId, x => x.NeedsNewCredentials = false);
+        Assert.That(await _service.ValidateAsync(created.Plaintext), Is.Not.Null);
+    }
+
+    [Test]
+    public async Task Validate_AccountLockedOut_NullUntilTheLockoutEnds()
+    {
+        var created = await _service.CreateAsync(_userId, "Agent", ApiTokenScope.ReadOnly, null);
+
+        await UpdateUserAsync(_userId, x => x.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(15));
+        Assert.That(await _service.ValidateAsync(created.Plaintext), Is.Null);
+
+        await UpdateUserAsync(_userId, x => x.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(-1));
+        Assert.That(await _service.ValidateAsync(created.Plaintext), Is.Not.Null);
+    }
+
+    [Test]
+    public async Task Validate_OtherAccountsState_DoesNotAffectTheToken()
+    {
+        var created = await _service.CreateAsync(_userId, "Agent", ApiTokenScope.ReadOnly, null);
+
+        await UpdateUserAsync(_otherUserId, x =>
+        {
+            x.NeedsNewCredentials = true;
+            x.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(15);
+        });
+
+        Assert.That(await _service.ValidateAsync(created.Plaintext), Is.Not.Null);
+    }
+
+    [Test]
+    public async Task Validate_RejectedForAccountState_DoesNotRecordUse()
+    {
+        var created = await _service.CreateAsync(_userId, "Agent", ApiTokenScope.ReadOnly, null);
+        await UpdateUserAsync(_userId, x => x.NeedsNewCredentials = true);
+
+        await _service.ValidateAsync(created.Plaintext);
+
+        Assert.That(await GetLastUsedAsync(created.Token.Id), Is.Null);
+    }
+
+    [Test]
     public async Task Validate_WritesLastUsedAtMostOncePerPrecision()
     {
         var created = await _service.CreateAsync(_userId, "Agent", ApiTokenScope.ReadOnly, null);
@@ -137,6 +186,13 @@ public class ApiTokenServiceTest
 
         var tokens = await _service.ListAsync(_userId);
         Assert.That(tokens.Select(x => x.Name), Is.EqualTo(new[] { "Mine" }));
+    }
+
+    private async Task UpdateUserAsync(int userId, Action<User> change)
+    {
+        using var db = _factory.CreateDbContext();
+        change(await db.Users.SingleAsync(x => x.Id == userId));
+        await db.SaveChangesAsync();
     }
 
     private async Task SetLastUsedAsync(int tokenId, DateTime value)

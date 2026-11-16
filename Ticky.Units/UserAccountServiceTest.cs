@@ -231,6 +231,72 @@ public class UserAccountServiceTest
     }
 
     [Test]
+    public async Task UpdateUser_NewPassword_RevokesTheUsersActiveTokensOnly()
+    {
+        var active = await AddApiTokenAsync(_userId, expiresAt: DateTime.Now.AddDays(7));
+        var neverExpires = await AddApiTokenAsync(_userId);
+        var expired = await AddApiTokenAsync(_userId, expiresAt: DateTime.Now.AddDays(-1));
+        var revokedEarlier = DateTime.Now.AddDays(-2);
+        var alreadyRevoked = await AddApiTokenAsync(_userId, revokedAt: revokedEarlier);
+        var someoneElses = await AddApiTokenAsync(_adminId);
+
+        var result = await _service.UpdateUserAsync(_adminId, _userId, "Jane Doe", "jane@test.com", NEW_PASSWORD, true);
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(result.Succeeded, Is.True);
+            Assert.That((await GetApiTokenAsync(active)).RevokedAt, Is.Not.Null);
+            Assert.That((await GetApiTokenAsync(neverExpires)).RevokedAt, Is.Not.Null);
+            Assert.That((await GetApiTokenAsync(expired)).RevokedAt, Is.Null);
+            Assert.That((await GetApiTokenAsync(alreadyRevoked)).RevokedAt, Is.EqualTo(revokedEarlier));
+            Assert.That((await GetApiTokenAsync(someoneElses)).RevokedAt, Is.Null);
+        });
+    }
+
+    [Test]
+    public async Task UpdateUser_WithoutNewPassword_KeepsTokens()
+    {
+        var token = await AddApiTokenAsync(_userId);
+
+        var result = await _service.UpdateUserAsync(_adminId, _userId, "Jane Smith", "jane.new@test.com", null, true);
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(result.Succeeded, Is.True);
+            Assert.That((await GetApiTokenAsync(token)).RevokedAt, Is.Null);
+        });
+    }
+
+    [Test]
+    public async Task UpdateUser_RefusedNewPassword_KeepsTokens()
+    {
+        var token = await AddApiTokenAsync(_userId);
+
+        var result = await _service.UpdateUserAsync(_adminId, _userId, "Jane Doe", "jane@test.com", "abc", true);
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(result.Succeeded, Is.False);
+            Assert.That((await GetApiTokenAsync(token)).RevokedAt, Is.Null);
+        });
+    }
+
+    [Test]
+    public async Task UpdateUser_NewPasswordWithTakenEmail_KeepsTokensBecauseNothingIsSaved()
+    {
+        var token = await AddApiTokenAsync(_userId);
+
+        var result = await _service.UpdateUserAsync(_adminId, _userId, "Jane Doe", "admin@test.com", NEW_PASSWORD, true);
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(FieldsOf(result), Is.EqualTo(new[] { UserAccountField.Email }));
+            Assert.That(await PasswordWorksAsync(_userId, PASSWORD), Is.True);
+            Assert.That((await GetApiTokenAsync(token)).RevokedAt, Is.Null);
+        });
+    }
+
+    [Test]
     public async Task UpdateUser_Self_CanChangeNameAndEmailButNotPassword()
     {
         var before = await GetUserAsync(_adminId);
@@ -549,6 +615,21 @@ public class UserAccountServiceTest
         });
     }
 
+    /// <summary>People who change their own password keep their tokens: they're the ones who made them.</summary>
+    [Test]
+    public async Task ChangePassword_KeepsTheUsersTokens()
+    {
+        var token = await AddApiTokenAsync(_userId);
+
+        var result = await _service.ChangePasswordAsync(_userId, PASSWORD, NEW_PASSWORD);
+
+        await Assert.MultipleAsync(async () =>
+        {
+            Assert.That(result.PasswordChanged, Is.True);
+            Assert.That((await GetApiTokenAsync(token)).RevokedAt, Is.Null);
+        });
+    }
+
     // Self-service: credentials that must be replaced
 
     [Test]
@@ -660,6 +741,32 @@ public class UserAccountServiceTest
             Assert.That((await GetUserAsync(_userId)).LockoutEnabled, Is.True);
             Assert.That((await GetUserAsync(_adminId)).LockoutEnabled, Is.True);
         });
+    }
+
+    /// <summary>Adds a token that is active unless told otherwise. Only the hash is stored, so it's a made-up one.</summary>
+    private async Task<int> AddApiTokenAsync(int userId, DateTime? expiresAt = null, DateTime? revokedAt = null)
+    {
+        using var scope = _provider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DataContext>();
+        var token = new ApiToken
+        {
+            UserId = userId,
+            Name = "Script",
+            TokenHash = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N"),
+            Scope = ApiTokenScope.ReadOnly,
+            ExpiresAt = expiresAt,
+            RevokedAt = revokedAt,
+        };
+
+        db.ApiTokens.Add(token);
+        await db.SaveChangesAsync();
+        return token.Id;
+    }
+
+    private async Task<ApiToken> GetApiTokenAsync(int id)
+    {
+        using var scope = _provider.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<DataContext>().ApiTokens.AsNoTracking().SingleAsync(x => x.Id == id);
     }
 
     private async Task LockOutAsync(int id)
