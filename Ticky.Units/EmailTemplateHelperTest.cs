@@ -199,6 +199,30 @@ public class EmailTemplateHelperTest
         }
     }
 
+    /// <summary>
+    /// Devity's <c>AddKey</c> encodes values itself, so text must be encoded exactly once: "R&amp;D" in the HTML, which
+    /// reads "R&amp;D" in the mail, never "R&amp;amp;D", which would show the entity.
+    /// </summary>
+    [Test]
+    public void Reminders_SpecialCharacters_AreEncodedOnce()
+    {
+        var card = NewCard("R&D \"launch\"", "Q&A\n5 < 6", ["Tom & Jerry"], DEADLINE);
+
+        foreach (var (name, render) in TEMPLATES)
+        {
+            var body = render(card);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(body, Does.Contain("R&amp;D &quot;launch&quot;"), name);
+                Assert.That(body, Does.Contain("Q&amp;A<br />5 &lt; 6"), name);
+                Assert.That(body, Does.Contain("Tom &amp; Jerry"), name);
+                Assert.That(body, Does.Not.Contain("&amp;amp;").And.Not.Contain("&amp;quot;").And.Not.Contain("&amp;lt;"), name);
+                Assert.That(body, Does.Not.Contain("&lt;br /&gt;"), name);
+            });
+        }
+    }
+
     [Test]
     public void Reminders_NoDescriptionNoSubtasks_LeavesTheSectionsOut()
     {
