@@ -199,15 +199,17 @@ public class CardService
 
     /// <summary>
     /// Makes the card repeat. The copies go to <see cref="RepeatInfo.TargetColumnId"/>, which has to be a column of the
-    /// card's own board. The repeat dialog always sends one. With none (null) it's stored as is, and the repeat job then
-    /// creates the copies in the board's first column.
+    /// card's own board. There is always one: the repeat job's fallback to the board's first column only exists for
+    /// repeats saved before this was required.
     /// </summary>
-    /// <returns>False, and changes nothing, if the target column isn't on the card's board (0 and unknown ids included).</returns>
+    /// <returns>False, and changes nothing, if there is no target column or it isn't on the card's board (0 and unknown ids included).</returns>
     public async Task<bool> SetRepeatAsync(int cardId, int userId, RepeatInfo repeatInfo)
     {
-        if (repeatInfo.TargetColumnId is { } targetColumnId)
+        if (repeatInfo.TargetColumnId is not { } targetColumnId)
+            return false;
+
+        using (var db = _dbContextFactory.CreateDbContext())
         {
-            using var db = _dbContextFactory.CreateDbContext();
             var boardId = await db.Cards
                 .AccessibleBy(userId)
                 .Where(x => x.Id == cardId)

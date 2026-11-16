@@ -459,11 +459,13 @@ public class CardServiceTest
     }
 
     [Test]
-    public async Task SetRepeat_NoTarget_IsStored()
+    public async Task SetRepeat_NoTarget_IsRejectedAndNothingChanges()
     {
-        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(null)), Is.True);
+        Assert.That(await _service.SetRepeatAsync(_cardId, _boardMemberId, NewRepeat(null)), Is.False);
 
-        Assert.That((await StoredRepeatAsync())!.TargetColumnId, Is.Null);
+        Assert.That(await StoredRepeatAsync(), Is.Null);
+        using var db = _factory.CreateDbContext();
+        Assert.That(await db.Activities.CountAsync(x => x.CardId == _cardId), Is.Zero);
     }
 
     #region Access: users who can't open a card's board can't act on it or its items
