@@ -215,9 +215,23 @@ The container listens on plain HTTP (port `8080`), so for HTTPS put a reverse pr
 
 Ticky reads these headers to know the visitor is on HTTPS, and then marks its sign-in cookie `Secure`, so browsers never send it over plain HTTP. When no `X-Forwarded-Proto` header arrives, as when you open Ticky over plain HTTP on your LAN, nothing changes and sign-in keeps working.
 
+A browser that already holds a sign-in cookie without `Secure` keeps it until Ticky renews it (once more than half of its 365 days have passed) or the user signs in again. After you put Ticky behind HTTPS with this setting, sign out and sign in again over HTTPS to get a `Secure` cookie.
+
 - `ASPNETCORE_FORWARDEDHEADERS_ENABLED` (default `true` in the Docker image): trust the `X-Forwarded-Proto` and `X-Forwarded-For` headers. Set it to `false` if you'd rather Ticky ignored them. Outside Docker it is off, so when you run Ticky with `dotnet run` behind a proxy, set it to `true` yourself.
 
 Docker networks give the proxy a changing address, so Ticky can't be told which proxy to trust and accepts these headers from any sender. A client that reaches the container directly can therefore set them on its own requests, which only changes how Ticky sees that client's own request (Ticky does nothing with the client address). Still, keep port `8080` behind your proxy instead of publishing it to the internet, and make sure your proxy overwrites `X-Forwarded-*` headers rather than passing along ones sent by visitors.
+
+The `docker-compose.yaml` from Getting Started publishes `"4088:8080"`, which leaves a direct plain-HTTP route to the container. Once a reverse proxy is in front of Ticky:
+
+- If the proxy runs in the same Compose network, remove the `ports` entry from `ticky-app`. The proxy reaches Ticky at `ticky-app:8080`.
+- If the proxy runs on the host, bind the port to loopback so only processes on that machine can reach it:
+
+  ```yaml
+  ports:
+    - "127.0.0.1:4088:8080"
+  ```
+
+Keep the original `"4088:8080"` if you open Ticky directly at `http://localhost:4088` without a proxy.
 
 ## 🔌 API
 
