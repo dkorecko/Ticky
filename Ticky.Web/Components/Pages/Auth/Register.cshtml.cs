@@ -7,6 +7,7 @@ public class RegisterModel : PageModel
     private readonly ILogger<RegisterModel> _logger;
     private readonly CodeService _codeService;
     private readonly AvatarService _avatarService;
+    private readonly SignUpRateLimiter _signUpRateLimiter;
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -16,7 +17,8 @@ public class RegisterModel : PageModel
         EmailService emailService,
         ILogger<RegisterModel> logger,
         CodeService codeService,
-        AvatarService avatarService
+        AvatarService avatarService,
+        SignUpRateLimiter signUpRateLimiter
     )
     {
         _userManager = userManager;
@@ -24,6 +26,7 @@ public class RegisterModel : PageModel
         _logger = logger;
         _codeService = codeService;
         _avatarService = avatarService;
+        _signUpRateLimiter = signUpRateLimiter;
     }
 
     /// <summary>
@@ -45,6 +48,17 @@ public class RegisterModel : PageModel
 
         if (ModelState.IsValid)
         {
+            // This form says when an address is taken, so the number of attempts per client is limited.
+            if (!_signUpRateLimiter.TryAcquire(HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty))
+            {
+                Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                ModelState.AddModelError(
+                    $"{nameof(Input)}.{nameof(Input.Email)}",
+                    $"Too many sign-up attempts. Please try again in {(int)Math.Ceiling(_signUpRateLimiter.Window.TotalMinutes)} minutes."
+                );
+                return Page();
+            }
+
             Input.DisplayName = Input.DisplayName.Trim();
             Input.Email = Input.Email.Trim();
 
