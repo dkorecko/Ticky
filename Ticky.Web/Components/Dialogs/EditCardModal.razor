@@ -5,6 +5,7 @@
 @inject NavigationManager _navigationManager
 @inject ILogger<EditCardModal> _logger
 @inject CardService _cardService
+@inject AntiforgeryStateProvider _antiforgery
 
 <PriorityModal @ref=_priorityModal UpdateCard="UpdateCard" />
 <LabelModal @ref=_labelModal UpdateCard="UpdateCard" />
@@ -564,7 +565,14 @@
     protected override void OnOpen()
     {
         _pasteObjRef = DotNetObjectReference.Create(this);
-        _ = _js.InvokeVoidAsync("attachCardPasteHandler", _pasteObjRef, _card!.Id);
+        // The upload endpoint rejects requests without the antiforgery token, which the paste handler sends as a header.
+        _ = _js.InvokeVoidAsync(
+            "attachCardPasteHandler",
+            _pasteObjRef,
+            _card!.Id,
+            Constants.Headers.Antiforgery,
+            _antiforgery.GetAntiforgeryToken()?.Value
+        );
         _ = LoadSubtasksAsync();
     }
 

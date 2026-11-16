@@ -24,6 +24,14 @@ namespace Ticky.Base
             public const string Antiforgery = "ticky-antiforgery";
         }
 
+        public static class Headers
+        {
+            /// <summary>
+            /// Carries the antiforgery token on requests the browser makes with fetch (the attachment upload).
+            /// </summary>
+            public const string Antiforgery = "X-Ticky-Antiforgery";
+        }
+
         public static class Defaults
         {
             public const string ADMIN_EMAIL = "admin@ticky.com";

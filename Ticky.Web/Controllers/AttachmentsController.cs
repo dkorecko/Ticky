@@ -115,7 +115,10 @@ public class AttachmentsController : ControllerBase
         }
     }
 
+    // A signed-in cookie plus a multipart body is a request any page on a sibling origin can send, so the upload
+    // needs the antiforgery token the app hands to the paste handler (sent in the header named in Program.cs).
     [HttpPost("upload")]
+    [ValidateAntiForgeryToken]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Upload([FromForm] IFormFile? file, [FromForm] int cardId)
     {
