@@ -199,9 +199,9 @@ public class CardService
 
     /// <summary>
     /// Makes the card repeat. The copies go to <see cref="RepeatInfo.TargetColumnId"/>, which has to be a column of the
-    /// card's own board (none means the board's first column).
+    /// card's own board. The repeat dialog always sends one; a caller that sends none (null) gets the board's first column.
     /// </summary>
-    /// <returns>False, and changes nothing, if the target column isn't on the card's board.</returns>
+    /// <returns>False, and changes nothing, if the target column isn't on the card's board (0 and unknown ids included).</returns>
     public async Task<bool> SetRepeatAsync(int cardId, int userId, RepeatInfo repeatInfo)
     {
         if (repeatInfo.TargetColumnId is { } targetColumnId)
