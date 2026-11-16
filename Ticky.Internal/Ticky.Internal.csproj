@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Devity.Extensions" Version="2026.1.4.1450" />
-    <PackageReference Include="Devity.Mailing" Version="2025.8.13.2012" />
+    <PackageReference Include="Devity.Extensions" Version="2026.11.16.725" />
+    <PackageReference Include="Devity.Mailing" Version="2026.11.16.725" />
     <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.14" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="9.0.22" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.22" />
@@ -23,6 +23,12 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.14" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+  </ItemGroup>
+
+  <!-- Security pin for a transitive package. Remove it once Pomelo.EntityFrameworkCore.MySql ships a patched version.
+       Pomelo.EntityFrameworkCore.MySql 9.0.0 depends on MySqlConnector 2.4.0 (GHSA-473q-m89c-ghf8). Fixed in 2.6.1. -->
+  <ItemGroup>
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
   </ItemGroup>
 
   <ItemGroup>
