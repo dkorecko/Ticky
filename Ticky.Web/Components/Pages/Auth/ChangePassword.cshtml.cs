@@ -2,15 +2,15 @@
 
 public class ChangePasswordModel : PageModel
 {
-    private readonly DataContext _dataContext;
+    private readonly CodeService _codeService;
     private readonly UserManager<User> _userManager;
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public ChangePasswordModel(DataContext dataContext, UserManager<User> userManager)
+    public ChangePasswordModel(CodeService codeService, UserManager<User> userManager)
     {
-        _dataContext = dataContext;
+        _codeService = codeService;
         _userManager = userManager;
     }
 
@@ -23,25 +23,41 @@ public class ChangePasswordModel : PageModel
     {
         if (ModelState.IsValid)
         {
-            var targetCode = await _dataContext
-                .Codes.Include(x => x.User)
-                .FirstOrDefaultAsync(x => x.Value.Equals(Input.Code));
+            var targetCode = await _codeService.VerifyCodeAsync(
+                Input.EmailAddress,
+                Input.Code,
+                CodePurpose.ForgottenPassword
+            );
 
             if (targetCode is not null)
             {
-                await _userManager.ResetPasswordAsync(
+                var result = await _userManager.ResetPasswordAsync(
                     targetCode.User,
                     await _userManager.GeneratePasswordResetTokenAsync(targetCode.User),
                     Input.Password
                 );
-                _dataContext.Codes.Remove(targetCode);
-                await _dataContext.SaveChangesAsync();
-                return LocalRedirect("/auth/passwordchanged");
+
+                if (result.Succeeded)
+                {
+                    await _codeService.ConsumeCodeAsync(targetCode);
+                    return LocalRedirect("/auth/passwordchanged");
+                }
+
+                // The code stays valid, so a password the rules don't allow can be replaced by another one.
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(
+                        $"{nameof(Input)}.{nameof(Input.Password)}",
+                        error.Description
+                    );
+                }
+
+                return Page();
             }
 
             ModelState.AddModelError(
                 $"{nameof(Input)}.{nameof(Input.Code)}",
-                "The provided code was not correct."
+                Constants.Codes.REJECTED_MESSAGE
             );
         }
 
@@ -50,9 +66,14 @@ public class ChangePasswordModel : PageModel
 
     public class InputModel
     {
+        [Display(Name = "E-mail address of your account", Prompt = "email@gmail.com")]
         [Required(AllowEmptyStrings = false)]
-        [RegularExpression("[1-9]{3}-[1-9]{3}")]
-        [Display(Name = "Confirmation code from the e-mail we sent you", Prompt = "123-456")]
+        [EmailAddress]
+        public string EmailAddress { get; set; } = string.Empty;
+
+        [Required(AllowEmptyStrings = false)]
+        [RegularExpression(Constants.Codes.INPUT_PATTERN)]
+        [Display(Name = "Confirmation code from the e-mail we sent you", Prompt = Constants.Codes.EXAMPLE)]
         public string Code { get; set; } = string.Empty;
 
         [Required(AllowEmptyStrings = false)]

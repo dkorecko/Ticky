@@ -27,18 +27,31 @@ public class ForgotPasswordModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        // Without SMTP nobody could receive the code. The page doesn't offer the form either.
+        if (!Constants.SMTP_ENABLED)
+            return Page();
+
         if (ModelState.IsValid)
         {
             var targetUser = await _dataContext.Users.FirstOrDefaultAsync(x =>
                 Input.EmailAddress.Equals(x.Email)
             );
 
-            if (targetUser is not null)
+            // A sign-up that isn't confirmed yet is handled like an unknown account, its code must stay in place.
+            if (targetUser is not null && !await _codeService.HasPendingSignUpAsync(targetUser))
             {
-                await _emailService.SendForgottenPasswordCodeEmailAsync(
-                    Input.EmailAddress,
-                    await _codeService.CreateCodeAsync(targetUser, CodePurpose.ForgottenPassword)
+                // Null when a code was mailed a moment ago: it stays valid and isn't replaced or mailed again.
+                var code = await _codeService.TryCreateCodeAsync(
+                    targetUser,
+                    CodePurpose.ForgottenPassword
                 );
+
+                if (code is not null)
+                    await _emailService.SendForgottenPasswordCodeEmailAsync(
+                        Input.EmailAddress,
+                        code
+                    );
+
                 return LocalRedirect("/auth/changepassword");
             }
 
