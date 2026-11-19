@@ -10,9 +10,10 @@
         <div class="h-24 w-24 rounded-lg bg-secondary/15 dark:bg-secondaryDark/20" title="project image">
         </div>
         
-        <div class="items-center flex flex-row gap-1">
+        @* Pinned to the top-right corner, so the hover boxes are as far from the card's top edge as from its right one. *@
+        <div class="-mt-1 -mr-1 flex flex-row items-start gap-1">
             <button class="add btn-transparent btn flex h-min !p-1" @onclick="MakeFavorite" @onclick:stopPropagation="true" title="@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "Remove from favorites" : "Add to favorites")">
-                <span class="@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "material-symbols-filled  " : "material-symbols-rounded  ") g-icon">
+                <span class="@(Board.Favorites.Any(x => x.UserId.Equals(_user.Id)) ? "material-symbols-filled  " : "material-symbols-rounded  ") g-icon leading-none">
                     kid_star
                 </span>
             </button>
@@ -24,7 +25,7 @@
                         { "Delete board", async () => await DeleteConfirmationDialog.OpenDialog(Board) }
                     }'>
                     <div class="btn-transparent btn flex h-min !p-1">
-                    <span class="material-symbols-rounded g-icon self-center" title="Board options">
+                    <span class="material-symbols-rounded g-icon self-center leading-none" title="Board options">
                             more_horiz
                         </span>
                     </div>
