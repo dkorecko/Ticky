@@ -6,6 +6,7 @@
 @inject ILogger<EditCardModal> _logger
 @inject CardService _cardService
 @inject AntiforgeryStateProvider _antiforgery
+@inject AttachmentService _attachmentService
 
 <PriorityModal @ref=_priorityModal UpdateCard="UpdateCard" />
 <LabelModal @ref=_labelModal UpdateCard="UpdateCard" />
@@ -104,7 +105,7 @@
                             {
                                 <div class="prop-row !pt-0">
                                     <div class="prop-label pl-6"><span class="material-symbols-rounded">keyboard_double_arrow_right</span>Next</div>
-                                    <div class="prop-value font-semibold">@_card.CalculateNextRepeat(DateTime.Now).ToReadableStringWithTime()</div>
+                                    <div class="prop-value font-semibold">@(_card.RepeatInfo.GetNextRepeat()?.ToReadableStringWithTime() ?? "Never: the schedule isn't valid")</div>
                                 </div>
                             }
                         </div>
@@ -135,7 +136,7 @@
                                     {
                                         var assigneeId = $"avatar_1_{i}";
 
-                                        <div id="@assigneeId" class="person-chip" @onclick="() => _mainLayout.UserInfoModal?.Open(assigneeId, assignee.Id)">
+                                        <div id="@assigneeId" class="person-chip" @onclick="() => MainLayout.UserInfoModal?.Open(assigneeId, assignee.Id)">
                                             <div style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@assignee.ProfilePictureFileName');"></div>
                                             <span>@assignee.DisplayName</span>
                                         </div>
@@ -159,7 +160,7 @@
                                     @{
                                         var createdById = "created_by";
                                     }
-                                    <div id=@createdById class="person-chip" @onclick="() => _mainLayout.UserInfoModal?.Open(createdById, _card.CreatedById)">
+                                    <div id=@createdById class="person-chip" @onclick="() => MainLayout.UserInfoModal?.Open(createdById, _card.CreatedById)">
                                         <div style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@_card.CreatedBy.ProfilePictureFileName');"></div>
                                         <span>@_card.CreatedBy.DisplayName</span>
                                     </div>
@@ -381,11 +382,11 @@
                                             @if(comment.CreatedBy is not null) 
                                             {
                                                 <div id=@commentId class="avatar" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@comment.CreatedBy.ProfilePictureFileName');"
-                                                     @onclick="() => _mainLayout.UserInfoModal?.Open(commentId, comment.CreatedById)"></div>
+                                                     @onclick="() => MainLayout.UserInfoModal?.Open(commentId, comment.CreatedById)"></div>
                                             } else {
                                                 <div id=@commentId class="avatar" style="background-image: url('./images/question_mark_avatar.png');"></div>
                                             }
-                                            <label id=@commentId class="cursor-pointer text-sm font-medium" @onclick="() => _mainLayout.UserInfoModal?.Open(commentId, comment.CreatedById)">@(comment.CreatedBy?.DisplayName ?? "Deleted User")</label>
+                                            <label id=@commentId class="cursor-pointer text-sm font-medium" @onclick="() => MainLayout.UserInfoModal?.Open(commentId, comment.CreatedById)">@(comment.CreatedBy?.DisplayName ?? "Deleted User")</label>
                                             <label class="text-xs subtext">@TimeHelper.ToElapsedString(comment.CreatedAt)</label>
                                         </div>
                                         <label class="text-sm font-normal break-normal break-words">@comment.Text</label>
@@ -418,7 +419,7 @@
                                         <div class='bg-add-outline ml-[-5px] h-2 max-w-2 min-w-2 rounded-full @(onlyFirstDates.Any(x => DateTime.Compare(activity.CreatedAt, x) == 0) ? string.Empty : "opacity-0")'></div>
                                         <label class="text-add-outline ml-3 whitespace-nowrap capitalize">@activity.CreatedAt.ToShortString()</label>
                                         <label class="ml-6"><label class="person-link" id="@activityId"
-                                            @onclick="() => _mainLayout.UserInfoModal?.Open(activityId, activity.UserId)">
+                                            @onclick="() => MainLayout.UserInfoModal?.Open(activityId, activity.UserId)">
                                             @@@activity.User.DisplayName</label> @((MarkupString) activity.ToHtml()).
                                         </label>
                                         <label class="text-add-outline ml-auto whitespace-nowrap">@activity.CreatedAt.ToElapsedString()</label>
@@ -435,7 +436,7 @@
                                     <div class="bg-add-outline ml-[-5px] h-2 w-2 rounded-full"></div>
                                     <label class="text-add-outline ml-3 whitespace-nowrap capitalize">@_card.CreatedAt.ToShortString()</label>
                                     <label class="ml-6"><label class="person-link" id="@finalActivityId"
-                                        @onclick="() => _mainLayout.UserInfoModal?.Open(finalActivityId, _card.CreatedById)">
+                                        @onclick="() => MainLayout.UserInfoModal?.Open(finalActivityId, _card.CreatedById)">
                                         @@@_card.CreatedBy.DisplayName</label> <b>created</b> this card.
                                     </label>
                                     <label class="text-add-outline ml-auto whitespace-nowrap">@_card.CreatedAt.ToElapsedString()</label>
@@ -459,7 +460,7 @@
                                         {
                                             <button class='btn btn-yellow !w-max px-3' @onclick="StartTimer">Start timer</button>
                                         } else {
-                                            <button class='btn btn-red !w-max px-3' @onclick="() => EndTimer(ongoingTimer)">@_ongoingTimer.ToElapsedString()</button>
+                                            <button class='btn btn-red !w-max px-3' @onclick="EndTimer">@_ongoingTimer.ToElapsedString()</button>
                                         }
                                     </div>
                                 </div>
@@ -470,7 +471,7 @@
 
                                     <div class="flex flex-row items-center justify-start gap-3">
                                         <div id="@userTimeRecordId" class="avatar" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@timeRecord.User.ProfilePictureFileName');"
-                                            @onclick="() => _mainLayout.UserInfoModal?.Open(userTimeRecordId, timeRecord.UserId)"></div>
+                                            @onclick="() => MainLayout.UserInfoModal?.Open(userTimeRecordId, timeRecord.UserId)"></div>
                                         <div class="flex w-full flex-row items-center justify-between">
                                             <div class="flex flex-col items-start justify-center">
                                                 <label>@timeRecord.User.DisplayName</label>
@@ -494,9 +495,6 @@
 </Modal>
 
 @code {
-    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
-    private MainLayout _mainLayout { get; set; } = default!;
-
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
@@ -579,14 +577,14 @@
     [JSInvokable]
     public async Task OnPastedUploadFinished()
     {
-        _mainLayout.RunNotification(new Notification("File uploaded successfully."));
+        MainLayout.RunNotification(new Notification("File uploaded successfully."));
         await UpdateCard();
     }
 
     [JSInvokable]
     public void OnPastedUploadFailed()
     {
-        _mainLayout.RunNotification(new Notification("File upload failed.", NotificationType.Fail));
+        MainLayout.RunNotification(new Notification("File upload failed.", NotificationType.Fail));
     }
 
     public async Task OnClose()
@@ -641,31 +639,19 @@
 
         var deepLink = $"{_navigationManager.BaseUri.TrimEnd('/')}/boards/{_card.Column.Board.Id}/{_card.Id}";
         await _js.InvokeVoidAsync("copyText", deepLink);
-        _mainLayout.RunNotification(new Notification("Card link copied to clipboard."));
+        MainLayout.RunNotification(new Notification("Card link copied to clipboard."));
     }
 
-    private async Task OnTextChanged(ChangeEventArgs e)
-    {
-        if (_card is null)
-            return;
-
-        await _cardService.RenameAsync(_card.Id, _user.Id, e.Value?.ToString() ?? string.Empty);
-        await UpdateCard();
-    }
+    private Task OnTextChanged(ChangeEventArgs e) =>
+        ChangeAsync(cardId => _cardService.RenameAsync(cardId, _user.Id, e.Value?.ToString() ?? string.Empty));
 
     private void OnCommentTextChanged(ChangeEventArgs e)
     {
         _commentText = e.Value?.ToString() ?? string.Empty;
     }
 
-    private async Task OnDescriptionChanged(ChangeEventArgs e)
-    {
-        if (_card is null)
-            return;
-
-        await _cardService.UpdateDescriptionAsync(_card.Id, _user.Id, e.Value?.ToString() ?? string.Empty);
-        await UpdateCard();
-    }
+    private Task OnDescriptionChanged(ChangeEventArgs e) =>
+        ChangeAsync(cardId => _cardService.UpdateDescriptionAsync(cardId, _user.Id, e.Value?.ToString() ?? string.Empty));
 
     private void UpdateTimer()
     {
@@ -705,81 +691,39 @@
 
     private async Task PostComment()
     {
-        if (_card is null)
-            return;
-
-        await _cardService.AddCommentAsync(_card.Id, _user.Id, _commentText);
-
-        _commentText = string.Empty;
-        await UpdateCard();
+        if (await ChangeAsync(cardId => _cardService.AddCommentAsync(cardId, _user.Id, _commentText)))
+            _commentText = string.Empty;
     }
 
     private async Task StartTimer()
     {
-        if (_card is null)
-            return;
-
         _ongoingTimer = TimeSpan.Zero;
-        await _cardService.StartTimerAsync(_card.Id, _user.Id);
-        await UpdateCard();
+        await ChangeAsync(cardId => _cardService.StartTimerAsync(cardId, _user.Id));
         UpdateTimer();
     }
 
-    private async Task EndTimer(TimeRecord activeTimeRecord)
+    private async Task EndTimer()
     {
-        // EndTimerAsync doesn't check access itself.
-        if (_card is null || !await _cardService.CanAccessCardAsync(_card.Id, _user.Id))
-            return;
-
-        await _cardService.EndTimerAsync(_card.Id, activeTimeRecord.Id);
-        await UpdateCard();
+        await ChangeAsync(cardId => _cardService.StopTimerAsync(cardId, _user.Id));
         UpdateTimer();
     }
 
-    private async Task DeleteTimeRecord(TimeRecord timeRecord)
-    {
-        if (_card is null)
-            return;
+    private Task DeleteTimeRecord(TimeRecord timeRecord) =>
+        ChangeAsync(cardId => _cardService.RemoveTimeRecordAsync(cardId, _user.Id, timeRecord.Id));
 
-        await _cardService.RemoveTimeRecordAsync(_card.Id, _user.Id, timeRecord.Id);
-        await UpdateCard();
-    }
+    private async Task MoveToPreviousList() => await MoveToAdjacentList(-1);
 
-    private async Task MoveToPreviousList()
-    {
-        if (_card is null)
-            return;
+    private async Task Join() => await SetAssigned(true);
 
-        await _cardService.MoveToAdjacentColumnAsync(_card.Id, _user.Id, -1);
-        await UpdateCard();
-    }
+    private async Task Leave() => await SetAssigned(false);
 
-    private async Task Join()
-    {
-        if (_card is null)
-            return;
+    private Task SetAssigned(bool assigned) =>
+        ChangeAsync(cardId => _cardService.SetAssigneeAsync(cardId, _user.Id, _user.Id, assigned));
 
-        await _cardService.JoinAsync(_card.Id, _user.Id);
-        await UpdateCard();
-    }
+    private async Task MoveToNextList() => await MoveToAdjacentList(1);
 
-    private async Task Leave()
-    {
-        if (_card is null)
-            return;
-
-        await _cardService.LeaveAsync(_card.Id, _user.Id);
-        await UpdateCard();
-    }
-
-    private async Task MoveToNextList()
-    {
-        if (_card is null)
-            return;
-
-        await _cardService.MoveToAdjacentColumnAsync(_card.Id, _user.Id, 1);
-        await UpdateCard();
-    }
+    private Task MoveToAdjacentList(int offset) =>
+        ChangeAsync(cardId => _cardService.MoveToAdjacentColumnAsync(cardId, _user.Id, offset));
 
     private async Task UpdateCard()
     {
@@ -794,12 +738,32 @@
         await OnSubmit.InvokeAsync();
     }
 
+    /// <summary>
+    /// Makes a change to the open card through the service, tells the user if it was refused, and shows the card as it
+    /// is now. If the card is gone or out of reach by then, the dialog closes instead of showing nothing. Returns whether
+    /// the change went through.
+    /// </summary>
+    private async Task<bool> ChangeAsync<TResult>(Func<int, Task<TResult>> change)
+        where TResult : IOperationResult
+    {
+        if (_card is null)
+            return false;
+
+        var succeeded = MainLayout.Report(await change(_card.Id));
+        await UpdateCard();
+
+        if (_card is null && Modal is not null)
+            await Modal.Close();
+
+        return succeeded;
+    }
+
     private async Task OpenLinkedCard(Card linkedCard)
     {
         // The link shows the linked card's name, but the user may not be able to open its board.
         if (!await _cardService.CanAccessCardAsync(linkedCard.Id, _user.Id))
         {
-            _mainLayout.RunNotification(new Notification("You do not have access to that card.", NotificationType.Fail));
+            MainLayout.RunNotification(new Notification("You do not have access to that card.", NotificationType.Fail));
             return;
         }
 
@@ -828,171 +792,78 @@
 
     private async Task DeleteAttachment(Attachment attachment)
     {
-        if (_card is null)
-            return;
-
-        await _cardService.RemoveAttachmentAsync(_card.Id, _user.Id, attachment.Id);
-        _mainLayout.RunNotification(new Notification($"File {attachment.OriginalName} deleted successfully."));
-        await UpdateCard();
+        if (await ChangeAsync(cardId => _cardService.RemoveAttachmentAsync(cardId, _user.Id, attachment.Id)))
+            MainLayout.RunNotification(new Notification($"File {attachment.OriginalName} deleted successfully."));
     }
 
-    private async Task DeleteReminder(Reminder reminder)
-    {
-        if (_card is null)
-            return;
+    private Task DeleteReminder(Reminder reminder) =>
+        ChangeAsync(cardId => _cardService.RemoveReminderAsync(cardId, _user.Id, reminder.Id));
 
-        await _cardService.RemoveReminderAsync(_card.Id, _user.Id, reminder.Id);
-        await UpdateCard();
-    }
-
-    private async Task DeleteDeadline()
-    {
-        if (_card is null)
-            return;
-
-        await _cardService.RemoveDeadlineAsync(_card.Id, _user.Id);
-        await UpdateCard();
-    }
+    private Task DeleteDeadline() =>
+        ChangeAsync(cardId => _cardService.RemoveDeadlineAsync(cardId, _user.Id));
 
     private async Task OnSubtaskMoved((string movedItemId, string? targetItemId, string _) args)
     {
-        if (_card is null)
+        if (_card is null || _subtasks is null)
             return;
 
         var movedSubtaskId = Convert.ToInt32(args.movedItemId);
-
-        if (_subtasks is null)
-            return;
-
         var movedSubtask = _subtasks.FirstOrDefault(x => x.Id.Equals(movedSubtaskId));
 
         if (movedSubtask is null)
             return;
 
         int? targetItemId = args.targetItemId is not null ? Convert.ToInt32(args.targetItemId) : null;
-        var targetIndex = ComputeReindexedListOrAdjustIndices(_subtasks, movedSubtaskId, targetItemId);
-        movedSubtask.Index = targetIndex;
-        IndexHelper.FixIndices(_subtasks);
+
+        // Show the new order right away, then save it.
+        _subtasks.MoveBefore(movedSubtask, _subtasks.FirstOrDefault(x => x.Id == targetItemId));
         StateHasChanged();
 
-        try
-        {
-            using var db = _dbContextFactory.CreateDbContext();
-            var card = await db.Cards
-                .AccessibleBy(_user.Id)
-                .Include(x => x.Subtasks)
-                .FirstOrDefaultAsync(x => x.Id == _card.Id);
+        var cardId = _card.Id;
 
-            if (card is null)
-                throw new InvalidOperationException("Card not found in DB.");
-
-            var dbMoved = card.Subtasks.FirstOrDefault(x => x.Id.Equals(movedSubtaskId));
-            if (dbMoved is null)
-                throw new InvalidOperationException("Moved subtask not found in DB.");
-
-            var dbTargetIndex = ComputeReindexedListOrAdjustIndices(card.Subtasks, movedSubtaskId, targetItemId);
-            dbMoved.Index = dbTargetIndex;
-            IndexHelper.FixIndices(card.Subtasks);
-
-            await db.SaveChangesAsync();
-
+        if (await MainLayout.SaveOrRevertAsync(_logger, () => _cardService.MoveSubtaskAsync(cardId, _user.Id, movedSubtaskId, targetItemId), "Failed to move subtask.", UpdateCard))
             await LoadSubtasksAsync();
-        }
-        catch (Exception ex)
-        {
-            _mainLayout.RunNotification(new Notification("Failed to move subtask.", NotificationType.Fail));
-            _logger?.LogError(ex, "Failed to move subtask");
-            await UpdateCard();
-        }
     }
 
-    private int ComputeReindexedListOrAdjustIndices(ICollection<Subtask> subtasks, int movedSubtaskId, int? targetItemId)
-    {
-        int defaultTarget = subtasks.Any() ? subtasks.Max(x => x.Index) + 1 : 0;
-
-        if (targetItemId.HasValue)
-        {
-            var target = subtasks.FirstOrDefault(x => x.Id == targetItemId.Value);
-            if (target is not null)
-            {
-                defaultTarget = target.Index;
-
-                foreach (var st in subtasks.OrderByDescending(x => x.Index))
-                {
-                    if (st.Index >= defaultTarget)
-                        st.Index++;
-                }
-            }
-        }
-
-        return defaultTarget;
-    }
-
-    private async Task DeleteLink(CardLink link)
-    {
-        if (_card is null)
-            return;
-
-        await _cardService.RemoveLinkAsync(link.Id, _user.Id);
-        await UpdateCard();
-    }
+    private Task DeleteLink(CardLink link) =>
+        ChangeAsync(cardId => _cardService.RemoveLinkAsync(cardId, _user.Id, link.Id));
 
     public async Task OnFileChanged(InputFileChangeEventArgs e)
     {
         if (_card is null)
             return;
 
-        // Before anything is written to disk; AddAttachmentAsync checks again for each file.
-        if (!await _cardService.CanAccessCardAsync(_card.Id, _user.Id))
-        {
-            _mainLayout.RunNotification(new Notification("You do not have access to this card.", NotificationType.Fail));
-            return;
-        }
-
         if(e.FileCount > Constants.Limits.MAX_FILES)
         {
-            _mainLayout.RunNotification(new Notification($"Only {Constants.Limits.MAX_FILES} can be uploaded.", NotificationType.Fail));
+            MainLayout.RunNotification(new Notification($"Only {Constants.Limits.MAX_FILES} can be uploaded.", NotificationType.Fail));
             return;
         }
 
-        var files = e.GetMultipleFiles(Constants.Limits.MAX_FILES).ToList();
-
-        var folderPath = Constants.SAVE_UPLOADED_FILES_PATH;
-
-        if (!Directory.Exists(folderPath))
-            Directory.CreateDirectory(folderPath);
-
-        foreach (var file in files)
+        foreach (var file in e.GetMultipleFiles(Constants.Limits.MAX_FILES))
         {
-            if (file.Size > Constants.Limits.MAX_FILE_SIZE)
-            {
-                _mainLayout.RunNotification(new Notification($"The file {file.Name} is too large.", NotificationType.Fail));
-                continue;
-            }
-
             try
             {
-                var trustedFileName = UploadHelper.CreateStoredFileName(folderPath, file.Name);
-                var path = Path.Combine(folderPath, trustedFileName);
+                // A file over the limit isn't read at all; the service refuses it by its size.
+                await using var content = file.Size > Constants.Limits.MAX_FILE_SIZE
+                    ? Stream.Null
+                    : file.OpenReadStream(Constants.Limits.MAX_FILE_SIZE);
+                // Checks access before anything is written to disk.
+                var result = await _attachmentService.AddAsync(_card.Id, _user.Id, content, file.Name, file.Size);
 
-                await using (FileStream fs = new(path, FileMode.Create))
+                // The card was deleted meanwhile, or the user lost access: say so once and stop.
+                if (result.Status == OperationStatus.NotFound)
                 {
-                    await file.OpenReadStream(Constants.Limits.MAX_FILE_SIZE).CopyToAsync(fs);
-                }
-
-                // The card was deleted meanwhile: drop the orphaned file and stop.
-                if (!await _cardService.AddAttachmentAsync(_card.Id, _user.Id, trustedFileName, file.Name))
-                {
-                    File.Delete(path);
+                    MainLayout.Report(result);
                     return;
                 }
 
-                _mainLayout.RunNotification(new Notification($"File {file.Name} uploaded successfully."));
+                if (MainLayout.Report(result))
+                    MainLayout.RunNotification(new Notification($"File {file.Name} uploaded successfully."));
             }
-            catch
+            catch (Exception ex)
             {
-                _mainLayout.RunNotification(new Notification($"File upload error while uploading {file.Name}.", NotificationType.Fail));
-                continue;
+                _logger.LogError(ex, "Failed to upload {FileName} to card {CardId}", file.Name, _card.Id);
+                MainLayout.RunNotification(new Notification($"File upload error while uploading {file.Name}.", NotificationType.Fail));
             }
         }
 
@@ -1073,26 +944,14 @@
         {
             _subtasks = null;
             await InvokeAsync(StateHasChanged);
-            _mainLayout.RunNotification(new Notification("Failed to load subtasks.", NotificationType.Fail));
+            MainLayout.RunNotification(new Notification("Failed to load subtasks.", NotificationType.Fail));
             _logger.LogError(ex, "Failed to load subtasks for card {CardId}", _card.Id);
         }
     }
 
-    private async Task UnsnoozeCard()
-    {
-        if (_card is null)
-            return;
+    private Task UnsnoozeCard() =>
+        ChangeAsync(cardId => _cardService.UnsnoozeAsync(cardId, _user.Id));
 
-        await _cardService.UnsnoozeAsync(_card.Id, _user.Id);
-        await UpdateCard();
-    }
-
-    private async Task RemoveRepeat()
-    {
-        if (_card is null)
-            return;
-
-        await _cardService.RemoveRepeatAsync(_card.Id, _user.Id);
-        await UpdateCard();
-    }
+    private Task RemoveRepeat() =>
+        ChangeAsync(cardId => _cardService.RemoveRepeatAsync(cardId, _user.Id));
 }

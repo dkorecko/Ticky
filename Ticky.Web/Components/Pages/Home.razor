@@ -1,12 +1,14 @@
 ﻿@page "/"
 @inject IDbContextFactory<DataContext> _dbContextFactory
+@inject BoardService _boardService
+@inject ProjectService _projectService
 @inherits NotifiableBase
 
 <CreateProjectModal @ref="_createProjectModal" OnSubmit="async () => await RunNotification(typeof(Project), OperationType.Added)" />
 <ImportModal @ref="_importModal" OnSubmit="HandleUpdate" />
 <CreateBoardModal @ref="_createBoardModal" OnSubmit="async () => await RunNotification(typeof(Board), OperationType.Added)" ImportModal="_importModal" />
 <EditProjectModal @ref="_editProjectModal" OnSubmit="async () => await RunNotification(typeof(Project), OperationType.Edited)" />
-<EditProjectMembershipsModal @ref="_editProjectMembershipsModal" OnSubmit="async () => await RunNotification(typeof(ProjectMembership), OperationType.Edited)" />
+<EditMembershipsModal @ref="_editProjectMembershipsModal" OnSubmit="async () => await RunNotification(typeof(ProjectMembership), OperationType.Edited)" />
 <DeleteConfirmationDialog T="Project" @ref="_deleteProjectModal" DeleteHandler="DeleteProjectAsync" OnConfirmed="HandleUpdate" />
 <DeleteConfirmationDialog T="Board" @ref="_deleteBoardModal" DeleteHandler="DeleteBoardAsync" OnConfirmed="HandleUpdate" />
 
@@ -74,13 +76,13 @@
                             {
                                 string id = $"avatar_{i}";
                                 <div id="@id" class="avatar @(i > 0 ? "stack-avatars" : "") self-center" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@member.User.ProfilePictureFileName');"
-                                @onclick="() => _mainLayout.UserInfoModal?.Open(id, member.UserId)"></div>
+                                @onclick="() => MainLayout.UserInfoModal?.Open(id, member.UserId)"></div>
                                 i++;
                             }
                         </div>
                         @if (project.Memberships.First(x => x.UserId.Equals(_user.Id)).IsAdmin)
                         {
-                            <button class="add btn-transparent btn flex !p-1" @onclick="() => _editProjectMembershipsModal?.Open(project.Id)" title="Add member">
+                            <button class="add btn-transparent btn flex !p-1" @onclick="() => _editProjectMembershipsModal?.OpenForProject(project.Id)" title="Add member">
                                 <span class="material-symbols-rounded g-icon self-center leading-none">
                                     add
                                 </span>
@@ -148,9 +150,6 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
-    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
-    private MainLayout _mainLayout { get; set; } = default!;
-
     private IEnumerable<Project>? _projects;
 
     private IEnumerable<Board>? _remainingBoards;
@@ -161,7 +160,7 @@
 
     private EditProjectModal? _editProjectModal;
 
-    private EditProjectMembershipsModal? _editProjectMembershipsModal;
+    private EditMembershipsModal? _editProjectMembershipsModal;
 
     private DeleteConfirmationDialog<Project>? _deleteProjectModal;
 
@@ -184,41 +183,13 @@
         _remainingBoards = await LoadRemainingBoardsAsync();
     }
 
-    /// <summary>
-    /// Deletes the project if the user still administers it. Only admins see the option, but the role may have changed
-    /// since the page loaded.
-    /// </summary>
-    private async Task<bool> DeleteProjectAsync(Project project)
-    {
-        using var db = _dbContextFactory.CreateDbContext();
+    // Only admins see these options, but the services check the role again, since it may have changed since the
+    // page loaded.
+    private async Task<bool> DeleteBoardAsync(Board board) =>
+        await MainLayout.ReportOrReloadAsync(await _boardService.DeleteAsync(board.Id, _user.Id), HandleUpdate);
 
-        if (!await db.IsProjectAdminAsync(project.Id, _user.Id))
-        {
-            _mainLayout.RunNotification(new("Only project admins can delete the project.", NotificationType.Fail));
-            return false;
-        }
-
-        await db.Projects.Where(x => x.Id == project.Id).ExecuteDeleteAsync();
-        return true;
-    }
-
-    /// <summary>
-    /// Deletes the board if the user still administers it. Only admins see the option, but the role may have changed
-    /// since the page loaded.
-    /// </summary>
-    private async Task<bool> DeleteBoardAsync(Board board)
-    {
-        using var db = _dbContextFactory.CreateDbContext();
-
-        if (!await db.IsBoardAdminAsync(board.Id, _user))
-        {
-            _mainLayout.RunNotification(new("Only board admins can delete the board.", NotificationType.Fail));
-            return false;
-        }
-
-        await db.Boards.Where(x => x.Id == board.Id).ExecuteDeleteAsync();
-        return true;
-    }
+    private async Task<bool> DeleteProjectAsync(Project project) =>
+        await MainLayout.ReportOrReloadAsync(await _projectService.DeleteAsync(project.Id, _user.Id), HandleUpdate);
 
     private async Task<IEnumerable<Project>> LoadProjectsAsync()
     {

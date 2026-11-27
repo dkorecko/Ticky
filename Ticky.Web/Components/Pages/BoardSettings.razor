@@ -1,6 +1,8 @@
 @page "/boards/settings/{Id:int}"
-@using System.Reflection
 @inject IDbContextFactory<DataContext> _dbContextFactory
+@inject BoardService _boardService
+@inject CardService _cardService
+@inject LabelService _labelService
 @inject ILogger<BoardSettings> _logger
 @inject NavigationManager _navigationManager
 @inject IJSRuntime _js
@@ -10,7 +12,7 @@
 <EditLabelModal @ref="_editLabelModal" OnSubmit="() => RunNotification(typeof(Label), OperationType.Edited)" />
 <EditCardModal @ref="_editCardModal" OnSubmit="HandleUpdate" />
 <DeleteConfirmationDialog T="Label" @ref="_deleteLabelModal" DeleteHandler="DeleteLabelAsync" OnConfirmed="HandleUpdate"/>
-<DeleteConfirmationDialog T="Card" @ref="_deleteCardModal" OnConfirmed="HandleUpdate" />
+<DeleteConfirmationDialog T="Card" @ref="_deleteCardModal" DeleteHandler="DeleteCardAsync" OnConfirmed="HandleUpdate" />
 
 @if (_board is not null)
 {
@@ -59,7 +61,7 @@
                         </div>
 
                         <label class="flex flex-row items-center gap-2 font-semibold">
-                            <input type="checkbox" class="toggle" checked=@_board.DisableSortingAnimations @onchange="(e) => OnSettingChanged(e, x => x.DisableSortingAnimations)">
+                            <input type="checkbox" class="toggle" checked=@_board.DisableSortingAnimations @onchange="(e) => OnSettingChanged(e, (changes, value) => changes with { DisableSortingAnimations = value })">
                             Disable
                         </label>
                     </div>
@@ -259,28 +261,15 @@
             .AsNoTracking()
             .ToListAsync();
 
-    private async void OnSettingChanged(ChangeEventArgs e, Expression<Func<Board, bool>> setter)
+    private async Task OnSettingChanged(ChangeEventArgs e, Func<BoardService.BoardChanges, bool, BoardService.BoardChanges> setting)
     {
         ArgumentNullException.ThrowIfNull(_board);
 
-        if (e.Value is not bool val)
+        if (e.Value is not bool value)
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-
-        if (!await CheckAdminAsync(db))
+        if (!await CheckResultAsync(await _boardService.UpdateAsync(_board.Id, _user.Id, setting(new(), value))))
             return;
-
-        var board = await db.Boards.FirstOrDefaultAsync(x => x.Id.Equals(_board.Id));
-
-        if (board is null)
-            return;
-
-        if (setter.Body is MemberExpression memberExpression && memberExpression.Member is PropertyInfo propertyInfo && propertyInfo.PropertyType == typeof(bool))
-            propertyInfo.SetValue(board, val);
-        else throw new Exception("Invalid property provided.");
-
-        await db.SaveChangesAsync();
 
         await RunNotification(typeof(BoardSettings), OperationType.Edited);
     }
@@ -294,21 +283,42 @@
         if (await db.IsBoardAdminAsync(Id, _user))
             return true;
 
-        MainLayout.RunNotification(new("Only board admins can change the board settings.", NotificationType.Fail));
-        _navigationManager.NavigateTo($"/boards/{Id}");
+        LeaveSettings();
         return false;
     }
 
-    private async Task<bool> DeleteLabelAsync(Label label)
+    /// <summary>
+    /// Whether a change went through. If it didn't, tells the user why: if they're no longer an admin, sends them back
+    /// to the board, and if what they changed is gone, like a label deleted in another tab, loads the page again.
+    /// </summary>
+    private async Task<bool> CheckResultAsync(IOperationResult result)
     {
-        using var db = _dbContextFactory.CreateDbContext();
-
-        if (!await CheckAdminAsync(db))
+        if (result.Status == OperationStatus.Forbidden)
+        {
+            LeaveSettings();
             return false;
+        }
 
-        await db.Labels.Where(x => x.Id.Equals(label.Id) && x.BoardId.Equals(Id)).ExecuteDeleteAsync();
-        return true;
+        if (MainLayout.Report(result))
+            return true;
+
+        if (result.Status == OperationStatus.NotFound)
+            await HandleUpdate();
+
+        return false;
     }
+
+    private void LeaveSettings()
+    {
+        MainLayout.RunNotification(new("Only board admins can change the board settings.", NotificationType.Fail));
+        _navigationManager.NavigateTo($"/boards/{Id}");
+    }
+
+    private async Task<bool> DeleteLabelAsync(Label label) =>
+        await CheckResultAsync(await _labelService.DeleteAsync(label.Id, _user.Id));
+
+    private async Task<bool> DeleteCardAsync(Card card) =>
+        await CheckResultAsync(await _cardService.DeleteAsync(card.Id, _user.Id));
 
     private async Task ExportBoard()
     {

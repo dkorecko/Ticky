@@ -22,6 +22,9 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
+    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+    private MainLayout _mainLayout { get; set; } = default!;
+
     [Parameter]
     public EventCallback UpdateCard { get; set; }
 
@@ -44,7 +47,8 @@
         if (_card is null)
             return;
 
-        await _cardService.AddTimeRecordAsync(_card.Id, _user.Id, _timeRecordModel.Time.ConvertToTimeSpan());
+        if (!await _mainLayout.ReportOrCloseAsync(await _cardService.AddTimeRecordAsync(_card.Id, _user.Id, _timeRecordModel.Time.ConvertToTimeSpan()), () => _modalRef?.CloseAsync() ?? Task.CompletedTask))
+            return;
 
         StateHasChanged();
         await UpdateCard.InvokeAsync();

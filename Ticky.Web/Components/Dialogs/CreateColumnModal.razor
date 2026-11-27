@@ -1,5 +1,5 @@
 ﻿@inherits AbstractModal
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject ColumnService _columnService
 
 <Modal @ref="Modal" Title="New column" OnSubmitAttempted="OnSubmitAttempted">
     <EditForm class="form" EditContext="_editContext">
@@ -42,9 +42,6 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
-    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
-    private MainLayout _mainLayout { get; set; } = default!;
-
     [Parameter]
     public EventCallback OnSubmit { get; set; }
 
@@ -82,25 +79,15 @@
         if (!_editContext.Validate())
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-
-        // Only admins see the option, but the role may have changed since the dialog opened.
-        if (!await db.IsBoardAdminAsync(_boardId, _user))
+        var result = await _columnService.CreateAsync(_boardId, _user.Id, new(_column.Name)
         {
-            _mainLayout.RunNotification(new("Only board admins can add columns.", NotificationType.Fail));
-            await Modal.Close();
+            Finished = _column.Finished,
+            MaxCards = _column.MaxCards,
+            NewCardPlacement = _column.NewCardPlacement,
+        });
+
+        if (!await SucceededAsync(result))
             return;
-        }
-
-        var board = await db.Boards.Include(x => x.Columns).FirstOrDefaultAsync(x => x.Id.Equals(_boardId));
-
-        if (board is not null)
-        {
-            _column.Index = board.Columns.GetNextIndex();
-
-            board.Columns.Add(_column);
-            await db.SaveChangesAsync();
-        }
 
         await Modal.Close();
         await OnSubmit.InvokeAsync();

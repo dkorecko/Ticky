@@ -1,7 +1,11 @@
 namespace Ticky.Internal.Services;
 
+/// <summary>Finds cards on every board the user can open, by name or key (see <see cref="CardQueryHelper.Search"/>).</summary>
 public class SearchService
 {
+    /// <summary>How many results the search box shows.</summary>
+    public const int DEFAULT_LIMIT = 5;
+
     private readonly IDbContextFactory<DataContext> _dbContextFactory;
 
     public SearchService(IDbContextFactory<DataContext> dbContextFactory)
@@ -9,9 +13,10 @@ public class SearchService
         _dbContextFactory = dbContextFactory;
     }
 
+    /// <summary>The best matches, with their column, board and project loaded for showing where they are.</summary>
     public async Task<List<Card>> SearchAsync(
         string? query,
-        User user,
+        int userId,
         CancellationToken cancellationToken = default
     )
     {
@@ -20,24 +25,14 @@ public class SearchService
 
         using var db = _dbContextFactory.CreateDbContext();
 
-        return await db
-            .Cards.Include(x => x.Column)
-            .ThenInclude(x => x.Board)
-            .ThenInclude(x => x.Project)
-            .ThenInclude(x => x.Memberships)
+        return await db.Cards
+            .AccessibleBy(userId)
+            .Search(query)
             .Include(x => x.Column)
-            .ThenInclude(x => x.Board)
-            .ThenInclude(x => x.Memberships)
-            .Where(x =>
-                x.Column.Board.Project.Memberships.Any(membership =>
-                    membership.UserId.Equals(user.Id)
-                ) || x.Column.Board.Memberships.Any(membership => membership.UserId.Equals(user.Id))
-            )
-            .Where(x =>
-                x.Name.Contains(query) || (x.Column.Board.Code + "-" + x.Number).Contains(query)
-            )
-            .Take(5)
+                .ThenInclude(x => x.Board)
+                    .ThenInclude(x => x.Project)
+            .Take(DEFAULT_LIMIT)
             .AsNoTracking()
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 }

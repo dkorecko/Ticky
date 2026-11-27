@@ -1,5 +1,5 @@
 @inherits AbstractModal
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject ProjectService _projectService
 
 <Modal @ref="Modal" Title="New project" OnSubmitAttempted="OnSubmitAttempted">
     <EditForm class="form" EditContext="_editContext">
@@ -44,22 +44,8 @@
         if (!_editContext.Validate())
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-        var user = await db.Users.FirstOrDefaultAsync(x => x.Id.Equals(_user.Id));
-
-        if (user is not null)
-        {
-            var membership = new ProjectMembership
-            {
-                IsAdmin = true,
-                ProjectId = _project.Id,
-                UserId = user.Id,
-                AddedAt = DateTime.Now
-            };
-            _project.Memberships.Add(membership);
-            db.Projects.Add(_project);
-            await db.SaveChangesAsync();
-        }
+        if (!await SucceededAsync(await _projectService.CreateAsync(_user.Id, _project.Name)))
+            return;
 
         await Modal.Close();
         await OnSubmit.InvokeAsync();

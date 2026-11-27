@@ -1,0 +1,193 @@
+@inherits AbstractModal
+@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject MembershipService _membershipService
+
+@* The members of a board or of a project, for its admins to add, promote and remove. A board's dialog also lists the
+   project's members, who can open the board too. *@
+<Modal @ref="Modal" Title=@($"Edit memberships for {(_boardId is null ? "project" : "board")} {_board?.Name ?? _project?.Name}") DisableButtons="true" EnableTitle="true">
+    @if (_project is null || (_boardId is not null && _board is null))
+    {
+        <Spinner/>
+    } else
+    {
+        <div class="form">
+            <div class="grid grid-cols-10 gap-2">
+                <div class="col-span-9">
+                    <input class="input-field" type="text"
+                           placeholder="Enter e-mail address" @oninput="OnInviteTextChanged" @ref="FocusElement" />
+                </div>
+                <button class="btn btn-purple" @onclick="AddAccess">Add</button>
+            </div>
+
+            <div class="flex flex-col">
+                @{
+                    var i = 0;
+                }
+                @foreach (var membership in Sorted(Editable))
+                {
+                    string avatarId = $"member_avatar_{i}";
+                    bool isSelf = membership.UserId.Equals(_user.Id);
+                    <div class="flex flex-row items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-text/[0.04] dark:hover:bg-textDark/[0.05]">
+                        <div id="@avatarId" @onclick="() => MainLayout.UserInfoModal?.Open(avatarId, membership.UserId)" class="avatar shrink-0 cursor-pointer" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@membership.User.ProfilePictureFileName');"></div>
+                        <span class="min-w-0 flex-1 truncate font-medium">@membership.User.DisplayName @(isSelf ? "(you)" : string.Empty)</span>
+                        <Dropdown Disabled="@isSelf" Actions='new() {
+                            { "Admin", async () => await ChangeAdmin(membership.UserId, true)},
+                            { "Member", async () => await ChangeAdmin(membership.UserId, false)}
+                        }'>
+                            <div class='role-select @(isSelf ? "role-select-disabled" : string.Empty)'>
+                                @(membership.IsAdmin ? "Admin" : "Member")
+                                <span class="material-symbols-rounded !text-lg" title="Change role">keyboard_arrow_down</span>
+                            </div>
+                        </Dropdown>
+                        <button type="button" disabled="@isSelf" @onclick="() => RemoveUser(membership.UserId)" class='material-symbols-rounded icon-button !text-lg hover:!text-red-button @(isSelf ? "disabled-icon" : string.Empty)' title="Remove member">delete</button>
+                    </div>
+
+                    i++;
+                }
+            </div>
+
+            @if (_board is not null)
+            {
+                <span class="mt-2 px-2 text-2xs font-medium tracking-wide text-subtext uppercase dark:text-subtextDark">Project members</span>
+                <div class="flex flex-col">
+                    @{
+                        i = 0;
+                    }
+                    @foreach (var membership in Sorted(_project.Memberships))
+                    {
+                        string avatarId = $"project_member_avatar_{i}";
+                        <div class="flex flex-row items-center gap-3 rounded-lg px-2 py-2 text-sm">
+                            <div id="@avatarId" @onclick="() => MainLayout.UserInfoModal?.Open(avatarId, membership.UserId)" class="avatar shrink-0 cursor-pointer" style="background-image: url('@Constants.ACCESS_UPLOADED_IMAGES_PATH/@membership.User.ProfilePictureFileName');"></div>
+                            <span class="min-w-0 flex-1 truncate font-medium">@membership.User.DisplayName @(membership.UserId.Equals(_user.Id) ? "(you)" : string.Empty)</span>
+                            <div class="role-select role-select-disabled">
+                                @(membership.IsAdmin ? "Admin" : "Member")
+                                <span class="material-symbols-rounded !text-lg">keyboard_arrow_down</span>
+                            </div>
+                            <span class="material-symbols-rounded icon-button disabled-icon !text-lg">delete</span>
+                        </div>
+
+                        i++;
+                    }
+                </div>
+            }
+        </div>
+    }
+</Modal>
+
+@code {
+    [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
+    private User _user { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    /// <summary>The board whose members the dialog changes, or null when it changes the project's.</summary>
+    private int? _boardId;
+    private int _projectId;
+    private Board? _board;
+    private Project? _project;
+    private string _inviteText = string.Empty;
+
+    /// <summary>The memberships the dialog changes: the board's, or the project's.</summary>
+    private IEnumerable<IMembership> Editable => _board is not null ? _board.Memberships : _project!.Memberships;
+
+    private static IEnumerable<IMembership> Sorted(IEnumerable<IMembership> memberships) =>
+        memberships.OrderByDescending(x => x.IsAdmin).ThenBy(x => x.AddedAt);
+
+    public async void OpenForBoard(int boardId) => await OpenAsync(boardId, 0);
+
+    public async void OpenForProject(int projectId) => await OpenAsync(null, projectId);
+
+    private async Task OpenAsync(int? boardId, int projectId)
+    {
+        (_boardId, _projectId, _board, _project) = (boardId, projectId, null, null);
+
+        if (!await LoadAsync())
+            return;
+
+        StateHasChanged();
+        await ShowAsync();
+    }
+
+    /// <summary>
+    /// Loads the members as they are now. False if the board or project is gone, or the user can no longer open it.
+    /// </summary>
+    private async Task<bool> LoadAsync()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+
+        if (_boardId is { } boardId)
+        {
+            _board = await db.Boards
+                .AccessibleBy(_user.Id)
+                .AsNoTracking()
+                .Include(x => x.Memberships)
+                    .ThenInclude(x => x.User)
+                .FirstOrDefaultAsync(x => x.Id == boardId);
+
+            if (_board is null)
+                return false;
+
+            _projectId = _board.ProjectId;
+        }
+
+        var projects = db.Projects.AsNoTracking();
+
+        // A board's dialog shows the project's members to everyone on the board; a project's is for its members.
+        if (_boardId is null)
+            projects = projects.Where(x => x.Memberships.Any(m => m.UserId == _user.Id));
+
+        _project = await projects
+            .Include(x => x.Memberships)
+                .ThenInclude(x => x.User)
+            .FirstOrDefaultAsync(x => x.Id == _projectId);
+
+        return _project is not null;
+    }
+
+    /// <summary>
+    /// Shows the outcome of a change, and the members as they are now, also after a refused change: another admin may
+    /// have changed them meanwhile, e.g. removed the member that was clicked. The dialog closes if the user may no longer
+    /// manage the members, or the board or project is gone.
+    /// </summary>
+    private async Task AfterChangeAsync(IOperationResult result)
+    {
+        MainLayout.Report(result);
+
+        if (result.Status == OperationStatus.Forbidden || !await LoadAsync())
+        {
+            if (Modal is not null)
+                await Modal.Close();
+
+            return;
+        }
+
+        StateHasChanged();
+
+        if (result.Succeeded)
+            await OnSubmit.InvokeAsync();
+    }
+
+    private void OnInviteTextChanged(ChangeEventArgs e)
+    {
+        _inviteText = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private async Task AddAccess()
+    {
+        if (_boardId is { } boardId)
+            await AfterChangeAsync(await _membershipService.AddBoardMemberAsync(boardId, _user.Id, _inviteText));
+        else
+            await AfterChangeAsync(await _membershipService.AddProjectMemberAsync(_projectId, _user.Id, _inviteText));
+    }
+
+    private async Task ChangeAdmin(int memberId, bool value) =>
+        await AfterChangeAsync(_boardId is { } boardId
+            ? await _membershipService.SetBoardAdminAsync(boardId, _user.Id, memberId, value)
+            : await _membershipService.SetProjectAdminAsync(_projectId, _user.Id, memberId, value));
+
+    private async Task RemoveUser(int memberId) =>
+        await AfterChangeAsync(_boardId is { } boardId
+            ? await _membershipService.RemoveBoardMemberAsync(boardId, _user.Id, memberId)
+            : await _membershipService.RemoveProjectMemberAsync(_projectId, _user.Id, memberId));
+}

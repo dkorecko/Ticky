@@ -1,4 +1,3 @@
-@inject IDbContextFactory<DataContext> _dbContextFactory
 @typeparam T where T : class, IDbEntry, IDeletable
 
 <Modal @ref=_dialog OnSubmitAttempted="HandleSubmit" RedSubmit=true SubmitButtonText="Delete" Title=@($"Delete {_entityName} {_obj?.Name}")>
@@ -25,24 +24,22 @@
     public EventCallback OnConfirmed { get; set; } = default!;
 
     /// <summary>
-    /// Deletes the object in place of the default delete, e.g. to check rules first. Returns whether it was deleted;
+    /// Deletes the object, through the service that checks whether the user may. Returns whether it was deleted;
     /// when it wasn't, the handler tells the user why.
     /// </summary>
-    [Parameter]
-    public Func<T, Task<bool>>? DeleteHandler { get; set; }
+    [Parameter, EditorRequired]
+    public Func<T, Task<bool>> DeleteHandler { get; set; } = default!;
 
     private string _entityName = typeof(T).Name.ToFriendlyName().ToLower();
     private T? _obj;
     private Modal? _dialog;
-    private Func<Task>? _onSubmitDelegate { get; set; } = default!;
 
-    public async Task OpenDialog(T obj, Func<Task>? onSubmitDelegate = null)
+    public async Task OpenDialog(T obj)
     {
         if (_dialog is null)
             return;
 
         _obj = obj;
-        _onSubmitDelegate = onSubmitDelegate;
         StateHasChanged();
 
         if (_user.InstantDelete)
@@ -59,23 +56,11 @@
         if (_dialog is null || _obj is null)
             return;
 
-        if (DeleteHandler is not null)
+        if (!await DeleteHandler(_obj))
         {
-            if (!await DeleteHandler(_obj))
-            {
-                await _dialog.Close();
-                return;
-            }
+            await _dialog.Close();
+            return;
         }
-        else
-        {
-            using var db = _dbContextFactory.CreateDbContext();
-
-            await db.Set<T>().Where(x => x.Id.Equals(_obj.Id)).ExecuteDeleteAsync();
-        }
-
-        if (_onSubmitDelegate is not null)
-            await _onSubmitDelegate.Invoke();
 
         MainLayout.RunNotification(new Notification($"{typeof(T).Name.ToFriendlyName()} deleted successfully."));
         await OnConfirmed.InvokeAsync();

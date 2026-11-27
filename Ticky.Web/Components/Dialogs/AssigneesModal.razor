@@ -39,6 +39,8 @@
         _modalRef?.Open(triggerElement);
     }
 
+    private bool IsAssigned(User member) => _assignable?.Assignees.Any(x => x.Id == member.Id) == true;
+
     public async Task SwitchMember(User member)
     {
         if (_assignable is null)
@@ -46,8 +48,8 @@
 
         var assignees = _assignable switch
         {
-            Card card => await _cardService.ToggleAssigneeAsync(card.Id, _user.Id, member.Id),
-            Subtask subtask => await _cardService.ToggleSubtaskAssigneeAsync(subtask.Id, _user.Id, member.Id),
+            Card card => (await _cardService.SetAssigneeAsync(card.Id, _user.Id, member.Id, !IsAssigned(member))).Value,
+            Subtask subtask => (await _cardService.SetSubtaskAssigneeAsync(subtask.CardId, _user.Id, subtask.Id, member.Id, !IsAssigned(member))).Value,
             _ => null
         };
 

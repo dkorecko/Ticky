@@ -175,8 +175,7 @@
     {
         base.OnParametersSet();
 
-        if(Card.RepeatInfo is not null)
-            _nextRepeat = Card.CalculateNextRepeat(DateTime.Now).ToReadableStringWithTime();
+        _nextRepeat = Card.RepeatInfo?.GetNextRepeat()?.ToReadableStringWithTime();
     }
 
     private bool IsAssignedToMe => Card.Assignees.Any(x => x.Id == _user.Id);
@@ -185,24 +184,14 @@
 
     private async Task ToggleSelfAssign()
     {
-        if (IsAssignedToMe)
-            await _cardService.LeaveAsync(Card.Id, _user.Id);
-        else
-            await _cardService.JoinAsync(Card.Id, _user.Id);
-
+        await _cardService.SetAssigneeAsync(Card.Id, _user.Id, _user.Id, !IsAssignedToMe);
         await OnCardUpdated.InvokeAsync();
     }
 
     private async Task ToggleTimer()
     {
-        if (RunningTimer is { } timer)
-        {
-            // EndTimerAsync doesn't check access itself.
-            if (!await _cardService.CanAccessCardAsync(Card.Id, _user.Id))
-                return;
-
-            await _cardService.EndTimerAsync(Card.Id, timer.Id);
-        }
+        if (RunningTimer is not null)
+            await _cardService.StopTimerAsync(Card.Id, _user.Id);
         else
             await _cardService.StartTimerAsync(Card.Id, _user.Id);
 
@@ -211,14 +200,10 @@
 
     private async Task ChangeFlaggedStatus()
     {
-        // SetFlaggedAsync doesn't check access itself.
-        if (!await _cardService.CanAccessCardAsync(Card.Id, _user.Id))
-            return;
-
         var flagged = !Card.Flagged;
 
-        await _cardService.SetFlaggedAsync(Card.Id, flagged);
-        Card.Flagged = flagged;
+        if ((await _cardService.SetFlaggedAsync(Card.Id, _user.Id, flagged)).Succeeded)
+            Card.Flagged = flagged;
 
         StateHasChanged();
         await OnCardUpdated.InvokeAsync();

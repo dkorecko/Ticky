@@ -86,7 +86,7 @@
         if (!_editContext.Validate())
             return;
 
-        _cardError = await _cardService.LinkCardsAsync(_card.Id, _linkingCard.Id, _user.Id, _linkCardsModel.Text);
+        _cardError = (await _cardService.LinkCardsAsync(_card.Id, _user.Id, _linkingCard.Id, _linkCardsModel.Text)).Message;
 
         if (_cardError is not null)
             return;

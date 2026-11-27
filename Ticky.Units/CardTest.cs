@@ -25,7 +25,7 @@ public class CardTest
     }
 
     [Test]
-    public void CalculateNextRepeat_Daily_SameDay()
+    public void GetNextRepeat_Daily_SameDay()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
         var nextRepeat = new DateTime(2025, 1, 1, 15, 0, 0);
@@ -38,11 +38,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_Daily_NextDay()
+    public void GetNextRepeat_Daily_NextDay()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
         var nextRepeat = new DateTime(2025, 1, 2, 9, 0, 0);
@@ -55,11 +55,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_WeekDays_SameDay()
+    public void GetNextRepeat_WeekDays_SameDay()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 9, 0, 0);
         var nextRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
@@ -73,11 +73,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_WeekDays_NextDay()
+    public void GetNextRepeat_WeekDays_NextDay()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
         var nextRepeat = new DateTime(2025, 1, 6, 9, 0, 0);
@@ -91,11 +91,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_MonthDayNumber_SameDay()
+    public void GetNextRepeat_MonthDayNumber_SameDay()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 9, 0, 0);
         var nextRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
@@ -109,11 +109,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_MonthDayNumber_NextDay()
+    public void GetNextRepeat_MonthDayNumber_NextDay()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
         var nextRepeat = new DateTime(2025, 1, 29, 9, 0, 0);
@@ -127,11 +127,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_EveryXthDay_TimeBefore()
+    public void GetNextRepeat_EveryXthDay_TimeBefore()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
         var nextRepeat = new DateTime(2025, 1, 3, 9, 0, 0);
@@ -145,11 +145,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_EveryXthWeek_TimeBefore()
+    public void GetNextRepeat_EveryXthWeek_TimeBefore()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
         var nextRepeat = new DateTime(2025, 1, 15, 9, 0, 0);
@@ -163,11 +163,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_EveryXthMonth_TimeBefore()
+    public void GetNextRepeat_EveryXthMonth_TimeBefore()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
         var nextRepeat = new DateTime(2025, 3, 1, 9, 0, 0);
@@ -181,11 +181,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_EveryXthYear_TimeBefore()
+    public void GetNextRepeat_EveryXthYear_TimeBefore()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
         var nextRepeat = new DateTime(2026, 1, 1, 9, 0, 0);
@@ -199,11 +199,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_EveryXthDay_TimeAfter()
+    public void GetNextRepeat_EveryXthDay_TimeAfter()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
         var nextRepeat = new DateTime(2025, 1, 3, 13, 0, 0);
@@ -217,11 +217,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_EveryXthWeek_TimeAfter()
+    public void GetNextRepeat_EveryXthWeek_TimeAfter()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
         var nextRepeat = new DateTime(2025, 1, 15, 13, 0, 0);
@@ -235,11 +235,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_EveryXthMonth_TimeAfter()
+    public void GetNextRepeat_EveryXthMonth_TimeAfter()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
         var nextRepeat = new DateTime(2025, 3, 1, 13, 0, 0);
@@ -253,11 +253,11 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
     }
 
     [Test]
-    public void CalculateNextRepeat_EveryXthYear_TimeAfter()
+    public void GetNextRepeat_EveryXthYear_TimeAfter()
     {
         var lastRepeat = new DateTime(2025, 1, 1, 11, 0, 0);
         var nextRepeat = new DateTime(2026, 1, 1, 13, 0, 0);
@@ -271,6 +271,44 @@ public class CardTest
             CardPlacement = CardPlacement.Top
         };
 
-        Assert.That(_card!.CalculateNextRepeat(lastRepeat), Is.EqualTo(nextRepeat));
+        Assert.That(_card!.RepeatInfo!.GetNextRepeat(), Is.EqualTo(nextRepeat));
+    }
+
+    // Stored schedules that no date matches (a trailing newline once passed validation) or that would overflow: the
+    // search for the next date must give up instead of looping forever, which hung the repeat job and the board.
+    [TestCase(RepeatType.WeekDays, "Sun\n", null)]
+    [TestCase(RepeatType.WeekDays, "Funday", null)]
+    [TestCase(RepeatType.MonthDayNumber, "32", null)]
+    [TestCase(RepeatType.MonthDayNumber, null, null)]
+    [TestCase(RepeatType.EveryXthDay, null, 0)]
+    [TestCase(RepeatType.EveryXthYear, null, 1000)]
+    public void GetNextRepeat_InvalidStoredSchedule_Null(RepeatType type, string? selected, int? number)
+    {
+        _card!.RepeatInfo = new RepeatInfo
+        {
+            Type = type,
+            Selected = selected,
+            Number = number,
+            LastRepeat = new DateTime(2025, 1, 1),
+            Time = TimeOnly.MinValue,
+            CardPlacement = CardPlacement.Top
+        };
+
+        Assert.That(_card.RepeatInfo.GetNextRepeat(), Is.Null);
+    }
+
+    [Test]
+    public void GetNextRepeat_StartNearTheEndOfTime_Null()
+    {
+        _card!.RepeatInfo = new RepeatInfo
+        {
+            Type = RepeatType.EveryXthYear,
+            Number = 999,
+            LastRepeat = new DateTime(9999, 12, 31),
+            Time = TimeOnly.MinValue,
+            CardPlacement = CardPlacement.Top
+        };
+
+        Assert.That(_card.RepeatInfo.GetNextRepeat(), Is.Null);
     }
 }

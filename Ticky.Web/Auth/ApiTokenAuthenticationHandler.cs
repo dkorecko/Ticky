@@ -33,16 +33,7 @@ public class ApiTokenAuthenticationHandler
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        if (!Request.Headers.TryGetValue("Authorization", out var header))
-            return AuthenticateResult.NoResult();
-
-        var value = header.ToString();
-        const string prefix = BearerScheme + " ";
-
-        if (!value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            return AuthenticateResult.NoResult();
-
-        var token = value[prefix.Length..].Trim();
+        var token = ReadToken();
 
         if (string.IsNullOrEmpty(token))
             return AuthenticateResult.NoResult();
@@ -70,6 +61,24 @@ public class ApiTokenAuthenticationHandler
         var ticket = new AuthenticationTicket(principal, Scheme.Name);
 
         return AuthenticateResult.Success(ticket);
+    }
+
+    /// <summary>
+    /// The token from the <c>Authorization: Bearer</c> header. Connections to the live-update hub may send it as the
+    /// <c>access_token</c> query parameter instead, as SignalR clients do where they can't set headers.
+    /// </summary>
+    private string? ReadToken()
+    {
+        var header = Request.Headers.Authorization.ToString();
+        const string prefix = BearerScheme + " ";
+
+        if (header.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            return header[prefix.Length..].Trim();
+
+        if (Request.Path.StartsWithSegments(Constants.Hubs.UPDATE_HUB))
+            return Request.Query[Constants.Api.HubTokenParameter].ToString().Trim();
+
+        return null;
     }
 
     /// <summary>Tells clients a 401 wants a bearer token, as HTTP expects of a 401.</summary>

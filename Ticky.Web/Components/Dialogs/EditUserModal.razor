@@ -76,9 +76,6 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
-    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
-    private MainLayout MainLayout { get; set; } = default!;
-
     /// <summary>Runs after a save that changed something.</summary>
     [Parameter]
     public EventCallback OnSubmit { get; set; }

@@ -64,8 +64,8 @@
 			await _js.InvokeVoidAsync("openDropDownOnElementId", _element, _elementId);
 	}
 
-	public async void Close() 
-	{
-		await _js.InvokeVoidAsync("closeDropdowns");
-	}
+	public async void Close() => await CloseAsync();
+
+	/// <summary>Like <see cref="Close"/>, but can be awaited.</summary>
+	public async Task CloseAsync() => await _js.InvokeVoidAsync("closeDropdowns");
 }

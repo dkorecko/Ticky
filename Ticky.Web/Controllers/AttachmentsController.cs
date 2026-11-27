@@ -1,118 +1,51 @@
 using Microsoft.AspNetCore.Authorization;
+using Ticky.Web.Helpers;
 
 namespace Ticky.Web.Controllers;
 
+/// <summary>
+/// Attachment files for the web UI: downloads, image previews, and uploads pasted into the card dialog. Every request
+/// checks that the signed-in user can open the attachment's card, so a link stops working for someone removed from
+/// the board. The public API has its own endpoints (see <c>CardAttachmentsController</c>).
+/// </summary>
 [Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class AttachmentsController : ControllerBase
 {
-    private readonly IDbContextFactory<DataContext> _dbContextFactory;
-    private readonly CardService _cardService;
+    private static readonly string[] ForbiddenFileNameParts = ["..", "/", "\\", "\n", "\r"];
+
+    private readonly AttachmentService _attachmentService;
     private readonly ILogger<AttachmentsController> _logger;
 
-    public AttachmentsController(
-        IDbContextFactory<DataContext> dbContextFactory,
-        CardService cardService,
-        ILogger<AttachmentsController> logger
-    )
+    public AttachmentsController(AttachmentService attachmentService, ILogger<AttachmentsController> logger)
     {
-        _dbContextFactory = dbContextFactory;
-        _cardService = cardService;
+        _attachmentService = attachmentService;
         _logger = logger;
     }
 
     [HttpGet("download/{*fileName}")]
     public async Task<IActionResult> Download(string fileName)
     {
-        if (string.IsNullOrWhiteSpace(fileName))
-            return BadRequest();
+        var stored = await FindAsync(fileName);
 
-        var decodedFileName = WebUtility.UrlDecode(fileName);
-        string[] forbiddenChars = ["..", "/", "\\", "\n", "\r"];
+        if (stored is null)
+            return NotFound();
 
-        if (forbiddenChars.Any(decodedFileName.Contains))
-            return BadRequest();
-
-        try
-        {
-            using var db = _dbContextFactory.CreateDbContext();
-            var attachment = await db.Attachments.FirstOrDefaultAsync(x =>
-                x.FileName == decodedFileName
-            );
-
-            // Same response as a missing file for someone who can't see the card, so the link doesn't reveal
-            // that the attachment exists.
-            if (attachment is null || !await CanAccessCardAsync(attachment.CardId))
-                return NotFound();
-
-            var absolutePath = Path.GetFullPath(
-                Path.Combine(Constants.SAVE_UPLOADED_FILES_PATH, attachment.FileName)
-            );
-
-            if (!System.IO.File.Exists(absolutePath))
-                return NotFound();
-
-            var contentType = "application/octet-stream";
-            Response.Headers.XContentTypeOptions = "nosniff";
-            return PhysicalFile(absolutePath, contentType, attachment.OriginalName);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while downloading an attachment");
-            return StatusCode(StatusCodes.Status500InternalServerError);
-        }
+        Response.Headers.XContentTypeOptions = "nosniff";
+        return PhysicalFile(stored.Path, "application/octet-stream", stored.Attachment.OriginalName);
     }
 
     [HttpGet("preview/{*fileName}")]
     public async Task<IActionResult> Preview(string fileName)
     {
-        if (string.IsNullOrWhiteSpace(fileName))
-            return BadRequest();
+        var stored = await FindAsync(fileName);
 
-        var decodedFileName = WebUtility.UrlDecode(fileName);
-        string[] forbiddenChars = ["..", "/", "\\", "\n", "\r"];
+        if (stored is null || !AttachmentContentTypes.TryGetImageContentType(stored.Attachment, out var contentType))
+            return NotFound();
 
-        if (forbiddenChars.Any(decodedFileName.Contains))
-            return BadRequest();
-
-        try
-        {
-            using var db = _dbContextFactory.CreateDbContext();
-            var attachment = await db.Attachments.FirstOrDefaultAsync(x =>
-                x.FileName == decodedFileName
-            );
-
-            if (
-                attachment is null
-                || !AttachmentHelper.IsImage(attachment)
-                || !await CanAccessCardAsync(attachment.CardId)
-            )
-                return NotFound();
-
-            var absolutePath = Path.GetFullPath(
-                Path.Combine(Constants.SAVE_UPLOADED_FILES_PATH, attachment.FileName)
-            );
-
-            if (!System.IO.File.Exists(absolutePath))
-                return NotFound();
-
-            var contentTypeProvider =
-                new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
-            contentTypeProvider.Mappings[Constants.Attachments.AVIF_FILE_EXTENSION] =
-                Constants.Attachments.AVIF_CONTENT_TYPE;
-
-            if (!contentTypeProvider.TryGetContentType(attachment.OriginalName, out var contentType))
-                return NotFound();
-
-            Response.Headers.XContentTypeOptions = "nosniff";
-            return PhysicalFile(absolutePath, contentType, enableRangeProcessing: true);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while previewing an attachment");
-            return StatusCode(StatusCodes.Status500InternalServerError);
-        }
+        Response.Headers.XContentTypeOptions = "nosniff";
+        return PhysicalFile(stored.Path, contentType, enableRangeProcessing: true);
     }
 
     // A signed-in cookie plus a multipart body is a request any page on a sibling origin can send, so the upload
@@ -122,62 +55,47 @@ public class AttachmentsController : ControllerBase
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Upload([FromForm] IFormFile? file, [FromForm] int cardId)
     {
-        if (User is null)
-            return Unauthorized();
-
         if (file is null)
             return BadRequest("No file");
-
-        if (file.Length > Constants.Limits.MAX_FILE_SIZE)
-            return BadRequest("File too large");
 
         if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId) || userId == 0)
             return Unauthorized();
 
-        // Same response as a missing card, so the endpoint doesn't reveal which card ids exist.
-        if (!await _cardService.CanAccessCardAsync(cardId, userId))
-            return NotFound();
-
-        var folderPath = Constants.SAVE_UPLOADED_FILES_PATH;
-
-        if (!Directory.Exists(folderPath))
-            Directory.CreateDirectory(folderPath);
-
         try
         {
-            var trustedFileName = UploadHelper.CreateStoredFileName(folderPath, file.FileName);
-            var path = Path.Combine(folderPath, trustedFileName);
+            await using var content = file.OpenReadStream();
+            var result = await _attachmentService.AddAsync(cardId, userId, content, file.FileName, file.Length);
 
-            await using (var fs = new FileStream(path, FileMode.Create))
+            // A missing card and one the user can't open look the same, so card ids don't leak.
+            return result.Status switch
             {
-                await file.CopyToAsync(fs);
-            }
-
-            if (!await _cardService.AddAttachmentAsync(cardId, userId, trustedFileName, file.FileName))
-            {
-                System.IO.File.Delete(path);
-                return NotFound();
-            }
-
-            return Ok(new { success = true });
+                OperationStatus.Succeeded => Ok(new { success = true }),
+                OperationStatus.NotFound => NotFound(),
+                _ => BadRequest(result.Message),
+            };
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "An error occurred while uploading an attachment for card {CardId}",
-                cardId
-            );
+            _logger.LogError(ex, "An error occurred while uploading an attachment for card {CardId}", cardId);
 
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
 
-    /// <summary>
-    /// Whether the signed-in user may see the card, i.e. is a member of its board or project. Checked on every
-    /// request, so a link stops working for someone who has since been removed from the board.
-    /// </summary>
-    private async Task<bool> CanAccessCardAsync(int cardId) =>
-        int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId)
-        && await _cardService.CanAccessCardAsync(cardId, userId);
+    /// <summary>The attachment stored under the name in the URL, if the signed-in user can open its card.</summary>
+    private async Task<AttachmentService.StoredFile?> FindAsync(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return null;
+
+        var decodedFileName = WebUtility.UrlDecode(fileName);
+
+        if (ForbiddenFileNameParts.Any(decodedFileName.Contains))
+            return null;
+
+        if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId))
+            return null;
+
+        return await _attachmentService.FindByFileNameAsync(decodedFileName, userId);
+    }
 }

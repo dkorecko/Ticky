@@ -1,5 +1,5 @@
 @inherits AbstractModal
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject BoardService _boardService
 
 <Modal @ref="Modal" Title="New board" OnSubmitAttempted="OnSubmitAttempted">
     <EditForm class="form" EditContext="_editContext">
@@ -33,9 +33,6 @@
 @code {
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
-
-    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
-    private MainLayout _mainLayout { get; set; } = default!;
 
     [Parameter]
     public EventCallback OnSubmit { get; set; }
@@ -80,32 +77,10 @@
         if (!_editContext.Validate())
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
+        var result = await _boardService.CreateAsync(_projectId, _user.Id, new(_board.Name, _board.Description, _board.Code));
 
-        // Only admins see the option, but the role may have changed since the dialog opened.
-        if (!await db.IsProjectAdminAsync(_projectId, _user.Id))
-        {
-            _mainLayout.RunNotification(new("Only project admins can add boards to the project.", NotificationType.Fail));
-            await Modal.Close();
+        if (!await SucceededAsync(result))
             return;
-        }
-
-        var project = await db.Projects.FirstOrDefaultAsync(x => x.Id.Equals(_projectId));
-
-        if (project is not null)
-        {
-            var defaultLabels = new List<Label>
-            {
-                new Label { Name = "Bug", TextColor = Color.White, BackgroundColor = Color.FromArgb(220, 38, 38), BoardId = _board.Id },
-                new Label { Name = "Feature", TextColor = Color.White, BackgroundColor = Color.FromArgb(16, 185, 129), BoardId = _board.Id },
-                new Label { Name = "Enhancement", TextColor = Color.White, BackgroundColor = Color.FromArgb(59, 130, 246), BoardId = _board.Id }
-            };
-
-            _board.Labels.AddRange(defaultLabels);
-
-            project.Boards.Add(_board);
-            await db.SaveChangesAsync();
-        }
 
         await Modal.Close();
         await OnSubmit.InvokeAsync();

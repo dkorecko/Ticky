@@ -1,5 +1,5 @@
 ﻿@inject NavigationManager _navigationManager
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject BoardService _boardService
 
 <EditBoardModal @ref="_editBoardModal" OnSubmit="OnEdit" />
 <CloneBoardModal @ref="_cloneBoardModal" OnCloned="OnEdit" />
@@ -109,32 +109,11 @@
 
     private async Task MakeFavorite(MouseEventArgs e)
     {
-        using var db = _dbContextFactory.CreateDbContext();
+        var favorite = !Board.Favorites.Any(x => x.UserId.Equals(_user.Id));
 
-        var board = await db.Boards
-            .Include(x => x.Favorites)
-            .FirstOrDefaultAsync(x => x.Id.Equals(Board.Id));
-
-        if (board is null)
+        if (!(await _boardService.SetFavoriteAsync(Board.Id, _user.Id, favorite)).Succeeded)
             return;
 
-        var existingFavorite = board.Favorites.FirstOrDefault(x => x.UserId.Equals(_user.Id));
-
-        bool newState = false;
-
-        if (existingFavorite is null)
-        {
-            board.Favorites.Add(new()
-            {
-                UserId = _user.Id,
-                BoardId = board.Id
-            });
-            newState = true;
-        }
-        else
-            board.Favorites.Remove(existingFavorite);
-
-        await db.SaveChangesAsync();
-        await OnFavorite.InvokeAsync(newState);
+        await OnFavorite.InvokeAsync(favorite);
     }
 }

@@ -1,21 +1,28 @@
-using Ticky.Base.Converters;
 using Ticky.Base.Entities.Owned;
-using Ticky.Internal.Helpers;
 
 namespace Ticky.Internal.Services;
 
 /// <summary>
-/// Card edits made from the card detail view and its dialogs. Most of them also write an entry to the card's activity log.
-/// Each method loads only what it changes and does nothing if the card or item no longer exists.
-/// Methods that take a user only act on cards on boards that user may open (see <see cref="BoardAccessHelper"/>), and
-/// treat any other card, or an item of one, as if it did not exist. The ones without a user (<see cref="SetFlaggedAsync"/>,
-/// <see cref="EndTimerAsync"/>) leave that check to the caller.
+/// Everything people do to cards, for both the web UI and the API. Every method checks that the user can open the
+/// card's board (see <see cref="Board.AccessibleBy"/>), so no caller can reach a card by guessing its id. The exception
+/// is <see cref="StopTimerAsync"/>, which only touches the caller's own timer. Most changes
+/// also write an entry to the card's activity log; a change that would leave things as they are does nothing, so the
+/// log only shows real changes.
 /// </summary>
 /// <remarks>
-/// Activities store what happened as data; the text is built when shown (see <see cref="ActivityFormatter"/>).
+/// Items of a card (subtasks, reminders, attachments, time records, links) are addressed by the card and the item's
+/// id together, and an item of another card counts as missing. Activities store what happened as data; the text is
+/// built when shown (see <see cref="ActivityFormatter"/>).
 /// </remarks>
 public class CardService
 {
+    public const string CARD_NOT_FOUND = "The card doesn't exist, or you can't access it.";
+    private const string COLUMN_NOT_FOUND = "The column doesn't exist, or you can't access it.";
+    private const string COLUMN_FULL = "The column is full.";
+    private const string NOT_A_MEMBER = "Only members of the board can be assigned.";
+    private const string NOT_A_BOARD_LABEL = "The label isn't one of the board's labels.";
+    public const string REPEAT_COLUMN_ELSEWHERE = "The target column has to be on this card's board.";
+
     private readonly IDbContextFactory<DataContext> _dbContextFactory;
     private readonly CardNumberingService _cardNumberingService;
 
@@ -28,33 +35,26 @@ public class CardService
         _cardNumberingService = cardNumberingService;
     }
 
-    public enum CreateCardStatus
+    /// <summary>A new card. Only the name is required; the lists hold ids of the board's labels and members.</summary>
+    public record CardDraft(string Name)
     {
-        Created,
-
-        /// <summary>The column doesn't exist, or the user isn't a member of its board or project.</summary>
-        NotFound,
-
-        /// <summary>The column already holds its maximum number of cards.</summary>
-        ColumnFull,
-
-        /// <summary>The name is empty after trimming.</summary>
-        InvalidName
+        public string? Description { get; init; }
+        public CardPriority? Priority { get; init; }
+        public DateTime? Deadline { get; init; }
+        public IReadOnlyCollection<int> LabelIds { get; init; } = [];
+        public IReadOnlyCollection<int> AssigneeIds { get; init; } = [];
     }
 
-    public record CreateCardResult(CreateCardStatus Status, Card? Card = null);
-
     /// <summary>
-    /// Creates a card in <paramref name="columnId"/>, at the top or bottom as the column's placement setting says.
-    /// No activity log entry, as before this method existed.
+    /// Creates a card in the column, at the top or bottom as the column's placement setting says. Creating a card
+    /// isn't written to the activity log, and neither are the values it starts with.
     /// </summary>
-    /// <param name="assignCreator">Also assigns the card to the user, for those who turned on automatic assigning.</param>
-    public async Task<CreateCardResult> CreateCardAsync(int columnId, int userId, string name, bool assignCreator = false)
+    public async Task<OperationResult<Card>> CreateCardAsync(int columnId, int userId, CardDraft draft)
     {
-        name = name?.Trim() ?? string.Empty;
+        var name = draft.Name?.Trim() ?? string.Empty;
 
-        if (name.Length == 0)
-            return new(CreateCardStatus.InvalidName);
+        if (OperationResult.RequireText(name, nameof(CardDraft.Name)) is { } empty)
+            return empty;
 
         using var db = _dbContextFactory.CreateDbContext();
 
@@ -64,41 +64,42 @@ public class CardService
             .FirstOrDefaultAsync(x => x.Id == columnId);
 
         if (column is null)
-            return new(CreateCardStatus.NotFound);
+            return OperationResult.NotFound(COLUMN_NOT_FOUND);
 
-        if (column.MaxCards != 0 && column.Cards.Count >= column.MaxCards)
-            return new(CreateCardStatus.ColumnFull);
+        if (column.IsFull())
+            return OperationResult.Conflict(COLUMN_FULL);
 
-        int newIndex;
+        var labelIds = draft.LabelIds.Distinct().ToList();
+        var labels = await db.Labels.Where(x => x.BoardId == column.BoardId && labelIds.Contains(x.Id)).ToListAsync();
 
-        if (column.NewCardPlacement == CardPlacement.Top)
-        {
-            foreach (var existing in column.Cards)
-                existing.Index++;
-            newIndex = 0;
-        }
-        else
-        {
-            newIndex = IndexHelper.GetNextIndex(column.Cards);
-        }
+        if (labels.Count != labelIds.Count)
+            return OperationResult.Invalid(nameof(CardDraft.LabelIds), "Every label must be one of the board's labels.");
+
+        var assigneeIds = draft.AssigneeIds.Distinct().ToList();
+        var assignees = await db.Users.MembersOf(column.BoardId).Where(x => assigneeIds.Contains(x.Id)).ToListAsync();
+
+        if (assignees.Count != assigneeIds.Count)
+            return OperationResult.Invalid(nameof(CardDraft.AssigneeIds), "Every assignee must be a member of the board.");
 
         var card = new Card
         {
             Name = name,
+            Description = draft.Description ?? string.Empty,
+            Priority = draft.Priority ?? CardPriority.Normal,
+            Deadline = draft.Deadline,
             ColumnId = columnId,
-            Index = newIndex,
+            Index = 0,
             CreatedAt = DateTime.Now,
             Number = await _cardNumberingService.GetNextNumberAsync(column.BoardId),
             CreatedById = userId,
         };
 
-        if (assignCreator)
-            card.Assignees.Add(await db.Users.FirstAsync(x => x.Id == userId));
+        card.Labels.AddRange(labels);
+        card.Assignees.AddRange(assignees);
+        column.Cards.Place(card, column.NewCardPlacement);
 
-        column.Cards.Add(card);
         await db.SaveChangesAsync();
-
-        return new(CreateCardStatus.Created, card);
+        return card;
     }
 
     /// <summary>
@@ -112,18 +113,41 @@ public class CardService
         return await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId);
     }
 
+    /// <summary>Deletes the card with everything on it, and closes the gap it leaves in its column.</summary>
+    public async Task<OperationResult> DeleteAsync(int cardId, int userId)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await db.Cards.AccessibleBy(userId).Include(x => x.Column.Cards).FirstOrDefaultAsync(x => x.Id == cardId);
+
+        if (card is null)
+            return OperationResult.NotFound(CARD_NOT_FOUND);
+
+        db.Cards.Remove(card);
+        card.Column.Cards.Where(x => x != card).ToList().FixIndices();
+
+        await db.SaveChangesAsync();
+        return OperationResult.Success;
+    }
+
     #region Card fields
 
-    public Task RenameAsync(int cardId, int userId, string name) =>
-        UpdateAsync(
+    public Task<OperationResult> RenameAsync(int cardId, int userId, string name)
+    {
+        name = name?.Trim() ?? string.Empty;
+
+        if (OperationResult.RequireText(name, "Name") is { } empty)
+            return Task.FromResult(empty);
+
+        return UpdateAsync(
             cardId,
             userId,
             card => new TitleChangedActivity { OldTitle = card.Name, NewTitle = name },
             card => card.Name = name,
             unchanged: card => card.Name == name
         );
+    }
 
-    public Task UpdateDescriptionAsync(int cardId, int userId, string description) =>
+    public Task<OperationResult> UpdateDescriptionAsync(int cardId, int userId, string description) =>
         UpdateAsync(
             cardId,
             userId,
@@ -132,39 +156,24 @@ public class CardService
             unchanged: card => card.Description == description
         );
 
-    public async Task SetPriorityAsync(int cardId, int userId, CardPriority priority)
-    {
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == cardId);
-
-        if (card is null || card.Priority == priority)
-            return;
-
-        card.Priority = priority;
-        Log(db, cardId, userId, new PriorityChangedActivity { Priority = priority });
-
-        await db.SaveChangesAsync();
-    }
+    public Task<OperationResult> SetPriorityAsync(int cardId, int userId, CardPriority priority) =>
+        UpdateAsync(
+            cardId,
+            userId,
+            _ => new PriorityChangedActivity { Priority = priority },
+            card => card.Priority = priority,
+            unchanged: card => card.Priority == priority
+        );
 
     /// <summary>Flags or unflags the card. Not written to the activity log, as flagging never was.</summary>
-    public async Task SetFlaggedAsync(int cardId, bool flagged)
-    {
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.FirstOrDefaultAsync(x => x.Id == cardId);
-
-        if (card is null || card.Flagged == flagged)
-            return;
-
-        card.Flagged = flagged;
-
-        await db.SaveChangesAsync();
-    }
+    public Task<OperationResult> SetFlaggedAsync(int cardId, int userId, bool flagged) =>
+        UpdateAsync(cardId, userId, activity: null, card => card.Flagged = flagged, unchanged: card => card.Flagged == flagged);
 
     /// <summary>
     /// Sets the deadline and arms its reminder again. Setting the deadline the card already has does nothing, so a
     /// reminder that already went out isn't sent again.
     /// </summary>
-    public Task SetDeadlineAsync(int cardId, int userId, DateTime deadline) =>
+    public Task<OperationResult> SetDeadlineAsync(int cardId, int userId, DateTime deadline) =>
         UpdateAsync(
             cardId,
             userId,
@@ -177,7 +186,7 @@ public class CardService
             unchanged: card => card.Deadline == deadline
         );
 
-    public Task RemoveDeadlineAsync(int cardId, int userId) =>
+    public Task<OperationResult> RemoveDeadlineAsync(int cardId, int userId) =>
         UpdateAsync(
             cardId,
             userId,
@@ -186,138 +195,251 @@ public class CardService
             unchanged: card => card.Deadline is null
         );
 
-    public Task SnoozeAsync(int cardId, int userId, DateTime until) =>
+    /// <summary>Hides the card from the board until the time; then it comes back on its own.</summary>
+    public Task<OperationResult> SnoozeAsync(int cardId, int userId, DateTime until) =>
         UpdateAsync(
             cardId,
             userId,
             _ => new SnoozedActivity { Until = until },
-            card => card.SnoozedUntil = until
+            card => card.SnoozedUntil = until,
+            unchanged: card => card.SnoozedUntil == until
         );
 
-    public Task UnsnoozeAsync(int cardId, int userId) =>
-        UpdateAsync(cardId, userId, _ => new UnsnoozedActivity(), card => card.SnoozedUntil = null);
-
-    /// <summary>
-    /// Makes the card repeat. The copies go to <see cref="RepeatInfo.TargetColumnId"/>, which has to be a column of the
-    /// card's own board. There is always one: the repeat job's fallback to the board's first column only exists for
-    /// repeats saved before this was required.
-    /// </summary>
-    /// <returns>False, and changes nothing, if there is no target column or it isn't on the card's board (0 and unknown ids included).</returns>
-    public async Task<bool> SetRepeatAsync(int cardId, int userId, RepeatInfo repeatInfo)
-    {
-        if (repeatInfo.TargetColumnId is not { } targetColumnId)
-            return false;
-
-        using (var db = _dbContextFactory.CreateDbContext())
-        {
-            var boardId = await db.Cards
-                .AccessibleBy(userId)
-                .Where(x => x.Id == cardId)
-                .Select(x => (int?)x.Column.BoardId)
-                .FirstOrDefaultAsync();
-
-            if (boardId is not null && !await db.Columns.AnyAsync(x => x.Id == targetColumnId && x.BoardId == boardId))
-                return false;
-        }
-
-        await UpdateAsync(
+    public Task<OperationResult> UnsnoozeAsync(int cardId, int userId) =>
+        UpdateAsync(
             cardId,
             userId,
-            _ => new RepeatSetActivity { RepeatType = repeatInfo.Type },
-            card => card.RepeatInfo = repeatInfo
+            _ => new UnsnoozedActivity(),
+            card => card.SnoozedUntil = null,
+            unchanged: card => card.SnoozedUntil is null
         );
 
-        return true;
-    }
-
-    public Task RemoveRepeatAsync(int cardId, int userId) =>
-        UpdateAsync(cardId, userId, _ => new RepeatDisabledActivity(), card => card.RepeatInfo = null);
-
-    /// <summary>Moves the card to the column next to its current one. Use -1 for the previous column, +1 for the next.</summary>
-    public async Task MoveToAdjacentColumnAsync(int cardId, int userId, int offset)
+    /// <summary>
+    /// Makes the card repeat: on the schedule, a copy is created in <see cref="RepeatInfo.TargetColumnId"/>, which has
+    /// to be a column of the card's own board. The repeat job's fallback to the board's first column only exists for
+    /// repeats saved before a target was required.
+    /// </summary>
+    public async Task<OperationResult> SetRepeatAsync(int cardId, int userId, RepeatInfo repeat)
     {
+        if (ValidateRepeat(repeat) is { } invalid)
+            return invalid;
+
         using var db = _dbContextFactory.CreateDbContext();
         var card = await db.Cards.AccessibleBy(userId).Include(x => x.Column).FirstOrDefaultAsync(x => x.Id == cardId);
 
         if (card is null)
-            return;
+            return OperationResult.NotFound(CARD_NOT_FOUND);
 
-        var targetColumn = await db.Columns.FirstOrDefaultAsync(x =>
-            x.BoardId == card.Column.BoardId && x.Index == card.Column.Index + offset
-        );
+        if (repeat.TargetColumnId is not { } targetColumnId)
+            return OperationResult.Invalid(nameof(RepeatInfo.TargetColumnId), "Pick the column the copies go to.");
 
-        if (targetColumn is null)
-            return;
+        if (!await db.Columns.AnyAsync(x => x.Id == targetColumnId && x.BoardId == card.Column.BoardId))
+            return OperationResult.Invalid(nameof(RepeatInfo.TargetColumnId), REPEAT_COLUMN_ELSEWHERE);
 
-        Log(db, cardId, userId, Moved(card.Column, targetColumn));
-        card.Column = targetColumn;
+        card.RepeatInfo = repeat;
+        Log(db, cardId, userId, new RepeatSetActivity { RepeatType = repeat.Type });
 
         await db.SaveChangesAsync();
+        return OperationResult.Success;
     }
 
+    public Task<OperationResult> RemoveRepeatAsync(int cardId, int userId) =>
+        UpdateAsync(
+            cardId,
+            userId,
+            _ => new RepeatDisabledActivity(),
+            card => card.RepeatInfo = null,
+            unchanged: card => card.RepeatInfo is null
+        );
+
+    /// <summary>Checks a repeat's settings (see <see cref="RepeatInfo.Validate"/>), and clears the ones its type doesn't use.</summary>
+    private static OperationResult? ValidateRepeat(RepeatInfo repeat)
+    {
+        if (repeat.Validate() is { } problem)
+            return OperationResult.Invalid(problem.Field, problem.Message);
+
+        if (!Enum.IsDefined(repeat.CardPlacement))
+            return OperationResult.Invalid(nameof(RepeatInfo.CardPlacement), "Unknown card placement.");
+
+        repeat.ClearUnused();
+        return null;
+    }
+
+    #endregion
+
+    #region Moving
+
     /// <summary>
-    /// Moves the card to another column on the same board, placing it before <paramref name="beforeCardId"/> or at the end.
+    /// Moves the card to a column on its board, before <paramref name="beforeCardId"/> or at the end when that is null
+    /// or not in the column. In its own column this reorders it, which isn't written to the activity log.
     /// </summary>
-    /// <returns>False if the card or column no longer exists, or the column is full.</returns>
-    public async Task<bool> MoveToColumnAsync(int cardId, int userId, int targetColumnId, int? beforeCardId)
+    public async Task<OperationResult> MoveAsync(int cardId, int userId, int targetColumnId, int? beforeCardId)
     {
         using var db = _dbContextFactory.CreateDbContext();
         var card = await db.Cards.AccessibleBy(userId).Include(x => x.Column.Cards).FirstOrDefaultAsync(x => x.Id == cardId);
-        var targetColumn = await db.Columns.Include(x => x.Cards).FirstOrDefaultAsync(x => x.Id == targetColumnId);
 
-        if (card is null || targetColumn is null || targetColumn.BoardId != card.Column.BoardId)
-            return false;
-
-        if (targetColumn.Id == card.ColumnId)
-            return true;
-
-        if (targetColumn.MaxCards != 0 && targetColumn.Cards.Count + 1 > targetColumn.MaxCards)
-            return false;
+        if (card is null)
+            return OperationResult.NotFound(CARD_NOT_FOUND);
 
         var oldColumn = card.Column;
+        var targetColumn = targetColumnId == oldColumn.Id
+            ? oldColumn
+            : await db.Columns
+                .Include(x => x.Cards)
+                .FirstOrDefaultAsync(x => x.Id == targetColumnId && x.BoardId == oldColumn.BoardId);
+
+        if (targetColumn is null)
+            return OperationResult.Invalid("TargetColumnId", "The column isn't on the card's board.");
+
+        var beforeCard = targetColumn.Cards.FirstOrDefault(x => x.Id == beforeCardId);
+
+        if (targetColumn == oldColumn)
+        {
+            targetColumn.Cards.MoveBefore(card, beforeCard);
+            await db.SaveChangesAsync();
+            return OperationResult.Success;
+        }
+
+        if (targetColumn.IsFull())
+            return OperationResult.Conflict(COLUMN_FULL);
+
         oldColumn.Cards.Remove(card);
         oldColumn.Cards.FixIndices();
 
-        var targetIndex = targetColumn.Cards.Count != 0 ? targetColumn.Cards.Max(x => x.Index) + 1 : 0;
-        var beforeCard = targetColumn.Cards.FirstOrDefault(x => x.Id == beforeCardId);
-
-        if (beforeCard is not null)
-        {
-            targetIndex = beforeCard.Index;
-
-            foreach (var other in targetColumn.Cards.Where(x => x.Index >= beforeCard.Index))
-                other.Index++;
-        }
-
-        Log(db, cardId, userId, Moved(oldColumn, targetColumn));
+        targetColumn.Cards.MoveBefore(card, beforeCard);
         targetColumn.Cards.Add(card);
         card.Column = targetColumn;
-        card.Index = targetIndex;
-        targetColumn.Cards.FixIndices();
+        Log(db, cardId, userId, Moved(oldColumn, targetColumn));
 
         await db.SaveChangesAsync();
-        return true;
+        return OperationResult.Success;
     }
 
-    /// <summary>Adds the label to the card, or removes it if the card already has it.</summary>
-    /// <returns>The card's labels after the change, or null if the card or label no longer exists.</returns>
-    public async Task<List<Label>?> ToggleLabelAsync(int cardId, int userId, int labelId)
+    /// <summary>Moves the card to the end of the column next to its own. Use -1 for the previous column, +1 for the next.</summary>
+    public async Task<OperationResult> MoveToAdjacentColumnAsync(int cardId, int userId, int offset)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.AccessibleBy(userId).Include(x => x.Labels).FirstOrDefaultAsync(x => x.Id == cardId);
-        var label = await db.Labels.FirstOrDefaultAsync(x => x.Id == labelId);
+        var column = await db.Cards
+            .AccessibleBy(userId)
+            .Where(x => x.Id == cardId)
+            .Select(x => new { x.Column.BoardId, x.Column.Index })
+            .FirstOrDefaultAsync();
 
-        if (card is null || label is null)
-            return null;
+        if (column is null)
+            return OperationResult.NotFound(CARD_NOT_FOUND);
 
-        if (card.Labels.Remove(label))
+        var targetColumnId = await db.Columns
+            .Where(x => x.BoardId == column.BoardId && x.Index == column.Index + offset)
+            .Select(x => (int?)x.Id)
+            .FirstOrDefaultAsync();
+
+        if (targetColumnId is null)
+            return OperationResult.Invalid(nameof(offset), "There is no column there.");
+
+        return await MoveAsync(cardId, userId, targetColumnId.Value, beforeCardId: null);
+    }
+
+    #endregion
+
+    #region Assignees and labels
+
+    /// <summary>
+    /// Assigns the member to the card, or unassigns them. Only the board's members can be assigned, but anyone can be
+    /// unassigned, e.g. after leaving the board.
+    /// </summary>
+    /// <returns>The card's assignees after the change.</returns>
+    public async Task<OperationResult<List<User>>> SetAssigneeAsync(int cardId, int userId, int memberId, bool assigned)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await db.Cards
+            .AccessibleBy(userId)
+            .Include(x => x.Assignees)
+            .Include(x => x.Column)
+            .FirstOrDefaultAsync(x => x.Id == cardId);
+
+        if (card is null)
+            return OperationResult.NotFound(CARD_NOT_FOUND);
+
+        return await SetAssigneeAsync(
+            db, card, card.Column.BoardId, cardId, userId, memberId, assigned,
+            user => new AssigneeAddedActivity { AssigneeId = user.Id, AssigneeName = user.DisplayName },
+            user => new AssigneeRemovedActivity { AssigneeId = user.Id, AssigneeName = user.DisplayName }
+        );
+    }
+
+    /// <summary>
+    /// Assigns the member to a card or subtask, or unassigns them, and logs it with the activity for that. Only the
+    /// board's members can be assigned, but anyone can be unassigned, e.g. after leaving the board.
+    /// </summary>
+    /// <returns>The assignees after the change.</returns>
+    private static async Task<OperationResult<List<User>>> SetAssigneeAsync(
+        DataContext db,
+        IAssignable item,
+        int boardId,
+        int cardId,
+        int userId,
+        int memberId,
+        bool assigned,
+        Func<User, Activity> addedActivity,
+        Func<User, Activity> removedActivity
+    )
+    {
+        var assignee = item.Assignees.FirstOrDefault(x => x.Id == memberId);
+
+        if (assigned == (assignee is not null))
+            return item.Assignees;
+
+        if (assigned)
         {
-            Log(db, cardId, userId, new LabelRemovedActivity { LabelId = label.Id, LabelName = label.Name });
+            assignee = await db.Users.MembersOf(boardId).FirstOrDefaultAsync(x => x.Id == memberId);
+
+            if (assignee is null)
+                return OperationResult.Invalid("UserId", NOT_A_MEMBER);
+
+            item.Assignees.Add(assignee);
+            Log(db, cardId, userId, addedActivity(assignee));
         }
         else
         {
+            item.Assignees.Remove(assignee!);
+            Log(db, cardId, userId, removedActivity(assignee!));
+        }
+
+        await db.SaveChangesAsync();
+        return item.Assignees;
+    }
+
+    /// <summary>Adds one of the board's labels to the card, or removes it.</summary>
+    /// <returns>The card's labels after the change.</returns>
+    public async Task<OperationResult<List<Label>>> SetLabelAsync(int cardId, int userId, int labelId, bool added)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+        var card = await db.Cards
+            .AccessibleBy(userId)
+            .Include(x => x.Labels)
+            .Include(x => x.Column)
+            .FirstOrDefaultAsync(x => x.Id == cardId);
+
+        if (card is null)
+            return OperationResult.NotFound(CARD_NOT_FOUND);
+
+        var label = await db.Labels.FirstOrDefaultAsync(x => x.Id == labelId && x.BoardId == card.Column.BoardId);
+
+        if (label is null)
+            return OperationResult.Invalid("LabelId", NOT_A_BOARD_LABEL);
+
+        if (added == card.Labels.Contains(label))
+            return card.Labels;
+
+        if (added)
+        {
             card.Labels.Add(label);
             Log(db, cardId, userId, new LabelAddedActivity { LabelId = label.Id, LabelName = label.Name });
+        }
+        else
+        {
+            card.Labels.Remove(label);
+            Log(db, cardId, userId, new LabelRemovedActivity { LabelId = label.Id, LabelName = label.Name });
         }
 
         await db.SaveChangesAsync();
@@ -326,81 +448,19 @@ public class CardService
 
     #endregion
 
-    #region Assignees
-
-    public async Task JoinAsync(int cardId, int userId)
-    {
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.AccessibleBy(userId).Include(x => x.Assignees).FirstOrDefaultAsync(x => x.Id == cardId);
-
-        if (card is null || card.Assignees.Any(x => x.Id == userId))
-            return;
-
-        var user = await db.Users.FirstOrDefaultAsync(x => x.Id == userId);
-
-        if (user is null)
-            return;
-
-        card.Assignees.Add(user);
-        Log(db, cardId, userId, new AssigneeAddedActivity { AssigneeId = user.Id, AssigneeName = user.DisplayName });
-
-        await db.SaveChangesAsync();
-    }
-
-    public async Task LeaveAsync(int cardId, int userId)
-    {
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.AccessibleBy(userId).Include(x => x.Assignees).FirstOrDefaultAsync(x => x.Id == cardId);
-        var assignee = card?.Assignees.FirstOrDefault(x => x.Id == userId);
-
-        if (card is null || assignee is null)
-            return;
-
-        card.Assignees.Remove(assignee);
-        Log(db, cardId, userId, new AssigneeRemovedActivity { AssigneeId = assignee.Id, AssigneeName = assignee.DisplayName });
-
-        await db.SaveChangesAsync();
-    }
-
-    /// <summary>Assigns the member to the card, or unassigns them if they already are.</summary>
-    /// <returns>The card's assignees after the change, or null if the card or member no longer exists.</returns>
-    public async Task<List<User>?> ToggleAssigneeAsync(int cardId, int userId, int memberId)
-    {
-        using var db = _dbContextFactory.CreateDbContext();
-        var card = await db.Cards.AccessibleBy(userId).Include(x => x.Assignees).FirstOrDefaultAsync(x => x.Id == cardId);
-        var member = await db.Users.FirstOrDefaultAsync(x => x.Id == memberId);
-
-        if (card is null || member is null)
-            return null;
-
-        if (card.Assignees.Remove(member))
-        {
-            Log(db, cardId, userId, new AssigneeRemovedActivity { AssigneeId = member.Id, AssigneeName = member.DisplayName });
-        }
-        else
-        {
-            card.Assignees.Add(member);
-            Log(db, cardId, userId, new AssigneeAddedActivity { AssigneeId = member.Id, AssigneeName = member.DisplayName });
-        }
-
-        await db.SaveChangesAsync();
-        return card.Assignees;
-    }
-
-    #endregion
-
     #region Comments
 
-    /// <returns>The new comment, or null if the text is empty or the card no longer exists.</returns>
-    public async Task<Comment?> AddCommentAsync(int cardId, int userId, string text)
+    public async Task<OperationResult<Comment>> AddCommentAsync(int cardId, int userId, string text)
     {
-        if (string.IsNullOrWhiteSpace(text))
-            return null;
+        text = text?.Trim() ?? string.Empty;
+
+        if (OperationResult.RequireText(text, "Text", "comment") is { } empty)
+            return empty;
 
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (!await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId))
-            return null;
+        if (await CheckCardAsync(db, cardId, userId) is { } missing)
+            return missing;
 
         var comment = new Comment
         {
@@ -420,195 +480,245 @@ public class CardService
 
     #region Subtasks
 
-    public async Task AddSubtaskAsync(int cardId, int userId, string text)
+    private const string SUBTASK_NOT_FOUND = "The subtask doesn't exist, or you can't access it.";
+
+    public async Task<OperationResult<Subtask>> AddSubtaskAsync(int cardId, int userId, string text)
     {
+        text = text?.Trim() ?? string.Empty;
+
+        if (OperationResult.RequireText(text, "Text", "subtask") is { } empty)
+            return empty;
+
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (!await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId))
-            return;
+        if (await CheckCardAsync(db, cardId, userId) is { } missing)
+            return missing;
 
         var subtasks = await db.Subtasks.Where(x => x.CardId == cardId).ToListAsync();
-
-        db.Subtasks.Add(new Subtask
+        var subtask = new Subtask
         {
             CardId = cardId,
             Text = text,
             Index = subtasks.GetNextIndex(),
-        });
+        };
+
+        db.Subtasks.Add(subtask);
         Log(db, cardId, userId, new SubtaskAddedActivity { SubtaskText = text });
 
         await db.SaveChangesAsync();
+        return subtask;
     }
 
-    public async Task EditSubtaskAsync(int subtaskId, int userId, string text)
+    public async Task<OperationResult> EditSubtaskAsync(int cardId, int userId, int subtaskId, string text)
     {
-        using var db = _dbContextFactory.CreateDbContext();
-        var subtask = await db.Subtasks.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == subtaskId);
+        text = text?.Trim() ?? string.Empty;
 
-        if (subtask is null)
-            return;
+        if (OperationResult.RequireText(text, "Text", "subtask") is { } empty)
+            return empty;
 
-        Log(db, subtask.CardId, userId, new SubtaskEditedActivity { OldSubtaskText = subtask.Text, SubtaskText = text });
-        subtask.Text = text;
-
-        await db.SaveChangesAsync();
-    }
-
-    public async Task SetSubtaskCompletedAsync(int subtaskId, int userId, bool completed)
-    {
-        using var db = _dbContextFactory.CreateDbContext();
-        var subtask = await db.Subtasks.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == subtaskId);
-
-        if (subtask is null)
-            return;
-
-        subtask.Completed = completed;
-        Log(db, subtask.CardId, userId, new SubtaskCompletionChangedActivity { SubtaskText = subtask.Text, Completed = completed });
-
-        await db.SaveChangesAsync();
-    }
-
-    public async Task DeleteSubtaskAsync(int subtaskId, int userId)
-    {
-        using var db = _dbContextFactory.CreateDbContext();
-        var subtask = await db.Subtasks.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == subtaskId);
-
-        if (subtask is null)
-            return;
-
-        db.Subtasks.Remove(subtask);
-        Log(db, subtask.CardId, userId, new SubtaskDeletedActivity { SubtaskText = subtask.Text });
-
-        var remaining = await db.Subtasks.Where(x => x.CardId == subtask.CardId && x.Id != subtaskId).ToListAsync();
-        remaining.FixIndices();
-
-        await db.SaveChangesAsync();
-    }
-
-    /// <summary>Assigns the member to the subtask, or unassigns them if they already are.</summary>
-    /// <returns>The subtask's assignees after the change, or null if the subtask or member no longer exists.</returns>
-    public async Task<List<User>?> ToggleSubtaskAssigneeAsync(int subtaskId, int userId, int memberId)
-    {
-        using var db = _dbContextFactory.CreateDbContext();
-        var subtask = await db.Subtasks.AccessibleBy(userId).Include(x => x.Assignees).FirstOrDefaultAsync(x => x.Id == subtaskId);
-        var member = await db.Users.FirstOrDefaultAsync(x => x.Id == memberId);
-
-        if (subtask is null || member is null)
-            return null;
-
-        if (subtask.Assignees.Remove(member))
+        return await UpdateSubtaskAsync(cardId, userId, subtaskId, (db, subtask) =>
         {
-            Log(db, subtask.CardId, userId, new SubtaskAssigneeRemovedActivity { AssigneeId = member.Id, AssigneeName = member.DisplayName, SubtaskText = subtask.Text });
-        }
-        else
+            if (subtask.Text == text)
+                return;
+
+            Log(db, cardId, userId, new SubtaskEditedActivity { OldSubtaskText = subtask.Text, SubtaskText = text });
+            subtask.Text = text;
+        });
+    }
+
+    public Task<OperationResult> SetSubtaskCompletedAsync(int cardId, int userId, int subtaskId, bool completed) =>
+        UpdateSubtaskAsync(cardId, userId, subtaskId, (db, subtask) =>
         {
-            subtask.Assignees.Add(member);
-            Log(db, subtask.CardId, userId, new SubtaskAssigneeAddedActivity { AssigneeId = member.Id, AssigneeName = member.DisplayName, SubtaskText = subtask.Text });
-        }
+            if (subtask.Completed == completed)
+                return;
+
+            subtask.Completed = completed;
+            Log(db, cardId, userId, new SubtaskCompletionChangedActivity { SubtaskText = subtask.Text, Completed = completed });
+        });
+
+    public Task<OperationResult> DeleteSubtaskAsync(int cardId, int userId, int subtaskId) =>
+        UpdateSubtaskAsync(cardId, userId, subtaskId, (db, subtask) =>
+        {
+            db.Subtasks.Remove(subtask);
+            subtask.Card.Subtasks.Where(x => x != subtask).ToList().FixIndices();
+            Log(db, cardId, userId, new SubtaskDeletedActivity { SubtaskText = subtask.Text });
+        });
+
+    /// <summary>Puts the subtask before another one of the card's subtasks, or last. Not written to the activity log.</summary>
+    public Task<OperationResult> MoveSubtaskAsync(int cardId, int userId, int subtaskId, int? beforeSubtaskId) =>
+        UpdateSubtaskAsync(cardId, userId, subtaskId, (_, subtask) =>
+        {
+            var subtasks = subtask.Card.Subtasks;
+            subtasks.MoveBefore(subtask, subtasks.FirstOrDefault(x => x.Id == beforeSubtaskId));
+        });
+
+    /// <summary>Assigns a member of the board to the subtask, or unassigns them.</summary>
+    /// <returns>The subtask's assignees after the change.</returns>
+    public async Task<OperationResult<List<User>>> SetSubtaskAssigneeAsync(int cardId, int userId, int subtaskId, int memberId, bool assigned)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+        var subtask = await db.Subtasks
+            .AccessibleBy(userId)
+            .Include(x => x.Assignees)
+            .Include(x => x.Card.Column)
+            .FirstOrDefaultAsync(x => x.Id == subtaskId && x.CardId == cardId);
+
+        if (subtask is null)
+            return OperationResult.NotFound(SUBTASK_NOT_FOUND);
+
+        return await SetAssigneeAsync(
+            db, subtask, subtask.Card.Column.BoardId, cardId, userId, memberId, assigned,
+            user => new SubtaskAssigneeAddedActivity { AssigneeId = user.Id, AssigneeName = user.DisplayName, SubtaskText = subtask.Text },
+            user => new SubtaskAssigneeRemovedActivity { AssigneeId = user.Id, AssigneeName = user.DisplayName, SubtaskText = subtask.Text }
+        );
+    }
+
+    /// <summary>Loads a subtask of the card with its card's subtasks, applies the change and saves.</summary>
+    private async Task<OperationResult> UpdateSubtaskAsync(int cardId, int userId, int subtaskId, Action<DataContext, Subtask> change)
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+        var subtask = await db.Subtasks
+            .AccessibleBy(userId)
+            .Include(x => x.Card.Subtasks)
+            .FirstOrDefaultAsync(x => x.Id == subtaskId && x.CardId == cardId);
+
+        if (subtask is null)
+            return OperationResult.NotFound(SUBTASK_NOT_FOUND);
+
+        change(db, subtask);
 
         await db.SaveChangesAsync();
-        return subtask.Assignees;
+        return OperationResult.Success;
     }
 
     #endregion
 
     #region Reminders
 
-    public async Task AddReminderAsync(int cardId, int userId, DateTime at)
+    /// <summary>Adds a reminder; when it's due, the card's assignees and creator get an e-mail.</summary>
+    public async Task<OperationResult<Reminder>> AddReminderAsync(int cardId, int userId, DateTime at)
     {
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (!await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId))
-            return;
+        if (await CheckCardAsync(db, cardId, userId) is { } missing)
+            return missing;
 
-        db.Reminders.Add(new Reminder { CardId = cardId, At = at });
+        var reminder = new Reminder { CardId = cardId, At = at };
+
+        db.Reminders.Add(reminder);
         Log(db, cardId, userId, new ReminderAddedActivity { At = at });
 
         await db.SaveChangesAsync();
+        return reminder;
     }
 
-    public async Task RemoveReminderAsync(int cardId, int userId, int reminderId)
+    public async Task<OperationResult> RemoveReminderAsync(int cardId, int userId, int reminderId)
     {
         using var db = _dbContextFactory.CreateDbContext();
         var reminder = await db.Reminders.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == reminderId && x.CardId == cardId);
 
         if (reminder is null)
-            return;
+            return OperationResult.NotFound("The reminder doesn't exist, or you can't access it.");
 
         db.Reminders.Remove(reminder);
         Log(db, cardId, userId, new ReminderRemovedActivity { At = reminder.At });
 
         await db.SaveChangesAsync();
+        return OperationResult.Success;
     }
 
     #endregion
 
     #region Attachments
 
-    /// <summary>Records a file that has already been saved to the uploads folder.</summary>
-    /// <returns>False if the card no longer exists.</returns>
-    public async Task<bool> AddAttachmentAsync(int cardId, int userId, string fileName, string originalName)
+    /// <summary>Records a file that has already been saved to the uploads folder (see <see cref="AttachmentService"/>).</summary>
+    public async Task<OperationResult<Attachment>> AddAttachmentAsync(int cardId, int userId, string fileName, string originalName)
     {
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (!await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId))
-            return false;
+        if (await CheckCardAsync(db, cardId, userId) is { } missing)
+            return missing;
 
-        db.Attachments.Add(new Attachment
+        var attachment = new Attachment
         {
             CardId = cardId,
             FileName = fileName,
             OriginalName = originalName,
-        });
+        };
+
+        db.Attachments.Add(attachment);
         Log(db, cardId, userId, new AttachmentUploadedActivity { FileName = originalName });
 
         await db.SaveChangesAsync();
-        return true;
+        return attachment;
     }
 
-    public async Task RemoveAttachmentAsync(int cardId, int userId, int attachmentId)
+    /// <summary>Removes the attachment. The file itself is deleted by the cleanup job.</summary>
+    public async Task<OperationResult> RemoveAttachmentAsync(int cardId, int userId, int attachmentId)
     {
         using var db = _dbContextFactory.CreateDbContext();
         var attachment = await db.Attachments.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == attachmentId && x.CardId == cardId);
 
         if (attachment is null)
-            return;
+            return OperationResult.NotFound("The attachment doesn't exist, or you can't access it.");
 
         db.Attachments.Remove(attachment);
         Log(db, cardId, userId, new AttachmentDeletedActivity { FileName = attachment.OriginalName });
 
         await db.SaveChangesAsync();
+        return OperationResult.Success;
     }
 
     #endregion
 
     #region Time tracking
 
-    public async Task StartTimerAsync(int cardId, int userId)
+    private const string TIME_RECORD_NOT_FOUND = "The time record doesn't exist, or you can't access it.";
+    /// <summary>The longest a time record may be. A record ends now, so a longer one would start before the dates the database holds.</summary>
+    public static readonly TimeSpan MaxDuration = TimeSpan.FromDays(365);
+
+    private static OperationResult? ValidateDuration(TimeSpan duration) =>
+        duration <= TimeSpan.Zero ? OperationResult.Invalid("Duration", "The time spent must be longer than zero.")
+        : duration > MaxDuration ? OperationResult.Invalid("Duration", "The time spent can't be more than a year.")
+        : null;
+
+    /// <summary>Starts the user's timer on the card. If it's already running, that timer is returned.</summary>
+    public async Task<OperationResult<TimeRecord>> StartTimerAsync(int cardId, int userId)
     {
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (!await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId))
-            return;
+        if (await CheckCardAsync(db, cardId, userId) is { } missing)
+            return missing;
 
-        db.TimeRecords.Add(new TimeRecord
+        var running = await db.TimeRecords.FirstOrDefaultAsync(x => x.CardId == cardId && x.UserId == userId && x.EndedAt == null);
+
+        if (running is not null)
+            return running;
+
+        var record = new TimeRecord
         {
             UserId = userId,
             CardId = cardId,
             StartedAt = DateTime.Now,
-        });
+        };
+
+        db.TimeRecords.Add(record);
 
         await db.SaveChangesAsync();
+        return record;
     }
 
-    /// <summary>Stops a running timer. Records shorter than a second are discarded.</summary>
-    public async Task EndTimerAsync(int cardId, int timeRecordId)
+    /// <summary>Stops the user's running timer on the card. A record shorter than a second is discarded.</summary>
+    public async Task<OperationResult> StopTimerAsync(int cardId, int userId)
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var record = await db.TimeRecords.FirstOrDefaultAsync(x => x.Id == timeRecordId && x.CardId == cardId);
+
+        // No access check: only the caller's own running timer is touched, and someone removed from the board must
+        // still be able to stop the timer they left running there.
+        var record = await db.TimeRecords.FirstOrDefaultAsync(x => x.CardId == cardId && x.UserId == userId && x.EndedAt == null);
 
         if (record is null)
-            return;
+            return OperationResult.Conflict("You have no timer running on this card.");
 
         record.EndedAt = DateTime.Now;
 
@@ -616,117 +726,134 @@ public class CardService
             db.TimeRecords.Remove(record);
 
         await db.SaveChangesAsync();
+        return OperationResult.Success;
     }
 
-    /// <summary>Adds a finished time record of the given length, ending now.</summary>
-    public async Task AddTimeRecordAsync(int cardId, int userId, TimeSpan duration)
+    /// <summary>Adds a finished time record of the given length for the user, ending now.</summary>
+    public async Task<OperationResult<TimeRecord>> AddTimeRecordAsync(int cardId, int userId, TimeSpan duration)
     {
+        if (ValidateDuration(duration) is { } invalid)
+            return invalid;
+
         using var db = _dbContextFactory.CreateDbContext();
 
-        if (!await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId))
-            return;
+        if (await CheckCardAsync(db, cardId, userId) is { } missing)
+            return missing;
 
         var now = DateTime.Now;
-
-        db.TimeRecords.Add(new TimeRecord
+        var record = new TimeRecord
         {
             CardId = cardId,
             UserId = userId,
             StartedAt = now - duration,
             EndedAt = now,
-        });
+        };
+
+        db.TimeRecords.Add(record);
         Log(db, cardId, userId, new TimeRecordAddedActivity { Duration = duration });
 
         await db.SaveChangesAsync();
+        return record;
     }
 
     /// <summary>Changes a finished time record's length. The record is moved to end now.</summary>
-    public async Task EditTimeRecordAsync(int timeRecordId, int userId, TimeSpan duration)
+    public async Task<OperationResult<TimeRecord>> EditTimeRecordAsync(int cardId, int userId, int timeRecordId, TimeSpan duration)
     {
+        if (ValidateDuration(duration) is { } invalid)
+            return invalid;
+
         using var db = _dbContextFactory.CreateDbContext();
-        var record = await db.TimeRecords.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == timeRecordId);
+        var record = await db.TimeRecords.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == timeRecordId && x.CardId == cardId);
 
         if (record is null)
-            return;
+            return OperationResult.NotFound(TIME_RECORD_NOT_FOUND);
 
-        var oldDuration = (record.EndedAt ?? DateTime.Now) - record.StartedAt;
+        if (record.EndedAt is null)
+            return OperationResult.Conflict("The timer is still running. Stop it before changing its time.");
+
+        var oldDuration = record.GetTotalTime();
         var now = DateTime.Now;
 
         record.EndedAt = now;
         record.StartedAt = now - duration;
 
-        Log(db, record.CardId, userId, new TimeRecordChangedActivity { OldDuration = oldDuration, Duration = duration });
+        Log(db, cardId, userId, new TimeRecordChangedActivity { OldDuration = oldDuration, Duration = duration });
 
         await db.SaveChangesAsync();
+        return record;
     }
 
-    public async Task RemoveTimeRecordAsync(int cardId, int userId, int timeRecordId)
+    public async Task<OperationResult> RemoveTimeRecordAsync(int cardId, int userId, int timeRecordId)
     {
         using var db = _dbContextFactory.CreateDbContext();
         var record = await db.TimeRecords.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == timeRecordId && x.CardId == cardId);
 
         if (record is null)
-            return;
-
-        var duration = (record.EndedAt ?? DateTime.Now) - record.StartedAt;
+            return OperationResult.NotFound(TIME_RECORD_NOT_FOUND);
 
         db.TimeRecords.Remove(record);
-        Log(db, cardId, userId, new TimeRecordDeletedActivity { Duration = duration });
+        Log(db, cardId, userId, new TimeRecordDeletedActivity { Duration = record.GetTotalTime() });
 
         await db.SaveChangesAsync();
+        return OperationResult.Success;
     }
 
     #endregion
 
     #region Linked cards
 
-    /// <summary>Links two cards in both directions, e.g. "is blocked by" on one side and "blocks" on the other.</summary>
-    /// <returns>An error to show the user, or null on success.</returns>
-    public async Task<string?> LinkCardsAsync(int cardId, int targetCardId, int userId, string category)
+    /// <summary>
+    /// Links two cards in both directions, e.g. "is blocked by" on one side and "blocks" on the other. The user must be
+    /// able to open both cards; they may be on different boards.
+    /// </summary>
+    /// <returns>The link as seen from <paramref name="cardId"/>.</returns>
+    public async Task<OperationResult<CardLink>> LinkCardsAsync(int cardId, int userId, int targetCardId, string category)
     {
-        if (cardId == targetCardId)
-            return "You cannot link this card to itself.";
-
         var oppositeCategory = GetOppositeLinkCategory(category);
 
         if (oppositeCategory is null)
-            return "Unknown relationship type.";
+            return OperationResult.Invalid(nameof(CardLink.Category), "Unknown relationship type.");
 
         using var db = _dbContextFactory.CreateDbContext();
         var card = await db.Cards.AccessibleBy(userId).AsNoTracking().Include(x => x.Column.Board).FirstOrDefaultAsync(x => x.Id == cardId);
-        var targetCard = await db.Cards.AccessibleBy(userId).AsNoTracking().Include(x => x.Column.Board).FirstOrDefaultAsync(x => x.Id == targetCardId);
 
         if (card is null)
-            return "This card does not exist anymore.";
+            return OperationResult.NotFound(CARD_NOT_FOUND);
+
+        if (cardId == targetCardId)
+            return OperationResult.Invalid("TargetCardId", "You cannot link this card to itself.");
+
+        var targetCard = await db.Cards.AccessibleBy(userId).AsNoTracking().Include(x => x.Column.Board).FirstOrDefaultAsync(x => x.Id == targetCardId);
 
         if (targetCard is null)
-            return "Target card does not exist anymore.";
+            return OperationResult.Invalid("TargetCardId", "The target card doesn't exist, or you can't access it.");
 
         if (await db.CardLinks.AnyAsync(x => x.CardOneId == cardId && x.CardTwoId == targetCardId))
-            return "This card is already linked to the target card.";
+            return OperationResult.Conflict("This card is already linked to the target card.");
 
-        db.CardLinks.Add(new CardLink { CardOneId = cardId, CardTwoId = targetCardId, Category = category });
+        var link = new CardLink { CardOneId = cardId, CardTwoId = targetCardId, Category = category };
+        db.CardLinks.Add(link);
         db.CardLinks.Add(new CardLink { CardOneId = targetCardId, CardTwoId = cardId, Category = oppositeCategory });
 
         Log(db, cardId, userId, Link(new LinkAddedActivity(), targetCard, category));
         Log(db, targetCardId, userId, Link(new LinkAddedActivity(), card, oppositeCategory));
 
         await db.SaveChangesAsync();
-        return null;
+        return link;
     }
 
-    /// <summary>Removes a link and its counterpart on the other card.</summary>
-    public async Task RemoveLinkAsync(int linkId, int userId)
+    /// <summary>Removes one of the card's links and its counterpart on the other card.</summary>
+    public async Task<OperationResult> RemoveLinkAsync(int cardId, int userId, int linkId)
     {
         using var db = _dbContextFactory.CreateDbContext();
         var link = await db.CardLinks
             .AccessibleBy(userId)
             .Include(x => x.CardOne.Column.Board)
             .Include(x => x.CardTwo.Column.Board)
-            .FirstOrDefaultAsync(x => x.Id == linkId);
+            .FirstOrDefaultAsync(x => x.Id == linkId && x.CardOneId == cardId);
 
         if (link is null)
-            return;
+            return OperationResult.NotFound("The link doesn't exist, or you can't access it.");
 
         var reverseLink = await db.CardLinks.FirstOrDefaultAsync(x =>
             x.CardOneId == link.CardTwoId && x.CardTwoId == link.CardOneId
@@ -742,6 +869,7 @@ public class CardService
         }
 
         await db.SaveChangesAsync();
+        return OperationResult.Success;
     }
 
     private static string? GetOppositeLinkCategory(string category)
@@ -763,30 +891,41 @@ public class CardService
 
     #endregion
 
+    /// <summary>Null if the user can open the card, otherwise the not-found result to return.</summary>
+    private static async Task<OperationResult?> CheckCardAsync(DataContext db, int cardId, int userId) =>
+        await db.Cards.AccessibleBy(userId).AnyAsync(x => x.Id == cardId) ? null : OperationResult.NotFound(CARD_NOT_FOUND);
+
     /// <summary>Changes a field on the card and logs it. The activity is created before the change, so it can see the old value.</summary>
+    /// <param name="activity">The log entry, or null for changes that aren't logged.</param>
     /// <param name="unchanged">
     /// Whether the change would leave the card as it is. Then nothing is saved or logged, so the activity log only
     /// shows real changes.
     /// </param>
-    private async Task UpdateAsync(
+    private async Task<OperationResult> UpdateAsync(
         int cardId,
         int userId,
-        Func<Card, Activity> activity,
+        Func<Card, Activity>? activity,
         Action<Card> change,
-        Func<Card, bool>? unchanged = null
+        Func<Card, bool> unchanged
     )
     {
         using var db = _dbContextFactory.CreateDbContext();
         var card = await db.Cards.AccessibleBy(userId).FirstOrDefaultAsync(x => x.Id == cardId);
 
-        if (card is null || unchanged?.Invoke(card) == true)
-            return;
+        if (card is null)
+            return OperationResult.NotFound(CARD_NOT_FOUND);
 
-        var entry = activity(card);
+        if (unchanged(card))
+            return OperationResult.Success;
+
+        var entry = activity?.Invoke(card);
         change(card);
-        Log(db, cardId, userId, entry);
+
+        if (entry is not null)
+            Log(db, cardId, userId, entry);
 
         await db.SaveChangesAsync();
+        return OperationResult.Success;
     }
 
     private static void Log(DataContext db, int cardId, int userId, Activity activity)

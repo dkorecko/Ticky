@@ -1,6 +1,9 @@
 @implements IDisposable
 
 @code {
+    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+    protected MainLayout MainLayout { get; set; } = default!;
+
     protected object? FocusElement { get; set; }
 
     protected Modal? Modal;
@@ -31,8 +34,16 @@
 
     protected virtual void OnOpen()
     {
-        
+
     }
+
+    /// <summary>
+    /// Whether a change the dialog made through a service went through. If it didn't, tells the user why. When it was
+    /// refused for access (the role may have changed since the dialog opened), the dialog closes too, since nothing in
+    /// the form can fix that; an invalid value keeps it open to correct.
+    /// </summary>
+    protected Task<bool> SucceededAsync(IOperationResult result) =>
+        MainLayout.ReportOrCloseAsync(result, () => Modal?.Close() ?? Task.CompletedTask);
 
     public virtual void Dispose()
     {

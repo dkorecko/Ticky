@@ -66,6 +66,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromDays(365);
     options.SlidingExpiration = true;
     options.LoginPath = "/auth/login";
+    // A page the user may not open (the admin panel) looks like one that doesn't exist, as boards they can't open do.
+    options.AccessDeniedPath = "/not-found";
 
     // Secure whenever the request is HTTPS. Behind a TLS-terminating proxy that relies on the forwarded headers
     // (ASPNETCORE_FORWARDEDHEADERS_ENABLED, on in the Docker image); plain-HTTP setups keep working without Secure.
@@ -94,6 +96,7 @@ Constants.SMTP_ENABLED = builder.Configuration.GetValue("SMTP_ENABLED", false);
 Constants.BASE_URL = builder
     .Configuration.GetValue("BASE_URL", "http://localhost:4088")
     .TrimEnd('/');
+Constants.API_RATE_LIMIT = builder.Configuration.GetValue("API_RATE_LIMIT", Constants.Api.DEFAULT_RATE_LIMIT);
 
 var mailKitOptions = builder.Configuration.GetSection("Email").Get<MailKitOptions>();
 
@@ -131,6 +134,12 @@ if (Constants.SMTP_ENABLED)
 
 builder.Services.AddScoped<CodeService>();
 builder.Services.AddScoped<CardService>();
+builder.Services.AddScoped<AttachmentService>();
+builder.Services.AddScoped<BoardService>();
+builder.Services.AddScoped<ColumnService>();
+builder.Services.AddScoped<LabelService>();
+builder.Services.AddScoped<MembershipService>();
+builder.Services.AddScoped<ProjectService>();
 builder.Services.AddScoped<ApiTokenService>();
 builder.Services.AddDevityMailing<EmailService>(mailKitOptions!);
 builder.Services.AddScoped<AvatarService>();
@@ -198,6 +207,16 @@ builder.Services.AddAuthorization(options =>
                 || context.User.HasClaim(Constants.Api.ScopeClaim, nameof(ApiTokenScope.ReadWrite))
             )
     );
+
+    // A read and write token, never the cookie: a multipart body is a request another site can make the browser send
+    // without a CORS preflight. The web UI uploads through AttachmentsController, which checks an antiforgery token.
+    options.AddPolicy(
+        Constants.Policies.ApiTokenCanWrite,
+        policy => policy
+            .AddAuthenticationSchemes(Constants.Api.TokenScheme)
+            .RequireAuthenticatedUser()
+            .RequireClaim(Constants.Api.ScopeClaim, nameof(ApiTokenScope.ReadWrite))
+    );
 });
 
 // Enums are names ("High") both ways, a stable contract for API callers. Numbers are rejected, so a request
@@ -206,11 +225,21 @@ builder.Services.AddAuthorization(options =>
 static void UseApiJson(System.Text.Json.JsonSerializerOptions options) =>
     options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter(allowIntegerValues: false));
 
-builder.Services.AddControllers().AddJsonOptions(options => UseApiJson(options.JsonSerializerOptions));
+builder.Services
+    .AddControllers(options => options.Conventions.Add(new Ticky.Web.Controllers.Api.DefaultSuccessResponseConvention()))
+    .AddJsonOptions(options =>
+    {
+        UseApiJson(options.JsonSerializerOptions);
+
+        // Times are server-local both ways. Only here: in the HTTP JSON options, the OpenAPI document would no longer
+        // know that times are strings.
+        options.JsonSerializerOptions.Converters.Add(new Ticky.Web.Controllers.Api.ServerTimeJsonConverter());
+    });
 builder.Services.ConfigureHttpJsonOptions(options => UseApiJson(options.SerializerOptions));
 
 // Every API error is a ProblemDetails body (RFC 9457), including the 401 and 403 from the auth middleware.
 builder.Services.AddProblemDetails();
+builder.Services.AddApiRateLimiting();
 
 builder.Services.AddOpenApi(
     Constants.Api.DocumentName,
@@ -219,6 +248,23 @@ builder.Services.AddOpenApi(
         options.ShouldInclude = description =>
             description.RelativePath?.StartsWith(Constants.Api.RoutePrefix + "/", StringComparison.OrdinalIgnoreCase) == true;
         options.AddDocumentTransformer<ApiDocumentTransformer>();
+
+        // Stable, readable operation names (e.g. Cards_Create) for code generators and agents' tool lists. Query
+        // parameters bound from a class (like BoardCardsQuery) come with their C# names; they're listed in camelCase
+        // like every other name in the API. Binding ignores case, so both spellings work.
+        options.AddOperationTransformer((operation, context, _) =>
+        {
+            if (context.Description.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor action)
+                operation.OperationId ??= $"{action.ControllerName}_{action.ActionName}";
+
+            foreach (var parameter in operation.Parameters?.OfType<Microsoft.OpenApi.OpenApiParameter>() ?? [])
+            {
+                if (parameter.In == Microsoft.OpenApi.ParameterLocation.Query && parameter.Name is { } name)
+                    parameter.Name = System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(name);
+            }
+
+            return Task.CompletedTask;
+        });
     }
 );
 
@@ -268,7 +314,14 @@ app.Use(
 // ProblemDetails body like every other API error.
 app.UseWhen(
     context => context.Request.Path.StartsWithSegments(Constants.Api.BasePath),
-    api => api.UseStatusCodePages()
+    api =>
+    {
+        api.UseStatusCodePages();
+
+        // An unexpected error is a plain 500 problem, not the app's error page. Development keeps the detailed one.
+        if (!app.Environment.IsDevelopment())
+            api.UseExceptionHandler();
+    }
 );
 
 app.UseAntiforgery();
@@ -319,6 +372,8 @@ app.UseStaticFiles(
 
 app.UseAuthentication();
 app.UseAuthorization();
+// After authorization, which signs in API callers by their token or cookie, so limits are counted per user.
+app.UseRateLimiter();
 
 app.MapControllers();
 

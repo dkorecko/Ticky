@@ -113,6 +113,9 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
+    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
+    private MainLayout _mainLayout { get; set; } = default!;
+
     [Parameter]
     public EventCallback UpdateCard { get; set; }
 
@@ -169,7 +172,7 @@
 
         _targetColumnError = null;
 
-        var saved = await _cardService.SetRepeatAsync(_card.Id, _user.Id, new()
+        var result = await _cardService.SetRepeatAsync(_card.Id, _user.Id, new()
         {
             Type = _repeatModel.Type,
             LastRepeat = _repeatModel.StartDate.ToDateTime(timeOnly),
@@ -180,11 +183,15 @@
             TargetColumnId = _repeatModel.TargetColumnId
         });
 
-        if (!saved)
+        // A target column that isn't on this board is shown under its picker; anything else as a notification.
+        if (result.Field == nameof(RepeatInfo.TargetColumnId))
         {
-            _targetColumnError = "The target column has to be on this card's board.";
+            _targetColumnError = result.Message;
             return;
         }
+
+        if (!_mainLayout.Report(result))
+            return;
 
         StateHasChanged();
         await UpdateCard.InvokeAsync();
