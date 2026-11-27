@@ -126,20 +126,14 @@
         using var db = _dbContextFactory.CreateDbContext();
         var userId = _user.Id;
 
-        // Open cards assigned to the user, on boards they can still access. Snoozed cards are hidden like on the board.
+        // On boards the user can still access.
         _cards = await db.Cards
             .AccessibleBy(userId)
+            .WorkOf(userId)
             .Include(x => x.Column)
                 .ThenInclude(x => x.Board)
-            .Where(x => x.Assignees.Any(a => a.Id == userId) && !x.Column.Finished && !x.SnoozedUntil.HasValue)
             .AsNoTracking()
             .ToListAsync();
-
-        _cards = _cards
-            .OrderBy(x => x.Deadline is null)
-            .ThenBy(x => x.Deadline)
-            .ThenByDescending(x => x.Priority)
-            .ToList();
 
         var dueBy = DateTime.Today.AddDays(DUE_SOON_DAYS + 1);
         _dueCount = _cards.Count(x => x.Deadline.HasValue && x.Deadline.Value < dueBy);
@@ -148,8 +142,7 @@
             .Include(x => x.Card)
                 .ThenInclude(x => x.Column)
                     .ThenInclude(x => x.Board)
-            .Where(x => x.UserId == userId && x.EndedAt == null)
-            .OrderBy(x => x.StartedAt)
+            .RunningOf(userId)
             .AsNoTracking()
             .ToListAsync();
 
@@ -177,7 +170,7 @@
 
     private async Task StopTimer(TimeRecord timer)
     {
-        await _cardService.EndTimerAsync(timer.CardId, timer.Id);
+        await _cardService.StopTimerAsync(timer.CardId, _user.Id);
         await LoadAsync();
     }
 

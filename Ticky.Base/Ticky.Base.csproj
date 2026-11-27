@@ -4,6 +4,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- The API's OpenAPI document describes request and response fields from the DTOs' XML comments. CS1591
+         (public member without a comment) and CS1573 (a record documenting only some of its fields) are off: only
+         what isn't obvious is documented. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

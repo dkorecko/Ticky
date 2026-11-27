@@ -7,6 +7,8 @@
 @inject IJSRuntime _js
 @inject ILogger<BoardView> _logger
 @inject IHttpContextAccessor _httpContextAccessor
+@inject CardService _cardService
+@inject ColumnService _columnService
 @inherits NotifiableBase
 @implements IAsyncDisposable
 
@@ -20,9 +22,9 @@
 <CreateColumnModal @ref="_createColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Added)" />
 <EditColumnModal @ref="_editColumnModal" OnSubmit="async () => await RunNotification(typeof(Column), OperationType.Edited)" />
 <DeleteConfirmationDialog T="Column" @ref="_deleteColumnModal" DeleteHandler="DeleteColumnAsync" OnConfirmed="HandleUpdate" />
-<DeleteConfirmationDialog T="Card" @ref="_deleteTaskModal" OnConfirmed="HandleUpdate" />
+<DeleteConfirmationDialog T="Card" @ref="_deleteTaskModal" DeleteHandler="DeleteCardAsync" OnConfirmed="HandleUpdate" />
 <EditCardModal @ref="_editCardModal" OnSubmit="OnTaskEdited" />
-<EditBoardMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
+<EditMembershipsModal @ref="_editBoardMembershipsModal" OnSubmit="async () => await RunNotification(typeof(BoardMembership), OperationType.Edited)" />
 
 @if(_board is null)
 {
@@ -85,7 +87,7 @@
                                         </span>
                                     </a>
 
-                                    <button class="nav-link" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
+                                    <button class="nav-link" @onclick="() => _editBoardMembershipsModal?.OpenForBoard(_board.Id)" title="Add member">
                                         <span class="material-symbols-rounded g-icon self-center">
                                             add
                                         </span>
@@ -151,7 +153,7 @@
                     </div>
                     @if (IsAdmin())
                     {
-                        <button class="add btn-transparent btn flex" @onclick="() => _editBoardMembershipsModal?.Open(_board.Id, _board.ProjectId)" title="Add member">
+                        <button class="add btn-transparent btn flex" @onclick="() => _editBoardMembershipsModal?.OpenForBoard(_board.Id)" title="Add member">
                             <span class="material-symbols-rounded g-icon self-center">
                                 add
                             </span>
@@ -249,7 +251,7 @@
     private EditCardModal? _editCardModal;
     private DeleteConfirmationDialog<Column>? _deleteColumnModal;
     private DeleteConfirmationDialog<Card>? _deleteTaskModal;
-    private EditBoardMembershipsModal? _editBoardMembershipsModal;
+    private EditMembershipsModal? _editBoardMembershipsModal;
     private FilterCardsModal? _filterCardsModal;
     private List<ElementReference> _avatars = [];
     private ElementReference Avatars { set => _avatars.Add(value); }
@@ -432,115 +434,40 @@
             return;
 
         var movedColumnId = Convert.ToInt32(args.movedItemId);
-        var snapshot = _board.Columns.Select(c => new { c.Id, c.Index }).ToList();
-
         var movedColumn = _board.Columns.FirstOrDefault(x => x.Id.Equals(movedColumnId));
 
         if (movedColumn is null)
             return;
 
-        int targetIndex = _board.Columns.Any() ? _board.Columns.Max(x => x.Index) + 1 : 0;
         int? targetItemId = args.targetItemId is not null ? Convert.ToInt32(args.targetItemId) : null;
+        var snapshot = _board.Columns.Select(c => (Column: c, c.Index)).ToList();
 
-        if (targetItemId.HasValue)
-        {
-            var targetColumn = _board.Columns.FirstOrDefault(x => x.Id.Equals(targetItemId));
-            if (targetColumn is not null)
-            {
-                targetIndex = targetColumn.Index;
-                foreach (var column in _board.Columns.OrderByDescending(x => x.Index))
-                {
-                    if (column.Index >= targetColumn.Index)
-                        column.Index++;
-                }
-            }
-        }
-
-        movedColumn.Index = targetIndex;
-        IndexHelper.FixIndices(_board.Columns);
+        // Show the new order right away, then save it.
+        _board.Columns.MoveBefore(movedColumn, _board.Columns.FirstOrDefault(x => x.Id == targetItemId));
         StateHasChanged();
 
-        try
-        {
-            using var db = _dbContextFactory.CreateDbContext();
-
-            // Only admins get the drag handle, but the callback is reachable by any member, and the role may have
-            // changed since the page loaded. The catch below puts the columns back.
-            if (!await db.IsBoardAdminAsync(Id, _user))
-                throw new UnauthorizedAccessException("Only board admins can reorder columns.");
-
-            var targetBoard = db.Boards
-                .Include(x => x.Columns)
-                .FirstOrDefault(x => x.Id.Equals(Id));
-
-            if (targetBoard is null)
-                throw new InvalidOperationException("Board not found in DB.");
-
-            var dbMovedColumn = targetBoard.Columns.FirstOrDefault(x => x.Id.Equals(movedColumnId));
-            if (dbMovedColumn is null)
-                throw new InvalidOperationException("Moved column not found in DB.");
-
-            int dbTargetIndex = targetBoard.Columns.Any() ? targetBoard.Columns.Max(x => x.Index) + 1 : 0;
-            if (targetItemId.HasValue)
+        var saved = await MainLayout.SaveOrRevertAsync(
+            _logger,
+            () => _columnService.MoveAsync(movedColumnId, _user.Id, targetItemId),
+            "Failed to move column. Changes were reverted.",
+            () =>
             {
-                var dbTargetColumn = targetBoard.Columns.FirstOrDefault(x => x.Id.Equals(targetItemId));
-                if (dbTargetColumn is not null)
-                {
-                    dbTargetIndex = dbTargetColumn.Index;
-                    foreach (var column in targetBoard.Columns.OrderByDescending(x => x.Index))
-                    {
-                        if (column.Index >= dbTargetColumn.Index)
-                            column.Index++;
-                    }
-                }
+                foreach (var (column, index) in snapshot)
+                    column.Index = index;
+
+                StateHasChanged();
             }
+        );
 
-            dbMovedColumn.Index = dbTargetIndex;
-            IndexHelper.FixIndices(targetBoard.Columns);
-
-            await db.SaveChangesAsync();
+        if (saved)
             await HandleUpdate();
-        }
-        catch (Exception ex)
-        {
-            var notAllowed = ex is UnauthorizedAccessException;
-
-            if (!notAllowed)
-                _logger.LogError(ex, "Failed to persist moved column.");
-
-            foreach (var oldColumnPosition in snapshot)
-            {
-                var column = _board.Columns.FirstOrDefault(x => x.Id == oldColumnPosition.Id);
-                column?.Index = oldColumnPosition.Index;
-            }
-
-            IndexHelper.FixIndices(_board.Columns);
-            StateHasChanged();
-
-            MainLayout.RunNotification(new(
-                notAllowed ? ex.Message : "Failed to move column. Changes were reverted.",
-                NotificationType.Fail
-            ));
-        }
     }
 
-    /// <summary>
-    /// Deletes the column if the user still administers the board. Only admins see the option, but the role may have
-    /// changed since the page loaded.
-    /// </summary>
-    private async Task<bool> DeleteColumnAsync(Column column)
-    {
-        using var db = _dbContextFactory.CreateDbContext();
+    private async Task<bool> DeleteColumnAsync(Column column) =>
+        await MainLayout.ReportOrReloadAsync(await _columnService.DeleteAsync(column.Id, _user.Id), HandleUpdate);
 
-        if (!await db.IsBoardAdminAsync(Id, _user))
-        {
-            MainLayout.RunNotification(new("Only board admins can delete columns.", NotificationType.Fail));
-            return false;
-        }
-
-        await db.Columns.Where(x => x.Id == column.Id && x.BoardId == Id).ExecuteDeleteAsync();
-        return true;
-    }
+    private async Task<bool> DeleteCardAsync(Card card) =>
+        await MainLayout.ReportOrReloadAsync(await _cardService.DeleteAsync(card.Id, _user.Id), HandleUpdate);
 
     private async Task OnDataChanged()
     {
@@ -623,28 +550,8 @@
             .Include(x => x.TimeRecords)
             .Include(x => x.Column)
             .Where(x => columnIds.Contains(x.ColumnId))
-            .Where(x => !x.SnoozedUntil.HasValue);
-
-        if (_filterModel.ExcludeCompleted)
-            queryableCards = queryableCards.Where(x => !x.Column.Finished);
-
-        if(!string.IsNullOrWhiteSpace(_filterModel.Text))
-        {
-            var query = _filterModel.Text.Trim();
-            queryableCards = queryableCards.Where(x => x.Name.Contains(query) || (x.Column.Board.Code + "-" + x.Number).Contains(query) || (x.Description != null && x.Description.Contains(query)));
-        }
-
-        if (_filterModel.AssignedUserIds.Count > 0 || _filterModel.IncludeUnassigned)
-            queryableCards = queryableCards.Where(card =>
-                (_filterModel.AssignedUserIds.Count > 0 && card.Assignees.Any(a => _filterModel.AssignedUserIds.Contains(a.Id)))
-                || (_filterModel.IncludeUnassigned && !card.Assignees.Any())
-            );
-
-        if (_filterModel.LabelIds.Count > 0)
-            queryableCards = queryableCards.Where(card => card.Labels.Any(x => _filterModel.LabelIds.Contains(x.Id)));
-
-        if (_filterModel.ExcludedLabelIds.Count > 0)
-            queryableCards = queryableCards.Where(card => !card.Labels.Any(x => _filterModel.ExcludedLabelIds.Contains(x.Id)));
+            .Where(x => !x.SnoozedUntil.HasValue)
+            .Matching(_filterModel);
 
         _cards = await queryableCards.ToListAsync();
 

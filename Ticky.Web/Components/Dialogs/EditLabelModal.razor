@@ -1,5 +1,5 @@
 @inherits AbstractModal
-@inject IDbContextFactory<DataContext> _dbContextFactory
+@inject LabelService _labelService
 
 <Modal @ref=Modal Title="Edit label" OnSubmitAttempted="EditLabel">
     @if(_board is null) {
@@ -37,9 +37,6 @@
 @code {
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
-
-    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
-    private MainLayout _mainLayout { get; set; } = default!;
 
     [Parameter]
     public EventCallback OnSubmit { get; set; }
@@ -109,36 +106,16 @@
         if(_board is null || _label is null || _editContext is null || !_editContext.Validate())
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-
-        if (!await db.IsBoardAdminAsync(_board.Id, _user))
+        var result = await _labelService.UpdateAsync(_label.Id, _user.Id, new()
         {
-            _mainLayout.RunNotification(new("Only board admins can manage labels.", NotificationType.Fail));
-            Modal?.Close();
-            return;
-        }
+            Name = _labelModel.Text,
+            TextColor = _labelModel.TextColor,
+            BackgroundColor = _labelModel.BackgroundColor,
+        });
 
-        var board = await db.Boards
-            .Include(x => x.Labels)
-            .FirstOrDefaultAsync(x => x.Id.Equals(_board.Id));
-
-        if(board is null)
+        if (!await SucceededAsync(result))
             return;
 
-        var targetLabel = board.Labels.FirstOrDefault(x => x.Id.Equals(_label.Id));
-
-        if (targetLabel is null)
-            return;
-
-        targetLabel.BoardId = board.Id;
-        targetLabel.Name = _labelModel.Text;
-        targetLabel.TextColor = _labelModel.TextColor;
-        targetLabel.BackgroundColor = _labelModel.BackgroundColor;
-
-        await db.SaveChangesAsync();
-
-        _board = board;
-        StateHasChanged();
         await OnSubmit.InvokeAsync();
         Modal?.Close();
     }

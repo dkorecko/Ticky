@@ -46,7 +46,7 @@ Ticky is packed with powerful features designed to make your task management sea
 - **Completion Confetti**: Feel the satisfaction of completing each task with a bunch of confetti, there to celebrate your success.
 - **Filtering**: Easily find and organize tasks based on various criteria.
 - **Trello import**: You can import your Trello boards, including the ability to map all the assigned members from your Trello board to Ticky users.
-- **API**: Let scripts and agents read and update your boards with API tokens, read-only or read and write. See [API](#-api).
+- **API**: Let scripts and agents do everything you can do in the app, with API tokens that are read-only or read and write. See [API](#-api).
 - ... and more!
 
 ## 📋 Prerequisites
@@ -104,6 +104,7 @@ services:
       #- FULLY_OFFLINE=true # Uncomment this if you want to disable the avatar service and run fully offline.
       #- DISABLE_USER_SIGNUPS=true # Uncomment to disable user self-registration. When true, only admins can create new users via the Admin Panel.
       - BASE_URL=http://localhost:4088 # Base URL for generating clickable links in emails (e.g., reminder emails). Change to the base URL you use to access Ticky.
+      #- API_RATE_LIMIT=600 # API requests each user may make per minute, across all their tokens. Set to 0 for no limit.
       - SMTP_ENABLED=true # Change this to false to ignore SMTP configuration and disable SMTP setup. Resetting password via typical password reset won't work (will need to be reset by an admin via the Admin Panel), as well as reminders and notifications. Can be enabled at any time.
       - SMTP_HOST=your-smtp-host
       - SMTP_PORT=your-smtp-port
@@ -216,7 +217,7 @@ The application automatically applies migrations on startup.
 
 ## 🔌 API
 
-Ticky has a REST API under `/api/v1`, so scripts and agents can read and update your boards. Every request acts as the user who created the token, so it reaches exactly the boards that user can.
+Ticky has a REST API under `/api/v1`, so scripts and AI agents can work with Ticky end to end: everything you can do in the app, under the same rules. Every request acts as the user who created the token, so it reaches exactly the boards that user can.
 
 ### Tokens
 
@@ -230,37 +231,46 @@ curl -H "Authorization: Bearer tky_..." http://localhost:4088/api/v1/boards
 
 ### Endpoints
 
-| Method | Path | What it does |
-| --- | --- | --- |
-| `GET` | `/api/v1/boards` | Boards you can open |
-| `GET` | `/api/v1/boards/{id}` | A board with its columns and labels |
-| `GET` | `/api/v1/boards/{id}/cards` | All cards on a board, in board order |
-| `GET` | `/api/v1/cards/{id}` | A card with its description, assignees, labels, subtasks and comments |
-| `POST` | `/api/v1/cards` | Create a card in a column |
-| `PATCH` | `/api/v1/cards/{id}` | Change a card's name, description, priority, deadline or flag |
-| `POST` | `/api/v1/cards/{id}/move` | Move a card to another column on the same board |
-| `POST` | `/api/v1/cards/{id}/comments` | Comment on a card |
+Every Ticky instance serves the full reference at `/api/docs`, where you can also try the endpoints, and the OpenAPI document at `/openapi/v1.json` for API clients, code generators and agent tools. Both work offline. In short:
 
-Every Ticky instance serves the full reference at `/api/docs`, where you can also try the endpoints, and the OpenAPI document at `/openapi/v1.json` for API clients and code generators. Both work offline.
+| Area | Endpoints |
+| --- | --- |
+| **You** | `GET /me` who the token acts as · `GET /me/work` your open assigned cards and running timers · `GET /search?q=` cards on all your boards by name or key, like `TKY-12` |
+| **Projects** | `GET`, `POST /projects` · `GET`, `PATCH`, `DELETE /projects/{id}` · `POST /projects/{id}/boards` · members: `GET`, `POST /projects/{id}/members`, `PATCH`, `DELETE /projects/{id}/members/{userId}` |
+| **Boards** | `GET /boards` · `GET`, `PATCH`, `DELETE /boards/{id}` · `GET /boards/{id}/cards` with filters · `GET /boards/{id}/activity` · `POST /boards/{id}/clone` · `PUT`, `DELETE /boards/{id}/favorite` · members: `GET`, `POST /boards/{id}/members`, `PATCH`, `DELETE /boards/{id}/members/{userId}` |
+| **Columns and labels** | `POST /boards/{id}/columns` · `PATCH`, `DELETE /columns/{id}` · `POST /columns/{id}/move` · `POST /boards/{id}/labels` · `PATCH`, `DELETE /labels/{id}` |
+| **Cards** | `POST /cards` · `GET`, `PATCH`, `DELETE /cards/{id}` · `POST /cards/{id}/move` · `GET /cards/{id}/activity` · `POST /cards/{id}/comments` · `PUT`, `DELETE /cards/{id}/assignees/{userId}` · `PUT`, `DELETE /cards/{id}/labels/{labelId}` · `PUT`, `DELETE /cards/{id}/snooze` · `PUT`, `DELETE /cards/{id}/repeat` |
+| **Card items** | subtasks: `POST /cards/{id}/subtasks`, `PATCH`, `DELETE /cards/{id}/subtasks/{subtaskId}`, `POST …/move`, `PUT`, `DELETE …/assignees/{userId}` · time: `PUT`, `DELETE /cards/{id}/timer` (start and stop yours), `POST /cards/{id}/time-records`, `PATCH`, `DELETE /cards/{id}/time-records/{recordId}` · `POST /cards/{id}/reminders`, `DELETE …/{reminderId}` · attachments: `POST /cards/{id}/attachments` (tokens only), `GET …/{attachmentId}/content`, `DELETE …/{attachmentId}` · links: `POST /cards/{id}/links`, `DELETE …/{linkId}` |
 
-For example, to create a card and then move it to another column:
+All paths start with `/api/v1`. For example, to create a card with a label and an assignee, and then move it to another column:
 
 ```bash
 curl -X POST http://localhost:4088/api/v1/cards \
   -H "Authorization: Bearer tky_..." -H "Content-Type: application/json" \
-  -d '{"columnId": 12, "name": "Renew the domain"}'
+  -d '{"columnId": 12, "name": "Renew the domain", "priority": "High", "labelIds": [3], "assigneeIds": [7]}'
 
 curl -X POST http://localhost:4088/api/v1/cards/345/move \
   -H "Authorization: Bearer tky_..." -H "Content-Type: application/json" \
   -d '{"targetColumnId": 13}'
 ```
 
+### Permissions
+
+The API follows the app's rules. Members of a board, or of its project, can do everything with its cards. Board admins also change the board, its columns, labels and members. Project admins change the project and its members, and add boards to it. Anyone can create a project. Read-only tokens can only read.
+
 ### Conventions
 
-- **Times** are in the server's time zone (in Docker that's UTC unless you set `TZ`) and are returned without an offset. Times you send with an offset or `Z` are converted to it.
+- **Times** are in the server's time zone (in Docker that's UTC unless you set `TZ`) and are returned without an offset. Times you send with an offset or `Z` are converted to it. Durations are `hh:mm:ss`.
 - **Enums** are names, like `"priority": "High"`.
-- **Errors** are [problem details](https://www.rfc-editor.org/rfc/rfc9457): `401` without a valid token, `403` when a read-only token calls a write endpoint, `404` for boards and cards that don't exist or that you can't access, and `400` or `409` with a `detail` or per-field `errors` when a request can't be done.
+- **Partial updates** (`PATCH`) change only the fields you send. Adding something a card already has, or removing something it doesn't, changes nothing and succeeds.
+- **Errors** are [problem details](https://www.rfc-editor.org/rfc/rfc9457): `401` without a valid token, `403` when a read-only token calls a write endpoint or you may not make the change (e.g. you aren't an admin), `404` for anything that doesn't exist or that you can't access, and `400` or `409` with a `detail` or per-field `errors` when a request can't be done.
+- **Activity** comes a page at a time, newest first: pass a page's `nextBefore` as `before` to get the next one.
+- **Rate limit**: each user may make 600 requests a minute across all their tokens, or what `API_RATE_LIMIT` sets (`0` turns the limit off). Past it, requests get `429` with a `Retry-After` header.
 - **Changes** made through the API show up on open boards right away and appear in the card's activity as yours.
+
+### Live updates
+
+To hear about changes instead of polling, connect a [SignalR](https://learn.microsoft.com/aspnet/core/signalr/introduction) client to `/updatehub` with your token, either in the `Authorization` header or as the `access_token` query parameter. Call `SubscribeBoard(boardId)` for each board, and handle `BoardChange(boardId, pageId)`: it tells you the board changed, so you can load what you need again.
 
 ## 🧪 Development
 

@@ -1,5 +1,6 @@
 @inherits AbstractModal
 @inject IDbContextFactory<DataContext> _dbContextFactory
+@inject ColumnService _columnService
 
 <Modal @ref="Modal" Title="Edit column" OnSubmitAttempted="OnSubmitAttempted">
     @if (_column is not null)
@@ -45,9 +46,6 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
-    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
-    private MainLayout _mainLayout { get; set; } = default!;
-
     [Parameter]
     public EventCallback OnSubmit { get; set; }
 
@@ -78,28 +76,16 @@
         if (!_editContext.Validate())
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-
-        // Only admins see the option, but the role may have changed since the dialog opened.
-        if (!await db.IsBoardAdminAsync(_column.BoardId, _user))
+        var result = await _columnService.UpdateAsync(_column.Id, _user.Id, new()
         {
-            _mainLayout.RunNotification(new("Only board admins can edit columns.", NotificationType.Fail));
-            await Modal.Close();
+            Name = _column.Name,
+            Finished = _column.Finished,
+            MaxCards = _column.MaxCards,
+            NewCardPlacement = _column.NewCardPlacement,
+        });
+
+        if (!await SucceededAsync(result))
             return;
-        }
-
-        var targetColumn = await db.Columns
-            .FirstOrDefaultAsync(x => x.Id.Equals(_column.Id));
-
-        if (targetColumn is not null)
-        {
-            targetColumn.Name = _column.Name;
-            targetColumn.Finished = _column.Finished;
-            targetColumn.MaxCards = _column.MaxCards;
-            targetColumn.NewCardPlacement = _column.NewCardPlacement;
-
-            await db.SaveChangesAsync();
-        }
 
         await Modal.Close();
         await OnSubmit.InvokeAsync();

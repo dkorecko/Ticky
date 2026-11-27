@@ -90,9 +90,6 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
-    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
-    private MainLayout _mainLayout { get; set; } = default!;
-
     [Parameter]
     public EventCallback OnSubmit { get; set; }
 
@@ -126,7 +123,7 @@
         }
         catch (UnauthorizedAccessException)
         {
-            _mainLayout.RunNotification(new("Only project admins can import boards into the project.", NotificationType.Fail));
+            MainLayout.RunNotification(new("Only project admins can import boards into the project.", NotificationType.Fail));
             await Modal.Close();
             return;
         }
@@ -144,7 +141,7 @@
     private void ShowUploadError(string message)
     {
         _isLoading = false;
-        _mainLayout.RunNotification(new Notification($"File upload failed: {message}", NotificationType.Fail));
+        MainLayout.RunNotification(new Notification($"File upload failed: {message}", NotificationType.Fail));
         StateHasChanged();
     }
 
@@ -178,7 +175,7 @@
             
             _model.MemberIdentifiers = new string[_model.ImportDto.Members.Count];
 
-            _mainLayout.RunNotification(new Notification("File was uploaded, you can verify the data and confirm the import."));
+            MainLayout.RunNotification(new Notification("File was uploaded, you can verify the data and confirm the import."));
             _isLoading = false;
         }
         catch (Exception ex)

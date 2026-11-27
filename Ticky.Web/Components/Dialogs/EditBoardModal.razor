@@ -1,5 +1,6 @@
 @inherits AbstractModal
 @inject IDbContextFactory<DataContext> _dbContextFactory
+@inject BoardService _boardService
 
 <Modal @ref="Modal" Title="Edit board" OnSubmitAttempted="OnSubmitAttempted">
     @if (_board is not null)
@@ -32,9 +33,6 @@
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
 
-    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
-    private MainLayout _mainLayout { get; set; } = default!;
-
     [Parameter]
     public EventCallback OnSubmit { get; set; }
 
@@ -65,25 +63,15 @@
         if (!_editContext.Validate())
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-
-        // Only admins see the option, but the role may have changed since the dialog opened.
-        if (!await db.IsBoardAdminAsync(_board.Id, _user))
+        var result = await _boardService.UpdateAsync(_board.Id, _user.Id, new()
         {
-            _mainLayout.RunNotification(new("Only board admins can edit the board.", NotificationType.Fail));
-            await Modal.Close();
+            Name = _board.Name,
+            Description = _board.Description,
+            Code = _board.Code,
+        });
+
+        if (!await SucceededAsync(result))
             return;
-        }
-
-        var targetBoard = await db.Boards.FirstOrDefaultAsync(x => x.Id.Equals(_board.Id));
-
-        if (targetBoard is not null)
-        {
-            targetBoard.Name = _board.Name;
-            targetBoard.Description = _board.Description;
-            targetBoard.Code = _board.Code;
-            await db.SaveChangesAsync();
-        }
 
         await Modal.Close();
         await OnSubmit.InvokeAsync();

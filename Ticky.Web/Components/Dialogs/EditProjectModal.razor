@@ -1,5 +1,6 @@
 @inherits AbstractModal
 @inject IDbContextFactory<DataContext> _dbContextFactory
+@inject ProjectService _projectService
 
 <Modal @ref="Modal" Title="Edit project" OnSubmitAttempted="OnSubmitAttempted">
     @if(_project is null)
@@ -21,9 +22,6 @@
 @code {
     [CascadingParameter(Name = Constants.CascadingParameters.CurrentAccount)]
     private User _user { get; set; } = default!;
-
-    [CascadingParameter(Name = Constants.CascadingParameters.MainLayout)]
-    private MainLayout _mainLayout { get; set; } = default!;
 
     [Parameter]
     public EventCallback OnSubmit { get; set; }
@@ -53,23 +51,8 @@
         if (!_editContext.Validate())
             return;
 
-        using var db = _dbContextFactory.CreateDbContext();
-
-        // Only admins see the option, but the role may have changed since the dialog opened.
-        if (!await db.IsProjectAdminAsync(_project.Id, _user.Id))
-        {
-            _mainLayout.RunNotification(new("Only project admins can edit the project.", NotificationType.Fail));
-            await Modal.Close();
+        if (!await SucceededAsync(await _projectService.RenameAsync(_project.Id, _user.Id, _project.Name)))
             return;
-        }
-
-        var project = await db.Projects.FirstOrDefaultAsync(x => x.Id.Equals(_project.Id));
-
-        if (project is not null)
-        {
-            project.Name = _project.Name;
-            await db.SaveChangesAsync();
-        }
 
         await Modal.Close();
         await OnSubmit.InvokeAsync();

@@ -26,12 +26,14 @@ public class Board : AbstractDbEntity, IDeletable
     /// Whether the user may open the board: they're a member of it or of its project. Needs <see cref="Memberships"/>
     /// and the project's memberships loaded; <see cref="AccessibleBy"/> is the same rule for database queries.
     /// </summary>
-    public bool VerifyAccess(User user) =>
-        Memberships.Any(x => x.UserId.Equals(user.Id))
-        || Project.Memberships.Any(x => x.UserId.Equals(user.Id));
+    public bool VerifyAccess(User user) => VerifyAccess(user.Id);
+
+    /// <inheritdoc cref="VerifyAccess(User)"/>
+    public bool VerifyAccess(int userId) =>
+        Memberships.Any(x => x.UserId == userId) || Project.Memberships.Any(x => x.UserId == userId);
 
     /// <summary>
-    /// <see cref="VerifyAccess"/> as a query condition, so the database filters boards by it. Keep the two in step.
+    /// <see cref="VerifyAccess(int)"/> as a query condition, so the database filters boards by it. Keep the two in step.
     /// Use it through the <c>AccessibleBy</c> query extensions, which also apply it to columns and cards.
     /// </summary>
     public static Expression<Func<Board, bool>> AccessibleBy(int userId) =>

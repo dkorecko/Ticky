@@ -341,7 +341,7 @@
 
     private async void Filter(Object? obj = null, ElapsedEventArgs? e = null)
     {
-        _resultCards = await _searchService.SearchAsync(_searchTerm, _user);
+        _resultCards = await _searchService.SearchAsync(_searchTerm, _user.Id);
         _isLoading = false;
         await InvokeAsync(StateHasChanged);
     }

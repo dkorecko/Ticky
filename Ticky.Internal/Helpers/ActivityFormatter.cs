@@ -1,4 +1,8 @@
+using System.Collections.Concurrent;
 using System.Net;
+using System.Reflection;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Ticky.Base.Converters;
 
 namespace Ticky.Internal.Helpers;
@@ -13,11 +17,37 @@ public static class ActivityFormatter
     /// HTML describing what happened, without the person's name, e.g. "<b>added</b> label <b>Bug</b>".
     /// Every value is escaped.
     /// </summary>
-    public static string ToHtml(this Activity activity)
-    {
-        if (activity.LegacyText is not null)
-            return activity.LegacyText;
+    public static string ToHtml(this Activity activity) =>
+        activity.LegacyText ?? Describe(activity, verb => $"<b>{verb}</b>", value => $"<b>{WebUtility.HtmlEncode(value ?? "?")}</b>");
 
+    /// <summary>
+    /// Plain text describing what happened, without the person's name, e.g. "added label Bug". For the API, where the
+    /// reader isn't a browser.
+    /// </summary>
+    public static string ToText(this Activity activity) =>
+        activity.LegacyText is { } legacy
+            ? WebUtility.HtmlDecode(HtmlTag.Replace(legacy, string.Empty))
+            : Describe(activity, verb => verb, value => value ?? "?");
+
+    /// <summary>
+    /// What the activity recorded, as its own properties by name, e.g. <c>LabelId</c> and <c>LabelName</c> for a label
+    /// added. Empty for kinds that record nothing more, like a comment posted.
+    /// </summary>
+    public static Dictionary<string, object?> ToDetails(this Activity activity) =>
+        DetailProperties
+            .GetOrAdd(activity.GetType(), type => type
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(x => x.DeclaringType != typeof(Activity) && x.GetCustomAttribute<JsonIgnoreAttribute>() is null)
+                .Where(x => !x.GetGetMethod()!.IsVirtual)
+                .ToArray())
+            .ToDictionary(x => x.Name, x => x.GetValue(activity));
+
+    private static readonly Regex HtmlTag = new("<[^>]*>");
+    private static readonly ConcurrentDictionary<Type, PropertyInfo[]> DetailProperties = new();
+
+    /// <summary>The wording of every kind of activity, with the action word and the values shaped by the caller.</summary>
+    private static string Describe(Activity activity, Func<string, string> B, Func<string?, string> V)
+    {
         return activity switch
         {
             CardMovedActivity x when x.FromColumnName is null => $"{B("moved")} the card to {V(x.ToColumnName)}",
@@ -78,12 +108,6 @@ public static class ActivityFormatter
             _ => string.Empty,
         };
     }
-
-    /// <summary>The action word, emphasized.</summary>
-    private static string B(string verb) => $"<b>{verb}</b>";
-
-    /// <summary>A value, escaped and emphasized.</summary>
-    private static string V(string? value) => $"<b>{WebUtility.HtmlEncode(value ?? "?")}</b>";
 
     private static string? Date(DateTime? value) => value?.ToReadableStringWithTime();
 }

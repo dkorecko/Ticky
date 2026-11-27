@@ -16,7 +16,7 @@ public class RepeatHostedService(IServiceScopeFactory serviceScopeFactory) : Abs
         var allRepeatCards = await db.Cards.Where(x => x.RepeatInfo != null).ToListAsync();
 
         var pendingNextRepeatCardIds = allRepeatCards
-            .Where(x => x.CalculateNextRepeat(DateTime.Now) < DateTime.Now)
+            .Where(x => x.RepeatInfo!.GetNextRepeat() < DateTime.Now)
             .Select(x => x.Id)
             .ToList();
 
@@ -178,7 +178,7 @@ public class RepeatHostedService(IServiceScopeFactory serviceScopeFactory) : Abs
             card.Activities.Add(createdActivity);
             createdActivities.Add((createdActivity, newCard));
 
-            PlaceNewCard(targetColumn.Cards, newCard, card.RepeatInfo.CardPlacement);
+            targetColumn.Cards.Place(newCard, card.RepeatInfo.CardPlacement);
         }
 
         if (populatedPendingRepeatCards.Count != 0)
@@ -191,24 +191,5 @@ public class RepeatHostedService(IServiceScopeFactory serviceScopeFactory) : Abs
             await db.SaveChangesAsync();
             logger.LogInformation("{Count} cards have been repeated.", populatedPendingRepeatCards.Count);
         }
-    }
-
-    /// <summary>Adds a repeated card to the top or bottom of a column's cards.</summary>
-    public static void PlaceNewCard(List<Card> columnCards, Card newCard, CardPlacement placement)
-    {
-        switch (placement)
-        {
-            case CardPlacement.Top:
-                columnCards.ForEach(x => x.Index++);
-                newCard.Index = 0;
-                break;
-            case CardPlacement.Bottom:
-                newCard.Index = columnCards.Count == 0 ? 0 : columnCards.Max(x => x.Index) + 1;
-                break;
-            default:
-                throw new Exception("Unsupported card placement type");
-        }
-
-        columnCards.Add(newCard);
     }
 }

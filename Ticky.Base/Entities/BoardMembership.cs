@@ -1,6 +1,6 @@
 namespace Ticky.Base.Entities;
 
-public class BoardMembership : AbstractDbEntity
+public class BoardMembership : AbstractDbEntity, IMembership
 {
     public required int UserId { get; set; }
     public virtual User User { get; set; } = null!;

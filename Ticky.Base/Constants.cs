@@ -6,6 +6,9 @@ namespace Ticky.Base
         public static bool FULLY_OFFLINE;
         public static bool DISABLE_USER_SIGNUPS = false;
         public static string BASE_URL = string.Empty;
+
+        /// <summary>How many API requests one user may make a minute, across all their tokens; 0 for no limit.</summary>
+        public static int API_RATE_LIMIT = Api.DEFAULT_RATE_LIMIT;
 #if DEBUG
         public const string APP_NAME = "Ticky [DEV]";
 #else
@@ -171,6 +174,12 @@ namespace Ticky.Base
             /// Endpoints that change data use this.
             /// </summary>
             public const string ApiCallerCanWrite = "ApiCallerCanWrite";
+
+            /// <summary>
+            /// Only read and write API tokens, not the browser's sign-in. For endpoints that take bodies a page on
+            /// another site could send along with the cookie without asking first (multipart file uploads).
+            /// </summary>
+            public const string ApiTokenCanWrite = "ApiTokenCanWrite";
         }
 
         public static class Roles
@@ -223,6 +232,39 @@ namespace Ticky.Base
 
             /// <summary>How often a token's last-used time is written, so busy clients don't cause a write per request.</summary>
             public static readonly TimeSpan LastUsedPrecision = TimeSpan.FromMinutes(1);
+
+            /// <summary>Requests a minute one user may make unless <c>API_RATE_LIMIT</c> says otherwise.</summary>
+            public const int DEFAULT_RATE_LIMIT = 600;
+
+            /// <summary>Name of the rate limiting policy the API's controllers use.</summary>
+            public const string RateLimitPolicy = "api";
+
+            /// <summary>
+            /// Query parameter a token may come in on when connecting to the live-update hub, since browsers can't send
+            /// headers with WebSocket connections. SignalR clients use it for their access token.
+            /// </summary>
+            public const string HubTokenParameter = "access_token";
+        }
+
+        /// <summary>
+        /// The formats a card repeat's settings must have, shared by the repeat dialog and
+        /// <see cref="Entities.Owned.RepeatInfo.Validate"/>. The patterns end in <c>\z</c>: <c>$</c> would also accept a
+        /// trailing newline ("Sun\n"), a day no date ever matches.
+        /// </summary>
+        public static class Repeat
+        {
+            /// <summary>Days of the week to repeat on, like <c>Mon,Wed,Fri</c>.</summary>
+            public const string WEEK_DAYS_PATTERN =
+                @"^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)(?:,(Mon|Tue|Wed|Thu|Fri|Sat|Sun))*\z";
+
+            /// <summary>Days of the month to repeat on, like <c>1,15,31</c>.</summary>
+            public const string MONTH_DAYS_PATTERN = @"^(3[01]|[12][0-9]|[1-9])(?:,(3[01]|[12][0-9]|[1-9]))*\z";
+
+            /// <summary>The largest interval for the "every x days/weeks/months/years" repeats.</summary>
+            public const int MAX_INTERVAL = 999;
+
+            /// <summary>How far ahead a repeat may start, so the next date always fits in a <see cref="DateTime"/>.</summary>
+            public const int MAX_YEARS_AHEAD = 100;
         }
 
         public static class StorageKeys

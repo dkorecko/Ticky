@@ -60,7 +60,7 @@
     {
         try
         {
-            await _cardService.SetSubtaskCompletedAsync(Subtask.Id, _user.Id, e.Value is bool completed && completed);
+            await _cardService.SetSubtaskCompletedAsync(Subtask.CardId, _user.Id, Subtask.Id, e.Value is bool completed && completed);
             await UpdateCard.InvokeAsync();
         }
         catch (Exception ex)
@@ -74,7 +74,7 @@
     {
         try
         {
-            await _cardService.DeleteSubtaskAsync(Subtask.Id, _user.Id);
+            await _cardService.DeleteSubtaskAsync(Subtask.CardId, _user.Id, Subtask.Id);
             await UpdateCard.InvokeAsync();
         }
         catch (Exception ex)

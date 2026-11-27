@@ -1,6 +1,6 @@
-﻿@inject IDbContextFactory<DataContext> _dbContextFactory
-@inject IJSRuntime _js
+﻿@inject IJSRuntime _js
 @inject CardService _cardService
+@inject ColumnService _columnService
 @inject ILogger<ColumnView> _logger
 @inherits NotifiableBase
 
@@ -178,6 +178,8 @@
         await InvokeAsync(StateHasChanged);
     }
 
+    private const string MOVE_FAILED = "Failed to move card. Changes were reverted.";
+
     private int GetColumnIdFromString(string str)
         => Convert.ToInt32(str.Replace(COLUMN_PREFIX, string.Empty));
 
@@ -185,234 +187,108 @@
     {
         var columnId = GetColumnIdFromString(args.columnId);
         var movedCardId = Convert.ToInt32(args.movedCardId);
+        int? targetCardId = args.targetCardId is not null ? Convert.ToInt32(args.targetCardId) : null;
 
-        var snapshot = Cards.Select(c => new { c.Id, c.ColumnId, c.Index }).ToList();
-
-        var targetColumnCards = Cards.Where(c => c.ColumnId == columnId).OrderBy(c => c.Index).ToList();
-        var movedCard = targetColumnCards.FirstOrDefault(x => x.Id == movedCardId);
+        var columnCards = Cards.Where(c => c.ColumnId == columnId).ToList();
+        var movedCard = columnCards.FirstOrDefault(x => x.Id == movedCardId);
 
         if (movedCard is null)
             return;
 
-        int targetIndex = targetColumnCards.Any() ? targetColumnCards.Max(x => x.Index) + 1 : 0;
-        int? targetCardId = args.targetCardId is not null ? Convert.ToInt32(args.targetCardId) : null;
+        var snapshot = Snapshot();
 
-        if (targetCardId is not null)
-        {
-            var targetCard = targetColumnCards.FirstOrDefault(x => x.Id.Equals(targetCardId));
-            if (targetCard is not null)
-            {
-                targetIndex = targetCard.Index;
-                foreach (var card in targetColumnCards.OrderByDescending(x => x.Index))
-                {
-                    if (card.Index >= targetCard.Index)
-                        card.Index++;
-                }
-            }
-        }
-
-        movedCard.Index = targetIndex;
-        IndexHelper.FixIndices(Cards.Where(c => c.ColumnId == columnId).ToList());
-
+        // Show the new order right away, then save it.
+        columnCards.MoveBefore(movedCard, columnCards.FirstOrDefault(x => x.Id == targetCardId));
         StateHasChanged();
 
-        try
-        {
-            using var db = _dbContextFactory.CreateDbContext();
-
-            var dbTargetColumn = db.Columns
-                .Include(x => x.Cards)
-                .First(x => x.Id.Equals(columnId));
-
-            var dbMovedCard = dbTargetColumn.Cards.OrderBy(x => x.Index).First(x => x.Id.Equals(movedCardId));
-
-            int dbTargetIndex = dbTargetColumn.Cards.Any() ? dbTargetColumn.Cards.Max(x => x.Index) + 1 : 0;
-
-            if (targetCardId is not null)
-            {
-                var dbTargetCard = dbTargetColumn.Cards.FirstOrDefault(x => x.Id.Equals(targetCardId));
-                if (dbTargetCard is not null)
-                {
-                    dbTargetIndex = dbTargetCard.Index;
-                    foreach (var card in dbTargetColumn.Cards.OrderByDescending(x => x.Index))
-                    {
-                        if (card.Index >= dbTargetCard.Index)
-                            card.Index++;
-                    }
-                }
-            }
-
-            dbMovedCard.Index = dbTargetIndex;
-            IndexHelper.FixIndices(dbTargetColumn.Cards);
-
-            await db.SaveChangesAsync();
+        if (await MainLayout.SaveOrRevertAsync(_logger, () => _cardService.MoveAsync(movedCardId, User.Id, columnId, targetCardId), MOVE_FAILED, () => Restore(snapshot)))
             await OnUpdate.InvokeAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to persist moved card within column.");
-            foreach (var oldCardPosition in snapshot)
-            {
-                var card = Cards.FirstOrDefault(x => x.Id == oldCardPosition.Id);
-
-                if (card is not null)
-                {
-                    card.ColumnId = oldCardPosition.ColumnId;
-                    card.Index = oldCardPosition.Index;
-                }
-            }
-
-            IndexHelper.FixIndices(Cards.Where(c => c.ColumnId == columnId).ToList());
-            StateHasChanged();
-
-            MainLayout.RunNotification(new("Failed to move card. Changes were reverted.", NotificationType.Fail));
-        }
     }
 
     private void OnExceededCardLimit()
         => MainLayout.RunNotification(new("The card could not be moved to this column due to it being already full.", NotificationType.Fail));
+
+    /// <summary>Where every card is, to put them back if a move fails.</summary>
+    private List<(Card Card, int ColumnId, Column Column, int Index)> Snapshot() =>
+        Cards.Select(c => (c, c.ColumnId, c.Column, c.Index)).ToList();
+
+    private void Restore(List<(Card Card, int ColumnId, Column Column, int Index)> snapshot)
+    {
+        foreach (var (card, columnId, column, index) in snapshot)
+        {
+            card.ColumnId = columnId;
+            card.Column = column;
+            card.Index = index;
+        }
+
+        StateHasChanged();
+    }
 
     private async Task OnMovedFromColumn((string movedCardId, string? targetCardId, string oldColumnId, string newColumnId, double x, double y) args)
     {
         if (Board is null)
             return;
 
-        var oldColumnId = GetColumnIdFromString(args.oldColumnId);
         var newColumnId = GetColumnIdFromString(args.newColumnId);
-
-        var snapshot = Cards.Select(c => new { c.Id, c.ColumnId, c.Index }).ToList();
-
         var movedCardId = Convert.ToInt32(args.movedCardId);
-        var oldColumnCards = Cards.Where(c => c.ColumnId == oldColumnId).OrderBy(c => c.Index).ToList();
-        var newColumnCards = Cards.Where(c => c.ColumnId == newColumnId).OrderBy(c => c.Index).ToList();
+        int? targetCardId = args.targetCardId is not null ? Convert.ToInt32(args.targetCardId) : null;
 
-        var movedCard = oldColumnCards.FirstOrDefault(x => x.Id == movedCardId);
+        var movedCard = Cards.FirstOrDefault(x => x.Id == movedCardId);
+        var newColumn = Board.Columns.First(c => c.Id == newColumnId);
+        var newColumnCards = Cards.Where(c => c.ColumnId == newColumnId).ToList();
 
         if (movedCard is null)
             return;
 
-        var newColumn = Board.Columns.First(c => c.Id == newColumnId);
-
+        // Filtered-out cards don't count here, but the service has the final say.
         if (newColumn.MaxCards != 0 && newColumnCards.Count + 1 > newColumn.MaxCards)
         {
             OnExceededCardLimit();
             return;
         }
 
-        oldColumnCards.Remove(movedCard);
-        IndexHelper.FixIndices(oldColumnCards);
+        var snapshot = Snapshot();
+        var oldColumnId = movedCard.ColumnId;
 
-        int targetIndex = newColumnCards.Any() ? newColumnCards.Max(x => x.Index) + 1 : 0;
-        int? targetCardId = args.targetCardId is not null ? Convert.ToInt32(args.targetCardId) : null;
-
-        if (targetCardId is not null)
-        {
-            var targetCard = newColumnCards.FirstOrDefault(x => x.Id.Equals(targetCardId));
-
-            if (targetCard is not null)
-            {
-                targetIndex = targetCard.Index;
-
-                foreach (var card in newColumnCards.OrderByDescending(x => x.Index))
-                {
-                    if (card.Index >= targetCard.Index)
-                        card.Index++;
-                }
-            }
-        }
-
-        var masterMoved = Cards.First(x => x.Id == movedCardId);
-        masterMoved.ColumnId = newColumnId;
-        masterMoved.Column = newColumn;
-        masterMoved.Index = targetIndex;
-
-        IndexHelper.FixIndices(Cards.Where(c => c.ColumnId == oldColumnId).ToList());
-        IndexHelper.FixIndices(Cards.Where(c => c.ColumnId == newColumnId).ToList());
+        // Show the move right away, then save it.
+        newColumnCards.MoveBefore(movedCard, newColumnCards.FirstOrDefault(x => x.Id == targetCardId));
+        movedCard.ColumnId = newColumnId;
+        movedCard.Column = newColumn;
+        Cards.Where(c => c.ColumnId == oldColumnId).ToList().FixIndices();
 
         await OnCardMoved.InvokeAsync();
 
         if (newColumn.Finished)
             await _js.InvokeVoidAsync("triggerConfetti", args.x, args.y);
 
-        try
-        {
-            if (!await _cardService.MoveToColumnAsync(movedCardId, User.Id, newColumnId, targetCardId))
-                throw new IndexOutOfRangeException("Target column is full.");
+        var saved = await MainLayout.SaveOrRevertAsync(
+            _logger,
+            () => _cardService.MoveAsync(movedCardId, User.Id, newColumnId, targetCardId),
+            MOVE_FAILED,
+            async () =>
+            {
+                Restore(snapshot);
+                await OnCardMoved.InvokeAsync();
+            }
+        );
 
+        if (saved)
             await OnUpdate.InvokeAsync();
-        }
-        catch (Exception ex)
-        {
-            foreach (var oldCardPosition in snapshot)
-            {
-                var card = Cards.FirstOrDefault(x => x.Id == oldCardPosition.Id);
-                if (card is not null)
-                {
-                    card.ColumnId = oldCardPosition.ColumnId;
-                    card.Index = oldCardPosition.Index;
-
-                    if (card.Id == movedCardId)
-                        card.Column = Board.Columns.First(c => c.Id.Equals(oldCardPosition.ColumnId));
-                }
-            }
-
-            IndexHelper.FixIndices(Cards.Where(c => c.ColumnId == oldColumnId).ToList());
-            IndexHelper.FixIndices(Cards.Where(c => c.ColumnId == newColumnId).ToList());
-            await OnCardMoved.InvokeAsync();
-
-            if (ex is IndexOutOfRangeException)
-                OnExceededCardLimit();
-            else
-            {
-                _logger.LogError(ex, "Failed to persist moved card from column.");
-                MainLayout.RunNotification(new("Failed to move card. Changes were reverted.", NotificationType.Fail));
-            }
-        }
     }
 
     private async Task ExpandOrCollapseColumn(int columnId)
     {
-        ArgumentNullException.ThrowIfNull(Board);
+        var column = Board.Columns.First(x => x.Id.Equals(columnId));
 
-        using var db = _dbContextFactory.CreateDbContext();
-
-        // Only admins see the option, but the role may have changed since the page loaded.
-        if (!await db.IsBoardAdminAsync(Board.Id, User))
-        {
-            MainLayout.RunNotification(new("Only board admins can collapse or expand columns.", NotificationType.Fail));
+        if (!await MainLayout.ReportOrReloadAsync(await _columnService.UpdateAsync(columnId, User.Id, new() { Collapsed = !column.Collapsed }), () => OnUpdate.InvokeAsync()))
             return;
-        }
 
-        var targetColumn = Board.Columns.First(x => x.Id.Equals(columnId));
-        targetColumn.Collapsed = !targetColumn.Collapsed;
-        await db.Columns
-            .Where(x => x.Id.Equals(columnId) && x.BoardId.Equals(Board.Id))
-            .ExecuteUpdateAsync(x => x.SetProperty(y => y.Collapsed, targetColumn.Collapsed));
-
+        column.Collapsed = !column.Collapsed;
         StateHasChanged();
         await OnUpdate.InvokeAsync();
     }
 
-    private async Task OpenDeleteColumnDialog(Column column)
-    {
-        ArgumentNullException.ThrowIfNull(DeleteColumnModal);
-
-        await DeleteColumnModal.OpenDialog(column, async () =>
-        {
-            using var db = _dbContextFactory.CreateDbContext();
-
-            var targetBoard = await db.Boards
-                .Include(x => x.Columns)
-            .FirstOrDefaultAsync(x => x.Id.Equals(Column.BoardId));
-
-            if (targetBoard is null)
-                return;
-
-            targetBoard.Columns.FixIndices();
-
-            await db.SaveChangesAsync();
-        });
-    }
+    private async Task OpenDeleteColumnDialog(Column column) => await DeleteColumnModal.OpenDialog(column);
 
     private void StartAddingToColumn(int columnId)
     {
@@ -436,15 +312,12 @@
         if (_createTaskModel is null || string.IsNullOrWhiteSpace(_createTaskModel.Text))
             return;
 
-        var result = await _cardService.CreateCardAsync(columnId, User.Id, _createTaskModel.Text, User.AutomaticAssign);
-
-        if (result.Status == CardService.CreateCardStatus.ColumnFull)
+        var result = await _cardService.CreateCardAsync(columnId, User.Id, new(_createTaskModel.Text)
         {
-            MainLayout.RunNotification(new("This column is already full.", NotificationType.Fail));
-            return;
-        }
+            AssigneeIds = User.AutomaticAssign ? [User.Id] : [],
+        });
 
-        if (result.Card is not { } newCard)
+        if (!MainLayout.Report(result) || result.Value is not { } newCard)
             return;
 
         await OnUpdate.InvokeAsync();

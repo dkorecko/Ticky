@@ -51,7 +51,7 @@
         if (_card is null)
             return;
 
-        var labels = await _cardService.ToggleLabelAsync(_card.Id, _user.Id, label.Id);
+        var labels = (await _cardService.SetLabelAsync(_card.Id, _user.Id, label.Id, !_card.Labels.Any(x => x.Id == label.Id))).Value;
 
         if (labels is null)
             return;
