@@ -332,6 +332,46 @@ function detachCardPasteHandler() {
     pasteDotNetRef = null;
 }
 
+// FoldableText: tells the component whether its folded (line-clamped) text overflows, now and whenever the element's
+// size changes (other width, fonts loaded), so it shows "Show more" only when something is hidden.
+const foldedTextChecks = new WeakMap();
+
+function observeFoldedText(element, dotNetReference) {
+    if (!element)
+        return;
+
+    let state = foldedTextChecks.get(element);
+    if (!state) {
+        state = { overflows: null };
+        state.check = () => {
+            // Unfolded text isn't clamped, so it can't tell; keep the last answer until it's folded again.
+            if (element.dataset.folded !== 'true')
+                return;
+
+            const overflows = element.scrollHeight > element.clientHeight + 1;
+            if (overflows === state.overflows)
+                return;
+
+            state.overflows = overflows;
+            dotNetReference.invokeMethodAsync('SetOverflows', overflows).catch(() => { });
+        };
+        state.observer = new ResizeObserver(state.check);
+        state.observer.observe(element);
+        foldedTextChecks.set(element, state);
+    }
+
+    state.check();
+}
+
+function unobserveFoldedText(element) {
+    const state = element ? foldedTextChecks.get(element) : null;
+    if (!state)
+        return;
+
+    state.observer.disconnect();
+    foldedTextChecks.delete(element);
+}
+
 function getElementScrollTop(element) {
     try {
         if (!element) return null;

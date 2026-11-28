@@ -362,7 +362,7 @@
                         }
                         else if (_tab == 1)
                         {
-                            <textarea class="input-field h-24 resize-none" 
+                            <textarea class="input-field max-h-48 min-h-24 resize-none [field-sizing:content]"
                                 @oninput="OnCommentTextChanged" value="@_commentText"
                                 placeholder="Say what's on your mind ..."></textarea>
                             <div class="flex flex-row justify-end">
@@ -374,7 +374,8 @@
                                 int j = 0;
                                 @foreach (var comment in _card.Comments.OrderByDescending(x => x.CreatedAt))
                                 {
-                                    <div class="flex flex-col gap-1">
+                                    @* Keyed, so a new comment at the top doesn't hand the others' folded state along. *@
+                                    <div @key="comment.Id" class="flex flex-col gap-1">
                                         <div class="flex flex-row items-center gap-2">
                                             @{
                                                 var commentId = $"comment_id_{j}";
@@ -389,7 +390,7 @@
                                             <label id=@commentId class="cursor-pointer text-sm font-medium" @onclick="() => MainLayout.UserInfoModal?.Open(commentId, comment.CreatedById)">@(comment.CreatedBy?.DisplayName ?? "Deleted User")</label>
                                             <label class="text-xs subtext">@TimeHelper.ToElapsedString(comment.CreatedAt)</label>
                                         </div>
-                                        <label class="text-sm font-normal break-normal break-words">@comment.Text</label>
+                                        <FoldableText Text="@comment.Text" Class="text-sm font-normal" />
                                     </div>
 
                                     j++;
