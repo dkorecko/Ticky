@@ -1,0 +1,73 @@
+@implements IAsyncDisposable
+@inject IJSRuntime _js
+
+@* Text that keeps its line breaks and is folded to 10 lines when longer, with a toggle to show all of it. Whether the
+   folded text overflows depends on how it wraps, so main.js measures it (again whenever its size changes) and the
+   toggle only shows when something is hidden. *@
+<div class="flex min-w-0 flex-col items-start gap-1">
+    <p @ref="_element" data-folded="@(_expanded ? "false" : "true")"
+       class='@Class whitespace-pre-wrap wrap-anywhere @(_expanded ? string.Empty : "line-clamp-10")'>@Text</p>
+    @if (_overflows || _expanded)
+    {
+        <button type="button" class="form-link text-xs font-medium" aria-expanded="@(_expanded ? "true" : "false")" @onclick="Toggle">
+            @(_expanded ? "Show less" : "Show more")
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public required string Text { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    private ElementReference _element;
+    private DotNetObjectReference<FoldableText>? _selfReference;
+    private string? _measuredText;
+    private bool _overflows;
+    private bool _expanded;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // The size doesn't have to change when the text does, so a new text is measured here as well.
+        if (_measuredText == Text)
+            return;
+
+        _measuredText = Text;
+        _selfReference ??= DotNetObjectReference.Create(this);
+
+        try
+        {
+            await _js.InvokeVoidAsync("observeFoldedText", _element, _selfReference);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    [JSInvokable]
+    public void SetOverflows(bool overflows)
+    {
+        if (_overflows == overflows)
+            return;
+
+        _overflows = overflows;
+        StateHasChanged();
+    }
+
+    private void Toggle() => _expanded = !_expanded;
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await _js.InvokeVoidAsync("unobserveFoldedText", _element);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+
+        _selfReference?.Dispose();
+    }
+}

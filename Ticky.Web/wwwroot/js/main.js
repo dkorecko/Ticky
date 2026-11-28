@@ -332,6 +332,61 @@ function detachCardPasteHandler() {
     pasteDotNetRef = null;
 }
 
+// FoldableText: tells the component whether its folded (line-clamped) text overflows, now, whenever the element's size
+// changes (other width, fonts loaded) and when it's folded again, so it shows "Show more" only when something is hidden.
+const foldedTextChecks = new WeakMap();
+
+function observeFoldedText(element, dotNetReference) {
+    if (!element)
+        return;
+
+    let state = foldedTextChecks.get(element);
+    if (!state) {
+        // The component starts out with no overflow, so text that fits doesn't need to tell it.
+        state = { overflows: false, sending: false, stopped: false };
+        state.check = () => {
+            // One update at a time: checks while one is on its way are skipped, and it checks again when it lands.
+            // Unfolded text isn't clamped, so it can't tell; keep the last answer until it's folded again.
+            if (state.stopped || state.sending || element.dataset.folded !== 'true')
+                return;
+
+            const overflows = element.scrollHeight > element.clientHeight + 1;
+            if (overflows === state.overflows)
+                return;
+
+            // Remembered only once the component has it: after a failed call, the next size change sends it again.
+            state.sending = true;
+            dotNetReference.invokeMethodAsync('SetOverflows', overflows)
+                .then(() => {
+                    state.overflows = overflows;
+                    state.sending = false;
+                    state.check();
+                })
+                .catch(() => { state.sending = false; });
+        };
+        state.observer = new ResizeObserver(state.check);
+        state.observer.observe(element);
+        // Folding doesn't always change the size: text that got wider while unfolded can now fit in the clamp.
+        state.foldObserver = new MutationObserver(state.check);
+        state.foldObserver.observe(element, { attributes: true, attributeFilter: ['data-folded'] });
+        foldedTextChecks.set(element, state);
+    }
+
+    state.check();
+}
+
+function unobserveFoldedText(element) {
+    const state = element ? foldedTextChecks.get(element) : null;
+    if (!state)
+        return;
+
+    // A call still on its way must not check again for a component that's gone.
+    state.stopped = true;
+    state.observer.disconnect();
+    state.foldObserver.disconnect();
+    foldedTextChecks.delete(element);
+}
+
 function getElementScrollTop(element) {
     try {
         if (!element) return null;

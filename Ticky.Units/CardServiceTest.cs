@@ -627,6 +627,16 @@ public class CardServiceTest
         Assert.That((await _service.AddCommentAsync(_cardId, _boardMemberId, "  ")).Status, Is.EqualTo(OperationStatus.Invalid));
     }
 
+    [Test]
+    public async Task AddComment_KeepsLineBreaksInsideTheText()
+    {
+        var comment = await _service.AddCommentAsync(_cardId, _boardMemberId, "\n\nFirst line\nSecond line\n\n  Indented\n");
+
+        using var db = _db.CreateDbContext();
+        Assert.That((await db.Comments.SingleAsync(x => x.Id == comment.Value!.Id)).Text, Is.EqualTo("First line\nSecond line\n\n  Indented"));
+        Assert.That((await _service.AddCommentAsync(_cardId, _boardMemberId, "\n \r\n")).Status, Is.EqualTo(OperationStatus.Invalid));
+    }
+
     #endregion
 
     #region Subtasks
