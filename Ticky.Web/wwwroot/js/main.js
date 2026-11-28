@@ -342,10 +342,11 @@ function observeFoldedText(element, dotNetReference) {
 
     let state = foldedTextChecks.get(element);
     if (!state) {
-        state = { overflows: null };
+        state = { overflows: null, sending: false, stopped: false };
         state.check = () => {
+            // One update at a time: checks while one is on its way are skipped, and it checks again when it lands.
             // Unfolded text isn't clamped, so it can't tell; keep the last answer until it's folded again.
-            if (element.dataset.folded !== 'true')
+            if (state.stopped || state.sending || element.dataset.folded !== 'true')
                 return;
 
             const overflows = element.scrollHeight > element.clientHeight + 1;
@@ -353,9 +354,14 @@ function observeFoldedText(element, dotNetReference) {
                 return;
 
             // Remembered only once the component has it: after a failed call, the next size change sends it again.
+            state.sending = true;
             dotNetReference.invokeMethodAsync('SetOverflows', overflows)
-                .then(() => { state.overflows = overflows; })
-                .catch(() => { });
+                .then(() => {
+                    state.overflows = overflows;
+                    state.sending = false;
+                    state.check();
+                })
+                .catch(() => { state.sending = false; });
         };
         state.observer = new ResizeObserver(state.check);
         state.observer.observe(element);
@@ -370,6 +376,8 @@ function unobserveFoldedText(element) {
     if (!state)
         return;
 
+    // A call still on its way must not check again for a component that's gone.
+    state.stopped = true;
     state.observer.disconnect();
     foldedTextChecks.delete(element);
 }
