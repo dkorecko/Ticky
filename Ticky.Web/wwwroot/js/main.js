@@ -352,8 +352,10 @@ function observeFoldedText(element, dotNetReference) {
             if (overflows === state.overflows)
                 return;
 
-            state.overflows = overflows;
-            dotNetReference.invokeMethodAsync('SetOverflows', overflows).catch(() => { });
+            // Remembered only once the component has it: after a failed call, the next size change sends it again.
+            dotNetReference.invokeMethodAsync('SetOverflows', overflows)
+                .then(() => { state.overflows = overflows; })
+                .catch(() => { });
         };
         state.observer = new ResizeObserver(state.check);
         state.observer.observe(element);

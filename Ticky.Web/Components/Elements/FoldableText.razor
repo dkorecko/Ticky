@@ -6,7 +6,7 @@
    toggle only shows when something is hidden. *@
 <div class="flex min-w-0 flex-col items-start gap-1">
     <p @ref="_element" data-folded="@(_expanded ? "false" : "true")"
-       class='@Class whitespace-pre-wrap break-words @(_expanded ? string.Empty : "line-clamp-10")'>@Text</p>
+       class='@Class whitespace-pre-wrap wrap-anywhere @(_expanded ? string.Empty : "line-clamp-10")'>@Text</p>
     @if (_overflows || _expanded)
     {
         <button type="button" class="form-link text-xs font-medium" aria-expanded="@(_expanded ? "true" : "false")" @onclick="Toggle">
