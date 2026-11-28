@@ -37,6 +37,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Read at startup and served at /api/agent-guide.md. -->
+    <Content Include="Docs\AgentGuide.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Update="wwwroot\emails\DeadlineReminder.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

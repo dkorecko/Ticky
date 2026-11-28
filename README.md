@@ -219,6 +219,8 @@ The application automatically applies migrations on startup.
 
 Ticky has a REST API under `/api/v1`, so scripts and AI agents can work with Ticky end to end: everything you can do in the app, under the same rules. Every request acts as the user who created the token, so it reaches exactly the boards that user can.
 
+AI agents that can run shell commands should read the short guide written for them first: every instance serves it at `/api/agent-guide.md`, and it lives in the repository as [`Ticky.Web/Docs/AgentGuide.md`](Ticky.Web/Docs/AgentGuide.md). Point your agent at it, together with a token.
+
 ### Tokens
 
 Create a token in **Settings → API tokens**. Choose whether it's **Read only** (only the `GET` endpoints) or **Read and write**, and when it expires. The token is shown once, since Ticky stores only a hash of it. Revoking it there stops it working right away.
