@@ -332,8 +332,8 @@ function detachCardPasteHandler() {
     pasteDotNetRef = null;
 }
 
-// FoldableText: tells the component whether its folded (line-clamped) text overflows, now and whenever the element's
-// size changes (other width, fonts loaded), so it shows "Show more" only when something is hidden.
+// FoldableText: tells the component whether its folded (line-clamped) text overflows, now, whenever the element's size
+// changes (other width, fonts loaded) and when it's folded again, so it shows "Show more" only when something is hidden.
 const foldedTextChecks = new WeakMap();
 
 function observeFoldedText(element, dotNetReference) {
@@ -366,6 +366,9 @@ function observeFoldedText(element, dotNetReference) {
         };
         state.observer = new ResizeObserver(state.check);
         state.observer.observe(element);
+        // Folding doesn't always change the size: text that got wider while unfolded can now fit in the clamp.
+        state.foldObserver = new MutationObserver(state.check);
+        state.foldObserver.observe(element, { attributes: true, attributeFilter: ['data-folded'] });
         foldedTextChecks.set(element, state);
     }
 
@@ -380,6 +383,7 @@ function unobserveFoldedText(element) {
     // A call still on its way must not check again for a component that's gone.
     state.stopped = true;
     state.observer.disconnect();
+    state.foldObserver.disconnect();
     foldedTextChecks.delete(element);
 }
 
