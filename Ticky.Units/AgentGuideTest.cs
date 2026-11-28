@@ -158,16 +158,22 @@ public class AgentGuideTest
 
         foreach (var code in Regex.Matches(prose, "`([^`\n]+)`").Cast<RegexMatch>())
         {
-            var span = Regex.Match(code.Groups[1].Value, @"^(?:(" + string.Join('|', HttpMethods) + @") )?(?:/api/v1)?(/[^\s?]*)$");
+            var span = Regex.Match(code.Groups[1].Value, @"^(?:(" + string.Join('|', HttpMethods) + @") )?(/api/v1)?(/[^\s?]*)$");
 
             if (!span.Success)
                 continue;
 
-            var path = span.Groups[2].Value;
-            var area = path.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            var path = span.Groups[3].Value;
 
-            if (area is null || !ApiAreas.Contains(area))
-                continue;
+            // Without the prefix, the first segment tells an API path from other code like /updatehub. With it, the
+            // path is meant as an API path, so a typo like /api/v1/board/{id} has to be caught, not skipped.
+            if (!span.Groups[2].Success)
+            {
+                var area = path.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+
+                if (area is null || !ApiAreas.Contains(area))
+                    continue;
+            }
 
             mentions.Add(new Mention(span.Groups[1].Success ? span.Groups[1].Value : null, Normalize(path)));
         }

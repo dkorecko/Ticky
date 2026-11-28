@@ -19,12 +19,20 @@ the short version: the model, the calls you need most, and the rules. The full r
 
 ## Setup
 
-Your user gives you the instance's address and an API token, which starts with `tky_`. Keep them in environment
-variables and never write the token itself into a command, a file or your answers:
+Your user sets the instance's address and an API token (it starts with `tky_`) as the environment variables
+`TICKY_URL` and `TICKY_TOKEN`, in the environment you run in. Check that they are set without printing them:
+
+```bash
+test -n "$TICKY_URL" && test -n "$TICKY_TOKEN" && echo set
+```
+
+If they are missing, ask your user to set them. Never ask for the token in the chat, and never write it into a
+command, a file or your answers. Your user can set them like this before starting you, which keeps the token off the
+screen and out of shell history:
 
 ```bash
 export TICKY_URL="https://ticky.example.com"   # no trailing slash
-export TICKY_TOKEN="tky_..."
+read -rs TICKY_TOKEN && export TICKY_TOKEN     # paste the token, then Enter
 ```
 
 Examples below are for bash. Every request looks like this:
@@ -141,7 +149,11 @@ curl -s "$TICKY_URL/api/v1/boards/$BOARD/activity?limit=50&before=$NEXT" -H "Aut
   or `Z`, it is converted to server time. Durations are `hh:mm:ss`.
 - `PATCH` is partial: a missing or `null` field is kept. Each resource clears a value its own way: a card's deadline
   with `clearDeadline`, a card's labels and assignees with their own `DELETE` calls.
-- Adding what is already there, or removing what is not, changes nothing and succeeds.
+- Some repeats are safe and change nothing: assigning or unassigning someone (on cards and on subtasks), adding or
+  removing a label, and starting a timer that is already running (you get that timer back).
+- Other repeats fail. Linking cards that are already linked, or adding someone who already has access, answers 409.
+  Stopping a timer that isn't running answers 409. Removing something that isn't there, like a link or a member,
+  answers 404.
 - Errors are problem details (`application/problem+json`) with `status`, `title` and often `detail`.
   - **400**: a value is invalid. The `errors` object names each field and says what is wrong; a value that can't be
     read at all, like an unknown enum name, shows as `$.fieldName`. Fix the value.
