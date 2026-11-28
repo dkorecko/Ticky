@@ -342,7 +342,8 @@ function observeFoldedText(element, dotNetReference) {
 
     let state = foldedTextChecks.get(element);
     if (!state) {
-        state = { overflows: null, sending: false, stopped: false };
+        // The component starts out with no overflow, so text that fits doesn't need to tell it.
+        state = { overflows: false, sending: false, stopped: false };
         state.check = () => {
             // One update at a time: checks while one is on its way are skipped, and it checks again when it lands.
             // Unfolded text isn't clamped, so it can't tell; keep the last answer until it's folded again.
