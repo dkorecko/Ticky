@@ -397,6 +397,10 @@ app.MapScalarApiReference(
             .HideDeveloperTools()
 );
 
+// A short guide to the API for AI agents, as Markdown: public like the API reference, since it describes the API and
+// holds nothing of anyone's. The OpenAPI description points agents to it.
+app.MapAgentGuide();
+
 // Serves build-time assets fingerprinted and pre-compressed, with long-lived caching.
 app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();

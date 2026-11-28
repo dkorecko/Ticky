@@ -216,6 +216,9 @@ namespace Ticky.Base
             /// <summary>The browsable API reference.</summary>
             public const string DocsPath = "/api/docs";
 
+            /// <summary>The short guide to the API for AI agents, as Markdown.</summary>
+            public const string AgentGuidePath = "/api/agent-guide.md";
+
             /// <summary>Name of the bearer security scheme in the OpenAPI document.</summary>
             public const string SecuritySchemeName = "Bearer";
 

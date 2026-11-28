@@ -14,6 +14,8 @@ public class ApiDocumentTransformer : IOpenApiDocumentTransformer
         app, under the same rules. Every request acts as the user who created the token, so it reaches exactly the
         boards that user can.
 
+        **AI agents:** read the short guide at `/api/agent-guide.md` first.
+
         **Authentication.** Create a token in Ticky under *Settings → API tokens* and send it with every request as
         `Authorization: Bearer tky_…`. Read-only tokens can call the `GET` endpoints; the others need a read and
         write token and answer `403` otherwise.
